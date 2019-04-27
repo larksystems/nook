@@ -36,9 +36,6 @@ main {
     width: 300px;
     overflow: hidden;
     overflow: scroll;
-    /* display: flex; */
-    /* flex-direction: column; */
-    /* height: auto; */
 }
 
 .message-panel {
