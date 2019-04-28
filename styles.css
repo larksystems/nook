@@ -34,7 +34,6 @@ main {
 .message-list {
     flex: 0 0 auto;
     width: 300px;
-    overflow: hidden;
     overflow: scroll;
 }
 
@@ -134,4 +133,18 @@ span.label__remove {
     margin-left: 4px;
     opacity: 0.4;
     font-size: 10px;
+}
+
+.message-summary {
+    text-align: center;
+    padding: 4px;
+    border-bottom: 1px solid #ddd;
+}
+
+.message-summary__id {
+    font-size: 18px;
+}
+
+.message-summary__demographics {
+    color: #666;
 }
