@@ -8,7 +8,7 @@ void init() {
   conversation.personInfo = '23 years old unmarried female, East';
   print(querySelector('main'));
   querySelector('.message-panel').remove();
-  querySelector('main').insertBefore(conversation.conversationPanel, querySelector('.action-panel'));
+  querySelector('main').insertBefore(conversation.conversationPanel, querySelector('.reply-panel'));
 
   conversation.addMessage(
     new MessageView(

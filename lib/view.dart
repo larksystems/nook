@@ -31,19 +31,6 @@ class ConversationPanelView {
     _messages = new DivElement();
     _messages.classes.add('messages');
     conversationPanel.append(_messages);
-
-    var replyBox = new DivElement();
-    replyBox.classes.add('reply-box');
-    var textarea = new DivElement()
-      ..classes.add('reply-box__textarea')
-      ..contentEditable = 'true';
-    replyBox.append(textarea);
-    var sendButton = new DivElement()
-      ..classes.add('reply-box__send-button')
-      ..text = 'SEND'
-      ..onClick.listen((_) => command(UIAction.sendMessage, new MessageData(textarea.text, _personId.text)));
-    replyBox.append(sendButton);
-    conversationPanel.append(replyBox);
   }
 
   set personId(String personId) => _personId.text = personId;
