@@ -43,39 +43,38 @@ class ConversationPanelView {
 
 class MessageView {
   DivElement message;
-  DivElement _message;
+  DivElement _messageContent;
   DivElement _messageLabels;
   DivElement _messageText;
   DivElement _messageTranslation;
 
   MessageView(String content, String messageId, {String translation = '', bool incoming = true, List<LabelView> labels = const[]}) {
     message = new DivElement()
-      ..classes.add('message-line')
+      ..classes.add('message')
+      ..classes.add(incoming ? 'message--incoming' : 'message--outgoing')
       ..dataset['id'] = messageId;
 
-    _message = new DivElement()
-      ..classes.add('message')
-      ..classes.add(incoming ? 'message--incoming' : 'message--outgoing');
-    message.append(_message);
+    _messageContent = new DivElement()
+      ..classes.add('message__content');
+    message.append(_messageContent);
+
+    _messageText = new DivElement()
+      ..classes.add('message__text')
+      ..text = content;
+    _messageContent.append(_messageText);
+
+    _messageTranslation = new DivElement()
+      ..classes.add('message__translation')
+      ..contentEditable = 'true'
+      ..text = translation
+      ..onInput.listen((_) => command(UIAction.updateTranslation, new TranslationData(_messageTranslation.text, messageId)));
+    _messageContent.append(_messageTranslation);
 
     _messageLabels = new DivElement()
       ..classes.add('message__labels');
     labels.forEach((label) => _messageLabels.append(label.label));
-    _message.append(_messageLabels);
+    message.append(_messageLabels);
 
-    _messageText = new DivElement()
-      ..classes.add('message__text')
-      ..classes.add(incoming ? 'message__text--incoming' : 'message__text--outgoing')
-      ..text = content;
-    _message.append(_messageText);
-
-    _messageTranslation = new DivElement()
-      ..classes.add('message__translation')
-      ..classes.add(incoming ? 'message__translation--incoming' : 'message__translation--outgoing')
-      ..contentEditable = 'true'
-      ..text = translation
-      ..onInput.listen((_) => command(UIAction.updateTranslation, new TranslationData(_messageTranslation.text, messageId)));
-    _message.append(_messageTranslation);
   }
 
   set translation(String translation) => _messageTranslation.text = translation;
@@ -103,12 +102,15 @@ class LabelView {
       ..classes.add('label')
       ..dataset['id'] = labelId;
 
-    label.append(new SpanElement()..text = text);
+    var labelText = new SpanElement()
+      ..classes.add('label__name')
+      ..text = text;
+    label.append(labelText);
+
     var removeButton = new SpanElement()
       ..classes.add('label__remove')
-      ..text = 'x'
       ..onClick.listen((_) {
-        DivElement message = getAncestors(label).firstWhere((e) => e.classes.contains('message-line'));
+        DivElement message = getAncestors(label).firstWhere((e) => e.classes.contains('message'));
         command(UIAction.removeLabel, new LabelData(labelId, message.dataset['id']));
       });
     label.append(removeButton);
