@@ -94,8 +94,8 @@ class MessageView {
   set translation(String translation) => _messageTranslation.text = translation;
 
   void addLabel(LabelView label, [int position]) {
-    // Add at the end
     if (position == null || position >= _messageLabels.children.length) {
+      // Add at the end
       _messageLabels.append(label.label);
       return;
     }
@@ -136,9 +136,9 @@ class ConversationListPanelView {
     conversationListPanel.classes.add('message-list');
   }
 
-  addConversation(ConversationSummary conversationSummary, [int position]) {
-    // Add at the end
+  void addConversation(ConversationSummary conversationSummary, [int position]) {
     if (position == null || position >= conversationListPanel.children.length) {
+      // Add at the end
       conversationListPanel.append(conversationSummary.conversationSummary);
       return;
     }
