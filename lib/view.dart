@@ -94,8 +94,8 @@ class MessageView {
   set translation(String translation) => _messageTranslation.text = translation;
 
   void addLabel(LabelView label, [int position]) {
-    // Add at the end
     if (position == null || position >= _messageLabels.children.length) {
+      // Add at the end
       _messageLabels.append(label.label);
       return;
     }
@@ -126,4 +126,41 @@ class LabelView {
       });
     label.append(removeButton);
   }
+}
+
+class ConversationListPanelView {
+  DivElement conversationListPanel;
+
+  ConversationListPanelView() {
+    conversationListPanel = new DivElement();
+    conversationListPanel.classes.add('message-list');
+  }
+
+  void addConversation(ConversationSummary conversationSummary, [int position]) {
+    if (position == null || position >= conversationListPanel.children.length) {
+      // Add at the end
+      conversationListPanel.append(conversationSummary.conversationSummary);
+      return;
+    }
+    // Add before an existing label
+    if (position < 0) {
+      position = 0;
+    }
+    Node refChild = conversationListPanel.children[position];
+    conversationListPanel.insertBefore(conversationSummary.conversationSummary, refChild);
+  }
+}
+
+class ConversationSummary {
+  DivElement conversationSummary;
+
+  ConversationSummary(String personId, String content) {
+    conversationSummary = new DivElement()
+      ..classes.add('summary-message')
+      ..dataset['id'] = personId
+      ..text = content
+      ..onClick.listen((_) => command(UIAction.selectConversation, new ConversationData(personId)));
+  }
+
+  set content(String text) => conversationSummary.text = text;
 }

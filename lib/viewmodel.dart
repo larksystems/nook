@@ -7,6 +7,7 @@ enum UIAction {
   updateTranslation,
   sendMessage,
   removeLabel,
+  selectConversation,
 }
 
 class Data {}
@@ -27,6 +28,11 @@ class LabelData extends Data {
   String labelId;
   String messageId;
   LabelData(this.labelId, this.messageId);
+}
+
+class ConversationData extends Data {
+  String personId;
+  ConversationData(this.personId);
 }
 
 UIState state;
