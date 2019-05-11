@@ -47,7 +47,10 @@ main {
 }
 
 .action-panel {
+    flex: 0 0 auto;
     width: 300px;
+    margin-top: 72px;
+    border-top: 1px solid #ddd;
 }
 
 .summary-message {
