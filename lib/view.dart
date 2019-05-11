@@ -13,23 +13,30 @@ class ConversationPanelView {
   DivElement _messages;
   DivElement _personId;
   DivElement _info;
+  DivElement _tags;
 
   ConversationPanelView() {
     conversationPanel = new DivElement();
     conversationPanel.classes.add('message-panel');
 
-    var conversationSummary = new DivElement();
-    conversationSummary.classes.add('message-summary');
-    _personId = new DivElement();
-    _personId.classes.add('message-summary__id');
-    conversationSummary.append(_personId);
-    _info = new DivElement();
-    _info.classes.add('message-summary__demographics');
-    conversationSummary.append(_info);
+    var conversationSummary = new DivElement()
+      ..classes.add('message-summary');
     conversationPanel.append(conversationSummary);
 
-    _messages = new DivElement();
-    _messages.classes.add('messages');
+    _personId = new DivElement()
+      ..classes.add('message-summary__id');
+    conversationSummary.append(_personId);
+
+    _info = new DivElement()
+      ..classes.add('message-summary__demographics');
+    conversationSummary.append(_info);
+
+    _tags = new DivElement()
+      ..classes.add('message-summary__tags');
+    conversationSummary.append(_tags);
+
+    _messages = new DivElement()
+      ..classes.add('messages');
     conversationPanel.append(_messages);
   }
 
@@ -38,6 +45,10 @@ class ConversationPanelView {
 
   addMessage(MessageView message) {
     _messages.append(message.message);
+  }
+
+  addTags(LabelView label) {
+    _tags.append(label.label);
   }
 }
 
@@ -94,13 +105,32 @@ class MessageView {
   }
 }
 
+enum TagColour {
+  None,
+  Green,
+  Yellow,
+  Red
+}
+
 class LabelView {
   DivElement label;
 
-  LabelView(String text, String labelId) {
+  LabelView(String text, String labelId, [TagColour tagColour = TagColour.None]) {
     label = new DivElement()
       ..classes.add('label')
       ..dataset['id'] = labelId;
+    switch (tagColour) {
+      case TagColour.Green:
+        label.classes.add('label--green');
+        break;
+      case TagColour.Yellow:
+        label.classes.add('label--yellow');
+        break;
+      case TagColour.Red:
+        label.classes.add('label--red');
+        break;
+      default:
+    }
 
     var labelText = new SpanElement()
       ..classes.add('label__name')
