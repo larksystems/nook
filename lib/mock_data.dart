@@ -391,6 +391,12 @@ List<Conversation> _conversations = [
     ],
 ];
 
-List<Tag> get tags => _tags.values.toList();
+List<Tag> get messageTags => _tags.values.toList();
+List<Tag> get conversationTags {
+  Map<String, Tag> tagsCopy = new Map<String, Tag>.from(_tags);
+  tagsCopy.removeWhere((key, tag) => [DEMO_AGE, DEMO_GENDER, DEMO_LOCATION].contains(key));
+  return tagsCopy.values.toList();
+
+}
 
 List<Conversation> get conversations => _conversations;

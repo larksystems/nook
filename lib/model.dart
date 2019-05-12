@@ -27,6 +27,7 @@ class Tag {
   String tagId;
   String content;
   TagType type;
+  String shortcut;
 }
 
 enum TagType {
