@@ -6,6 +6,8 @@ void init() {
   ConversationPanelView conversation = new ConversationPanelView();
   conversation.personId = 'KGD6192830172';
   conversation.personInfo = '23 years old unmarried female, East';
+  conversation.addTags(new LabelView('label1', '00001'));
+  conversation.addTags(new LabelView('needs_action', '00002', TagColour.Red));
   print(querySelector('main'));
   querySelector('.message-panel').remove();
   querySelector('main').insertBefore(conversation.conversationPanel, querySelector('.reply-panel'));

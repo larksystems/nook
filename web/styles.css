@@ -85,3 +85,8 @@ main {
 .message-summary__demographics {
     color: #666;
 }
+
+.message-summary__tags {
+    display: flex;
+    place-content: center;
+}
