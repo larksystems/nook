@@ -12,3 +12,7 @@ List<Tag> loadConversationTags() {
 List<Tag> loadMessageTags() {
   return data.messageTags;
 }
+
+void updateConversation(Conversation conversation) {
+  // TODO(mariana): implement saving the updated conversation
+}

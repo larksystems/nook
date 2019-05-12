@@ -109,6 +109,7 @@ void command(UIAction action, Data data) {
           TagData tagData = data;
           model.Tag tag = conversationTags.singleWhere((tag) => tag.tagId == tagData.tagId);
           activeConversation.tags.add(tag);
+          fbt.updateConversation(activeConversation);
           view.conversationPanelView.addTags(new view.LabelView(tag.content, tag.tagId));
           break;
         default:
