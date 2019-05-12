@@ -1,8 +1,11 @@
-import 'firebase_tools.dart' as fbt;
 
+class DeidentifiedPhoneNumber {
+  String value;
+  String shortValue;
+}
 class Conversation {
-  String deidentifiedPhoneNumber;
-  String demographicsInfo;
+  DeidentifiedPhoneNumber deidentifiedPhoneNumber;
+  Map<String, String> demographicsInfo;
   List<Tag> tags;
   List<Message> messages;
 }
@@ -29,12 +32,4 @@ class Tag {
 enum TagType {
   Normal,
   Important
-}
-
-List<Conversation> conversations;
-List<Tag> tags;
-
-void init() {
-  conversations = fbt.loadConversations();
-  tags = fbt.loadTags();
 }

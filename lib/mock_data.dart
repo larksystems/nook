@@ -56,8 +56,8 @@ Map<String, Tag> _tags = {
 
 List<Conversation> _conversations = [
   new Conversation()
-    ..deidentifiedPhoneNumber = 'ahso-asgo-qbal'
-    ..demographicsInfo = 'Female, 28, East'
+    ..deidentifiedPhoneNumber = (new DeidentifiedPhoneNumber()..shortValue = 'ahso-asgo-qbal')
+    ..demographicsInfo = {'Gender': 'Female', 'Age': '28', 'Location':'East'}
     ..tags = [_tags[NO_CLEAN_WATER_ACCESS]]
     ..messages = [
       new Message()
@@ -117,8 +117,8 @@ List<Conversation> _conversations = [
         ..tags = [],
     ],
   new Conversation()
-    ..deidentifiedPhoneNumber = 'glar-bgls-paxb'
-    ..demographicsInfo = 'Male, 16, East'
+    ..deidentifiedPhoneNumber = (new DeidentifiedPhoneNumber()..shortValue = 'glar-bgls-paxb')
+    ..demographicsInfo = {'Gender': 'Male', 'Age': '16', 'Location':'East'}
     ..tags = [_tags[CLEAN_WATER_ACCESS]]
     ..messages = [
       new Message()
@@ -168,8 +168,8 @@ List<Conversation> _conversations = [
         ..tags = [_tags[CLEAN_WATER_ACCESS]],
     ],
   new Conversation()
-    ..deidentifiedPhoneNumber = 'alha-pcaa-vass'
-    ..demographicsInfo = 'Female, 46, West'
+    ..deidentifiedPhoneNumber = (new DeidentifiedPhoneNumber()..shortValue = 'alha-pcaa-vass')
+    ..demographicsInfo = {'Gender': 'Female', 'Age': '46', 'Location':'West'}
     ..tags = []
     ..messages = [
       new Message()
@@ -214,8 +214,8 @@ List<Conversation> _conversations = [
         ..tags = [],
     ],
   new Conversation()
-    ..deidentifiedPhoneNumber = 'agso-ashk-chls'
-    ..demographicsInfo = ''
+    ..deidentifiedPhoneNumber = (new DeidentifiedPhoneNumber()..shortValue = 'agso-ashk-chls')
+    ..demographicsInfo = {}
     ..tags = []
     ..messages = [
       new Message()
@@ -225,8 +225,8 @@ List<Conversation> _conversations = [
         ..tags = [],
     ],
   new Conversation()
-    ..deidentifiedPhoneNumber = 'ahls-cnhl-flas'
-    ..demographicsInfo = ''
+    ..deidentifiedPhoneNumber = (new DeidentifiedPhoneNumber()..shortValue = 'ahls-cnhl-flas')
+    ..demographicsInfo = {}
     ..tags = []
     ..messages = [
       new Message()
@@ -236,8 +236,8 @@ List<Conversation> _conversations = [
         ..tags = [],
     ],
   new Conversation()
-    ..deidentifiedPhoneNumber = 'jala-blas-ohsa'
-    ..demographicsInfo = ''
+    ..deidentifiedPhoneNumber = (new DeidentifiedPhoneNumber()..shortValue = 'jala-blas-ohsa')
+    ..demographicsInfo = {}
     ..tags = []
     ..messages = [
       new Message()
@@ -247,8 +247,8 @@ List<Conversation> _conversations = [
         ..tags = [],
     ],
   new Conversation()
-    ..deidentifiedPhoneNumber = 'ahls-bxks-mahs'
-    ..demographicsInfo = ''
+    ..deidentifiedPhoneNumber = (new DeidentifiedPhoneNumber()..shortValue = 'ahls-bxks-mahs')
+    ..demographicsInfo = {}
     ..tags = []
     ..messages = [
       new Message()
@@ -258,8 +258,8 @@ List<Conversation> _conversations = [
         ..tags = [],
     ],
   new Conversation()
-    ..deidentifiedPhoneNumber = 'blad-qhla-zblh'
-    ..demographicsInfo = ''
+    ..deidentifiedPhoneNumber = (new DeidentifiedPhoneNumber()..shortValue = 'blad-qhla-zblh')
+    ..demographicsInfo = {}
     ..tags = []
     ..messages = [
       new Message()
@@ -269,8 +269,8 @@ List<Conversation> _conversations = [
         ..tags = [],
     ],
   new Conversation()
-    ..deidentifiedPhoneNumber = 'asha-bcka-ylja'
-    ..demographicsInfo = ''
+    ..deidentifiedPhoneNumber = (new DeidentifiedPhoneNumber()..shortValue = 'asha-bcka-ylja')
+    ..demographicsInfo = {}
     ..tags = []
     ..messages = [
       new Message()
@@ -280,8 +280,8 @@ List<Conversation> _conversations = [
         ..tags = [],
     ],
   new Conversation()
-    ..deidentifiedPhoneNumber = 'ghla-ghjl-yuio'
-    ..demographicsInfo = ''
+    ..deidentifiedPhoneNumber = (new DeidentifiedPhoneNumber()..shortValue = 'ghla-ghjl-yuio')
+    ..demographicsInfo = {}
     ..tags = []
     ..messages = [
       new Message()
@@ -291,8 +291,8 @@ List<Conversation> _conversations = [
         ..tags = [],
     ],
   new Conversation()
-    ..deidentifiedPhoneNumber = 'hals-ashk-werj'
-    ..demographicsInfo = ''
+    ..deidentifiedPhoneNumber = (new DeidentifiedPhoneNumber()..shortValue = 'hals-ashk-werj')
+    ..demographicsInfo = {}
     ..tags = []
     ..messages = [
       new Message()
@@ -302,8 +302,8 @@ List<Conversation> _conversations = [
         ..tags = [],
     ],
   new Conversation()
-    ..deidentifiedPhoneNumber = 'mnbx-vbnm-dfgh'
-    ..demographicsInfo = ''
+    ..deidentifiedPhoneNumber = (new DeidentifiedPhoneNumber()..shortValue = 'mnbx-vbnm-dfgh')
+    ..demographicsInfo = {}
     ..tags = []
     ..messages = [
       new Message()
@@ -313,8 +313,8 @@ List<Conversation> _conversations = [
         ..tags = [],
     ],
   new Conversation()
-    ..deidentifiedPhoneNumber = 'dfgh-jhga-sdfg'
-    ..demographicsInfo = ''
+    ..deidentifiedPhoneNumber = (new DeidentifiedPhoneNumber()..shortValue = 'dfgh-jhga-sdfg')
+    ..demographicsInfo = {}
     ..tags = []
     ..messages = [
       new Message()
@@ -324,8 +324,8 @@ List<Conversation> _conversations = [
         ..tags = [],
     ],
   new Conversation()
-    ..deidentifiedPhoneNumber = 'erty-poiu-werj'
-    ..demographicsInfo = ''
+    ..deidentifiedPhoneNumber = (new DeidentifiedPhoneNumber()..shortValue = 'erty-poiu-werj')
+    ..demographicsInfo = {}
     ..tags = []
     ..messages = [
       new Message()
@@ -335,8 +335,8 @@ List<Conversation> _conversations = [
         ..tags = [],
     ],
   new Conversation()
-    ..deidentifiedPhoneNumber = 'oiuy-hjkl-jhgf'
-    ..demographicsInfo = ''
+    ..deidentifiedPhoneNumber = (new DeidentifiedPhoneNumber()..shortValue = 'oiuy-hjkl-jhgf')
+    ..demographicsInfo = {}
     ..tags = []
     ..messages = [
       new Message()
@@ -346,8 +346,8 @@ List<Conversation> _conversations = [
         ..tags = [],
     ],
   new Conversation()
-    ..deidentifiedPhoneNumber = 'lklk-hkjk-upoq'
-    ..demographicsInfo = ''
+    ..deidentifiedPhoneNumber = (new DeidentifiedPhoneNumber()..shortValue = 'lklk-hkjk-upoq')
+    ..demographicsInfo = {}
     ..tags = []
     ..messages = [
       new Message()
@@ -357,8 +357,8 @@ List<Conversation> _conversations = [
         ..tags = [],
     ],
   new Conversation()
-    ..deidentifiedPhoneNumber = 'dfua-agsk-slkd'
-    ..demographicsInfo = ''
+    ..deidentifiedPhoneNumber = (new DeidentifiedPhoneNumber()..shortValue = 'dfua-agsk-slkd')
+    ..demographicsInfo = {}
     ..tags = []
     ..messages = [
       new Message()
@@ -368,8 +368,8 @@ List<Conversation> _conversations = [
         ..tags = [],
     ],
   new Conversation()
-    ..deidentifiedPhoneNumber = 'ooiw-ppqp-hlkk'
-    ..demographicsInfo = ''
+    ..deidentifiedPhoneNumber = (new DeidentifiedPhoneNumber()..shortValue = 'ooiw-ppqp-hlkk')
+    ..demographicsInfo = {}
     ..tags = []
     ..messages = [
       new Message()
@@ -379,8 +379,8 @@ List<Conversation> _conversations = [
         ..tags = [],
     ],
   new Conversation()
-    ..deidentifiedPhoneNumber = 'zbvx-zxcc-bvxm'
-    ..demographicsInfo = ''
+    ..deidentifiedPhoneNumber = (new DeidentifiedPhoneNumber()..shortValue = 'zbvx-zxcc-bvxm')
+    ..demographicsInfo = {}
     ..tags = []
     ..messages = [
       new Message()

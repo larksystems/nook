@@ -12,7 +12,7 @@ ConversationPanelView conversationPanelView;
 ReplyPanelView replyPanelView;
 TagPanelView tagPanelView;
 
-init() {
+void init() {
   conversationListPanelView = new ConversationListPanelView();
   conversationPanelView = new ConversationPanelView();
   replyPanelView = new ReplyPanelView();
@@ -66,22 +66,25 @@ class ConversationPanelView {
   set deidentifiedPhoneNumber(String deidentifiedPhoneNumber) => _deidentifiedPhoneNumber.text = deidentifiedPhoneNumber;
   set demographicsInfo(String demographicsInfo) => _info.text = demographicsInfo;
 
-  addMessage(MessageView message) {
+  void addMessage(MessageView message) {
     _messages.append(message.message);
   }
 
-  addTags(LabelView label) {
+  void addTags(LabelView label) {
     _tags.append(label.label);
   }
 
-  clear() {
+  void clear() {
     _deidentifiedPhoneNumber.text = '';
     _info.text = '';
 
-    while (_tags.firstChild != null) {
+    int tagsNo = _tags.children.length;
+    for (int i = 0; i < tagsNo; i++) {
       _tags.firstChild.remove();
     }
-    while (_messages.firstChild != null) {
+
+    int messagesNo = _messages.children.length;
+    for (int i = 0; i < messagesNo; i++) {
       _messages.firstChild.remove();
     }
   }
@@ -209,7 +212,7 @@ class ConversationListPanelView {
     _phoneToConversations[conversationSummary.deidentifiedPhoneNumber] = conversationSummary;
   }
 
-  selectConversation(String deidentifiedPhoneNumber) {
+  void selectConversation(String deidentifiedPhoneNumber) {
     activeConversation?._deselect();
     activeConversation = _phoneToConversations[deidentifiedPhoneNumber];
     activeConversation._select();
@@ -271,7 +274,7 @@ class ReplyPanelView {
     replyPanel.append(_notes);
   }
 
-  addReply(ActionView action) {
+  void addReply(ActionView action) {
     _replyList.append(action.action);
   }
 }
@@ -304,7 +307,7 @@ class TagPanelView {
     _tags.append(_addTag.addAction);
   }
 
-  addTag(ActionView action) {
+  void addTag(ActionView action) {
     _tagList.append(action.action);
   }
 }

@@ -1,3 +1,4 @@
+import 'firebase_tools.dart' as fbt;
 import 'model.dart' as model;
 import 'view.dart' as view;
 
@@ -39,24 +40,28 @@ class ConversationData extends Data {
 
 UIState state = UIState.idle;
 
+List<model.Conversation> conversations;
+List<model.Tag> tags;
 model.Conversation activeConversation;
 
 void init() {
-  model.init();
   view.init();
 
+  conversations = fbt.loadConversations();
+  tags = fbt.loadTags();
+
   // Fill in conversationListPanelView
-  for (var conversation in model.conversations) {
+  for (var conversation in conversations) {
     view.conversationListPanelView.addConversation(
       new view.ConversationSummary(
-        conversation.deidentifiedPhoneNumber,
+        conversation.deidentifiedPhoneNumber.shortValue,
         conversation.messages.first.content)
     );
   }
 
   // Fill in conversationPanelView
-  activeConversation = model.conversations[0];
-  view.conversationListPanelView.selectConversation(activeConversation.deidentifiedPhoneNumber);
+  activeConversation = conversations[0];
+  view.conversationListPanelView.selectConversation(activeConversation.deidentifiedPhoneNumber.shortValue);
   populateConversationPanelView(activeConversation);
 
   // Fill in replyPanelView
@@ -78,7 +83,7 @@ void command(UIAction action, Data data) {
           break;
         case UIAction.selectConversation:
           ConversationData conversationData = data;
-          activeConversation = model.conversations.singleWhere((conversation) => conversation.deidentifiedPhoneNumber == conversationData.deidentifiedPhoneNumber);
+          activeConversation = conversations.singleWhere((conversation) => conversation.deidentifiedPhoneNumber.shortValue == conversationData.deidentifiedPhoneNumber);
           // Select the new conversation in the list
           view.conversationListPanelView.selectConversation(conversationData.deidentifiedPhoneNumber);
           // Replace the previous conversation in the conversation panel
@@ -95,8 +100,8 @@ void command(UIAction action, Data data) {
 void populateConversationPanelView(model.Conversation conversation) {
   view.conversationPanelView.clear();
   view.conversationPanelView
-    ..deidentifiedPhoneNumber = conversation.deidentifiedPhoneNumber
-    ..demographicsInfo = conversation.demographicsInfo;
+    ..deidentifiedPhoneNumber = conversation.deidentifiedPhoneNumber.shortValue
+    ..demographicsInfo = conversation.demographicsInfo.values.join(', ');
   for (var tag in conversation.tags) {
     view.conversationPanelView.addTags(new view.LabelView(tag.content, tag.tagId));
   }
@@ -110,7 +115,7 @@ void populateConversationPanelView(model.Conversation conversation) {
     view.conversationPanelView.addMessage(
       new view.MessageView(
         message.content,
-        '${conversation.deidentifiedPhoneNumber}-${i}',
+        '${conversation.deidentifiedPhoneNumber.shortValue}-${i}',
         translation: message.translation,
         incoming: message.direction == model.MessageDirection.In,
         labels: tags
