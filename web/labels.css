@@ -1,0 +1,59 @@
+.label {
+  font-size: 12px;
+  font-style: italic;
+  display: flex;
+}
+
+.label__name {
+  padding: 2px 5px;
+  margin: 1px 0;
+  border-radius: 2px;
+  border: 1px dashed #ddd;
+}
+
+.label__remove {
+  width: 16px;
+  height: 16px;
+  margin: 1px 0 1px 2px;
+  padding: 3px 0;
+  border-radius: 2px;
+  display: inline-block;
+  vertical-align: middle;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.label__remove:before,
+.label__remove:after {
+  position: relative;
+  left: 7px;
+  top: 1px;
+  content: ' ';
+  height: 14px;
+  width: 1px;
+  background-color: #ccc;
+  display: block;
+}
+
+.label__remove:before {
+  transform: rotate(45deg);
+}
+
+.label__remove:after {
+  top: -13px;
+  transform: rotate(-45deg);
+}
+
+.label:hover .label__remove {
+  opacity: 0.7;
+}
+
+.label__remove:hover:before,
+.label__remove:hover:after {
+  background-color: #888;
+}
+
+.label__remove:active:before,
+.label__remove:active:after {
+  background-color: #333;
+}

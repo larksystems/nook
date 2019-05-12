@@ -31,7 +31,11 @@ void init() {
   conversation.addMessage(
     new MessageView(
       'First of all, thank you for all your work, it\'s really great to see this being done',
-      '0003')
+      '0003',
+      labels: [
+        new LabelView('label1', '0000-1'),
+        new LabelView('label2', '0000-2')
+      ])
   );
   conversation.addMessage(
     new MessageView(

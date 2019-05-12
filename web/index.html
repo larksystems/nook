@@ -12,6 +12,8 @@
   <script defer src="main.dart.js"></script>
   <link rel="stylesheet" href="reset.css">
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="labels.css">
+  <link rel="stylesheet" href="messages.css">
 </head>
 
 <body>
@@ -45,117 +47,142 @@
                 <div class="message-summary__demographics">23 years old unmarried female, East</div>
             </div>
             <div class="messages">
-                <div class="message-line">
-                    <div class="message message--incoming">
-                        <div class="message__labels">
-                            <div class="label">
-                                <span>label1</span>
-                                <span class="label__remove">x</span>
-                            </div>
-                            <div class="label">
-                                <span>label2</span>
-                                <span class="label__remove">x</span>
-                            </div>
-                        </div>
-                        <div class="message__text message__text--incoming">Buna prietene</div>
-                        <div class="message__translation message__translation--incoming">Hi there my friend</div>
+                <div class="message message--incoming" data-id="0000">
+                    <div class="message__content">
+                        <div class="message__text">Buna prietene</div>
+                        <div class="message__translation" contenteditable="true">Hi there my friend</div>
+                    </div>
+                <div class="message__labels">
+                    <div class="label" data-id="0000-1">
+                        <span class="label__name">label1</span>
+                        <span class="label__remove"></span>
+                    </div>
+                    <div class="label" data-id="0000-2">
+                        <span class="label__name">label2</span>
+                        <span class="label__remove"></span>
                     </div>
                 </div>
-                <div class="message-line">
-                    <div class="message message--outgoing">
-                        <div class="message__text message__text--outgoing">Salut</div>
-                        <div class="message__translation message__translation--outgoing">Hey</div>
+            </div>
+            <div class="message message--outgoing" data-id="0001">
+                <div class="message__content">
+                    <div class="message__text">Salut</div>
+                    <div class="message__translation" contenteditable="true">Hey</div>
+                </div>
+                <div class="message__labels"></div>
+            </div>
+            <div class="message message--incoming" data-id="0003">
+                <div class="message__content">
+                    <div class="message__text">First of all, thank you for all your work, it's really great to see this being done</div>
+                    <div class="message__translation" contenteditable="true"></div>
+                </div>
+                <div class="message__labels">
+                    <div class="label" data-id="0000-1">
+                        <span class="label__name">label1</span>
+                        <span class="label__remove"></span>
+                    </div>
+                    <div class="label" data-id="0000-2">
+                        <span class="label__name">label2</span>
+                        <span class="label__remove"></span>
                     </div>
                 </div>
-                <div class="message-line">
-                    <div class="message message--incoming">
-                        <div class="message__text message__text--incoming">First of all, thank you for all your work, it's really great to see this being done</div>
+            </div>
+            <div class="message message--incoming" data-id="0004">
+                <div class="message__content">
+                    <div class="message__text">De asemenea, ma bucur tare mult ca pot sa vorbesc cu tine, cred ca e f important ca cineva asculta.</div>
+                    <div class="message__translation" contenteditable="true">Also, I'm super happy that I can talk with you, I think it's really important someone listens to this.</div>
+                </div>
+                <div class="message__labels"></div>
+            </div>
+            <div class="message message--outgoing" data-id="0005">
+                <div class="message__content">
+                    <div class="message__text">Thank you for your message, what's your gender?</div>
+                    <div class="message__translation" contenteditable="true">Hey</div>
+                </div>
+                <div class="message__labels"></div>
+            </div>
+            <div class="message message--incoming" data-id="0006">
+                <div class="message__content">
+                    <div class="message__text">Female</div>
+                    <div class="message__translation" contenteditable="true"></div>
+                </div>
+                <div class="message__labels">
+                    <div class="label" data-id="0006-1">
+                        <span class="label__name">gender</span>
+                        <span class="label__remove"></span>
                     </div>
                 </div>
-                <div class="message-line">
-                    <div class="message message--incoming">
-                        <div class="message__text message__text--incoming">De asemenea, ma bucur tare mult ca pot sa vorbesc cu tine, cred ca e f important ca cineva asculta.</div>
-                        <div class="message__translation message__translation--incoming">Also, I'm super happy that I can talk with you, I think it's really important someone listens to this.</div>
+            </div>
+            <div class="message message--outgoing" data-id="0007">
+                <div class="message__content">
+                    <div class="message__text">How old are you?</div>
+                    <div class="message__translation" contenteditable="true"></div>
+                </div>
+                <div class="message__labels"></div>
+            </div>
+            <div class="message message--incoming" data-id="0008">
+                <div class="message__content">
+                    <div class="message__text">23</div>
+                    <div class="message__translation" contenteditable="true"></div>
+                </div>
+                <div class="message__labels">
+                    <div class="label" data-id="0008-1">
+                        <span class="label__name">age</span>
+                        <span class="label__remove"></span>
                     </div>
                 </div>
-                <div class="message-line">
-                    <div class="message message--outgoing">
-                        <div class="message__text message__text--outgoing">Thank you for your message, what's your gender?</div>
+            </div>
+            <div class="message message--outgoing" data-id="0009">
+                <div class="message__content">
+                    <div class="message__text">Which area do you live in?</div>
+                    <div class="message__translation" contenteditable="true"></div>
+                </div>
+                <div class="message__labels"></div>
+            </div>
+            <div class="message message--incoming" data-id="0010">
+                <div class="message__content">
+                    <div class="message__text">East</div>
+                    <div class="message__translation" contenteditable="true"></div>
+                </div>
+                <div class="message__labels">
+                    <div class="label" data-id="0010-1">
+                        <span class="label__name">location</span>
+                        <span class="label__remove"></span>
                     </div>
                 </div>
-                <div class="message-line">
-                    <div class="message message--incoming">
-                        <div class="message__labels">
-                            <div class="label">
-                                <span>gender</span>
-                                <span class="label__remove">x</span>
-                            </div>
-                        </div>
-                        <div class="message__text message__text--incoming">Female</div>
+            </div>
+            <div class="message message--outgoing" data-id="0011">
+                <div class="message__content">
+                    <div class="message__text">Are you married?</div>
+                    <div class="message__translation" contenteditable="true"></div>
+                </div>
+                <div class="message__labels"></div>
+            </div>
+            <div class="message message--incoming" data-id="0012">
+                <div class="message__content">
+                    <div class="message__text">No</div>
+                    <div class="message__translation" contenteditable="true"></div>
+                </div>
+                <div class="message__labels">
+                    <div class="label" data-id="0012-1">
+                        <span class="label__name">married</span>
+                        <span class="label__remove"></span>
                     </div>
                 </div>
-                <div class="message-line">
-                    <div class="message message--outgoing">
-                        <div class="message__text message__text--outgoing">How old are you?</div>
-                    </div>
+            </div>
+            <div class="message message--outgoing" data-id="0013">
+                <div class="message__content">
+                    <div class="message__text">Thank you for your time</div>
+                    <div class="message__translation" contenteditable="true"></div>
                 </div>
-                <div class="message-line">
-                    <div class="message message--incoming">
-                        <div class="message__labels">
-                            <div class="label">
-                                <span>age</span>
-                                <span class="label__remove">x</span>
-                            </div>
-                            <div class="label">
-                                <span>age</span>
-                                <span class="label__remove">x</span>
-                            </div>
-                        </div>
-                        <div class="message__text message__text--incoming">23</div>
-                    </div>
+                <div class="message__labels"></div>
+            </div>
+            <div class="message message--incoming" data-id="0014">
+                <div class="message__content">
+                    <div class="message__text">Thank you too!</div>
+                    <div class="message__translation" contenteditable="true"></div>
                 </div>
-                <div class="message-line">
-                    <div class="message message--outgoing">
-                        <div class="message__text message__text--outgoing">Which area do you live in?</div>
-                    </div>
-                </div>
-                <div class="message-line">
-                    <div class="message message--incoming">
-                        <div class="message__labels">
-                            <div class="label">
-                                <span>location</span>
-                                <span class="label__remove">x</span>
-                            </div>
-                        </div>
-                        <div class="message__text message__text--incoming">East</div>
-                    </div>
-                </div>
-                <div class="message-line">
-                    <div class="message message--outgoing">
-                        <div class="message__text message__text--outgoing">Are you married</div>
-                    </div>
-                </div>
-                <div class="message-line">
-                    <div class="message message--incoming">
-                        <div class="message__labels">
-                            <div class="label" style="background: coral">
-                                <span class="label__text">married</span>
-                                <span class="label__remove">x</span>
-                            </div>
-                        </div>
-                        <div class="message__text message__text--incoming">No</div>
-                    </div>
-                </div>
-                <div class="message-line">
-                    <div class="message message--outgoing">
-                        <div class="message__text message__text--outgoing">Thank you for you time</div>
-                    </div>
-                </div>
-                <div class="message-line">
-                    <div class="message message--incoming">
-                        <div class="message__text message__text--incoming">Thank you too!</div>
-                    </div>
-                </div>
+                <div class="message__labels"></div>
+            </div>
             </div>
         </div>
         <div class="reply-panel">

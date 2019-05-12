@@ -1,0 +1,45 @@
+.message {
+  border-radius: 6px;
+  display: flex;
+  align-content: flex-start;
+  align-items: flex-start;
+}
+
+.message.message--outgoing {
+  justify-content: flex-end;
+  margin-left: 24px;
+}
+
+.message.message--incoming {
+  margin-right: 24px;
+}
+
+.message__content {
+  margin: 4px;
+  padding: 8px;
+  border-radius: 6px;
+  flex: 0 1 auto;
+  flex-wrap: inherit;
+}
+
+.message.message--incoming .message__content {
+  background: #f3f3f3;
+}
+
+.message.message--outgoing .message__content {
+  background: #fbfbfb;
+}
+
+.message__translation {
+  font-size: .8em;
+  padding-left: 16px;
+  color: #666;
+}
+
+.message__labels {
+  margin: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex: 0 1 auto;
+}
