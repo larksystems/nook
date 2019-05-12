@@ -7,6 +7,11 @@ import 'viewmodel.dart';
 
 Logger log = new Logger('view.dart');
 
+const REPLY_PANEL_TITLE = 'Suggested responses';
+const TAG_PANEL_TITLE = 'Available tags';
+const ADD_REPLY_INFO = 'Add new suggested response';
+const ADD_TAG_INFO = 'Add new tag';
+
 class ConversationPanelView {
   // HTML elements
   DivElement conversationPanel;
@@ -182,4 +187,118 @@ class ConversationSummary {
   }
 
   set content(String text) => conversationSummary.text = text;
+}
+
+class ReplyPanelView {
+  DivElement replyPanel;
+  DivElement _replies;
+  DivElement _replyList;
+  DivElement _notes;
+
+  AddAction _addReply;
+
+  ReplyPanelView() {
+    replyPanel = new DivElement()
+      ..classes.add('reply-panel');
+
+    var panelTitle = new DivElement()
+      ..classes.add('panel-title')
+      ..text = REPLY_PANEL_TITLE;
+    replyPanel.append(panelTitle);
+
+    _replies = new DivElement()
+      ..classes.add('replies')
+      ..classes.add('action-list');
+    replyPanel.append(_replies);
+
+    _replyList = new DivElement();
+    _replies.append(_replyList);
+
+    _addReply = new AddAction(ADD_REPLY_INFO);
+    _replies.append(_addReply.addAction);
+
+    _notes = new DivElement()
+      ..classes.add('notes-box')
+      ..append(new DivElement()
+          ..classes.add('notes-box__textarea')
+          ..contentEditable = 'true');
+    replyPanel.append(_notes);
+  }
+
+  addReply(ActionView action) {
+    _replyList.append(action.action);
+  }
+}
+
+class TagPanelView {
+  DivElement tagPanel;
+  DivElement _tags;
+  DivElement _tagList;
+
+  AddAction _addTag;
+
+  TagPanelView() {
+    tagPanel = new DivElement()
+      ..classes.add('tag-panel');
+
+    var panelTitle = new DivElement()
+      ..classes.add('panel-title')
+      ..text = TAG_PANEL_TITLE;
+    tagPanel.append(panelTitle);
+
+    _tags = new DivElement()
+      ..classes.add('tags')
+      ..classes.add('action-list');
+    tagPanel.append(_tags);
+
+    _tagList = new DivElement();
+    _tags.append(_tagList);
+
+    _addTag = new AddAction(ADD_TAG_INFO);
+    _tags.append(_addTag.addAction);
+  }
+
+  addTag(ActionView action) {
+    _tagList.append(action.action);
+  }
+}
+
+class ActionView {
+  DivElement action;
+
+  ActionView(String text, String shortcut, String buttonText) {
+    action = new DivElement()
+      ..classes.add('action');
+
+    var shortcutElement = new DivElement()
+      ..classes.add('action__shortcut')
+      ..text = shortcut;
+    action.append(shortcutElement);
+
+    var textElement = new DivElement()
+      ..classes.add('action__text')
+      ..text = text;
+    action.append(textElement);
+
+    var buttonElement = new DivElement()
+      ..classes.add('action__button')
+      ..text = buttonText;
+    action.append(buttonElement);
+  }
+}
+
+class AddAction {
+  DivElement addAction;
+
+  AddAction(String infoText) {
+    addAction = new DivElement()
+      ..classes.add('add-action');
+
+    var info = new DivElement()
+      ..classes.add('add-action__info')
+      ..text = infoText;
+    addAction.append(info);
+
+    // TODO(mariana): fill in functionality for adding new action
+  }
 }

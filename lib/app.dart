@@ -144,4 +144,24 @@ void init() {
   conversationList.addConversation(new ConversationSummary("mba", "I'm 35"));
   conversationList.addConversation(new ConversationSummary("ksa", "Do you get these?"));
   conversationList.addConversation(new ConversationSummary("zho", "F"));
+
+  // Populate suggested responses with some data
+  ReplyPanelView replyPanel = new ReplyPanelView();
+  querySelector('.reply-panel').remove();
+  querySelector('main').insertBefore(replyPanel.replyPanel, querySelector('.tag-panel'));
+
+  replyPanel.addReply(new ActionView('Thanks!', '1', 'SEND SMS'));
+  replyPanel.addReply(new ActionView('Can you tell me more?', '2', 'SEND SMS'));
+  replyPanel.addReply(new ActionView('What is your gender?', '3', 'SEND SMS'));
+
+  // Populate available tags with some data
+  TagPanelView tagPanel = new TagPanelView();
+  querySelector('.tag-panel').remove();
+  querySelector('main').append(tagPanel.tagPanel);
+
+  tagPanel.addTag(new ActionView('Gender', 'A', 'TAG conversation'));
+  tagPanel.addTag(new ActionView('Age', 'B', 'TAG conversation'));
+  tagPanel.addTag(new ActionView('Location', 'C', 'TAG conversation'));
+  tagPanel.addTag(new ActionView('Marital status', 'D', 'TAG conversation'));
+  tagPanel.addTag(new ActionView('Needs action', 'E', 'TAG conversation'));
 }
