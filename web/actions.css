@@ -1,0 +1,72 @@
+
+.action-list {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.action {
+  margin: 4px;
+  padding: 8px;
+  border-radius: 6px;
+  display: flex;
+}
+
+.action:hover {
+  background: #eee;
+}
+
+.action__text {
+  flex:  1 1 auto;
+}
+
+.action__button {
+  flex: 0 0 auto;
+  padding: 4px;
+  border-radius: 4px;
+  border: 1px solid #bbb;
+  opacity: 0;
+  cursor: pointer;
+  align-self: start;
+}
+
+.action:hover .action__button {
+  opacity: 1;
+}
+
+.action__button:hover {
+  background: #ddd;
+}
+
+.action__button:active {
+  background: #ccc;
+}
+
+.action__shortcut {
+  flex: 0;
+  align-self: start;
+  margin-right: 16px;
+  padding: 0px 6px;
+}
+
+.action__shortcut:after {
+  content: ']';
+}
+
+.action__shortcut:before {
+  content: '[';
+}
+
+.add-action__info {
+  margin-left: 54px;
+  font-size: 12px;
+  padding: 4px;
+  color: #999;
+  display: inline-block;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.add-action__info:hover {
+  background: #eee;
+}
