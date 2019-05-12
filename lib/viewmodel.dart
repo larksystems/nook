@@ -34,8 +34,8 @@ class LabelData extends Data {
 }
 
 class ConversationData extends Data {
-  String deidentifiedPhoneNumber;
-  ConversationData(this.deidentifiedPhoneNumber);
+  String deidentifiedPhoneNumberShort;
+  ConversationData(this.deidentifiedPhoneNumberShort);
 }
 
 UIState state = UIState.idle;
@@ -83,9 +83,9 @@ void command(UIAction action, Data data) {
           break;
         case UIAction.selectConversation:
           ConversationData conversationData = data;
-          activeConversation = conversations.singleWhere((conversation) => conversation.deidentifiedPhoneNumber.shortValue == conversationData.deidentifiedPhoneNumber);
+          activeConversation = conversations.singleWhere((conversation) => conversation.deidentifiedPhoneNumber.shortValue == conversationData.deidentifiedPhoneNumberShort);
           // Select the new conversation in the list
-          view.conversationListPanelView.selectConversation(conversationData.deidentifiedPhoneNumber);
+          view.conversationListPanelView.selectConversation(conversationData.deidentifiedPhoneNumberShort);
           // Replace the previous conversation in the conversation panel
           populateConversationPanelView(activeConversation);
           break;
