@@ -7,6 +7,24 @@ import 'viewmodel.dart';
 
 Logger log = new Logger('view.dart');
 
+ConversationListPanelView conversationListPanelView;
+ConversationPanelView conversationPanelView;
+ReplyPanelView replyPanelView;
+TagPanelView tagPanelView;
+
+void init() {
+  conversationListPanelView = new ConversationListPanelView();
+  conversationPanelView = new ConversationPanelView();
+  replyPanelView = new ReplyPanelView();
+  tagPanelView = new TagPanelView();
+
+  querySelector('main')
+    ..append(conversationListPanelView.conversationListPanel)
+    ..append(conversationPanelView.conversationPanel)
+    ..append(replyPanelView.replyPanel)
+    ..append(tagPanelView.tagPanel);
+}
+
 const REPLY_PANEL_TITLE = 'Suggested responses';
 const TAG_PANEL_TITLE = 'Available tags';
 const ADD_REPLY_INFO = 'Add new suggested response';
@@ -16,7 +34,7 @@ class ConversationPanelView {
   // HTML elements
   DivElement conversationPanel;
   DivElement _messages;
-  DivElement _personId;
+  DivElement _deidentifiedPhoneNumber;
   DivElement _info;
   DivElement _tags;
 
@@ -28,9 +46,9 @@ class ConversationPanelView {
       ..classes.add('message-summary');
     conversationPanel.append(conversationSummary);
 
-    _personId = new DivElement()
+    _deidentifiedPhoneNumber = new DivElement()
       ..classes.add('message-summary__id');
-    conversationSummary.append(_personId);
+    conversationSummary.append(_deidentifiedPhoneNumber);
 
     _info = new DivElement()
       ..classes.add('message-summary__demographics');
@@ -45,15 +63,30 @@ class ConversationPanelView {
     conversationPanel.append(_messages);
   }
 
-  set personId(String personId) => _personId.text = personId;
-  set personInfo(String personInfo) => _info.text = personInfo;
+  set deidentifiedPhoneNumber(String deidentifiedPhoneNumber) => _deidentifiedPhoneNumber.text = deidentifiedPhoneNumber;
+  set demographicsInfo(String demographicsInfo) => _info.text = demographicsInfo;
 
-  addMessage(MessageView message) {
+  void addMessage(MessageView message) {
     _messages.append(message.message);
   }
 
-  addTags(LabelView label) {
+  void addTags(LabelView label) {
     _tags.append(label.label);
+  }
+
+  void clear() {
+    _deidentifiedPhoneNumber.text = '';
+    _info.text = '';
+
+    int tagsNo = _tags.children.length;
+    for (int i = 0; i < tagsNo; i++) {
+      _tags.firstChild.remove();
+    }
+
+    int messagesNo = _messages.children.length;
+    for (int i = 0; i < messagesNo; i++) {
+      _messages.firstChild.remove();
+    }
   }
 }
 
@@ -155,6 +188,9 @@ class LabelView {
 class ConversationListPanelView {
   DivElement conversationListPanel;
 
+  Map<String, ConversationSummary> _phoneToConversations = {};
+  ConversationSummary activeConversation;
+
   ConversationListPanelView() {
     conversationListPanel = new DivElement();
     conversationListPanel.classes.add('message-list');
@@ -164,6 +200,7 @@ class ConversationListPanelView {
     if (position == null || position >= conversationListPanel.children.length) {
       // Add at the end
       conversationListPanel.append(conversationSummary.conversationSummary);
+      _phoneToConversations[conversationSummary.deidentifiedPhoneNumber] = conversationSummary;
       return;
     }
     // Add before an existing label
@@ -172,21 +209,33 @@ class ConversationListPanelView {
     }
     Node refChild = conversationListPanel.children[position];
     conversationListPanel.insertBefore(conversationSummary.conversationSummary, refChild);
+    _phoneToConversations[conversationSummary.deidentifiedPhoneNumber] = conversationSummary;
+  }
+
+  void selectConversation(String deidentifiedPhoneNumber) {
+    activeConversation?._deselect();
+    activeConversation = _phoneToConversations[deidentifiedPhoneNumber];
+    activeConversation._select();
   }
 }
 
 class ConversationSummary {
   DivElement conversationSummary;
 
-  ConversationSummary(String personId, String content) {
+  String deidentifiedPhoneNumber;
+
+  ConversationSummary(this.deidentifiedPhoneNumber, String content) {
     conversationSummary = new DivElement()
       ..classes.add('summary-message')
-      ..dataset['id'] = personId
+      ..dataset['id'] = deidentifiedPhoneNumber
       ..text = content
-      ..onClick.listen((_) => command(UIAction.selectConversation, new ConversationData(personId)));
+      ..onClick.listen((_) => command(UIAction.selectConversation, new ConversationData(deidentifiedPhoneNumber)));
   }
 
   set content(String text) => conversationSummary.text = text;
+
+  void _deselect() => conversationSummary.classes.remove('summary-message--selected');
+  void _select() => conversationSummary.classes.add('summary-message--selected');
 }
 
 class ReplyPanelView {
@@ -225,7 +274,7 @@ class ReplyPanelView {
     replyPanel.append(_notes);
   }
 
-  addReply(ActionView action) {
+  void addReply(ActionView action) {
     _replyList.append(action.action);
   }
 }
@@ -258,7 +307,7 @@ class TagPanelView {
     _tags.append(_addTag.addAction);
   }
 
-  addTag(ActionView action) {
+  void addTag(ActionView action) {
     _tagList.append(action.action);
   }
 }
