@@ -9,6 +9,7 @@ enum UIState {
 enum UIAction {
   updateTranslation,
   sendMessage,
+  addTag,
   removeLabel,
   selectConversation,
 }
@@ -38,17 +39,24 @@ class ConversationData extends Data {
   ConversationData(this.deidentifiedPhoneNumberShort);
 }
 
+class TagData extends Data {
+  String tagId;
+  TagData(this.tagId);
+}
+
 UIState state = UIState.idle;
 
 List<model.Conversation> conversations;
-List<model.Tag> tags;
+List<model.Tag> conversationTags;
+List<model.Tag> messageTags;
 model.Conversation activeConversation;
 
 void init() {
   view.init();
 
   conversations = fbt.loadConversations();
-  tags = fbt.loadTags();
+  conversationTags = fbt.loadConversationTags();
+  messageTags = fbt.loadMessageTags();
 
   // Fill in conversationListPanelView
   for (var conversation in conversations) {
@@ -68,7 +76,15 @@ void init() {
   // TODO
 
   // Fill in tagPanelView
-  // TODO
+  // Prepare list of shortcuts in case some tags don't have shortcuts
+  List<String> shortcuts = 'abcdefghijklmnopqrstuvwxyz'.split('');
+  for (var tag in conversationTags) {
+    shortcuts.remove(tag.shortcut);
+  }
+  for (var tag in conversationTags) {
+    String shortcut = tag.shortcut != null ? tag.shortcut : shortcuts.removeAt(0);
+    view.tagPanelView.addTag(new view.TagActionView(tag.content, shortcut, tag.tagId, 'TAG conversation'));
+  }
 }
 
 void command(UIAction action, Data data) {
@@ -88,6 +104,12 @@ void command(UIAction action, Data data) {
           view.conversationListPanelView.selectConversation(conversationData.deidentifiedPhoneNumberShort);
           // Replace the previous conversation in the conversation panel
           populateConversationPanelView(activeConversation);
+          break;
+        case UIAction.addTag:
+          TagData tagData = data;
+          model.Tag tag = conversationTags.singleWhere((tag) => tag.tagId == tagData.tagId);
+          activeConversation.tags.add(tag);
+          view.conversationPanelView.addTags(new view.LabelView(tag.content, tag.tagId));
           break;
         default:
       }

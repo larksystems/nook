@@ -315,9 +315,10 @@ class TagPanelView {
 class ActionView {
   DivElement action;
 
-  ActionView(String text, String shortcut, String buttonText) {
+  ActionView(String text, String shortcut, String actionId, String buttonText) {
     action = new DivElement()
-      ..classes.add('action');
+      ..classes.add('action')
+      ..dataset['id'] = actionId;
 
     var shortcutElement = new DivElement()
       ..classes.add('action__shortcut')
@@ -333,6 +334,13 @@ class ActionView {
       ..classes.add('action__button')
       ..text = buttonText;
     action.append(buttonElement);
+  }
+}
+
+class TagActionView extends ActionView {
+  TagActionView(String text, String shortcut, String tagId, String buttonText) : super(text, shortcut, tagId, buttonText) {
+    var buttonElement = action.querySelector('.action__button');
+    buttonElement.onClick.listen((_) => command(UIAction.addTag, new TagData(action.dataset['id'])));
   }
 }
 

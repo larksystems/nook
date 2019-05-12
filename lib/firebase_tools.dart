@@ -5,6 +5,10 @@ List<Conversation> loadConversations() {
   return data.conversations;
 }
 
-List<Tag> loadTags() {
-  return data.tags;
+List<Tag> loadConversationTags() {
+  return data.conversationTags;
+}
+
+List<Tag> loadMessageTags() {
+  return data.messageTags;
 }
