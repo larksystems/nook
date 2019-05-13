@@ -391,12 +391,26 @@ List<Conversation> _conversations = [
     ],
 ];
 
+List<SuggestedReply> _suggestedReplies = [
+  new SuggestedReply()
+    ..content = 'Thanks for your message. How old are you?',
+  new SuggestedReply()
+    ..content = 'What\'s your gender?',
+  new SuggestedReply()
+    ..content = 'Which area do you live in?',
+  new SuggestedReply()
+    ..content = 'Thanks for your messages. Do you have access to clean water now?',
+  new SuggestedReply()
+    ..content = 'How much do you have to pay for it?',
+];
+
 List<Tag> get messageTags => _tags.values.toList();
 List<Tag> get conversationTags {
   Map<String, Tag> tagsCopy = new Map<String, Tag>.from(_tags);
   tagsCopy.removeWhere((key, tag) => [DEMO_AGE, DEMO_GENDER, DEMO_LOCATION].contains(key));
   return tagsCopy.values.toList();
-
 }
+
+List<SuggestedReply> get suggestedReplies => _suggestedReplies;
 
 List<Conversation> get conversations => _conversations;
