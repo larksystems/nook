@@ -319,6 +319,7 @@ class ReplyPanelView {
     for (int i = 0; i < repliesNo; i++) {
       _replyList.firstChild.remove();
     }
+    assert(_replyList.children.length == 0);
   }
 }
 
