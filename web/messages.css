@@ -16,7 +16,7 @@
 
 .message__content {
   margin: 4px;
-  padding: 8px;
+  padding: 6px;
   border-radius: 6px;
   flex: 0 1 auto;
   flex-wrap: inherit;
@@ -24,10 +24,16 @@
 
 .message.message--incoming .message__content {
   background: #f3f3f3;
+  border: 2px solid #f3f3f3;
 }
 
 .message.message--outgoing .message__content {
   background: #fbfbfb;
+  border: 2px solid #fbfbfb;
+}
+
+.message.message--selected .message__content {
+  border: 2px solid #ccc;
 }
 
 .message__translation {

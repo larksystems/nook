@@ -38,9 +38,12 @@ class ConversationPanelView {
   DivElement _info;
   DivElement _tags;
 
+  List<MessageView> _messageViews = [];
+
   ConversationPanelView() {
-    conversationPanel = new DivElement();
-    conversationPanel.classes.add('message-panel');
+    conversationPanel = new DivElement()
+      ..classes.add('message-panel')
+      ..onClick.listen((_) => command(UIAction.deselectMessage, null));
 
     var conversationSummary = new DivElement()
       ..classes.add('message-summary');
@@ -68,15 +71,29 @@ class ConversationPanelView {
 
   void addMessage(MessageView message) {
     _messages.append(message.message);
+    _messageViews.add(message);
   }
 
   void addTags(LabelView label) {
     _tags.append(label.label);
   }
 
+  void selectMessage(int index) {
+    _messageViews[index]._select();
+  }
+
+  void deselectMessage() {
+    MessageView._deselect();
+  }
+
+  MessageView messageViewAtIndex(int index) {
+    return _messageViews[index];
+  }
+
   void clear() {
     _deidentifiedPhoneNumber.text = '';
     _info.text = '';
+    _messageViews = [];
 
     int tagsNo = _tags.children.length;
     for (int i = 0; i < tagsNo; i++) {
@@ -97,14 +114,22 @@ class MessageView {
   DivElement _messageText;
   DivElement _messageTranslation;
 
-  MessageView(String content, String messageId, {String translation = '', bool incoming = true, List<LabelView> labels = const[]}) {
+  static MessageView selectedMessageView;
+
+  MessageView(String content, String conversationId, int messageIndex, {String translation = '', bool incoming = true, List<LabelView> labels = const[]}) {
     message = new DivElement()
       ..classes.add('message')
       ..classes.add(incoming ? 'message--incoming' : 'message--outgoing')
-      ..dataset['id'] = messageId;
+      ..dataset['conversationId'] = conversationId
+      ..dataset['messageIndex'] = '$messageIndex';
 
     _messageContent = new DivElement()
-      ..classes.add('message__content');
+      ..classes.add('message__content')
+      ..onClick.listen((event) {
+        event.preventDefault();
+        event.stopPropagation();
+        command(UIAction.selectMessage, new MessageData(conversationId, messageIndex));
+      });
     message.append(_messageContent);
 
     _messageText = new DivElement()
@@ -116,7 +141,7 @@ class MessageView {
       ..classes.add('message__translation')
       ..contentEditable = 'true'
       ..text = translation
-      ..onInput.listen((_) => command(UIAction.updateTranslation, new TranslationData(_messageTranslation.text, messageId)));
+      ..onInput.listen((_) => command(UIAction.updateTranslation, new TranslationData(_messageTranslation.text, conversationId, messageIndex)));
     _messageContent.append(_messageTranslation);
 
     _messageLabels = new DivElement()
@@ -140,6 +165,17 @@ class MessageView {
     }
     Node refChild = _messageLabels.children[position];
     _messageLabels.insertBefore(label.label, refChild);
+  }
+
+  void _select() {
+    MessageView._deselect();
+    message.classes.add('message--selected');
+    selectedMessageView = this;
+  }
+
+  static void _deselect() {
+    selectedMessageView?.message?.classes?.remove('message--selected');
+    selectedMessageView = null;
   }
 }
 
@@ -309,6 +345,14 @@ class TagPanelView {
 
   void addTag(ActionView action) {
     _tagList.append(action.action);
+  }
+
+  void clear() {
+    int tagsNo = _tagList.children.length;
+    for (int i = 0; i < tagsNo; i++) {
+      _tagList.firstChild.remove();
+    }
+    assert(_tagList.children.length == 0);
   }
 }
 

@@ -4,6 +4,7 @@ import 'view.dart' as view;
 
 enum UIState {
   idle,
+  messageSelected,
 }
 
 enum UIAction {
@@ -12,20 +13,23 @@ enum UIAction {
   addTag,
   removeLabel,
   selectConversation,
+  selectMessage,
+  deselectMessage,
 }
 
 class Data {}
 
 class MessageData extends Data {
-  String messageText;
-  String personId;
-  MessageData(this.messageText, this.personId);
+  String conversationId;
+  int messageIndex;
+  MessageData(this.conversationId, this.messageIndex);
 }
 
 class TranslationData extends Data {
   String translationText;
-  String messageId;
-  TranslationData(this.translationText, this.messageId);
+  String conversationId;
+  int messageIndex;
+  TranslationData(this.translationText, this.conversationId, this.messageIndex);
 }
 
 class LabelData extends Data {
@@ -50,6 +54,7 @@ List<model.Conversation> conversations;
 List<model.Tag> conversationTags;
 List<model.Tag> messageTags;
 model.Conversation activeConversation;
+model.Message selectedMessage;
 
 void init() {
   view.init();
@@ -77,14 +82,7 @@ void init() {
 
   // Fill in tagPanelView
   // Prepare list of shortcuts in case some tags don't have shortcuts
-  List<String> shortcuts = 'abcdefghijklmnopqrstuvwxyz'.split('');
-  for (var tag in conversationTags) {
-    shortcuts.remove(tag.shortcut);
-  }
-  for (var tag in conversationTags) {
-    String shortcut = tag.shortcut != null ? tag.shortcut : shortcuts.removeAt(0);
-    view.tagPanelView.addTag(new view.TagActionView(tag.content, shortcut, tag.tagId, 'TAG conversation'));
-  }
+  populateTagPanelView(conversationTags, TagReceiver.Conversation);
 }
 
 void command(UIAction action, Data data) {
@@ -112,11 +110,56 @@ void command(UIAction action, Data data) {
           fbt.updateConversation(activeConversation);
           view.conversationPanelView.addTags(new view.LabelView(tag.content, tag.tagId));
           break;
+        case UIAction.selectMessage:
+          MessageData messageData = data;
+          selectedMessage = activeConversation.messages[messageData.messageIndex];
+          view.conversationPanelView.selectMessage(messageData.messageIndex);
+          populateTagPanelView(messageTags, TagReceiver.Message);
+          state = UIState.messageSelected;
+          break;
         default:
       }
-
       break;
-    default:
+    case UIState.messageSelected:
+      switch (action) {
+        case UIAction.addTag:
+          TagData tagData = data;
+          model.Tag tag = messageTags.singleWhere((tag) => tag.tagId == tagData.tagId);
+          selectedMessage.tags.add(tag);
+          fbt.updateConversation(activeConversation);
+          view.conversationPanelView
+            .messageViewAtIndex(activeConversation.messages.indexOf(selectedMessage))
+            .addLabel(new view.LabelView(tag.content, tag.tagId));
+          break;
+        case UIAction.selectMessage:
+          MessageData messageData = data;
+          selectedMessage = activeConversation.messages[messageData.messageIndex];
+          view.conversationPanelView.selectMessage(messageData.messageIndex);
+          populateTagPanelView(messageTags, TagReceiver.Message);
+          break;
+        case UIAction.deselectMessage:
+          selectedMessage = null;
+          view.conversationPanelView.deselectMessage();
+          populateTagPanelView(conversationTags, TagReceiver.Conversation);
+          state = UIState.idle;
+          break;
+        case UIAction.selectConversation:
+          ConversationData conversationData = data;
+          activeConversation = conversations.singleWhere((conversation) => conversation.deidentifiedPhoneNumber.shortValue == conversationData.deidentifiedPhoneNumberShort);
+          // Select the new conversation in the list
+          view.conversationListPanelView.selectConversation(conversationData.deidentifiedPhoneNumberShort);
+          // Replace the previous conversation in the conversation panel
+          populateConversationPanelView(activeConversation);
+
+          if (selectedMessage != null) {
+            selectedMessage = null;
+            view.conversationPanelView.deselectMessage();
+            populateTagPanelView(conversationTags, TagReceiver.Conversation);
+          }
+          break;
+        default:
+      }
+      break;
   }
 }
 
@@ -138,10 +181,40 @@ void populateConversationPanelView(model.Conversation conversation) {
     view.conversationPanelView.addMessage(
       new view.MessageView(
         message.content,
-        '${conversation.deidentifiedPhoneNumber.shortValue}-${i}',
+        conversation.deidentifiedPhoneNumber.shortValue,
+        i,
         translation: message.translation,
         incoming: message.direction == model.MessageDirection.In,
         labels: tags
       ));
+  }
+}
+
+const TAG_CONVERSATION_BUTTON_TEXT = 'TAG conversation';
+const TAG_MESSAGE_BUTTON_TEXT = 'TAG message';
+
+enum TagReceiver {
+  Conversation,
+  Message
+}
+
+void populateTagPanelView(List<model.Tag> tags, TagReceiver tagReceiver) {
+  view.tagPanelView.clear();
+  List<String> shortcuts = 'abcdefghijklmnopqrstuvwxyz'.split('');
+  for (var tag in tags) {
+    shortcuts.remove(tag.shortcut);
+  }
+  String buttonText = '';
+  switch (tagReceiver) {
+    case TagReceiver.Conversation:
+      buttonText = TAG_CONVERSATION_BUTTON_TEXT;
+      break;
+    case TagReceiver.Message:
+      buttonText = TAG_MESSAGE_BUTTON_TEXT;
+      break;
+  }
+  for (var tag in tags) {
+    String shortcut = tag.shortcut != null ? tag.shortcut : shortcuts.removeAt(0);
+    view.tagPanelView.addTag(new view.TagActionView(tag.content, shortcut, tag.tagId, buttonText));
   }
 }
