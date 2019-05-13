@@ -352,6 +352,7 @@ class TagPanelView {
     for (int i = 0; i < tagsNo; i++) {
       _tagList.firstChild.remove();
     }
+    assert(_tagList.children.length == 0);
   }
 }
 
