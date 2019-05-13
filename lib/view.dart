@@ -313,6 +313,13 @@ class ReplyPanelView {
   void addReply(ActionView action) {
     _replyList.append(action.action);
   }
+
+  void clear() {
+    int repliesNo = _replyList.children.length;
+    for (int i = 0; i < repliesNo; i++) {
+      _replyList.firstChild.remove();
+    }
+  }
 }
 
 class TagPanelView {
@@ -377,6 +384,13 @@ class ActionView {
       ..classes.add('action__button')
       ..text = buttonText;
     action.append(buttonElement);
+  }
+}
+
+class ReplyActionView extends ActionView {
+  ReplyActionView(String text, String shortcut, int replyIndex, String buttonText) : super(text, shortcut, '$replyIndex', buttonText) {
+    var buttonElement = action.querySelector('.action__button');
+    buttonElement.onClick.listen((_) => command(UIAction.sendMessage, new ReplyData(replyIndex)));
   }
 }
 
