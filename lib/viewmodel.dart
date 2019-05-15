@@ -86,14 +86,14 @@ void init() {
   // Fill in conversationPanelView
   activeConversation = conversations[0];
   view.conversationListPanelView.selectConversation(activeConversation.deidentifiedPhoneNumber.shortValue);
-  populateConversationPanelView(activeConversation);
+  _populateConversationPanelView(activeConversation);
 
   // Fill in replyPanelView
-  populateReplyPanelView(suggestedReplies);
+  _populateReplyPanelView(suggestedReplies);
 
   // Fill in tagPanelView
   // Prepare list of shortcuts in case some tags don't have shortcuts
-  populateTagPanelView(conversationTags, TagReceiver.Conversation);
+  _populateTagPanelView(conversationTags, TagReceiver.Conversation);
 }
 
 void command(UIAction action, Data data) {
@@ -129,7 +129,7 @@ void command(UIAction action, Data data) {
           // Select the new conversation in the list
           view.conversationListPanelView.selectConversation(conversationData.deidentifiedPhoneNumberShort);
           // Replace the previous conversation in the conversation panel
-          populateConversationPanelView(activeConversation);
+          _populateConversationPanelView(activeConversation);
           break;
         case UIAction.addTag:
           TagData tagData = data;
@@ -142,7 +142,7 @@ void command(UIAction action, Data data) {
           MessageData messageData = data;
           selectedMessage = activeConversation.messages[messageData.messageIndex];
           view.conversationPanelView.selectMessage(messageData.messageIndex);
-          populateTagPanelView(messageTags, TagReceiver.Message);
+          _populateTagPanelView(messageTags, TagReceiver.Message);
           state = UIState.messageSelected;
           break;
         default:
@@ -182,12 +182,12 @@ void command(UIAction action, Data data) {
           MessageData messageData = data;
           selectedMessage = activeConversation.messages[messageData.messageIndex];
           view.conversationPanelView.selectMessage(messageData.messageIndex);
-          populateTagPanelView(messageTags, TagReceiver.Message);
+          _populateTagPanelView(messageTags, TagReceiver.Message);
           break;
         case UIAction.deselectMessage:
           selectedMessage = null;
           view.conversationPanelView.deselectMessage();
-          populateTagPanelView(conversationTags, TagReceiver.Conversation);
+          _populateTagPanelView(conversationTags, TagReceiver.Conversation);
           state = UIState.idle;
           break;
         case UIAction.selectConversation:
@@ -196,12 +196,12 @@ void command(UIAction action, Data data) {
           // Select the new conversation in the list
           view.conversationListPanelView.selectConversation(conversationData.deidentifiedPhoneNumberShort);
           // Replace the previous conversation in the conversation panel
-          populateConversationPanelView(activeConversation);
+          _populateConversationPanelView(activeConversation);
 
           if (selectedMessage != null) {
             selectedMessage = null;
             view.conversationPanelView.deselectMessage();
-            populateTagPanelView(conversationTags, TagReceiver.Conversation);
+            _populateTagPanelView(conversationTags, TagReceiver.Conversation);
           }
           break;
         default:

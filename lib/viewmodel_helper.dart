@@ -10,7 +10,7 @@ enum TagReceiver {
   Message
 }
 
-void populateConversationPanelView(model.Conversation conversation) {
+void _populateConversationPanelView(model.Conversation conversation) {
   view.conversationPanelView.clear();
   view.conversationPanelView
     ..deidentifiedPhoneNumber = conversation.deidentifiedPhoneNumber.shortValue
@@ -37,7 +37,7 @@ void populateConversationPanelView(model.Conversation conversation) {
   }
 }
 
-void populateReplyPanelView(List<model.SuggestedReply> replies) {
+void _populateReplyPanelView(List<model.SuggestedReply> replies) {
   view.replyPanelView.clear();
   List<String> shortcuts = '1234567890'.split('');
   for (var reply in replies) {
@@ -51,7 +51,7 @@ void populateReplyPanelView(List<model.SuggestedReply> replies) {
   }
 }
 
-void populateTagPanelView(List<model.Tag> tags, TagReceiver tagReceiver) {
+void _populateTagPanelView(List<model.Tag> tags, TagReceiver tagReceiver) {
   view.tagPanelView.clear();
   List<String> shortcuts = 'abcdefghijklmnopqrstuvwxyz'.split('');
   for (var tag in tags) {
