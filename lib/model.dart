@@ -18,20 +18,20 @@ enum MessageDirection {
 class Message {
   MessageDirection direction;
   DateTime datetime;
-  String content;
+  String text;
   String translation;
   List<Tag> tags;
 }
 
 class SuggestedReply {
-  String content;
+  String text;
   String translation;
   String shortcut;
 }
 
 class Tag {
   String tagId;
-  String content;
+  String text;
   TagType type;
   String shortcut;
 }

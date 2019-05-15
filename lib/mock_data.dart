@@ -15,41 +15,41 @@ const NO_CLEAN_WATER_ACCESS = 'no_clean_water_access';
 
 Map<String, Tag> _tags = {
     DEMO_GENDER: new Tag()
-        ..content = DEMO_GENDER
+        ..text = DEMO_GENDER
         ..tagId = 'tag-0102'
         ..type = TagType.Normal,
     DEMO_AGE: new Tag()
-        ..content = DEMO_AGE
+        ..text = DEMO_AGE
         ..tagId = 'tag-7012'
         ..type = TagType.Normal,
     DEMO_LOCATION: new Tag()
-        ..content = DEMO_LOCATION
+        ..text = DEMO_LOCATION
         ..tagId = 'tag-5812'
         ..type = TagType.Normal,
 
     WATER_QUALITY: new Tag()
-        ..content = WATER_QUALITY
+        ..text = WATER_QUALITY
         ..tagId = 'tag-ashk'
         ..type = TagType.Normal,
     HEALTHCARE: new Tag()
-        ..content = HEALTHCARE
+        ..text = HEALTHCARE
         ..tagId = 'tag-alsf'
         ..type = TagType.Normal,
     RELIGION: new Tag()
-        ..content = RELIGION
+        ..text = RELIGION
         ..tagId = 'tag-ahsx'
         ..type = TagType.Normal,
     WEATHER: new Tag()
-        ..content = WEATHER
+        ..text = WEATHER
         ..tagId = 'tag-ahos'
         ..type = TagType.Normal,
 
     CLEAN_WATER_ACCESS: new Tag()
-        ..content = CLEAN_WATER_ACCESS
+        ..text = CLEAN_WATER_ACCESS
         ..tagId = 'tag-blas'
         ..type = TagType.Normal,
     NO_CLEAN_WATER_ACCESS: new Tag()
-        ..content = NO_CLEAN_WATER_ACCESS
+        ..text = NO_CLEAN_WATER_ACCESS
         ..tagId = 'tag-boda'
         ..type = TagType.Important,
   };
@@ -62,57 +62,57 @@ List<Conversation> _conversations = [
     ..messages = [
       new Message()
         ..direction = MessageDirection.In
-        ..content = 'Yes. because of poor water quality'
+        ..text = 'Yes. because of poor water quality'
         ..datetime = new DateTime.now().subtract(new Duration(days: 2, hours: 7))
         ..tags = [_tags[WATER_QUALITY]],
       new Message()
         ..direction = MessageDirection.Out
-        ..content = 'Thanks for your message. How old are you?'
+        ..text = 'Thanks for your message. How old are you?'
         ..datetime = new DateTime.now().subtract(new Duration(days: 2, hours: 6))
         ..tags = [],
       new Message()
         ..direction = MessageDirection.In
-        ..content = '28'
+        ..text = '28'
         ..datetime = new DateTime.now().subtract(new Duration(days: 2, hours: 6))
         ..tags = [_tags[DEMO_AGE]],
       new Message()
         ..direction = MessageDirection.Out
-        ..content = 'What\'s your gender?'
+        ..text = 'What\'s your gender?'
         ..datetime = new DateTime.now().subtract(new Duration(days: 2, hours: 6))
         ..tags = [],
       new Message()
         ..direction = MessageDirection.In
-        ..content = 'Female'
+        ..text = 'Female'
         ..datetime = new DateTime.now().subtract(new Duration(days: 2, hours: 6))
         ..tags = [_tags[DEMO_GENDER]],
       new Message()
         ..direction = MessageDirection.Out
-        ..content = 'Which area do you live in?'
+        ..text = 'Which area do you live in?'
         ..datetime = new DateTime.now().subtract(new Duration(days: 2, hours: 6))
         ..tags = [],
       new Message()
         ..direction = MessageDirection.In
-        ..content = 'East'
+        ..text = 'East'
         ..datetime = new DateTime.now().subtract(new Duration(days: 2, hours: 6))
         ..tags = [_tags[DEMO_LOCATION]],
       new Message()
         ..direction = MessageDirection.Out
-        ..content = 'Thanks for your messages. Do you have access to clean water now?'
+        ..text = 'Thanks for your messages. Do you have access to clean water now?'
         ..datetime = new DateTime.now().subtract(new Duration(days: 2, hours: 6))
         ..tags = [],
       new Message()
         ..direction = MessageDirection.In
-        ..content = 'No, I have to buy it every week'
+        ..text = 'No, I have to buy it every week'
         ..datetime = new DateTime.now().subtract(new Duration(days: 2, hours: 5))
         ..tags = [_tags[NO_CLEAN_WATER_ACCESS]],
       new Message()
         ..direction = MessageDirection.Out
-        ..content = 'How much do you have to pay for it'
+        ..text = 'How much do you have to pay for it'
         ..datetime = new DateTime.now().subtract(new Duration(days: 2, hours: 4))
         ..tags = [],
       new Message()
         ..direction = MessageDirection.In
-        ..content = '50 cents per litre, I can manage, and hopefully it won\'t be for too long'
+        ..text = '50 cents per litre, I can manage, and hopefully it won\'t be for too long'
         ..datetime = new DateTime.now().subtract(new Duration(days: 2, hours: 3))
         ..tags = [],
     ],
@@ -123,47 +123,47 @@ List<Conversation> _conversations = [
     ..messages = [
       new Message()
         ..direction = MessageDirection.In
-        ..content = 'Yes because people drink dirty water'
+        ..text = 'Yes because people drink dirty water'
         ..datetime = new DateTime.now().subtract(new Duration(days: 2, hours: 7))
         ..tags = [_tags[WATER_QUALITY]],
       new Message()
         ..direction = MessageDirection.Out
-        ..content = 'Thanks for your message. How old are you?'
+        ..text = 'Thanks for your message. How old are you?'
         ..datetime = new DateTime.now().subtract(new Duration(days: 2, hours: 6))
         ..tags = [],
       new Message()
         ..direction = MessageDirection.In
-        ..content = '16'
+        ..text = '16'
         ..datetime = new DateTime.now().subtract(new Duration(days: 2, hours: 6))
         ..tags = [_tags[DEMO_AGE]],
       new Message()
         ..direction = MessageDirection.Out
-        ..content = 'What\'s your gender?'
+        ..text = 'What\'s your gender?'
         ..datetime = new DateTime.now().subtract(new Duration(days: 2, hours: 6))
         ..tags = [],
       new Message()
         ..direction = MessageDirection.In
-        ..content = 'Male'
+        ..text = 'Male'
         ..datetime = new DateTime.now().subtract(new Duration(days: 2, hours: 6))
         ..tags = [_tags[DEMO_GENDER]],
       new Message()
         ..direction = MessageDirection.Out
-        ..content = 'Which area do you live in?'
+        ..text = 'Which area do you live in?'
         ..datetime = new DateTime.now().subtract(new Duration(days: 2, hours: 6))
         ..tags = [],
       new Message()
         ..direction = MessageDirection.In
-        ..content = 'East'
+        ..text = 'East'
         ..datetime = new DateTime.now().subtract(new Duration(days: 2, hours: 6))
         ..tags = [_tags[DEMO_LOCATION]],
       new Message()
         ..direction = MessageDirection.Out
-        ..content = 'Thanks for your messages. Do you have access to clean water now?'
+        ..text = 'Thanks for your messages. Do you have access to clean water now?'
         ..datetime = new DateTime.now().subtract(new Duration(days: 2, hours: 6))
         ..tags = [],
       new Message()
         ..direction = MessageDirection.In
-        ..content = 'Yes I use a filter to clean water from the village well'
+        ..text = 'Yes I use a filter to clean water from the village well'
         ..datetime = new DateTime.now().subtract(new Duration(days: 2, hours: 5))
         ..tags = [_tags[CLEAN_WATER_ACCESS]],
     ],
@@ -174,42 +174,42 @@ List<Conversation> _conversations = [
     ..messages = [
       new Message()
         ..direction = MessageDirection.In
-        ..content = 'There is enough hospitals in the area'
+        ..text = 'There is enough hospitals in the area'
         ..datetime = new DateTime.now().subtract(new Duration(days: 3, hours: 7))
         ..tags = [_tags[HEALTHCARE]],
       new Message()
         ..direction = MessageDirection.Out
-        ..content = 'Thanks for your message. How old are you?'
+        ..text = 'Thanks for your message. How old are you?'
         ..datetime = new DateTime.now().subtract(new Duration(days: 2, hours: 6))
         ..tags = [],
       new Message()
         ..direction = MessageDirection.In
-        ..content = '46'
+        ..text = '46'
         ..datetime = new DateTime.now().subtract(new Duration(days: 2, hours: 6))
         ..tags = [_tags[DEMO_AGE]],
       new Message()
         ..direction = MessageDirection.Out
-        ..content = 'What\'s your gender?'
+        ..text = 'What\'s your gender?'
         ..datetime = new DateTime.now().subtract(new Duration(days: 2, hours: 6))
         ..tags = [],
       new Message()
         ..direction = MessageDirection.In
-        ..content = 'Female'
+        ..text = 'Female'
         ..datetime = new DateTime.now().subtract(new Duration(days: 2, hours: 6))
         ..tags = [_tags[DEMO_GENDER]],
       new Message()
         ..direction = MessageDirection.Out
-        ..content = 'Which area do you live in?'
+        ..text = 'Which area do you live in?'
         ..datetime = new DateTime.now().subtract(new Duration(days: 2, hours: 6))
         ..tags = [],
       new Message()
         ..direction = MessageDirection.In
-        ..content = 'West'
+        ..text = 'West'
         ..datetime = new DateTime.now().subtract(new Duration(days: 2, hours: 6))
         ..tags = [_tags[DEMO_LOCATION]],
       new Message()
         ..direction = MessageDirection.Out
-        ..content = 'Thanks for your messages. Do you have access to clean water now?'
+        ..text = 'Thanks for your messages. Do you have access to clean water now?'
         ..datetime = new DateTime.now().subtract(new Duration(days: 2, hours: 6))
         ..tags = [],
     ],
@@ -220,7 +220,7 @@ List<Conversation> _conversations = [
     ..messages = [
       new Message()
         ..direction = MessageDirection.In
-        ..content = 'The people of the area work on the cleanliness of the town and accessing clean water'
+        ..text = 'The people of the area work on the cleanliness of the town and accessing clean water'
         ..datetime = new DateTime.now().subtract(new Duration(days: 3, hours: 7))
         ..tags = [],
     ],
@@ -231,7 +231,7 @@ List<Conversation> _conversations = [
     ..messages = [
       new Message()
         ..direction = MessageDirection.In
-        ..content = 'Yes because our people don\'t take good care of sewages and dirt'
+        ..text = 'Yes because our people don\'t take good care of sewages and dirt'
         ..datetime = new DateTime.now().subtract(new Duration(days: 3, hours: 7))
         ..tags = [],
     ],
@@ -242,7 +242,7 @@ List<Conversation> _conversations = [
     ..messages = [
       new Message()
         ..direction = MessageDirection.In
-        ..content = 'No because the health workers have done great job in creating awareness'
+        ..text = 'No because the health workers have done great job in creating awareness'
         ..datetime = new DateTime.now().subtract(new Duration(days: 3, hours: 7))
         ..tags = [],
     ],
@@ -253,7 +253,7 @@ List<Conversation> _conversations = [
     ..messages = [
       new Message()
         ..direction = MessageDirection.In
-        ..content = 'No because we are people who are connected to their God'
+        ..text = 'No because we are people who are connected to their God'
         ..datetime = new DateTime.now().subtract(new Duration(days: 3, hours: 7))
         ..tags = [],
     ],
@@ -264,7 +264,7 @@ List<Conversation> _conversations = [
     ..messages = [
       new Message()
         ..direction = MessageDirection.In
-        ..content = 'No proper sanitation in that the boreholes and toilets are close to each other'
+        ..text = 'No proper sanitation in that the boreholes and toilets are close to each other'
         ..datetime = new DateTime.now().subtract(new Duration(days: 3, hours: 7))
         ..tags = [],
     ],
@@ -275,7 +275,7 @@ List<Conversation> _conversations = [
     ..messages = [
       new Message()
         ..direction = MessageDirection.In
-        ..content = 'People especially those living far from towns lack awawreness'
+        ..text = 'People especially those living far from towns lack awawreness'
         ..datetime = new DateTime.now().subtract(new Duration(days: 3, hours: 7))
         ..tags = [],
     ],
@@ -286,7 +286,7 @@ List<Conversation> _conversations = [
     ..messages = [
       new Message()
         ..direction = MessageDirection.In
-        ..content = 'Because of the garbage all over the town'
+        ..text = 'Because of the garbage all over the town'
         ..datetime = new DateTime.now().subtract(new Duration(days: 3, hours: 7))
         ..tags = [],
     ],
@@ -297,7 +297,7 @@ List<Conversation> _conversations = [
     ..messages = [
       new Message()
         ..direction = MessageDirection.In
-        ..content = 'No because this disease is not so common in Somalia'
+        ..text = 'No because this disease is not so common in Somalia'
         ..datetime = new DateTime.now().subtract(new Duration(days: 3, hours: 7))
         ..tags = [],
     ],
@@ -308,7 +308,7 @@ List<Conversation> _conversations = [
     ..messages = [
       new Message()
         ..direction = MessageDirection.In
-        ..content = 'There is influx of internally displaced peronss intowns nowadays and do not have propersanitation'
+        ..text = 'There is influx of internally displaced peronss intowns nowadays and do not have propersanitation'
         ..datetime = new DateTime.now().subtract(new Duration(days: 3, hours: 7))
         ..tags = [],
     ],
@@ -319,7 +319,7 @@ List<Conversation> _conversations = [
     ..messages = [
       new Message()
         ..direction = MessageDirection.In
-        ..content = 'There is no free access to free medical care facilities'
+        ..text = 'There is no free access to free medical care facilities'
         ..datetime = new DateTime.now().subtract(new Duration(days: 3, hours: 7))
         ..tags = [],
     ],
@@ -330,7 +330,7 @@ List<Conversation> _conversations = [
     ..messages = [
       new Message()
         ..direction = MessageDirection.In
-        ..content = 'No Because Allah is enough for us and we ask him to protect us from this disease'
+        ..text = 'No Because Allah is enough for us and we ask him to protect us from this disease'
         ..datetime = new DateTime.now().subtract(new Duration(days: 3, hours: 7))
         ..tags = [],
     ],
@@ -341,7 +341,7 @@ List<Conversation> _conversations = [
     ..messages = [
       new Message()
         ..direction = MessageDirection.In
-        ..content = 'our government is not providing sanitation'
+        ..text = 'our government is not providing sanitation'
         ..datetime = new DateTime.now().subtract(new Duration(days: 3, hours: 7))
         ..tags = [],
     ],
@@ -352,7 +352,7 @@ List<Conversation> _conversations = [
     ..messages = [
       new Message()
         ..direction = MessageDirection.In
-        ..content = 'yes it is hot and dry'
+        ..text = 'yes it is hot and dry'
         ..datetime = new DateTime.now().subtract(new Duration(days: 3, hours: 7))
         ..tags = [],
     ],
@@ -363,7 +363,7 @@ List<Conversation> _conversations = [
     ..messages = [
       new Message()
         ..direction = MessageDirection.In
-        ..content = 'yes because it spreads through contaminated water'
+        ..text = 'yes because it spreads through contaminated water'
         ..datetime = new DateTime.now().subtract(new Duration(days: 3, hours: 7))
         ..tags = [],
     ],
@@ -374,7 +374,7 @@ List<Conversation> _conversations = [
     ..messages = [
       new Message()
         ..direction = MessageDirection.In
-        ..content = 'no because none of my friends have it'
+        ..text = 'no because none of my friends have it'
         ..datetime = new DateTime.now().subtract(new Duration(days: 3, hours: 7))
         ..tags = [],
     ],
@@ -385,7 +385,7 @@ List<Conversation> _conversations = [
     ..messages = [
       new Message()
         ..direction = MessageDirection.In
-        ..content = 'yes,my neighbour is very sick.'
+        ..text = 'yes,my neighbour is very sick.'
         ..datetime = new DateTime.now().subtract(new Duration(days: 3, hours: 7))
         ..tags = [],
     ],
@@ -393,15 +393,15 @@ List<Conversation> _conversations = [
 
 List<SuggestedReply> _suggestedReplies = [
   new SuggestedReply()
-    ..content = 'Thanks for your message. How old are you?',
+    ..text = 'Thanks for your message. How old are you?',
   new SuggestedReply()
-    ..content = 'What\'s your gender?',
+    ..text = 'What\'s your gender?',
   new SuggestedReply()
-    ..content = 'Which area do you live in?',
+    ..text = 'Which area do you live in?',
   new SuggestedReply()
-    ..content = 'Thanks for your messages. Do you have access to clean water now?',
+    ..text = 'Thanks for your messages. Do you have access to clean water now?',
   new SuggestedReply()
-    ..content = 'How much do you have to pay for it?',
+    ..text = 'How much do you have to pay for it?',
 ];
 
 List<Tag> get messageTags => _tags.values.toList();
