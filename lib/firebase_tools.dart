@@ -13,6 +13,10 @@ List<Tag> loadMessageTags() {
   return data.messageTags;
 }
 
+List<SuggestedReply> loadSuggestedReplies() {
+  return data.suggestedReplies;
+}
+
 void updateConversation(Conversation conversation) {
   // TODO(mariana): implement saving the updated conversation
 }

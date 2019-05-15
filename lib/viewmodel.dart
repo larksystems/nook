@@ -25,6 +25,11 @@ class MessageData extends Data {
   MessageData(this.conversationId, this.messageIndex);
 }
 
+class ReplyData extends Data {
+  int replyIndex;
+  ReplyData(this.replyIndex);
+}
+
 class TranslationData extends Data {
   String translationText;
   String conversationId;
@@ -51,6 +56,7 @@ class TagData extends Data {
 UIState state = UIState.idle;
 
 List<model.Conversation> conversations;
+List<model.SuggestedReply> suggestedReplies;
 List<model.Tag> conversationTags;
 List<model.Tag> messageTags;
 model.Conversation activeConversation;
@@ -60,6 +66,7 @@ void init() {
   view.init();
 
   conversations = fbt.loadConversations();
+  suggestedReplies = fbt.loadSuggestedReplies();
   conversationTags = fbt.loadConversationTags();
   messageTags = fbt.loadMessageTags();
 
@@ -78,7 +85,7 @@ void init() {
   populateConversationPanelView(activeConversation);
 
   // Fill in replyPanelView
-  // TODO
+  populateReplyPanelView(suggestedReplies);
 
   // Fill in tagPanelView
   // Prepare list of shortcuts in case some tags don't have shortcuts
@@ -92,6 +99,23 @@ void command(UIAction action, Data data) {
         case UIAction.updateTranslation:
           break;
         case UIAction.sendMessage:
+          ReplyData replyData = data;
+          model.SuggestedReply selectedReply = suggestedReplies[replyData.replyIndex];
+          model.Message newMessage = new model.Message()
+            ..content = selectedReply.content
+            ..datetime = new DateTime.now()
+            ..direction = model.MessageDirection.Out
+            ..translation = selectedReply.translation
+            ..tags = [];
+          activeConversation.messages.add(newMessage);
+          view.conversationPanelView.addMessage(
+            new view.MessageView(
+              newMessage.content,
+              activeConversation.deidentifiedPhoneNumber.shortValue,
+              activeConversation.messages.indexOf(newMessage),
+              translation: newMessage.translation,
+              incoming: false)
+          );
           break;
         case UIAction.removeLabel:
           break;
@@ -122,6 +146,25 @@ void command(UIAction action, Data data) {
       break;
     case UIState.messageSelected:
       switch (action) {
+        case UIAction.sendMessage:
+          ReplyData replyData = data;
+          model.SuggestedReply selectedReply = suggestedReplies[replyData.replyIndex];
+          model.Message newMessage = new model.Message()
+            ..content = selectedReply.content
+            ..datetime = new DateTime.now()
+            ..direction = model.MessageDirection.Out
+            ..translation = selectedReply.translation
+            ..tags = [];
+          activeConversation.messages.add(newMessage);
+          view.conversationPanelView.addMessage(
+            new view.MessageView(
+              newMessage.content,
+              activeConversation.deidentifiedPhoneNumber.shortValue,
+              activeConversation.messages.indexOf(newMessage),
+              translation: newMessage.translation,
+              incoming: false)
+          );
+          break;
         case UIAction.addTag:
           TagData tagData = data;
           model.Tag tag = messageTags.singleWhere((tag) => tag.tagId == tagData.tagId);
@@ -187,6 +230,22 @@ void populateConversationPanelView(model.Conversation conversation) {
         incoming: message.direction == model.MessageDirection.In,
         labels: tags
       ));
+  }
+}
+
+const SEND_REPLY_BUTTON_TEXT = 'SEND message';
+
+populateReplyPanelView(List<model.SuggestedReply> replies) {
+  view.replyPanelView.clear();
+  List<String> shortcuts = '1234567890'.split('');
+  for (var reply in replies) {
+    shortcuts.remove(reply.shortcut);
+  }
+  String buttonText = SEND_REPLY_BUTTON_TEXT;
+  for (var reply in replies) {
+    String shortcut = reply.shortcut != null ? reply.shortcut : shortcuts.removeAt(0);
+    int replyIndex = replies.indexOf(reply);
+    view.replyPanelView.addReply(new view.ReplyActionView(reply.content, shortcut, replyIndex, buttonText));
   }
 }
 

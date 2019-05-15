@@ -23,6 +23,12 @@ class Message {
   List<Tag> tags;
 }
 
+class SuggestedReply {
+  String content;
+  String translation;
+  String shortcut;
+}
+
 class Tag {
   String tagId;
   String content;
