@@ -146,7 +146,7 @@ void command(UIAction action, Data data) {
       break;
     case UIState.messageSelected:
       switch (action) {
-        case UIAction.selectMessage:
+        case UIAction.sendMessage:
           ReplyData replyData = data;
           model.SuggestedReply selectedReply = suggestedReplies[replyData.replyIndex];
           model.Message newMessage = new model.Message()
