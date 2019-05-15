@@ -10,6 +10,8 @@ enum TagReceiver {
   Message
 }
 
+// Functions to populate the views with model objects.
+
 void _populateConversationPanelView(model.Conversation conversation) {
   view.conversationPanelView.clear();
   view.conversationPanelView
