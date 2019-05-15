@@ -74,8 +74,8 @@ class ConversationPanelView {
     _messageViews.add(message);
   }
 
-  void addTags(LabelView label) {
-    _tags.append(label.label);
+  void addTags(TagView tag) {
+    _tags.append(tag.tag);
   }
 
   void selectMessage(int index) {
@@ -110,13 +110,13 @@ class ConversationPanelView {
 class MessageView {
   DivElement message;
   DivElement _messageContent;
-  DivElement _messageLabels;
+  DivElement _messageTags;
   DivElement _messageText;
   DivElement _messageTranslation;
 
   static MessageView selectedMessageView;
 
-  MessageView(String content, String conversationId, int messageIndex, {String translation = '', bool incoming = true, List<LabelView> labels = const[]}) {
+  MessageView(String content, String conversationId, int messageIndex, {String translation = '', bool incoming = true, List<TagView> tags = const[]}) {
     message = new DivElement()
       ..classes.add('message')
       ..classes.add(incoming ? 'message--incoming' : 'message--outgoing')
@@ -144,27 +144,27 @@ class MessageView {
       ..onInput.listen((_) => command(UIAction.updateTranslation, new TranslationData(_messageTranslation.text, conversationId, messageIndex)));
     _messageContent.append(_messageTranslation);
 
-    _messageLabels = new DivElement()
-      ..classes.add('message__labels');
-    labels.forEach((label) => _messageLabels.append(label.label));
-    message.append(_messageLabels);
+    _messageTags = new DivElement()
+      ..classes.add('message__tags');
+    tags.forEach((tag) => _messageTags.append(tag.tag));
+    message.append(_messageTags);
 
   }
 
   set translation(String translation) => _messageTranslation.text = translation;
 
-  void addLabel(LabelView label, [int position]) {
-    if (position == null || position >= _messageLabels.children.length) {
+  void addTag(TagView tag, [int position]) {
+    if (position == null || position >= _messageTags.children.length) {
       // Add at the end
-      _messageLabels.append(label.label);
+      _messageTags.append(tag.tag);
       return;
     }
-    // Add before an existing label
+    // Add before an existing tag
     if (position < 0) {
       position = 0;
     }
-    Node refChild = _messageLabels.children[position];
-    _messageLabels.insertBefore(label.label, refChild);
+    Node refChild = _messageTags.children[position];
+    _messageTags.insertBefore(tag.tag, refChild);
   }
 
   void _select() {
@@ -186,38 +186,38 @@ enum TagColour {
   Red
 }
 
-class LabelView {
-  DivElement label;
+class TagView {
+  DivElement tag;
 
-  LabelView(String text, String labelId, [TagColour tagColour = TagColour.None]) {
-    label = new DivElement()
-      ..classes.add('label')
-      ..dataset['id'] = labelId;
+  TagView(String text, String tagId, [TagColour tagColour = TagColour.None]) {
+    tag = new DivElement()
+      ..classes.add('tag')
+      ..dataset['id'] = tagId;
     switch (tagColour) {
       case TagColour.Green:
-        label.classes.add('label--green');
+        tag.classes.add('tag--green');
         break;
       case TagColour.Yellow:
-        label.classes.add('label--yellow');
+        tag.classes.add('tag--yellow');
         break;
       case TagColour.Red:
-        label.classes.add('label--red');
+        tag.classes.add('tag--red');
         break;
       default:
     }
 
-    var labelText = new SpanElement()
-      ..classes.add('label__name')
+    var tagText = new SpanElement()
+      ..classes.add('tag__name')
       ..text = text;
-    label.append(labelText);
+    tag.append(tagText);
 
     var removeButton = new SpanElement()
-      ..classes.add('label__remove')
+      ..classes.add('tag__remove')
       ..onClick.listen((_) {
-        DivElement message = getAncestors(label).firstWhere((e) => e.classes.contains('message'));
-        command(UIAction.removeLabel, new LabelData(labelId, message.dataset['id']));
+        DivElement message = getAncestors(tag).firstWhere((e) => e.classes.contains('message'));
+        command(UIAction.removeMessageTag, new MessageTagData(tagId, message.dataset['id']));
       });
-    label.append(removeButton);
+    tag.append(removeButton);
   }
 }
 
@@ -239,7 +239,7 @@ class ConversationListPanelView {
       _phoneToConversations[conversationSummary.deidentifiedPhoneNumber] = conversationSummary;
       return;
     }
-    // Add before an existing label
+    // Add before an existing tag
     if (position < 0) {
       position = 0;
     }

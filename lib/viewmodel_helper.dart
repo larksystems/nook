@@ -18,14 +18,14 @@ void _populateConversationPanelView(model.Conversation conversation) {
     ..deidentifiedPhoneNumber = conversation.deidentifiedPhoneNumber.shortValue
     ..demographicsInfo = conversation.demographicsInfo.values.join(', ');
   for (var tag in conversation.tags) {
-    view.conversationPanelView.addTags(new view.LabelView(tag.content, tag.tagId));
+    view.conversationPanelView.addTags(new view.TagView(tag.content, tag.tagId));
   }
 
   for (int i = 0; i < conversation.messages.length; i++) {
     var message = conversation.messages[i];
-    List<view.LabelView> tags = [];
+    List<view.TagView> tags = [];
     for (var tag in message.tags) {
-      tags.add(new view.LabelView(tag.content, tag.tagId));
+      tags.add(new view.TagView(tag.content, tag.tagId));
     }
     view.conversationPanelView.addMessage(
       new view.MessageView(
@@ -34,7 +34,7 @@ void _populateConversationPanelView(model.Conversation conversation) {
         i,
         translation: message.translation,
         incoming: message.direction == model.MessageDirection.In,
-        labels: tags
+        tags: tags
       ));
   }
 }

@@ -42,7 +42,7 @@
   color: #666;
 }
 
-.message__labels {
+.message__tags {
   margin: 4px;
   display: flex;
   flex-direction: column;
