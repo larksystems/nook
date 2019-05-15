@@ -6,9 +6,14 @@ import 'view.dart' as view;
 
 part 'viewmodel_helper.dart';
 
-enum UIState {
-  idle,
-  messageSelected,
+enum UIActionContext {
+  sendReply,
+  tag,
+}
+
+enum UIActionObject {
+  conversation,
+  message,
 }
 
 enum UIAction {
@@ -57,7 +62,8 @@ class TagData extends Data {
   TagData(this.tagId);
 }
 
-UIState state = UIState.idle;
+UIActionContext actionContextState;
+UIActionObject actionObjectState;
 
 List<model.Conversation> conversations;
 List<model.SuggestedReply> suggestedReplies;
@@ -87,9 +93,11 @@ void init() {
   activeConversation = conversations[0];
   view.conversationListPanelView.selectConversation(activeConversation.deidentifiedPhoneNumber.shortValue);
   _populateConversationPanelView(activeConversation);
+  actionObjectState = UIActionObject.conversation;
 
   // Fill in replyPanelView
   _populateReplyPanelView(suggestedReplies);
+  actionContextState = UIActionContext.sendReply;
 
   // Fill in tagPanelView
   // Prepare list of shortcuts in case some tags don't have shortcuts
@@ -97,80 +105,37 @@ void init() {
 }
 
 void command(UIAction action, Data data) {
-  switch (state) {
-    case UIState.idle:
-      switch (action) {
-        case UIAction.updateTranslation:
-          break;
-        case UIAction.sendMessage:
-          ReplyData replyData = data;
-          model.SuggestedReply selectedReply = suggestedReplies[replyData.replyIndex];
-          model.Message newMessage = new model.Message()
-            ..text = selectedReply.text
-            ..datetime = new DateTime.now()
-            ..direction = model.MessageDirection.Out
-            ..translation = selectedReply.translation
-            ..tags = [];
-          activeConversation.messages.add(newMessage);
-          view.conversationPanelView.addMessage(
-            new view.MessageView(
-              newMessage.text,
-              activeConversation.deidentifiedPhoneNumber.shortValue,
-              activeConversation.messages.indexOf(newMessage),
-              translation: newMessage.translation,
-              incoming: false)
-          );
-          break;
-        case UIAction.removeMessageTag:
-          break;
-        case UIAction.selectConversation:
-          ConversationData conversationData = data;
-          activeConversation = conversations.singleWhere((conversation) => conversation.deidentifiedPhoneNumber.shortValue == conversationData.deidentifiedPhoneNumberShort);
-          // Select the new conversation in the list
-          view.conversationListPanelView.selectConversation(conversationData.deidentifiedPhoneNumberShort);
-          // Replace the previous conversation in the conversation panel
-          _populateConversationPanelView(activeConversation);
-          break;
-        case UIAction.addTag:
-          TagData tagData = data;
+  switch (action) {
+    case UIAction.sendMessage:
+      ReplyData replyData = data;
+      model.SuggestedReply selectedReply = suggestedReplies[replyData.replyIndex];
+      model.Message newMessage = new model.Message()
+        ..text = selectedReply.text
+        ..datetime = new DateTime.now()
+        ..direction = model.MessageDirection.Out
+        ..translation = selectedReply.translation
+        ..tags = [];
+      activeConversation.messages.add(newMessage);
+      view.conversationPanelView.addMessage(
+        new view.MessageView(
+          newMessage.text,
+          activeConversation.deidentifiedPhoneNumber.shortValue,
+          activeConversation.messages.indexOf(newMessage),
+          translation: newMessage.translation,
+          incoming: false)
+      );
+      actionContextState = UIActionContext.tag;
+      break;
+    case UIAction.addTag:
+      TagData tagData = data;
+      switch (actionObjectState) {
+        case UIActionObject.conversation:
           model.Tag tag = conversationTags.singleWhere((tag) => tag.tagId == tagData.tagId);
           activeConversation.tags.add(tag);
           fbt.updateConversation(activeConversation);
           view.conversationPanelView.addTags(new view.TagView(tag.text, tag.tagId));
           break;
-        case UIAction.selectMessage:
-          MessageData messageData = data;
-          selectedMessage = activeConversation.messages[messageData.messageIndex];
-          view.conversationPanelView.selectMessage(messageData.messageIndex);
-          _populateTagPanelView(messageTags, TagReceiver.Message);
-          state = UIState.messageSelected;
-          break;
-        default:
-      }
-      break;
-    case UIState.messageSelected:
-      switch (action) {
-        case UIAction.sendMessage:
-          ReplyData replyData = data;
-          model.SuggestedReply selectedReply = suggestedReplies[replyData.replyIndex];
-          model.Message newMessage = new model.Message()
-            ..text = selectedReply.text
-            ..datetime = new DateTime.now()
-            ..direction = model.MessageDirection.Out
-            ..translation = selectedReply.translation
-            ..tags = [];
-          activeConversation.messages.add(newMessage);
-          view.conversationPanelView.addMessage(
-            new view.MessageView(
-              newMessage.text,
-              activeConversation.deidentifiedPhoneNumber.shortValue,
-              activeConversation.messages.indexOf(newMessage),
-              translation: newMessage.translation,
-              incoming: false)
-          );
-          break;
-        case UIAction.addTag:
-          TagData tagData = data;
+        case UIActionObject.message:
           model.Tag tag = messageTags.singleWhere((tag) => tag.tagId == tagData.tagId);
           selectedMessage.tags.add(tag);
           fbt.updateConversation(activeConversation);
@@ -178,34 +143,55 @@ void command(UIAction action, Data data) {
             .messageViewAtIndex(activeConversation.messages.indexOf(selectedMessage))
             .addTag(new view.TagView(tag.text, tag.tagId));
           break;
-        case UIAction.selectMessage:
-          MessageData messageData = data;
-          selectedMessage = activeConversation.messages[messageData.messageIndex];
-          view.conversationPanelView.selectMessage(messageData.messageIndex);
-          _populateTagPanelView(messageTags, TagReceiver.Message);
+      }
+      break;
+    case UIAction.selectMessage:
+      MessageData messageData = data;
+      selectedMessage = activeConversation.messages[messageData.messageIndex];
+      view.conversationPanelView.selectMessage(messageData.messageIndex);
+      _populateTagPanelView(messageTags, TagReceiver.Message);
+      switch (actionObjectState) {
+        case UIActionObject.conversation:
+          actionObjectState = UIActionObject.message;
           break;
-        case UIAction.deselectMessage:
+        case UIActionObject.message:
+          break;
+      }
+      break;
+    case UIAction.deselectMessage:
+      switch (actionObjectState) {
+        case UIActionObject.conversation:
+          break;
+        case UIActionObject.message:
           selectedMessage = null;
           view.conversationPanelView.deselectMessage();
           _populateTagPanelView(conversationTags, TagReceiver.Conversation);
-          state = UIState.idle;
+          actionObjectState = UIActionObject.conversation;
           break;
-        case UIAction.selectConversation:
-          ConversationData conversationData = data;
-          activeConversation = conversations.singleWhere((conversation) => conversation.deidentifiedPhoneNumber.shortValue == conversationData.deidentifiedPhoneNumberShort);
-          // Select the new conversation in the list
-          view.conversationListPanelView.selectConversation(conversationData.deidentifiedPhoneNumberShort);
-          // Replace the previous conversation in the conversation panel
-          _populateConversationPanelView(activeConversation);
-
-          if (selectedMessage != null) {
-            selectedMessage = null;
-            view.conversationPanelView.deselectMessage();
-            _populateTagPanelView(conversationTags, TagReceiver.Conversation);
-          }
-          break;
-        default:
       }
       break;
+    case UIAction.selectConversation:
+      ConversationData conversationData = data;
+      activeConversation = conversations.singleWhere((conversation) => conversation.deidentifiedPhoneNumber.shortValue == conversationData.deidentifiedPhoneNumberShort);
+      // Select the new conversation in the list
+      view.conversationListPanelView.selectConversation(conversationData.deidentifiedPhoneNumberShort);
+      // Replace the previous conversation in the conversation panel
+      _populateConversationPanelView(activeConversation);
+      switch (actionObjectState) {
+        case UIActionObject.conversation:
+          break;
+        case UIActionObject.message:
+          selectedMessage = null;
+          view.conversationPanelView.deselectMessage();
+          _populateTagPanelView(conversationTags, TagReceiver.Conversation);
+          break;
+      }
+      actionContextState = UIActionContext.sendReply;
+      break;
+    case UIAction.removeMessageTag:
+      break;
+    case UIAction.updateTranslation:
+      break;
+    default:
   }
 }
