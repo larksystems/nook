@@ -15,7 +15,7 @@ enum UIAction {
   updateTranslation,
   sendMessage,
   addTag,
-  removeLabel,
+  removeMessageTag,
   selectConversation,
   selectMessage,
   deselectMessage,
@@ -41,10 +41,10 @@ class TranslationData extends Data {
   TranslationData(this.translationText, this.conversationId, this.messageIndex);
 }
 
-class LabelData extends Data {
-  String labelId;
+class MessageTagData extends Data {
+  String tagId;
   String messageId;
-  LabelData(this.labelId, this.messageId);
+  MessageTagData(this.tagId, this.messageId);
 }
 
 class ConversationData extends Data {
@@ -121,7 +121,7 @@ void command(UIAction action, Data data) {
               incoming: false)
           );
           break;
-        case UIAction.removeLabel:
+        case UIAction.removeMessageTag:
           break;
         case UIAction.selectConversation:
           ConversationData conversationData = data;
@@ -136,7 +136,7 @@ void command(UIAction action, Data data) {
           model.Tag tag = conversationTags.singleWhere((tag) => tag.tagId == tagData.tagId);
           activeConversation.tags.add(tag);
           fbt.updateConversation(activeConversation);
-          view.conversationPanelView.addTags(new view.LabelView(tag.content, tag.tagId));
+          view.conversationPanelView.addTags(new view.TagView(tag.content, tag.tagId));
           break;
         case UIAction.selectMessage:
           MessageData messageData = data;
@@ -176,7 +176,7 @@ void command(UIAction action, Data data) {
           fbt.updateConversation(activeConversation);
           view.conversationPanelView
             .messageViewAtIndex(activeConversation.messages.indexOf(selectedMessage))
-            .addLabel(new view.LabelView(tag.content, tag.tagId));
+            .addTag(new view.TagView(tag.content, tag.tagId));
           break;
         case UIAction.selectMessage:
           MessageData messageData = data;
