@@ -18,18 +18,18 @@ void _populateConversationPanelView(model.Conversation conversation) {
     ..deidentifiedPhoneNumber = conversation.deidentifiedPhoneNumber.shortValue
     ..demographicsInfo = conversation.demographicsInfo.values.join(', ');
   for (var tag in conversation.tags) {
-    view.conversationPanelView.addTags(new view.TagView(tag.content, tag.tagId));
+    view.conversationPanelView.addTags(new view.TagView(tag.text, tag.tagId));
   }
 
   for (int i = 0; i < conversation.messages.length; i++) {
     var message = conversation.messages[i];
     List<view.TagView> tags = [];
     for (var tag in message.tags) {
-      tags.add(new view.TagView(tag.content, tag.tagId));
+      tags.add(new view.TagView(tag.text, tag.tagId));
     }
     view.conversationPanelView.addMessage(
       new view.MessageView(
-        message.content,
+        message.text,
         conversation.deidentifiedPhoneNumber.shortValue,
         i,
         translation: message.translation,
@@ -49,7 +49,7 @@ void _populateReplyPanelView(List<model.SuggestedReply> replies) {
   for (var reply in replies) {
     String shortcut = reply.shortcut != null ? reply.shortcut : shortcuts.removeAt(0);
     int replyIndex = replies.indexOf(reply);
-    view.replyPanelView.addReply(new view.ReplyActionView(reply.content, shortcut, replyIndex, buttonText));
+    view.replyPanelView.addReply(new view.ReplyActionView(reply.text, shortcut, replyIndex, buttonText));
   }
 }
 
@@ -70,6 +70,6 @@ void _populateTagPanelView(List<model.Tag> tags, TagReceiver tagReceiver) {
   }
   for (var tag in tags) {
     String shortcut = tag.shortcut != null ? tag.shortcut : shortcuts.removeAt(0);
-    view.tagPanelView.addTag(new view.TagActionView(tag.content, shortcut, tag.tagId, buttonText));
+    view.tagPanelView.addTag(new view.TagActionView(tag.text, shortcut, tag.tagId, buttonText));
   }
 }

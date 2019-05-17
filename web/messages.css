@@ -14,7 +14,7 @@
   margin-right: 24px;
 }
 
-.message__content {
+.message__bubble {
   margin: 4px;
   padding: 6px;
   border-radius: 6px;
@@ -22,17 +22,17 @@
   flex-wrap: inherit;
 }
 
-.message.message--incoming .message__content {
+.message.message--incoming .message__bubble {
   background: #f3f3f3;
   border: 2px solid #f3f3f3;
 }
 
-.message.message--outgoing .message__content {
+.message.message--outgoing .message__bubble {
   background: #fbfbfb;
   border: 2px solid #fbfbfb;
 }
 
-.message.message--selected .message__content {
+.message.message--selected .message__bubble {
   border: 2px solid #ccc;
 }
 

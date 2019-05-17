@@ -79,7 +79,7 @@ void init() {
     view.conversationListPanelView.addConversation(
       new view.ConversationSummary(
         conversation.deidentifiedPhoneNumber.shortValue,
-        conversation.messages.first.content)
+        conversation.messages.first.text)
     );
   }
 
@@ -106,7 +106,7 @@ void command(UIAction action, Data data) {
           ReplyData replyData = data;
           model.SuggestedReply selectedReply = suggestedReplies[replyData.replyIndex];
           model.Message newMessage = new model.Message()
-            ..content = selectedReply.content
+            ..text = selectedReply.text
             ..datetime = new DateTime.now()
             ..direction = model.MessageDirection.Out
             ..translation = selectedReply.translation
@@ -114,7 +114,7 @@ void command(UIAction action, Data data) {
           activeConversation.messages.add(newMessage);
           view.conversationPanelView.addMessage(
             new view.MessageView(
-              newMessage.content,
+              newMessage.text,
               activeConversation.deidentifiedPhoneNumber.shortValue,
               activeConversation.messages.indexOf(newMessage),
               translation: newMessage.translation,
@@ -136,7 +136,7 @@ void command(UIAction action, Data data) {
           model.Tag tag = conversationTags.singleWhere((tag) => tag.tagId == tagData.tagId);
           activeConversation.tags.add(tag);
           fbt.updateConversation(activeConversation);
-          view.conversationPanelView.addTags(new view.TagView(tag.content, tag.tagId));
+          view.conversationPanelView.addTags(new view.TagView(tag.text, tag.tagId));
           break;
         case UIAction.selectMessage:
           MessageData messageData = data;
@@ -154,7 +154,7 @@ void command(UIAction action, Data data) {
           ReplyData replyData = data;
           model.SuggestedReply selectedReply = suggestedReplies[replyData.replyIndex];
           model.Message newMessage = new model.Message()
-            ..content = selectedReply.content
+            ..text = selectedReply.text
             ..datetime = new DateTime.now()
             ..direction = model.MessageDirection.Out
             ..translation = selectedReply.translation
@@ -162,7 +162,7 @@ void command(UIAction action, Data data) {
           activeConversation.messages.add(newMessage);
           view.conversationPanelView.addMessage(
             new view.MessageView(
-              newMessage.content,
+              newMessage.text,
               activeConversation.deidentifiedPhoneNumber.shortValue,
               activeConversation.messages.indexOf(newMessage),
               translation: newMessage.translation,
@@ -176,7 +176,7 @@ void command(UIAction action, Data data) {
           fbt.updateConversation(activeConversation);
           view.conversationPanelView
             .messageViewAtIndex(activeConversation.messages.indexOf(selectedMessage))
-            .addTag(new view.TagView(tag.content, tag.tagId));
+            .addTag(new view.TagView(tag.text, tag.tagId));
           break;
         case UIAction.selectMessage:
           MessageData messageData = data;

@@ -109,40 +109,40 @@ class ConversationPanelView {
 
 class MessageView {
   DivElement message;
-  DivElement _messageContent;
+  DivElement _messageBubble;
   DivElement _messageTags;
   DivElement _messageText;
   DivElement _messageTranslation;
 
   static MessageView selectedMessageView;
 
-  MessageView(String content, String conversationId, int messageIndex, {String translation = '', bool incoming = true, List<TagView> tags = const[]}) {
+  MessageView(String text, String conversationId, int messageIndex, {String translation = '', bool incoming = true, List<TagView> tags = const[]}) {
     message = new DivElement()
       ..classes.add('message')
       ..classes.add(incoming ? 'message--incoming' : 'message--outgoing')
       ..dataset['conversationId'] = conversationId
       ..dataset['messageIndex'] = '$messageIndex';
 
-    _messageContent = new DivElement()
-      ..classes.add('message__content')
+    _messageBubble = new DivElement()
+      ..classes.add('message__bubble')
       ..onClick.listen((event) {
         event.preventDefault();
         event.stopPropagation();
         command(UIAction.selectMessage, new MessageData(conversationId, messageIndex));
       });
-    message.append(_messageContent);
+    message.append(_messageBubble);
 
     _messageText = new DivElement()
       ..classes.add('message__text')
-      ..text = content;
-    _messageContent.append(_messageText);
+      ..text = text;
+    _messageBubble.append(_messageText);
 
     _messageTranslation = new DivElement()
       ..classes.add('message__translation')
       ..contentEditable = 'true'
       ..text = translation
       ..onInput.listen((_) => command(UIAction.updateTranslation, new TranslationData(_messageTranslation.text, conversationId, messageIndex)));
-    _messageContent.append(_messageTranslation);
+    _messageBubble.append(_messageTranslation);
 
     _messageTags = new DivElement()
       ..classes.add('message__tags');
@@ -260,15 +260,15 @@ class ConversationSummary {
 
   String deidentifiedPhoneNumber;
 
-  ConversationSummary(this.deidentifiedPhoneNumber, String content) {
+  ConversationSummary(this.deidentifiedPhoneNumber, String text) {
     conversationSummary = new DivElement()
       ..classes.add('summary-message')
       ..dataset['id'] = deidentifiedPhoneNumber
-      ..text = content
+      ..text = text
       ..onClick.listen((_) => command(UIAction.selectConversation, new ConversationData(deidentifiedPhoneNumber)));
   }
 
-  set content(String text) => conversationSummary.text = text;
+  set text(String text) => conversationSummary.text = text;
 
   void _deselect() => conversationSummary.classes.remove('summary-message--selected');
   void _select() => conversationSummary.classes.add('summary-message--selected');
