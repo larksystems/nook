@@ -1,0 +1,11 @@
+{
+    "apiKey" : "AIzaSyB0XIxv0aTw3cwQlYc2Q_pxQ_XNVgLo9Yo",
+    "authDomain" : "nook-development.firebaseapp.com",
+    "databaseURL" : "https://nook-development.firebaseio.com",
+    "projectId" : "nook-development",
+    "storageBucket" : "nook-development.appspot.com",
+    "messagingSenderId" : "504684479642",
+    "logUrl" : "https://us-central1-nook-development.cloudfunctions.net/Log",
+    "publishUrl" : "https://us-central1-nook-development.cloudfunctions.net/Publish"
+  }
+  
