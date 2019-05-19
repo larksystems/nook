@@ -78,6 +78,10 @@ class ConversationPanelView {
     _tags.append(tag.tag);
   }
 
+  void removeTag(String tagId) {
+    _tags.children.removeWhere((Element d) => d.dataset["id"] == tagId);
+  }
+
   void selectMessage(int index) {
     _messageViews[index]._select();
   }
@@ -167,6 +171,10 @@ class MessageView {
     _messageTags.insertBefore(tag.tag, refChild);
   }
 
+  void removeTag(String tagId) {
+    _messageTags.children.removeWhere((e) => e.dataset["id"] == tagId);
+  }
+
   void _select() {
     MessageView._deselect();
     message.classes.add('message--selected');
@@ -214,8 +222,14 @@ class TagView {
     var removeButton = new SpanElement()
       ..classes.add('tag__remove')
       ..onClick.listen((_) {
-        DivElement message = getAncestors(tag).firstWhere((e) => e.classes.contains('message'));
-        command(UIAction.removeMessageTag, new MessageTagData(tagId, message.dataset['id']));
+        DivElement message = getAncestors(tag).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
+        if (message == null) {
+          // Conversation tag not message tag
+          DivElement messageSummary = getAncestors(tag).firstWhere((e) => e.classes.contains('message-summary'));
+          command(UIAction.removeTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
+        } else {
+          command(UIAction.removeTag, new MessageTagData(tagId, int.parse(message.dataset['message-index'])));
+        }
       });
     tag.append(removeButton);
   }

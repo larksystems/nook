@@ -15,7 +15,7 @@ enum UIAction {
   updateTranslation,
   sendMessage,
   addTag,
-  removeMessageTag,
+  removeTag,
   selectConversation,
   selectMessage,
   deselectMessage,
@@ -43,8 +43,14 @@ class TranslationData extends Data {
 
 class MessageTagData extends Data {
   String tagId;
-  String messageId;
-  MessageTagData(this.tagId, this.messageId);
+  int messageIndex;
+  MessageTagData(this.tagId, this.messageIndex);
+}
+
+class ConversationTagData extends Data {
+  String tagId;
+  String conversationId;
+  ConversationTagData(this.tagId, this.conversationId);
 }
 
 class ConversationData extends Data {
@@ -121,7 +127,24 @@ void command(UIAction action, Data data) {
               incoming: false)
           );
           break;
-        case UIAction.removeMessageTag:
+        case UIAction.removeTag:
+          if (data is ConversationTagData) {
+            ConversationTagData conversationTagData = data;
+            model.Tag tag = conversationTags.singleWhere((tag) => tag.tagId == conversationTagData.tagId);
+            activeConversation.tags.remove(tag);
+            fbt.updateConversation(activeConversation);
+            view.conversationPanelView.removeTag(tag.tagId);
+            break;
+          }
+          assert (data is MessageTagData);
+          MessageTagData messageTagData = data;
+          print (messageTagData.messageIndex);
+          var message = activeConversation.messages[messageTagData.messageIndex];
+          message.tags.removeWhere((t) => t.tagId == messageTagData.tagId);
+          fbt.updateConversation(activeConversation);
+          view.conversationPanelView
+            .messageViewAtIndex(messageTagData.messageIndex)
+            .removeTag(messageTagData.tagId);
           break;
         case UIAction.selectConversation:
           ConversationData conversationData = data;
@@ -177,6 +200,24 @@ void command(UIAction action, Data data) {
           view.conversationPanelView
             .messageViewAtIndex(activeConversation.messages.indexOf(selectedMessage))
             .addTag(new view.TagView(tag.text, tag.tagId));
+          break;
+        case UIAction.removeTag:
+          if (data is ConversationTagData) {
+            ConversationTagData conversationTagData = data;
+            model.Tag tag = conversationTags.singleWhere((tag) => tag.tagId == conversationTagData.tagId);
+            activeConversation.tags.remove(tag);
+            fbt.updateConversation(activeConversation);
+            view.conversationPanelView.removeTag(tag.tagId);
+            break;
+          }
+          assert (data is MessageTagData);
+          MessageTagData messageTagData = data;
+          var message = activeConversation.messages[messageTagData.messageIndex];
+          message.tags.removeWhere((t) => t.tagId == messageTagData.tagId);
+          fbt.updateConversation(activeConversation);
+          view.conversationPanelView
+            .messageViewAtIndex(messageTagData.messageIndex)
+            .removeTag(messageTagData.tagId);
           break;
         case UIAction.selectMessage:
           MessageData messageData = data;
