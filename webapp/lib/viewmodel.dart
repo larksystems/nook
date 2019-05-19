@@ -134,9 +134,11 @@ void command(UIAction action, Data data) {
         case UIAction.addTag:
           TagData tagData = data;
           model.Tag tag = conversationTags.singleWhere((tag) => tag.tagId == tagData.tagId);
-          activeConversation.tags.add(tag);
-          fbt.updateConversation(activeConversation);
-          view.conversationPanelView.addTags(new view.TagView(tag.text, tag.tagId));
+          if (!activeConversation.tags.contains(tag)) {
+            activeConversation.tags.add(tag);
+            fbt.updateConversation(activeConversation);
+            view.conversationPanelView.addTags(new view.TagView(tag.text, tag.tagId));
+          }
           break;
         case UIAction.selectMessage:
           MessageData messageData = data;
@@ -172,11 +174,14 @@ void command(UIAction action, Data data) {
         case UIAction.addTag:
           TagData tagData = data;
           model.Tag tag = messageTags.singleWhere((tag) => tag.tagId == tagData.tagId);
-          selectedMessage.tags.add(tag);
-          fbt.updateConversation(activeConversation);
-          view.conversationPanelView
-            .messageViewAtIndex(activeConversation.messages.indexOf(selectedMessage))
-            .addTag(new view.TagView(tag.text, tag.tagId));
+          if (!selectedMessage.tags.contains(tag)) {
+            selectedMessage.tags.add(tag);
+            fbt.updateConversation(activeConversation);
+            view.conversationPanelView
+              .messageViewAtIndex(activeConversation.messages.indexOf(selectedMessage))
+              .addTag(new view.TagView(tag.text, tag.tagId));
+          }
+          
           break;
         case UIAction.selectMessage:
           MessageData messageData = data;
