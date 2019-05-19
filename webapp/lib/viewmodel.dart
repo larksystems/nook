@@ -138,7 +138,6 @@ void command(UIAction action, Data data) {
           }
           assert (data is MessageTagData);
           MessageTagData messageTagData = data;
-          print (messageTagData.messageIndex);
           var message = activeConversation.messages[messageTagData.messageIndex];
           message.tags.removeWhere((t) => t.tagId == messageTagData.tagId);
           fbt.updateConversation(activeConversation);
