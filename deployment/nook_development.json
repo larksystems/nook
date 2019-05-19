@@ -7,5 +7,4 @@
     "messagingSenderId" : "504684479642",
     "logUrl" : "https://us-central1-nook-development.cloudfunctions.net/Log",
     "publishUrl" : "https://us-central1-nook-development.cloudfunctions.net/Publish"
-  }
-  
+}
