@@ -59,8 +59,8 @@ class ConversationTagData extends Data {
 }
 
 class ConversationData extends Data {
-  String deidentifiedPhoneNumberShort;
-  ConversationData(this.deidentifiedPhoneNumberShort);
+  String deidentifiedPhoneNumber;
+  ConversationData(this.deidentifiedPhoneNumber);
 }
 
 class TagData extends Data {
@@ -90,14 +90,14 @@ void init() {
   for (var conversation in conversations) {
     view.conversationListPanelView.addConversation(
       new view.ConversationSummary(
-        conversation.deidentifiedPhoneNumber.shortValue,
+        conversation.deidentifiedPhoneNumber.value,
         conversation.messages.first.text)
     );
   }
 
   // Fill in conversationPanelView
   activeConversation = conversations[0];
-  view.conversationListPanelView.selectConversation(activeConversation.deidentifiedPhoneNumber.shortValue);
+  view.conversationListPanelView.selectConversation(activeConversation.deidentifiedPhoneNumber.value);
   _populateConversationPanelView(activeConversation);
   actionObjectState = UIActionObject.conversation;
 
@@ -125,7 +125,7 @@ void command(UIAction action, Data data) {
       view.conversationPanelView.addMessage(
         new view.MessageView(
           newMessage.text,
-          activeConversation.deidentifiedPhoneNumber.shortValue,
+          activeConversation.deidentifiedPhoneNumber.value,
           activeConversation.messages.indexOf(newMessage),
           translation: newMessage.translation,
           incoming: false)
@@ -200,9 +200,9 @@ void command(UIAction action, Data data) {
       break;
     case UIAction.selectConversation:
       ConversationData conversationData = data;
-      activeConversation = conversations.singleWhere((conversation) => conversation.deidentifiedPhoneNumber.shortValue == conversationData.deidentifiedPhoneNumberShort);
+      activeConversation = conversations.singleWhere((conversation) => conversation.deidentifiedPhoneNumber.value == conversationData.deidentifiedPhoneNumber);
       // Select the new conversation in the list
-      view.conversationListPanelView.selectConversation(conversationData.deidentifiedPhoneNumberShort);
+      view.conversationListPanelView.selectConversation(conversationData.deidentifiedPhoneNumber);
       // Replace the previous conversation in the conversation panel
       _populateConversationPanelView(activeConversation);
       switch (actionObjectState) {
