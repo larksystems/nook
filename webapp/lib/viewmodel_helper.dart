@@ -30,7 +30,7 @@ void _populateConversationPanelView(model.Conversation conversation) {
     view.conversationPanelView.addMessage(
       new view.MessageView(
         message.text,
-        conversation.deidentifiedPhoneNumber.shortValue,
+        conversation.deidentifiedPhoneNumber.value,
         i,
         translation: message.translation,
         incoming: message.direction == model.MessageDirection.In,
