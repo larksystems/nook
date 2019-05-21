@@ -35,7 +35,7 @@ main {
     border-right: 1px solid #ddd;
 }
 
-.message-panel,
+.conversation-panel,
 .reply-panel,
 .tag-panel {
     flex: 1;
@@ -79,20 +79,20 @@ main {
     border-top: 1px solid #ddd;
 }
 
-.message-summary {
+.conversation-summary {
     text-align: center;
     padding: 4px;
 }
 
-.message-summary__id {
+.conversation-summary__id {
     font-size: 18px;
 }
 
-.message-summary__demographics {
+.conversation-summary__demographics {
     color: #666;
 }
 
-.message-summary__tags {
+.conversation-summary__tags {
     display: flex;
     place-content: center;
 }
