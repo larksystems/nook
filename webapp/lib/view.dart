@@ -42,23 +42,23 @@ class ConversationPanelView {
 
   ConversationPanelView() {
     conversationPanel = new DivElement()
-      ..classes.add('message-panel')
+      ..classes.add('conversation-panel')
       ..onClick.listen((_) => command(UIAction.deselectMessage, null));
 
     var conversationSummary = new DivElement()
-      ..classes.add('message-summary');
+      ..classes.add('conversation-summary');
     conversationPanel.append(conversationSummary);
 
     _deidentifiedPhoneNumber = new DivElement()
-      ..classes.add('message-summary__id');
+      ..classes.add('conversation-summary__id');
     conversationSummary.append(_deidentifiedPhoneNumber);
 
     _info = new DivElement()
-      ..classes.add('message-summary__demographics');
+      ..classes.add('conversation-summary__demographics');
     conversationSummary.append(_info);
 
     _tags = new DivElement()
-      ..classes.add('message-summary__tags');
+      ..classes.add('conversation-summary__tags');
     conversationSummary.append(_tags);
 
     _messages = new DivElement()
@@ -225,7 +225,7 @@ class TagView {
         DivElement message = getAncestors(tag).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
         if (message == null) {
           // Conversation tag not message tag
-          DivElement messageSummary = getAncestors(tag).firstWhere((e) => e.classes.contains('message-summary'));
+          DivElement messageSummary = getAncestors(tag).firstWhere((e) => e.classes.contains('conversation-summary'));
           command(UIAction.removeTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
         } else {
           command(UIAction.removeTag, new MessageTagData(tagId, int.parse(message.dataset['message-index'])));
