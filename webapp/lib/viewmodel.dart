@@ -18,6 +18,7 @@ enum UIActionObject {
 
 enum UIAction {
   updateTranslation,
+  updateNote,
   sendMessage,
   addTag,
   removeTag,
@@ -68,6 +69,11 @@ class TagData extends Data {
   TagData(this.tagId);
 }
 
+class NoteData extends Data {
+  String noteText;
+  NoteData(this.noteText);
+}
+
 UIActionContext actionContextState;
 UIActionObject actionObjectState;
 
@@ -103,6 +109,7 @@ void init() {
 
   // Fill in replyPanelView
   _populateReplyPanelView(suggestedReplies);
+  view.replyPanelView.noteText = activeConversation.notes;
   actionContextState = UIActionContext.sendReply;
 
   // Fill in tagPanelView
@@ -205,6 +212,7 @@ void command(UIAction action, Data data) {
       view.conversationListPanelView.selectConversation(conversationData.deidentifiedPhoneNumber);
       // Replace the previous conversation in the conversation panel
       _populateConversationPanelView(activeConversation);
+      view.replyPanelView.noteText = activeConversation.notes;
       switch (actionObjectState) {
         case UIActionObject.conversation:
           break;
@@ -217,6 +225,10 @@ void command(UIAction action, Data data) {
       actionContextState = UIActionContext.sendReply;
       break;
     case UIAction.updateTranslation:
+      break;
+    case UIAction.updateNote:
+      NoteData noteData = data;
+      activeConversation.notes = noteData.noteText;
       break;
     default:
   }
