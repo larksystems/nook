@@ -1,3 +1,3 @@
-import 'viewmodel.dart' as viewmodel;
+import 'controller.dart' as controller;
 
-void init() => viewmodel.init();
+void init() => controller.init();
