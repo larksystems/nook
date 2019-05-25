@@ -293,6 +293,7 @@ class ReplyPanelView {
   DivElement _replies;
   DivElement _replyList;
   DivElement _notes;
+  DivElement _notesTextarea;
 
   AddAction _addReply;
 
@@ -317,12 +318,17 @@ class ReplyPanelView {
     _replies.append(_addReply.addAction);
 
     _notes = new DivElement()
-      ..classes.add('notes-box')
-      ..append(new DivElement()
-          ..classes.add('notes-box__textarea')
-          ..contentEditable = 'true');
+      ..classes.add('notes-box');
     replyPanel.append(_notes);
+
+    _notesTextarea = new DivElement()
+      ..classes.add('notes-box__textarea')
+      ..contentEditable = 'true';
+    _notesTextarea.onInput.listen((_) => command(UIAction.updateNote, new NoteData(_notesTextarea.text)));
+    _notes.append(_notesTextarea);
   }
+
+  set noteText(String text) => _notesTextarea.text = text;
 
   void addReply(ActionView action) {
     _replyList.append(action.action);
