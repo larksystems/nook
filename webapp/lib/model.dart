@@ -8,6 +8,7 @@ class Conversation {
   Map<String, String> demographicsInfo;
   List<Tag> tags;
   List<Message> messages;
+  String notes;
 }
 
 enum MessageDirection {
