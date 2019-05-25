@@ -235,7 +235,8 @@ List<Conversation> _conversations = [
         ..text = 'The people of the area work on the cleanliness of the town and accessing clean water'
         ..datetime = new DateTime.now().subtract(new Duration(days: 3, hours: 7))
         ..tags = [],
-    ],
+    ]
+    ..notes = 'Can someone translate this message please',
   new Conversation()
     ..deidentifiedPhoneNumber = (
       new DeidentifiedPhoneNumber()
