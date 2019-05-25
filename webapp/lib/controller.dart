@@ -1,10 +1,11 @@
-library viewmodel;
+library controller;
 
-import 'firebase_tools.dart' as fbt;
+import 'platform.dart' as platform;
 import 'model.dart' as model;
 import 'view.dart' as view;
 
-part 'viewmodel_helper.dart';
+part 'controller_platform_helper.dart';
+part 'controller_view_helper.dart';
 
 enum UIActionContext {
   sendReply,
@@ -84,13 +85,16 @@ List<model.Tag> messageTags;
 model.Conversation activeConversation;
 model.Message selectedMessage;
 
-void init() {
-  view.init();
+platform.PlatformUtils platformUtils;
 
-  conversations = fbt.loadConversations();
-  suggestedReplies = fbt.loadSuggestedReplies();
-  conversationTags = fbt.loadConversationTags();
-  messageTags = fbt.loadMessageTags();
+void init() async {
+  view.init();
+  platformUtils = new platform.PlatformUtils(null, null);
+
+  conversations = await _conversationsFromPlatformData(platformUtils.loadConversations());
+  suggestedReplies = await _suggestedRepliesFromPlatformData(platformUtils.loadSuggestedReplies());
+  conversationTags = await _conversationTagsFromPlatformData(platformUtils.loadConversationTags());
+  messageTags = await _messageTagsFromPlatformData(platformUtils.loadMessageTags());
 
   // Fill in conversationListPanelView
   for (var conversation in conversations) {
@@ -146,7 +150,7 @@ void command(UIAction action, Data data) {
           model.Tag tag = conversationTags.singleWhere((tag) => tag.tagId == tagData.tagId);
           if (!activeConversation.tags.contains(tag)) {
             activeConversation.tags.add(tag);
-            fbt.updateConversation(activeConversation);
+            platformUtils.updateConversation(encodeConversationToPlatformData(activeConversation));
             view.conversationPanelView.addTags(new view.TagView(tag.text, tag.tagId));
           }
           break;
@@ -154,7 +158,7 @@ void command(UIAction action, Data data) {
           model.Tag tag = messageTags.singleWhere((tag) => tag.tagId == tagData.tagId);
           if (!selectedMessage.tags.contains(tag)) {
             selectedMessage.tags.add(tag);
-            fbt.updateConversation(activeConversation);
+            platformUtils.updateConversation(encodeConversationToPlatformData(activeConversation));
             view.conversationPanelView
               .messageViewAtIndex(activeConversation.messages.indexOf(selectedMessage))
               .addTag(new view.TagView(tag.text, tag.tagId));
@@ -167,7 +171,7 @@ void command(UIAction action, Data data) {
         ConversationTagData conversationTagData = data;
         model.Tag tag = conversationTags.singleWhere((tag) => tag.tagId == conversationTagData.tagId);
         activeConversation.tags.remove(tag);
-        fbt.updateConversation(activeConversation);
+        platformUtils.updateConversation(encodeConversationToPlatformData(activeConversation));
         view.conversationPanelView.removeTag(tag.tagId);
         break;
       }
@@ -175,7 +179,7 @@ void command(UIAction action, Data data) {
       MessageTagData messageTagData = data;
       var message = activeConversation.messages[messageTagData.messageIndex];
       message.tags.removeWhere((t) => t.tagId == messageTagData.tagId);
-      fbt.updateConversation(activeConversation);
+      platformUtils.updateConversation(encodeConversationToPlatformData(activeConversation));
       view.conversationPanelView
         .messageViewAtIndex(messageTagData.messageIndex)
         .removeTag(messageTagData.tagId);
