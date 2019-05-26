@@ -2,7 +2,7 @@ import 'dart:html';
 
 import 'dom_utils.dart';
 import 'logger.dart';
-import 'viewmodel.dart';
+import 'controller.dart';
 
 
 Logger log = new Logger('view.dart');

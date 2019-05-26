@@ -1,4 +1,4 @@
-part of viewmodel;
+part of controller;
 
 const SEND_REPLY_BUTTON_TEXT = 'SEND message';
 
