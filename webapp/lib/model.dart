@@ -41,3 +41,8 @@ enum TagType {
   Normal,
   Important
 }
+
+class User {
+  String userName;
+  String userEmail;
+}
