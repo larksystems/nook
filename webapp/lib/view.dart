@@ -11,18 +11,23 @@ ConversationListPanelView conversationListPanelView;
 ConversationPanelView conversationPanelView;
 ReplyPanelView replyPanelView;
 TagPanelView tagPanelView;
+AuthView authView;
 
 void init() {
   conversationListPanelView = new ConversationListPanelView();
   conversationPanelView = new ConversationPanelView();
   replyPanelView = new ReplyPanelView();
   tagPanelView = new TagPanelView();
+  authView = new AuthView();
 
   querySelector('main')
     ..append(conversationListPanelView.conversationListPanel)
     ..append(conversationPanelView.conversationPanel)
     ..append(replyPanelView.replyPanel)
     ..append(tagPanelView.tagPanel);
+
+  querySelector('header')
+    ..append(authView.authElement);
 }
 
 const REPLY_PANEL_TITLE = 'Suggested responses';
@@ -436,5 +441,60 @@ class AddAction {
     addAction.append(info);
 
     // TODO(mariana): fill in functionality for adding new action
+  }
+}
+
+class AuthView {
+  DivElement authElement;
+  DivElement _userPic;
+  DivElement _userName;
+  ButtonElement _signOutButton;
+  ButtonElement _signInButton;
+
+  AuthView() {
+    authElement = new DivElement()
+      ..classes.add('auth');
+
+    _userPic = new DivElement()
+      ..classes.add('user-pic');
+    authElement.append(_userPic);
+
+    _userName = new DivElement()
+      ..classes.add('user-name');
+    authElement.append(_userName);
+
+    _signOutButton = new ButtonElement()
+      ..text = 'Sign out'
+      ..onClick.listen((_) => command(UIAction.signOutButtonClicked, null));
+    authElement.append(_signOutButton);
+
+    _signInButton = new ButtonElement()
+      ..text = 'Sign in'
+      ..onClick.listen((_) => command(UIAction.signInButtonClicked, null));
+    authElement.append(_signInButton);
+  }
+
+  void signIn(String userName, userPicUrl) {
+    // Set the user's profile pic and name
+    _userPic.style.backgroundImage = 'url($userPicUrl)';
+    _userName.text = userName;
+
+    // Show user's profile pic, name and sign-out button.
+    _userName.attributes.remove('hidden');
+    _userPic.attributes.remove('hidden');
+    _signOutButton.attributes.remove('hidden');
+
+    // Hide sign-in button.
+    _signInButton.setAttribute('hidden', 'true');
+  }
+
+  void signOut() {
+    // Hide user's profile pic, name and sign-out button.
+    _userName.attributes['hidden'] = 'true';
+    _userPic.attributes['hidden'] = 'true';
+    _signOutButton.attributes['hidden'] = 'true';
+
+    // Show sign-in button.
+    _signInButton.attributes.remove('hidden');
   }
 }
