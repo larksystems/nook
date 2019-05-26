@@ -26,6 +26,10 @@ enum UIAction {
   selectConversation,
   selectMessage,
   deselectMessage,
+  userSignedIn,
+  userSignedOut,
+  signInButtonClicked,
+  signOutButtonClicked,
 }
 
 class Data {}
@@ -75,6 +79,13 @@ class NoteData extends Data {
   NoteData(this.noteText);
 }
 
+class UserData extends Data {
+  String displayName;
+  String email;
+  String photoUrl;
+  UserData(this.displayName, this.email, this.photoUrl);
+}
+
 UIActionContext actionContextState;
 UIActionObject actionObjectState;
 
@@ -84,6 +95,7 @@ List<model.Tag> conversationTags;
 List<model.Tag> messageTags;
 model.Conversation activeConversation;
 model.Message selectedMessage;
+model.User signedInUser;
 
 platform.PlatformUtils platformUtils;
 
@@ -233,6 +245,23 @@ void command(UIAction action, Data data) {
     case UIAction.updateNote:
       NoteData noteData = data;
       activeConversation.notes = noteData.noteText;
+      break;
+    case UIAction.userSignedOut:
+      signedInUser = null;
+      view.authView.signOut();
+      break;
+    case UIAction.userSignedIn:
+      UserData userData = data;
+      signedInUser = new model.User()
+        ..userName = userData.displayName
+        ..userEmail = userData.email;
+      view.authView.signIn(userData.displayName, userData.photoUrl);
+      break;
+    case UIAction.signInButtonClicked:
+      platformUtils.signIn();
+      break;
+    case UIAction.signOutButtonClicked:
+      platformUtils.signOut();
       break;
     default:
   }
