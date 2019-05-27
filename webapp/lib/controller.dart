@@ -100,16 +100,14 @@ model.Conversation activeConversation;
 model.Message selectedMessage;
 model.User signedInUser;
 
-platform.PlatformUtils platformUtils;
-
 void init() async {
   view.init();
-  platformUtils = new platform.PlatformUtils(null, null);
+  platform.init();
 
-  conversations = await _conversationsFromPlatformData(platformUtils.loadConversations());
-  suggestedReplies = await _suggestedRepliesFromPlatformData(platformUtils.loadSuggestedReplies());
-  conversationTags = await _conversationTagsFromPlatformData(platformUtils.loadConversationTags());
-  messageTags = await _messageTagsFromPlatformData(platformUtils.loadMessageTags());
+  conversations = await _conversationsFromPlatformData(platform.loadConversations());
+  suggestedReplies = await _suggestedRepliesFromPlatformData(platform.loadSuggestedReplies());
+  conversationTags = await _conversationTagsFromPlatformData(platform.loadConversationTags());
+  messageTags = await _messageTagsFromPlatformData(platform.loadMessageTags());
 
   // Fill in conversationListPanelView
   for (var conversation in conversations) {
@@ -170,7 +168,7 @@ void command(UIAction action, Data data) {
           model.Tag tag = conversationTags.singleWhere((tag) => tag.tagId == tagData.tagId);
           if (!activeConversation.tags.contains(tag)) {
             activeConversation.tags.add(tag);
-            platformUtils.updateConversation(encodeConversationToPlatformData(activeConversation));
+            platform.updateConversation(encodeConversationToPlatformData(activeConversation));
             view.conversationPanelView.addTags(new view.TagView(tag.text, tag.tagId));
           }
           break;
@@ -178,7 +176,7 @@ void command(UIAction action, Data data) {
           model.Tag tag = messageTags.singleWhere((tag) => tag.tagId == tagData.tagId);
           if (!selectedMessage.tags.contains(tag)) {
             selectedMessage.tags.add(tag);
-            platformUtils.updateConversation(encodeConversationToPlatformData(activeConversation));
+            platform.updateConversation(encodeConversationToPlatformData(activeConversation));
             view.conversationPanelView
               .messageViewAtIndex(activeConversation.messages.indexOf(selectedMessage))
               .addTag(new view.TagView(tag.text, tag.tagId));
@@ -191,7 +189,7 @@ void command(UIAction action, Data data) {
         ConversationTagData conversationTagData = data;
         model.Tag tag = conversationTags.singleWhere((tag) => tag.tagId == conversationTagData.tagId);
         activeConversation.tags.remove(tag);
-        platformUtils.updateConversation(encodeConversationToPlatformData(activeConversation));
+        platform.updateConversation(encodeConversationToPlatformData(activeConversation));
         view.conversationPanelView.removeTag(tag.tagId);
         break;
       }
@@ -199,7 +197,7 @@ void command(UIAction action, Data data) {
       MessageTagData messageTagData = data;
       var message = activeConversation.messages[messageTagData.messageIndex];
       message.tags.removeWhere((t) => t.tagId == messageTagData.tagId);
-      platformUtils.updateConversation(encodeConversationToPlatformData(activeConversation));
+      platform.updateConversation(encodeConversationToPlatformData(activeConversation));
       view.conversationPanelView
         .messageViewAtIndex(messageTagData.messageIndex)
         .removeTag(messageTagData.tagId);
@@ -266,10 +264,10 @@ void command(UIAction action, Data data) {
       view.authView.signIn(userData.displayName, userData.photoUrl);
       break;
     case UIAction.signInButtonClicked:
-      platformUtils.signIn();
+      platform.signIn();
       break;
     case UIAction.signOutButtonClicked:
-      platformUtils.signOut();
+      platform.signOut();
       break;
     default:
   }
