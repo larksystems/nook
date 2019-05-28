@@ -153,6 +153,11 @@ void command(UIAction action, Data data) {
           translation: newMessage.translation,
           incoming: false)
       );
+      platformUtils
+        .sendMessage(activeConversation.deidentifiedPhoneNumber.value, selectedReply.text)
+        .then((success) {
+          // TODO(mariana): Do something if sending the message was successful or failed.
+        });
       actionContextState = UIActionContext.tag;
       break;
     case UIAction.addTag:
