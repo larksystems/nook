@@ -11,110 +11,110 @@ Logger log = new Logger('platform_utils.dart');
 
 const _SEND_TO_MULTI_IDS_ACTION = "send_to_multi_ids";
 
-init() async {
-  await platform_constants.init();
+  init() async {
+    await platform_constants.init();
 
-  firebase.initializeApp(
-    apiKey: platform_constants.apiKey,
-    authDomain: platform_constants.authDomain,
-    databaseURL: platform_constants.databaseURL,
-    projectId: platform_constants.projectId,
-    storageBucket: platform_constants.storageBucket,
-    messagingSenderId: platform_constants.messagingSenderId);
+    firebase.initializeApp(
+      apiKey: platform_constants.apiKey,
+      authDomain: platform_constants.authDomain,
+      databaseURL: platform_constants.databaseURL,
+      projectId: platform_constants.projectId,
+      storageBucket: platform_constants.storageBucket,
+      messagingSenderId: platform_constants.messagingSenderId);
 
-  // Firebase login
-  firebaseAuth.onAuthStateChanged.listen((firebase.User user) {
-    if (user == null) { // User signed out
-      controller.command(controller.UIAction.userSignedOut, null);
-      return;
-    }
-    // User signed in
-    String photoURL = firebaseAuth.currentUser.photoURL;
-    if (photoURL == null) {
-      photoURL =  '/assets/user_image_placeholder.png';
-    }
-    controller.command(controller.UIAction.userSignedIn, new controller.UserData(user.displayName, user.email, photoURL));
-  });
-}
+    // Firebase login
+    firebaseAuth.onAuthStateChanged.listen((firebase.User user) {
+      if (user == null) { // User signed out
+        controller.command(controller.UIAction.userSignedOut, null);
+        return;
+      }
+      // User signed in
+      String photoURL = firebaseAuth.currentUser.photoURL;
+      if (photoURL == null) {
+        photoURL =  '/assets/user_image_placeholder.png';
+      }
+      controller.command(controller.UIAction.userSignedIn, new controller.UserData(user.displayName, user.email, photoURL));
+    });
+  }
 
-firebase.Auth get firebaseAuth => firebase.auth();
+  firebase.Auth get firebaseAuth => firebase.auth();
 
-/// Signs the user in.
-signIn() {
-  var provider = new firebase.GoogleAuthProvider();
-  firebaseAuth.signInWithPopup(provider);
-}
+  /// Signs the user in.
+  signIn() {
+    var provider = new firebase.GoogleAuthProvider();
+    firebaseAuth.signInWithPopup(provider);
+  }
 
-/// Signs the user out.
-signOut() {
-  firebaseAuth.signOut();
-}
+  /// Signs the user out.
+  signOut() {
+    firebaseAuth.signOut();
+  }
 
-/// Returns true if a user is signed-in.
-bool isUserSignedIn() {
-  return firebaseAuth.currentUser != null;
-}
+  /// Returns true if a user is signed-in.
+  bool isUserSignedIn() {
+    return firebaseAuth.currentUser != null;
+  }
 
-Future sendMessage(String id, String message) {
-  log.verbose("Sending message $id : $message");
+  Future sendMessage(String id, String message) {
+    log.verbose("Sending message $id : $message");
 
-  return sendMultiMessage([id], message);
-}
+    return sendMultiMessage([id], message);
+  }
 
-Future sendMultiMessage(List<String> ids, String message) {
-  log.verbose("Sending multi-message $ids : $message");
+  Future sendMultiMessage(List<String> ids, String message) {
+    log.verbose("Sending multi-message $ids : $message");
 
-  //  {
-  //  "action" : "send_to_multi_ids"
-  //  "ids" : [ "nook-uuid-23dsa" ],
-  //  "message" : "🐱"
-  //  }
+    //  {
+    //  "action" : "send_to_multi_ids"
+    //  "ids" : [ "nook-uuid-23dsa" ],
+    //  "message" : "🐱"
+    //  }
 
-  String payload = json.encode(
-    {
-      'action' : _SEND_TO_MULTI_IDS_ACTION,
-      'ids' : ids,
-      'message' : message
-    }
-  );
+    String payload = json.encode(
+      {
+        'action' : _SEND_TO_MULTI_IDS_ACTION,
+        'ids' : ids,
+        'message' : message
+      }
+    );
 
-  return _sendPubSubMessage(platform_constants.smsTopic, payload);
-}
+    return _sendPubSubMessage(platform_constants.smsTopic, payload);
+  }
 
-Future _sendPubSubMessage(String topic, String message) async {
-  log.verbose("_sendPubSubMessage $topic $message");
-  var client = new BrowserClient();
-  var response = await client.post(platform_constants.publishUrl, body: json.encode({"topic":topic,"message": message }));
+  Future _sendPubSubMessage(String topic, String message) async {
+    log.verbose("_sendPubSubMessage $topic $message");
+    var client = new BrowserClient();
+    var response = await client.post(platform_constants.publishUrl, body: json.encode({"topic":topic,"message": message }));
 
-  log.verbose("_sendPubSubMessage response ${response.statusCode}, ${response.body}");
-  return response.statusCode == 200;
-}
+    log.verbose("_sendPubSubMessage response ${response.statusCode}, ${response.body}");
+    return response.statusCode == 200;
+  }
 
-Future loadConversations() {
-  log.verbose('Loading conversations');
+  Future loadConversations() {
+    log.verbose('Loading conversations');
 
-  return new Future.value(data.conversations);
-}
+    return new Future.value(data.conversations);
+  }
 
 
-Future loadConversationTags() {
-  log.verbose('Loading conversation tags');
+  Future loadConversationTags() {
+    log.verbose('Loading conversation tags');
 
-  return new Future.value(data.conversationTags);
-}
+    return new Future.value(data.conversationTags);
+  }
 
-Future loadMessageTags() {
-  log.verbose('Loading message tags');
+  Future loadMessageTags() {
+    log.verbose('Loading message tags');
 
-  return new Future.value(data.messageTags);
-}
+    return new Future.value(data.messageTags);
+  }
 
-Future loadSuggestedReplies() {
-  log.verbose('Loading suggested replies');
+  Future loadSuggestedReplies() {
+    log.verbose('Loading suggested replies');
 
-  return new Future.value(data.suggestedReplies);
-}
+    return new Future.value(data.suggestedReplies);
+  }
 
-Future updateConversation(Map conversationData) async {
-  // TODO(mariana): implement commication with Firebase/PubSub here
-}
+  Future updateConversation(Map conversationData) async {
+    // TODO(mariana): implement commication with Firebase/PubSub here
+  }
