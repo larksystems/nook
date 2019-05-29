@@ -33,6 +33,7 @@ enum UIAction {
   userSignedOut,
   signInButtonClicked,
   signOutButtonClicked,
+  keyPressed,
 }
 
 class Data {}
@@ -87,6 +88,11 @@ class UserData extends Data {
   String email;
   String photoUrl;
   UserData(this.displayName, this.email, this.photoUrl);
+}
+
+class KeyPressData extends Data {
+  String key;
+  KeyPressData(this.key);
 }
 
 UIActionContext actionContextState;
@@ -268,6 +274,8 @@ void command(UIAction action, Data data) {
       break;
     case UIAction.signOutButtonClicked:
       platform.signOut();
+      break;
+    case UIAction.keyPressed:
       break;
     default:
   }
