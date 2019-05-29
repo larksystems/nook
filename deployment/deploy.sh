@@ -17,7 +17,7 @@ mv build ../public
 cd ..
 
 # Copy the constants in the build folder
-# cp $PATH_TO_CONSTANTS_FILE public/assets/firebase_constants.json
+cp $PATH_TO_CONSTANTS_FILE public/assets/firebase_constants.json
 
 # Get the project id
 PROJECT_ID=$(cat $PATH_TO_CONSTANTS_FILE | python -c 'import json,sys; constants=json.load(sys.stdin); print(constants["projectId"])')
