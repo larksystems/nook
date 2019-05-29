@@ -28,6 +28,8 @@ void init() {
 
   querySelector('header')
     ..append(authView.authElement);
+
+  document.onKeyPress.listen((event) => command(UIAction.keyPressed, new KeyPressData(event.key)));
 }
 
 const REPLY_PANEL_TITLE = 'Suggested responses';
@@ -150,7 +152,8 @@ class MessageView {
       ..classes.add('message__translation')
       ..contentEditable = 'true'
       ..text = translation
-      ..onInput.listen((_) => command(UIAction.updateTranslation, new TranslationData(_messageTranslation.text, conversationId, messageIndex)));
+      ..onInput.listen((_) => command(UIAction.updateTranslation, new TranslationData(_messageTranslation.text, conversationId, messageIndex)))
+      ..onKeyPress.listen((e) => e.stopPropagation());
     _messageBubble.append(_messageTranslation);
 
     _messageTags = new DivElement()
@@ -328,8 +331,9 @@ class ReplyPanelView {
 
     _notesTextarea = new DivElement()
       ..classes.add('notes-box__textarea')
-      ..contentEditable = 'true';
-    _notesTextarea.onInput.listen((_) => command(UIAction.updateNote, new NoteData(_notesTextarea.text)));
+      ..contentEditable = 'true'
+      ..onInput.listen((_) => command(UIAction.updateNote, new NoteData(_notesTextarea.text)))
+      ..onKeyPress.listen((e) => e.stopPropagation());
     _notes.append(_notesTextarea);
   }
 
