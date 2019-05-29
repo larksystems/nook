@@ -1,11 +1,14 @@
 library controller;
 
-import 'platform.dart' as platform;
+import 'logger.dart';
 import 'model.dart' as model;
+import 'platform.dart' as platform;
 import 'view.dart' as view;
 
 part 'controller_platform_helper.dart';
 part 'controller_view_helper.dart';
+
+Logger log = new Logger('controller.dart');
 
 enum UIActionContext {
   sendReply,
@@ -156,7 +159,7 @@ void command(UIAction action, Data data) {
       platformUtils
         .sendMessage(activeConversation.deidentifiedPhoneNumber.value, selectedReply.text)
         .then((success) {
-          // TODO(mariana): Do something if sending the message was successful or failed.
+          log.verbose('controller.sendMessage reponse status $success');
         });
       actionContextState = UIActionContext.tag;
       break;
