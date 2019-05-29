@@ -154,7 +154,7 @@ void command(UIAction action, Data data) {
           translation: newMessage.translation,
           incoming: false)
       );
-      platformUtils
+      platform
         .sendMessage(activeConversation.deidentifiedPhoneNumber.value, selectedReply.text)
         .then((success) {
           log.verbose('controller.sendMessage reponse status $success');
