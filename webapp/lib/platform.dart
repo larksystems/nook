@@ -2,32 +2,25 @@ import "dart:convert";
 import 'package:http/browser_client.dart';
 import 'package:firebase/firebase.dart' as firebase;
 
-import "logger.dart";
+import 'logger.dart';
 import 'mock_data.dart' as data;
 import 'controller.dart' as controller;
+import 'platform_constants.dart' as platform_constants;
 
 Logger log = new Logger('platform_utils.dart');
 
 const _SEND_TO_MULTI_IDS_ACTION = "send_to_multi_ids";
 
+  init() async {
+    await platform_constants.init();
 
-class PlatformUtils {
-  String publishUrl;
-
-  String _SMS_TOPIC;
-
-
-  PlatformUtils(this.publishUrl, String todo_fix_arg_list) {
-    final projectId = "nook-development"; // TODO load this from config
     firebase.initializeApp(
-      apiKey: "AIzaSyB0XIxv0aTw3cwQlYc2Q_pxQ_XNVgLo9Yo",
-      authDomain: "nook-development.firebaseapp.com",
-      databaseURL: "https://nook-development.firebaseio.com",
-      projectId: projectId,
-      storageBucket: "nook-development.appspot.com",
-      messagingSenderId: "504684479642");
-
-    this._SMS_TOPIC = projectId + "-sms-channel-topic";
+      apiKey: platform_constants.apiKey,
+      authDomain: platform_constants.authDomain,
+      databaseURL: platform_constants.databaseURL,
+      projectId: platform_constants.projectId,
+      storageBucket: platform_constants.storageBucket,
+      messagingSenderId: platform_constants.messagingSenderId);
 
     // Firebase login
     firebaseAuth.onAuthStateChanged.listen((firebase.User user) {
@@ -85,13 +78,13 @@ class PlatformUtils {
       }
     );
 
-    return _sendPubSubMessage(this._SMS_TOPIC, payload);
+    return _sendPubSubMessage(platform_constants.smsTopic, payload);
   }
 
   Future _sendPubSubMessage(String topic, String message) async {
     log.verbose("_sendPubSubMessage $topic $message");
     var client = new BrowserClient();
-    var response = await client.post(publishUrl, body: json.encode({"topic":topic,"message": message }));
+    var response = await client.post(platform_constants.publishUrl, body: json.encode({"topic":topic,"message": message }));
 
     log.verbose("_sendPubSubMessage response ${response.statusCode}, ${response.body}");
     return response.statusCode == 200;
@@ -125,4 +118,3 @@ class PlatformUtils {
   Future updateConversation(Map conversationData) async {
     // TODO(mariana): implement commication with Firebase/PubSub here
   }
-}
