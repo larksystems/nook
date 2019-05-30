@@ -41,24 +41,15 @@ void _populateConversationPanelView(model.Conversation conversation) {
 
 void _populateReplyPanelView(List<model.SuggestedReply> replies) {
   view.replyPanelView.clear();
-  List<String> shortcuts = '1234567890'.split('');
-  for (var reply in replies) {
-    shortcuts.remove(reply.shortcut);
-  }
   String buttonText = SEND_REPLY_BUTTON_TEXT;
   for (var reply in replies) {
-    String shortcut = reply.shortcut != null ? reply.shortcut : shortcuts.removeAt(0);
     int replyIndex = replies.indexOf(reply);
-    view.replyPanelView.addReply(new view.ReplyActionView(reply.text, shortcut, replyIndex, buttonText));
+    view.replyPanelView.addReply(new view.ReplyActionView(reply.text, reply.shortcut, replyIndex, buttonText));
   }
 }
 
 void _populateTagPanelView(List<model.Tag> tags, TagReceiver tagReceiver) {
   view.tagPanelView.clear();
-  List<String> shortcuts = 'abcdefghijklmnopqrstuvwxyz'.split('');
-  for (var tag in tags) {
-    shortcuts.remove(tag.shortcut);
-  }
   String buttonText = '';
   switch (tagReceiver) {
     case TagReceiver.Conversation:
@@ -69,7 +60,6 @@ void _populateTagPanelView(List<model.Tag> tags, TagReceiver tagReceiver) {
       break;
   }
   for (var tag in tags) {
-    String shortcut = tag.shortcut != null ? tag.shortcut : shortcuts.removeAt(0);
-    view.tagPanelView.addTag(new view.TagActionView(tag.text, shortcut, tag.tagId, buttonText));
+    view.tagPanelView.addTag(new view.TagActionView(tag.text, tag.shortcut, tag.tagId, buttonText));
   }
 }
