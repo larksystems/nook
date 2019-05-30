@@ -17,41 +17,50 @@ Map<String, Tag> _tags = {
     DEMO_GENDER: new Tag()
         ..text = DEMO_GENDER
         ..tagId = 'tag-0102'
-        ..type = TagType.Normal,
+        ..type = TagType.Normal
+        ..shortcut = 'g',
     DEMO_AGE: new Tag()
         ..text = DEMO_AGE
         ..tagId = 'tag-7012'
-        ..type = TagType.Normal,
+        ..type = TagType.Normal
+        ..shortcut = 'a',
     DEMO_LOCATION: new Tag()
         ..text = DEMO_LOCATION
         ..tagId = 'tag-5812'
-        ..type = TagType.Normal,
+        ..type = TagType.Normal
+        ..shortcut = 'l',
 
     WATER_QUALITY: new Tag()
         ..text = WATER_QUALITY
         ..tagId = 'tag-ashk'
-        ..type = TagType.Normal,
+        ..type = TagType.Normal
+        ..shortcut = 'q',
     HEALTHCARE: new Tag()
         ..text = HEALTHCARE
         ..tagId = 'tag-alsf'
-        ..type = TagType.Normal,
+        ..type = TagType.Normal
+        ..shortcut = 'h',
     RELIGION: new Tag()
         ..text = RELIGION
         ..tagId = 'tag-ahsx'
-        ..type = TagType.Normal,
+        ..type = TagType.Normal
+        ..shortcut = 'r',
     WEATHER: new Tag()
         ..text = WEATHER
         ..tagId = 'tag-ahos'
-        ..type = TagType.Normal,
+        ..type = TagType.Normal
+        ..shortcut = 'w',
 
     CLEAN_WATER_ACCESS: new Tag()
         ..text = CLEAN_WATER_ACCESS
         ..tagId = 'tag-blas'
-        ..type = TagType.Normal,
+        ..type = TagType.Normal
+        ..shortcut = 'c',
     NO_CLEAN_WATER_ACCESS: new Tag()
         ..text = NO_CLEAN_WATER_ACCESS
         ..tagId = 'tag-boda'
-        ..type = TagType.Important,
+        ..type = TagType.Important
+        ..shortcut = 'n',
   };
 
 List<Conversation> _conversations = [
@@ -451,15 +460,20 @@ List<Conversation> _conversations = [
 
 List<SuggestedReply> _suggestedReplies = [
   new SuggestedReply()
-    ..text = 'Thanks for your message. How old are you?',
+    ..text = 'Thanks for your message. How old are you?'
+    ..shortcut = '1',
   new SuggestedReply()
-    ..text = 'What\'s your gender?',
+    ..text = 'What\'s your gender?'
+    ..shortcut = '2',
   new SuggestedReply()
-    ..text = 'Which area do you live in?',
+    ..text = 'Which area do you live in?'
+    ..shortcut = '3',
   new SuggestedReply()
-    ..text = 'Thanks for your messages. Do you have access to clean water now?',
+    ..text = 'Thanks for your messages. Do you have access to clean water now?'
+    ..shortcut = '4',
   new SuggestedReply()
-    ..text = 'How much do you have to pay for it?',
+    ..text = 'How much do you have to pay for it?'
+    ..shortcut = '5',
 ];
 
 List<Tag> get messageTags => _tags.values.toList();
