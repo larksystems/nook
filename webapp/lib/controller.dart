@@ -202,7 +202,7 @@ void command(UIAction action, Data data) {
     case UIAction.selectConversation:
       ConversationData conversationData = data;
       activeConversation = conversations.singleWhere((conversation) => conversation.deidentifiedPhoneNumber.value == conversationData.deidentifiedPhoneNumber);
-      updateViewForNewActiveConversation();
+      updateViewForConversation(activeConversation);
       break;
     case UIAction.updateTranslation:
       break;
@@ -234,7 +234,7 @@ void command(UIAction action, Data data) {
         nextConversationIndex = nextConversationIndex >= conversations.length ? 0 : nextConversationIndex;
         // Select the next conversation in the list
         activeConversation = conversations[nextConversationIndex];
-        updateViewForNewActiveConversation();
+        updateViewForConversation(activeConversation);
         return;
       }
       // If the shortcut is for a reply, find it and send it
