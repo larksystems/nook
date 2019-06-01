@@ -1,0 +1,10 @@
+{
+    "apiKey" : "AIzaSyB30tg6eRo_jJ1kCWhAdfUly1Il7OSjY3M",
+    "authDomain" : "project-2019-nutrition.firebaseapp.com",
+    "databaseURL" : "https://project-2019-nutrition.firebaseio.com",
+    "projectId" : "project-2019-nutrition",
+    "storageBucket" : "project-2019-nutrition.appspot.com",
+    "messagingSenderId" : "1020066056028",
+    "logUrl" : "https://us-central1-project-2019-nutrition.cloudfunctions.net/Log",
+    "publishUrl" : "https://us-central1-project-2019-nutrition.cloudfunctions.net/Publish"
+}
