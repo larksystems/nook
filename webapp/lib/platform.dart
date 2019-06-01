@@ -125,20 +125,19 @@ firestore.Firestore _firestoreInstance;
     _firestoreInstance.collection(tagCollectionRoot).onSnapshot.listen((querySnapshot) {
       // No need to process local writes to Firebase
       if (querySnapshot.metadata.hasPendingWrites) {
-        log.verbose("Skipping processing of local messages");
+        log.verbose("Skipping processing of local changes");
         return;
       }
 
-      log.verbose("Starting processing ${querySnapshot.docChanges().length} messages.");
+      log.verbose("Starting processing ${querySnapshot.docChanges().length} tags.");
 
       List<Tag> ret = [];
       querySnapshot.docChanges().forEach((documentChange) {
-
         var tag = documentChange.doc;
         log.verbose("Processing ${tag.id}");
         ret.add(_firestoreTagToModelTag(tag));
-        listener(ret);
       });
+      listener(ret);
     });
   }
 
