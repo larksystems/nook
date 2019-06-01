@@ -126,7 +126,7 @@ firestore.Firestore _firestoreInstance;
       // No need to process local writes to Firebase
       if (querySnapshot.metadata.hasPendingWrites) {
         log.verbose("Skipping processing of local messages");
-        // return;
+        return;
       }
 
       log.verbose("Starting processing ${querySnapshot.docChanges().length} messages.");
