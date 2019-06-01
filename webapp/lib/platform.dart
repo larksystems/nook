@@ -70,21 +70,23 @@ const _SEND_TO_MULTI_IDS_ACTION = "send_to_multi_ids";
     //  "message" : "🐱"
     //  }
 
-    String payload = json.encode(
+    Map payload = 
       {
         'action' : _SEND_TO_MULTI_IDS_ACTION,
         'ids' : ids,
         'message' : message
-      }
-    );
+      };
 
     return _sendPubSubMessage(platform_constants.smsTopic, payload);
   }
 
-  Future _sendPubSubMessage(String topic, String message) async {
-    log.verbose("_sendPubSubMessage $topic $message");
+  Future _sendPubSubMessage(String topic, Map payload) async {
+    log.verbose("_sendPubSubMessage $topic $payload");
     var client = new BrowserClient();
-    var response = await client.post(platform_constants.publishUrl, body: json.encode({"topic":topic,"message": message }));
+    String body = json.encode({"topic":topic,"payload": payload });
+    log.verbose("_sendPubSubMessage About to send: ${body}");
+
+    var response = await client.post(platform_constants.publishUrl, body: body);
 
     log.verbose("_sendPubSubMessage response ${response.statusCode}, ${response.body}");
     return response.statusCode == 200;

@@ -40,13 +40,13 @@ exports.Publish = functions.https.onRequest((req, res) => {
           )
         );
       return;
-    } else if (!data.message) {
-        console.log(`Message not provided`);
+    } else if (!data.payload) {
+        console.log(`Payload not provided`);
       res
         .status(500)
         .send(
           new Error(
-            'Message not provided. Make sure you have a "message" property in your request'
+            'Payload not provided. Make sure you have a "payload" property in your request'
           )
         );
       return;
@@ -54,19 +54,17 @@ exports.Publish = functions.https.onRequest((req, res) => {
 
     // References an existing topic
     const topic = pubsub.topic(data.topic);
-    const message = {
-      data: {
-        message: data.message,
-      },
+    const payload = {
+        payload: data.payload,
     };
 
-    console.log(`Publishing Topic: ${topic} Message: ${message}`);
+    console.log(`Publishing Topic: ${topic} Payload: ${payload}`);
 
     publisher = topic.publisher();
   
     // Publishes a message
     publisher
-      .publish(Buffer.from(JSON.stringify(message)))
+      .publish(Buffer.from(JSON.stringify(payload)))
       .then(() => res.status(200).send('Message published.'))
       .catch(err => {
         console.error(err);
