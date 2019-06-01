@@ -20,8 +20,10 @@ enum UIAction {
   updateNote,
   sendMessage,
   addTag,
+  addFilterTag,
   removeConversationTag,
   removeMessageTag,
+  removeFilterTag,
   selectConversation,
   selectMessage,
   deselectMessage,
@@ -64,6 +66,11 @@ class ConversationTagData extends Data {
   ConversationTagData(this.tagId, this.conversationId);
 }
 
+class FilterTagData extends Data {
+  String tagId;
+  FilterTagData(this.tagId);
+}
+
 class ConversationData extends Data {
   String deidentifiedPhoneNumber;
   ConversationData(this.deidentifiedPhoneNumber);
@@ -94,10 +101,12 @@ class KeyPressData extends Data {
 UIActionObject actionObjectState;
 
 List<model.Conversation> conversations;
+List<model.Conversation> filteredConversations;
 List<model.SuggestedReply> suggestedReplies;
 List<model.Tag> availableTags;
 List<model.Tag> conversationTags;
 List<model.Tag> messageTags;
+List<model.Tag> filterTags;
 model.Conversation activeConversation;
 model.Message selectedMessage;
 model.User signedInUser;
@@ -114,24 +123,27 @@ void populateUI() async {
   suggestedReplies = await _suggestedRepliesFromPlatformData(platform.loadSuggestedReplies());
   conversationTags = [];
 
+  // Get any filter tags from the url
+  List<String> filterTagIds = view.urlView.pageUrlFilterTags;
+  filterTags = filterTagIds.map((tagId) => conversationTags.singleWhere((tag) => tag.tagId == tagId)).toList();
+  filteredConversations = filterConversationsByTags(conversations, filterTags);
+  _populateFilterTagsMenu(conversationTags);
+  _populateSelectedFilterTags(filterTags);
+
   // Fill in conversationListPanelView
-  for (var conversation in conversations) {
-    view.conversationListPanelView.addConversation(
-      new view.ConversationSummary(
-        conversation.deidentifiedPhoneNumber.value,
-        conversation.messages.first.text)
-    );
-  }
+  _populateConversationListPanelView(filteredConversations);
 
   // Fill in conversationPanelView
-  activeConversation = conversations[0];
-  view.conversationListPanelView.selectConversation(activeConversation.deidentifiedPhoneNumber.value);
-  _populateConversationPanelView(activeConversation);
+  if (filteredConversations.isNotEmpty) {
+    activeConversation = filteredConversations[0];
+    view.conversationListPanelView.selectConversation(activeConversation.deidentifiedPhoneNumber.value);
+    _populateConversationPanelView(activeConversation);
+    view.replyPanelView.noteText = activeConversation.notes;
+  }
   actionObjectState = UIActionObject.conversation;
 
   // Fill in replyPanelView
   _populateReplyPanelView(suggestedReplies);
-  view.replyPanelView.noteText = activeConversation.notes;
 
   platform.listenForConversationTags(
     (tags) {
@@ -166,6 +178,28 @@ void command(UIAction action, Data data) {
           break;
       }
       break;
+    case UIAction.addFilterTag:
+      FilterTagData tagData = data;
+      model.Tag tag = conversationTags.singleWhere((tag) => tag.tagId == tagData.tagId);
+      if (!filterTags.contains(tag)) {
+        filterTags.add(tag);
+        view.urlView.pageUrlFilterTags = filterTags.map((tag) => tag.tagId).toList();
+        view.conversationFilter.addFilterTag(new view.FilterTagView(tag.text, tag.tagId));
+        filteredConversations = filterConversationsByTags(conversations, filterTags);
+        _populateConversationListPanelView(filteredConversations);
+
+        // Replace conversationPanelView with the first conversation in the new filtered list
+        if (filteredConversations.isNotEmpty) {
+          activeConversation = filteredConversations[0];
+          view.conversationListPanelView.selectConversation(activeConversation.deidentifiedPhoneNumber.value);
+          _populateConversationPanelView(activeConversation);
+          view.replyPanelView.noteText = activeConversation.notes;
+        } else {
+          view.conversationPanelView.clear();
+        }
+        actionObjectState = UIActionObject.conversation;
+      }
+      break;
     case UIAction.removeConversationTag:
       ConversationTagData conversationTagData = data;
       model.Tag tag = conversationTags.singleWhere((tag) => tag.tagId == conversationTagData.tagId);
@@ -181,6 +215,26 @@ void command(UIAction action, Data data) {
       view.conversationPanelView
         .messageViewAtIndex(messageTagData.messageIndex)
         .removeTag(messageTagData.tagId);
+      break;
+    case UIAction.removeFilterTag:
+      FilterTagData tagData = data;
+      model.Tag tag = conversationTags.singleWhere((tag) => tag.tagId == tagData.tagId);
+      filterTags.remove(tag);
+      view.urlView.pageUrlFilterTags = filterTags.map((tag) => tag.tagId).toList();
+      view.conversationFilter.removeFilterTag(tag.tagId);
+      filteredConversations = filterConversationsByTags(conversations, filterTags);
+      _populateConversationListPanelView(filteredConversations);
+
+      // Replace conversationPanelView with the first conversation in the new filtered list
+      if (filteredConversations.isNotEmpty) {
+        activeConversation = filteredConversations[0];
+        view.conversationListPanelView.selectConversation(activeConversation.deidentifiedPhoneNumber.value);
+        _populateConversationPanelView(activeConversation);
+        view.replyPanelView.noteText = activeConversation.notes;
+      } else {
+        view.conversationPanelView.clear();
+      }
+      actionObjectState = UIActionObject.conversation;
       break;
     case UIAction.selectMessage:
       MessageData messageData = data;
@@ -211,7 +265,7 @@ void command(UIAction action, Data data) {
       break;
     case UIAction.selectConversation:
       ConversationData conversationData = data;
-      activeConversation = conversations.singleWhere((conversation) => conversation.deidentifiedPhoneNumber.value == conversationData.deidentifiedPhoneNumber);
+      activeConversation = filteredConversations.singleWhere((conversation) => conversation.deidentifiedPhoneNumber.value == conversationData.deidentifiedPhoneNumber);
       updateViewForConversation(activeConversation);
       break;
     case UIAction.updateTranslation:
@@ -241,10 +295,10 @@ void command(UIAction action, Data data) {
     case UIAction.keyPressed:
       KeyPressData keyPressData = data;
       if (keyPressData.key == 'Enter') {
-        int nextConversationIndex = conversations.indexOf(activeConversation) + 1;
-        nextConversationIndex = nextConversationIndex >= conversations.length ? 0 : nextConversationIndex;
+        int nextConversationIndex = filteredConversations.indexOf(activeConversation) + 1;
+        nextConversationIndex = nextConversationIndex >= filteredConversations.length ? 0 : nextConversationIndex;
         // Select the next conversation in the list
-        activeConversation = conversations[nextConversationIndex];
+        activeConversation = filteredConversations[nextConversationIndex];
         updateViewForConversation(activeConversation);
         return;
       }
@@ -333,4 +387,15 @@ void setMessageTag(model.Tag tag, model.Message message, model.Conversation conv
       .messageViewAtIndex(conversation.messages.indexOf(message))
       .addTag(new view.MessageTagView(tag.text, tag.tagId));
   }
+}
+
+List<model.Conversation> filterConversationsByTags(List<model.Conversation> conversations, List<model.Tag> filterTags) {
+  if (filterTags.isEmpty) return conversations;
+
+  List<model.Conversation> filteredConversations = [];
+  conversations.forEach((conversation) {
+    if (!conversation.tags.toSet().containsAll(filterTags)) return;
+    filteredConversations.add(conversation);
+  });
+  return filteredConversations;
 }
