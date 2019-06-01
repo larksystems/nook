@@ -1,15 +1,21 @@
 import "dart:convert";
+import "dart:async";
+
 import 'package:http/browser_client.dart';
 import 'package:firebase/firebase.dart' as firebase;
+import 'package:firebase/firestore.dart' as firestore;
 
 import 'logger.dart';
 import 'mock_data.dart' as data;
 import 'controller.dart' as controller;
 import 'platform_constants.dart' as platform_constants;
 
+import 'model.dart';
+
 Logger log = new Logger('platform_utils.dart');
 
 const _SEND_TO_MULTI_IDS_ACTION = "send_to_multi_ids";
+firestore.Firestore _firestoreInstance; 
 
   init() async {
     await platform_constants.init();
@@ -34,6 +40,8 @@ const _SEND_TO_MULTI_IDS_ACTION = "send_to_multi_ids";
         photoURL =  '/assets/user_image_placeholder.png';
       }
       controller.command(controller.UIAction.userSignedIn, new controller.UserData(user.displayName, user.email, photoURL));
+
+      _firestoreInstance = firebase.firestore();
     });
   }
 
@@ -98,11 +106,36 @@ const _SEND_TO_MULTI_IDS_ACTION = "send_to_multi_ids";
     return new Future.value(data.conversations);
   }
 
-
-  Future loadConversationTags() {
+  Future<List<Tag>> loadConversationTags() async {
     log.verbose('Loading conversation tags');
+    
+    List<Tag> ret = <Tag>[];
+    Stopwatch sw = new Stopwatch()..start();
 
-    return new Future.value(data.conversationTags);
+    log.verbose("Loading tags");
+
+    final tagCollectionRoot = "/tags";
+    log.verbose("Root of query: $tagCollectionRoot");
+
+    var tagsQuery = await _firestoreInstance.collection(tagCollectionRoot).get();
+    log.verbose("Query constructed");
+
+    tagsQuery.forEach((tag) {
+      log.verbose("Processing ${tag.id}");
+
+      var data = tag.data();
+
+      Tag newTag = new Tag()
+        ..shortcut = data["shortcut"]
+        ..tagId = tag.id
+        ..text = data["text"]
+        ..type = data["type"] == "important" ? TagType.Important : TagType.Normal; // TODO: Generalise
+
+      ret.add(newTag);
+    });
+
+    log.verbose("${ret.length} tags loaded in ${sw.elapsedMilliseconds}ms");
+    return ret;
   }
 
   Future loadMessageTags() {

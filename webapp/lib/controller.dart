@@ -105,6 +105,10 @@ void init() async {
   view.init();
   platform.init();
 
+}
+
+void populateUI() async {
+
   conversations = await _conversationsFromPlatformData(platform.loadConversations());
   suggestedReplies = await _suggestedRepliesFromPlatformData(platform.loadSuggestedReplies());
   conversationTags = await _conversationTagsFromPlatformData(platform.loadConversationTags());
@@ -220,6 +224,7 @@ void command(UIAction action, Data data) {
         ..userName = userData.displayName
         ..userEmail = userData.email;
       view.authView.signIn(userData.displayName, userData.photoUrl);
+      populateUI();
       break;
     case UIAction.signInButtonClicked:
       platform.signIn();
