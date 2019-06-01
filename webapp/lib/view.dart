@@ -237,7 +237,7 @@ abstract class TagView {
 
 class MessageTagView extends TagView {
   MessageTagView(String text, String tagId, [TagColour tagColour = TagColour.None]) : super(text, tagId, tagColour) {
-    _removeButton..onClick.listen((_) {
+    _removeButton.onClick.listen((_) {
       DivElement message = getAncestors(tag).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
       command(UIAction.removeMessageTag, new MessageTagData(tagId, int.parse(message.dataset['message-index'])));
     });
@@ -246,7 +246,7 @@ class MessageTagView extends TagView {
 
 class ConversationTagView extends TagView {
   ConversationTagView(String text, String tagId, [TagColour tagColour = TagColour.None]) : super(text, tagId, tagColour) {
-    _removeButton..onClick.listen((_) {
+    _removeButton.onClick.listen((_) {
       DivElement messageSummary = getAncestors(tag).firstWhere((e) => e.classes.contains('conversation-summary'));
       command(UIAction.removeConversationTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
     });
