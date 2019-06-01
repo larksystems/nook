@@ -116,10 +116,12 @@ firestore.Firestore _firestoreInstance;
         ..type = data["type"] == "important" ? TagType.Important : TagType.Normal; // TODO: Generalise
   }
   
-  void listenForConversationTags(TagsUpdatedListener listener) async {
-    log.verbose('Loading conversation tags');
+  
+  void listenForConversationTags(TagsUpdatedListener listener) => _listenForTags(listener, "/conversationTags");
+  void listenForMessageTags(TagsUpdatedListener listener) => _listenForTags(listener, "/messageTags");
 
-    final tagCollectionRoot = "/conversationTags";
+  void _listenForTags(TagsUpdatedListener listener, String tagCollectionRoot) async {
+    log.verbose('Loading tags from $tagCollectionRoot');
     log.verbose("Root of query: $tagCollectionRoot");
 
     _firestoreInstance.collection(tagCollectionRoot).onSnapshot.listen((querySnapshot) {
@@ -140,6 +142,9 @@ firestore.Firestore _firestoreInstance;
       listener(ret);
     });
   }
+
+
+
 
   Future loadMessageTags() {
     log.verbose('Loading message tags');
