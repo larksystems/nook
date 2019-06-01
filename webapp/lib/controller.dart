@@ -20,7 +20,8 @@ enum UIAction {
   updateNote,
   sendMessage,
   addTag,
-  removeTag,
+  removeConversationTag,
+  removeMessageTag,
   selectConversation,
   selectMessage,
   deselectMessage,
@@ -165,16 +166,14 @@ void command(UIAction action, Data data) {
           break;
       }
       break;
-    case UIAction.removeTag:
-      if (data is ConversationTagData) {
-        ConversationTagData conversationTagData = data;
-        model.Tag tag = conversationTags.singleWhere((tag) => tag.tagId == conversationTagData.tagId);
-        activeConversation.tags.remove(tag);
-        platform.updateConversation(encodeConversationToPlatformData(activeConversation));
-        view.conversationPanelView.removeTag(tag.tagId);
-        break;
-      }
-      assert (data is MessageTagData);
+    case UIAction.removeConversationTag:
+      ConversationTagData conversationTagData = data;
+      model.Tag tag = conversationTags.singleWhere((tag) => tag.tagId == conversationTagData.tagId);
+      activeConversation.tags.remove(tag);
+      platform.updateConversation(encodeConversationToPlatformData(activeConversation));
+      view.conversationPanelView.removeTag(tag.tagId);
+      break;
+    case UIAction.removeMessageTag:
       MessageTagData messageTagData = data;
       var message = activeConversation.messages[messageTagData.messageIndex];
       message.tags.removeWhere((t) => t.tagId == messageTagData.tagId);
@@ -322,7 +321,7 @@ void setConversationTag(model.Tag tag, model.Conversation conversation) {
   if (!conversation.tags.contains(tag)) {
     conversation.tags.add(tag);
     platform.updateConversation(encodeConversationToPlatformData(conversation));
-    view.conversationPanelView.addTags(new view.TagView(tag.text, tag.tagId));
+    view.conversationPanelView.addTags(new view.ConversationTagView(tag.text, tag.tagId));
   }
 }
 
@@ -332,6 +331,6 @@ void setMessageTag(model.Tag tag, model.Message message, model.Conversation conv
     platform.updateConversation(encodeConversationToPlatformData(conversation));
     view.conversationPanelView
       .messageViewAtIndex(conversation.messages.indexOf(message))
-      .addTag(new view.TagView(tag.text, tag.tagId));
+      .addTag(new view.MessageTagView(tag.text, tag.tagId));
   }
 }
