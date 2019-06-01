@@ -59,6 +59,26 @@ void _populateTagPanelView(List<model.Tag> tags, TagReceiver tagReceiver) {
       buttonText = TAG_MESSAGE_BUTTON_TEXT;
       break;
   }
+
+  // Important tags first, then sort by text string
+  tags.sort((t1, t2) {
+    switch (t1.type) {
+      case model.TagType.Important:
+        if (t2.type == model.TagType.Important) {
+          return t1.text.compareTo(t2.text);
+        } else {
+          return -1;
+        }
+        break;
+      default:
+        if (t2.type == model.TagType.Important) {
+          return 1;
+        } else {
+          return t1.text.compareTo(t2.text);
+        }
+    }
+  });
+
   for (var tag in tags) {
     view.tagPanelView.addTag(new view.TagActionView(tag.text, tag.shortcut, tag.tagId, buttonText));
   }

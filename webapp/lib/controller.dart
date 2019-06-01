@@ -111,8 +111,7 @@ void populateUI() async {
 
   conversations = await _conversationsFromPlatformData(platform.loadConversations());
   suggestedReplies = await _suggestedRepliesFromPlatformData(platform.loadSuggestedReplies());
-  conversationTags = await _conversationTagsFromPlatformData(platform.loadConversationTags());
-  messageTags = await _messageTagsFromPlatformData(platform.loadMessageTags());
+  conversationTags = [];
 
   // Fill in conversationListPanelView
   for (var conversation in conversations) {
@@ -133,9 +132,17 @@ void populateUI() async {
   _populateReplyPanelView(suggestedReplies);
   view.replyPanelView.noteText = activeConversation.notes;
 
-  // Fill in tagPanelView
-  availableTags = conversationTags;
-  _populateTagPanelView(availableTags, TagReceiver.Conversation);
+  platform.listenForConversationTags(
+    (tags) {
+      var updatedIds = tags.map((t) => t.tagId).toSet();
+      conversationTags.removeWhere((tag) => updatedIds.contains(tag.tagId));
+      conversationTags.addAll(tags);
+
+      if (actionObjectState == UIActionObject.conversation) {
+        _populateTagPanelView(conversationTags, TagReceiver.Conversation);
+      }
+    }
+  );
 }
 
 void command(UIAction action, Data data) {

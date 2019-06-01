@@ -105,37 +105,40 @@ firestore.Firestore _firestoreInstance;
 
     return new Future.value(data.conversations);
   }
-
-  Future<List<Tag>> loadConversationTags() async {
-    log.verbose('Loading conversation tags');
-    
-    List<Tag> ret = <Tag>[];
-    Stopwatch sw = new Stopwatch()..start();
-
-    log.verbose("Loading tags");
-
-    final tagCollectionRoot = "/tags";
-    log.verbose("Root of query: $tagCollectionRoot");
-
-    var tagsQuery = await _firestoreInstance.collection(tagCollectionRoot).get();
-    log.verbose("Query constructed");
-
-    tagsQuery.forEach((tag) {
-      log.verbose("Processing ${tag.id}");
-
-      var data = tag.data();
-
-      Tag newTag = new Tag()
+  
+  typedef TagsUpdatedListener(List<Tag> tags);
+  Tag _firestoreTagToModelTag(firestore.DocumentSnapshot tag) {
+    var data = tag.data();
+    return new Tag()
         ..shortcut = data["shortcut"]
         ..tagId = tag.id
         ..text = data["text"]
         ..type = data["type"] == "important" ? TagType.Important : TagType.Normal; // TODO: Generalise
+  }
+  
+  void listenForConversationTags(TagsUpdatedListener listener) async {
+    log.verbose('Loading conversation tags');
 
-      ret.add(newTag);
+    final tagCollectionRoot = "/conversationTags";
+    log.verbose("Root of query: $tagCollectionRoot");
+
+    _firestoreInstance.collection(tagCollectionRoot).onSnapshot.listen((querySnapshot) {
+      // No need to process local writes to Firebase
+      if (querySnapshot.metadata.hasPendingWrites) {
+        log.verbose("Skipping processing of local changes");
+        return;
+      }
+
+      log.verbose("Starting processing ${querySnapshot.docChanges().length} tags.");
+
+      List<Tag> ret = [];
+      querySnapshot.docChanges().forEach((documentChange) {
+        var tag = documentChange.doc;
+        log.verbose("Processing ${tag.id}");
+        ret.add(_firestoreTagToModelTag(tag));
+      });
+      listener(ret);
     });
-
-    log.verbose("${ret.length} tags loaded in ${sw.elapsedMilliseconds}ms");
-    return ret;
   }
 
   Future loadMessageTags() {
