@@ -277,14 +277,16 @@ void command(UIAction action, Data data) {
       break;
     case UIAction.userSignedOut:
       signedInUser = null;
-      view.authView.signOut();
+      view.authHeaderView.signOut();
+      view.initSignedOutView();
       break;
     case UIAction.userSignedIn:
       UserData userData = data;
       signedInUser = new model.User()
         ..userName = userData.displayName
         ..userEmail = userData.email;
-      view.authView.signIn(userData.displayName, userData.photoUrl);
+      view.authHeaderView.signIn(userData.displayName, userData.photoUrl);
+      view.initSignedInView();
       populateUI();
       break;
     case UIAction.signInButtonClicked:
