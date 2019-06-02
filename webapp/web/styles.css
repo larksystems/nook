@@ -185,3 +185,28 @@ main {
 .user-name {
     margin: 6px;
 }
+
+.auth-main {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    align-content: flex-start;
+    width: 600px;
+    margin: 100px auto;
+}
+
+img.partner-logo {
+    height: 60px;
+    margin: 16px;
+}
+
+img.partner-logo--unicef {
+    height: 40px;
+    padding-bottom: 3px;
+}
+
+.project-description p {
+    margin: 16px 0;
+    text-align: center;
+}
