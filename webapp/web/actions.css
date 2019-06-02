@@ -16,8 +16,14 @@
   background: #eee;
 }
 
-.action__text {
+.action__description {
   flex:  1 1 auto;
+}
+
+.action__translation {
+  font-size: .8em;
+  padding-left: 16px;
+  color: #666;
 }
 
 .action__button {
