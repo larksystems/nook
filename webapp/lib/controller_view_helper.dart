@@ -51,6 +51,7 @@ void _populateConversationPanelView(model.Conversation conversation) {
 }
 
 void _populateReplyPanelView(List<model.SuggestedReply> replies) {
+  replies.sort((r1, r2) => r1.shortcut.compareTo(r2.shortcut));
   view.replyPanelView.clear();
   String buttonText = SEND_REPLY_BUTTON_TEXT;
   for (var reply in replies) {
