@@ -143,9 +143,6 @@ void populateUI() async {
   }
   actionObjectState = UIActionObject.conversation;
 
-  // Fill in replyPanelView
-  _populateReplyPanelView(suggestedReplies);
-
   platform.listenForConversationTags(
     (tags) {
       var updatedIds = tags.map((t) => t.tagId).toSet();
