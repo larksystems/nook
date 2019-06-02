@@ -193,24 +193,23 @@ void command(UIAction action, Data data) {
     case UIAction.addFilterTag:
       FilterTagData tagData = data;
       model.Tag tag = conversationTags.singleWhere((tag) => tag.tagId == tagData.tagId);
-      if (!filterTags.contains(tag)) {
-        filterTags.add(tag);
-        view.urlView.pageUrlFilterTags = filterTags.map((tag) => tag.tagId).toList();
-        view.conversationFilter.addFilterTag(new view.FilterTagView(tag.text, tag.tagId));
-        filteredConversations = filterConversationsByTags(conversations, filterTags);
-        _populateConversationListPanelView(filteredConversations);
+      if (filterTags.contains(tag)) break;
+      filterTags.add(tag);
+      view.urlView.pageUrlFilterTags = filterTags.map((tag) => tag.tagId).toList();
+      view.conversationFilter.addFilterTag(new view.FilterTagView(tag.text, tag.tagId));
+      filteredConversations = filterConversationsByTags(conversations, filterTags);
+      _populateConversationListPanelView(filteredConversations);
 
-        // Replace conversationPanelView with the first conversation in the new filtered list
-        if (filteredConversations.isNotEmpty) {
-          activeConversation = filteredConversations[0];
-          view.conversationListPanelView.selectConversation(activeConversation.deidentifiedPhoneNumber.value);
-          _populateConversationPanelView(activeConversation);
-          view.replyPanelView.noteText = activeConversation.notes;
-        } else {
-          view.conversationPanelView.clear();
-        }
-        actionObjectState = UIActionObject.conversation;
+      // Replace conversationPanelView with the first conversation in the new filtered list
+      if (filteredConversations.isNotEmpty) {
+        activeConversation = filteredConversations[0];
+        view.conversationListPanelView.selectConversation(activeConversation.deidentifiedPhoneNumber.value);
+        _populateConversationPanelView(activeConversation);
+        view.replyPanelView.noteText = activeConversation.notes;
+      } else {
+        view.conversationPanelView.clear();
       }
+      actionObjectState = UIActionObject.conversation;
       break;
     case UIAction.removeConversationTag:
       ConversationTagData conversationTagData = data;
