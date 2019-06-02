@@ -124,7 +124,7 @@ void populateUI() async {
   conversationTags = [];
   messageTags = [];
 
-  updateViewForConversations(filteredConversations);
+  activeConversation = updateViewForConversations(filteredConversations);
 
   platform.listenForConversationTags(
     (tags) {
@@ -143,7 +143,7 @@ void populateUI() async {
       _populateFilterTagsMenu(conversationTags);
       _populateSelectedFilterTags(filterTags);
 
-      updateViewForConversations(filteredConversations);
+      activeConversation = updateViewForConversations(filteredConversations);
     }
   );
 
@@ -173,11 +173,13 @@ void populateUI() async {
 void command(UIAction action, Data data) {
   switch (action) {
     case UIAction.sendMessage:
+      if (activeConversation == null) return;
       ReplyData replyData = data;
       model.SuggestedReply selectedReply = suggestedReplies[replyData.replyIndex];
       sendReply(selectedReply, activeConversation);
       break;
     case UIAction.addTag:
+      if (activeConversation == null) return;
       TagData tagData = data;
       switch (actionObjectState) {
         case UIActionObject.conversation:
@@ -198,20 +200,10 @@ void command(UIAction action, Data data) {
       view.urlView.pageUrlFilterTags = filterTags.map((tag) => tag.tagId).toList();
       view.conversationFilter.addFilterTag(new view.FilterTagView(tag.text, tag.tagId));
       filteredConversations = filterConversationsByTags(conversations, filterTags);
-      _populateConversationListPanelView(filteredConversations);
-
-      // Replace conversationPanelView with the first conversation in the new filtered list
-      if (filteredConversations.isNotEmpty) {
-        activeConversation = filteredConversations[0];
-        view.conversationListPanelView.selectConversation(activeConversation.deidentifiedPhoneNumber.value);
-        _populateConversationPanelView(activeConversation);
-        view.replyPanelView.noteText = activeConversation.notes;
-      } else {
-        view.conversationPanelView.clear();
-      }
-      actionObjectState = UIActionObject.conversation;
+      activeConversation = updateViewForConversations(filteredConversations);
       break;
     case UIAction.removeConversationTag:
+      if (activeConversation == null) return;
       ConversationTagData conversationTagData = data;
       model.Tag tag = conversationTags.singleWhere((tag) => tag.tagId == conversationTagData.tagId);
       activeConversation.tags.remove(tag);
@@ -219,6 +211,7 @@ void command(UIAction action, Data data) {
       view.conversationPanelView.removeTag(tag.tagId);
       break;
     case UIAction.removeMessageTag:
+      if (activeConversation == null) return;
       MessageTagData messageTagData = data;
       var message = activeConversation.messages[messageTagData.messageIndex];
       message.tags.removeWhere((t) => t.tagId == messageTagData.tagId);
@@ -235,19 +228,10 @@ void command(UIAction action, Data data) {
       view.conversationFilter.removeFilterTag(tag.tagId);
       filteredConversations = filterConversationsByTags(conversations, filterTags);
       _populateConversationListPanelView(filteredConversations);
-
-      // Replace conversationPanelView with the first conversation in the new filtered list
-      if (filteredConversations.isNotEmpty) {
-        activeConversation = filteredConversations[0];
-        view.conversationListPanelView.selectConversation(activeConversation.deidentifiedPhoneNumber.value);
-        _populateConversationPanelView(activeConversation);
-        view.replyPanelView.noteText = activeConversation.notes;
-      } else {
-        view.conversationPanelView.clear();
-      }
-      actionObjectState = UIActionObject.conversation;
+      activeConversation = updateViewForConversations(filteredConversations);
       break;
     case UIAction.selectMessage:
+      if (activeConversation == null) return;
       MessageData messageData = data;
       selectedMessage = activeConversation.messages[messageData.messageIndex];
       view.conversationPanelView.selectMessage(messageData.messageIndex);
@@ -263,6 +247,7 @@ void command(UIAction action, Data data) {
       }
       break;
     case UIAction.deselectMessage:
+      if (activeConversation == null) return;
       switch (actionObjectState) {
         case UIActionObject.conversation:
           break;
@@ -284,6 +269,7 @@ void command(UIAction action, Data data) {
     case UIAction.updateTranslation:
       break;
     case UIAction.updateNote:
+      if (activeConversation == null) return;
       NoteData noteData = data;
       activeConversation.notes = noteData.noteText;
       break;
@@ -306,6 +292,7 @@ void command(UIAction action, Data data) {
       platform.signOut();
       break;
     case UIAction.keyPressed:
+      if (activeConversation == null) return;
       KeyPressData keyPressData = data;
       if (keyPressData.key == 'Enter') {
         int nextConversationIndex = filteredConversations.indexOf(activeConversation) + 1;
@@ -343,18 +330,24 @@ void command(UIAction action, Data data) {
   }
 }
 
-void updateViewForConversations(List<model.Conversation> conversations) {
-  // Fill in conversationListPanelView
+/// Shows the list of [conversations] and selects the first conversation.
+/// Returns the first conversation in the list, or null if list is empty.
+model.Conversation updateViewForConversations(List<model.Conversation> conversations) {
+  // Update conversationListPanelView
   _populateConversationListPanelView(conversations);
-
-  // Fill in conversationPanelView
-  if (conversations.isNotEmpty) {
-    activeConversation = conversations[0];
-    view.conversationListPanelView.selectConversation(activeConversation.deidentifiedPhoneNumber.value);
-    _populateConversationPanelView(activeConversation);
-    view.replyPanelView.noteText = activeConversation.notes;
-  }
   actionObjectState = UIActionObject.conversation;
+
+  // Update conversationPanelView
+  if (conversations.isEmpty) {
+    view.conversationPanelView.clear();
+    view.replyPanelView.noteText = '';
+    return null;
+  }
+  model.Conversation firstConversation = conversations[0];
+  view.conversationListPanelView.selectConversation(firstConversation.deidentifiedPhoneNumber.value);
+  _populateConversationPanelView(firstConversation);
+  view.replyPanelView.noteText = firstConversation.notes;
+  return firstConversation;
 }
 
 void updateViewForConversation(model.Conversation conversation) {
