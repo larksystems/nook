@@ -250,9 +250,7 @@ void command(UIAction action, Data data) {
       MessageData messageData = data;
       selectedMessage = activeConversation.messages[messageData.messageIndex];
       view.conversationPanelView.selectMessage(messageData.messageIndex);
-      if (actionObjectState == UIActionObject.message) {
-        _populateTagPanelView(messageTags, TagReceiver.Message);
-      }
+      _populateTagPanelView(messageTags, TagReceiver.Message);
       switch (actionObjectState) {
         case UIActionObject.conversation:
           actionObjectState = UIActionObject.message;
@@ -268,9 +266,7 @@ void command(UIAction action, Data data) {
         case UIActionObject.message:
           selectedMessage = null;
           view.conversationPanelView.deselectMessage();
-          if (actionObjectState == UIActionObject.conversation) {
-            _populateTagPanelView(conversationTags, TagReceiver.Conversation);
-          }
+          _populateTagPanelView(conversationTags, TagReceiver.Conversation);
           actionObjectState = UIActionObject.conversation;
           break;
       }
