@@ -143,15 +143,6 @@ firestore.Firestore _firestoreInstance;
     });
   }
 
-
-
-
-  Future loadMessageTags() {
-    log.verbose('Loading message tags');
-
-    return new Future.value(data.messageTags);
-  }
-
   Future loadSuggestedReplies() {
     log.verbose('Loading suggested replies');
 
