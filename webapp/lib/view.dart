@@ -533,7 +533,7 @@ class ActionView {
     action.append(shortcutElement);
 
     var textElement = new DivElement()
-      ..classes.add('action__text')
+      ..classes.add('action__description')
       ..text = text;
     action.append(textElement);
 
@@ -545,7 +545,24 @@ class ActionView {
 }
 
 class ReplyActionView extends ActionView {
-  ReplyActionView(String text, String shortcut, int replyIndex, String buttonText) : super(text, shortcut, '$replyIndex', buttonText) {
+  ReplyActionView(String text, String translation, String shortcut, int replyIndex, String buttonText) : super(text, shortcut, '$replyIndex', buttonText) {
+    var descriptionElement = action.querySelector('.action__description')
+      ..text = '';
+
+    var actionText = new DivElement()
+      ..classes.add('action__text')
+      ..text = text;
+    descriptionElement.append(actionText);
+
+    var actionTranslation = new DivElement();
+    actionTranslation
+      ..classes.add('action__translation')
+      ..contentEditable = 'true'
+      ..text = translation
+      ..onInput.listen((_) => command(UIAction.updateTranslation, new ReplyTranslationData(actionTranslation.text, replyIndex)))
+      ..onKeyPress.listen((e) => e.stopPropagation());
+    descriptionElement.append(actionTranslation);
+
     var buttonElement = action.querySelector('.action__button');
     buttonElement.onClick.listen((_) => command(UIAction.sendMessage, new ReplyData(replyIndex)));
   }
