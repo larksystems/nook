@@ -103,7 +103,6 @@ UIActionObject actionObjectState;
 List<model.Conversation> conversations;
 List<model.Conversation> filteredConversations;
 List<model.SuggestedReply> suggestedReplies;
-List<model.Tag> availableTags;
 List<model.Tag> conversationTags;
 List<model.Tag> messageTags;
 List<model.Tag> filterTags;
@@ -263,8 +262,9 @@ void command(UIAction action, Data data) {
       MessageData messageData = data;
       selectedMessage = activeConversation.messages[messageData.messageIndex];
       view.conversationPanelView.selectMessage(messageData.messageIndex);
-      availableTags = messageTags;
-      _populateTagPanelView(availableTags, TagReceiver.Message);
+      if (actionObjectState == UIActionObject.message) {
+        _populateTagPanelView(messageTags, TagReceiver.Message);
+      }
       switch (actionObjectState) {
         case UIActionObject.conversation:
           actionObjectState = UIActionObject.message;
@@ -280,8 +280,9 @@ void command(UIAction action, Data data) {
         case UIActionObject.message:
           selectedMessage = null;
           view.conversationPanelView.deselectMessage();
-          availableTags = conversationTags;
-          _populateTagPanelView(availableTags, TagReceiver.Conversation);
+          if (actionObjectState == UIActionObject.conversation) {
+            _populateTagPanelView(conversationTags, TagReceiver.Conversation);
+          }
           actionObjectState = UIActionObject.conversation;
           break;
       }
@@ -333,18 +334,19 @@ void command(UIAction action, Data data) {
         return;
       }
       // If the shortcut is for a tag, find it and tag it to the conversation/message
-      var selectedTag = availableTags.where((tag) => tag.shortcut == keyPressData.key);
-      if (selectedTag.isNotEmpty) {
-        assert (selectedTag.length == 1);
-        switch (actionObjectState) {
-          case UIActionObject.conversation:
-            setConversationTag(selectedTag.first, activeConversation);
-            break;
-          case UIActionObject.message:
-            setMessageTag(selectedTag.first, selectedMessage, activeConversation);
-            break;
-        }
-        return;
+      switch (actionObjectState) {
+        case UIActionObject.conversation:
+          var selectedTag = conversationTags.where((tag) => tag.shortcut == keyPressData.key);
+          if (selectedTag.isEmpty) break;
+          assert (selectedTag.length == 1);
+          setConversationTag(selectedTag.first, activeConversation);
+          return;
+        case UIActionObject.message:
+          var selectedTag = messageTags.where((tag) => tag.shortcut == keyPressData.key);
+          if (selectedTag.isEmpty) break;
+          assert (selectedTag.length == 1);
+          setMessageTag(selectedTag.first, selectedMessage, activeConversation);
+          return;
       }
       // There is no matching shortcut in either replies or tags, ignore
       break;
@@ -365,8 +367,7 @@ void updateViewForConversation(model.Conversation conversation) {
     case UIActionObject.message:
       selectedMessage = null;
       view.conversationPanelView.deselectMessage();
-      availableTags = conversationTags;
-      _populateTagPanelView(availableTags, TagReceiver.Conversation);
+      _populateTagPanelView(conversationTags, TagReceiver.Conversation);
       break;
   }
 }
