@@ -171,15 +171,22 @@ void populateUI() async {
 }
 
 void command(UIAction action, Data data) {
+  // For most actions, a conversation needs to be active.
+  // Early exist if it's not one of the actions valid without an active conversation.
+  if (activeConversation == null &&
+      action != UIAction.addFilterTag && action != UIAction.removeFilterTag &&
+      action != UIAction.signInButtonClicked && action != UIAction.signOutButtonClicked &&
+      action != UIAction.userSignedIn && action != UIAction.userSignedOut) {
+    return;
+  }
+
   switch (action) {
     case UIAction.sendMessage:
-      if (activeConversation == null) return;
       ReplyData replyData = data;
       model.SuggestedReply selectedReply = suggestedReplies[replyData.replyIndex];
       sendReply(selectedReply, activeConversation);
       break;
     case UIAction.addTag:
-      if (activeConversation == null) return;
       TagData tagData = data;
       switch (actionObjectState) {
         case UIActionObject.conversation:
@@ -203,7 +210,6 @@ void command(UIAction action, Data data) {
       activeConversation = updateViewForConversations(filteredConversations);
       break;
     case UIAction.removeConversationTag:
-      if (activeConversation == null) return;
       ConversationTagData conversationTagData = data;
       model.Tag tag = conversationTags.singleWhere((tag) => tag.tagId == conversationTagData.tagId);
       activeConversation.tags.remove(tag);
@@ -211,7 +217,6 @@ void command(UIAction action, Data data) {
       view.conversationPanelView.removeTag(tag.tagId);
       break;
     case UIAction.removeMessageTag:
-      if (activeConversation == null) return;
       MessageTagData messageTagData = data;
       var message = activeConversation.messages[messageTagData.messageIndex];
       message.tags.removeWhere((t) => t.tagId == messageTagData.tagId);
@@ -231,7 +236,6 @@ void command(UIAction action, Data data) {
       activeConversation = updateViewForConversations(filteredConversations);
       break;
     case UIAction.selectMessage:
-      if (activeConversation == null) return;
       MessageData messageData = data;
       selectedMessage = activeConversation.messages[messageData.messageIndex];
       view.conversationPanelView.selectMessage(messageData.messageIndex);
@@ -247,7 +251,6 @@ void command(UIAction action, Data data) {
       }
       break;
     case UIAction.deselectMessage:
-      if (activeConversation == null) return;
       switch (actionObjectState) {
         case UIActionObject.conversation:
           break;
@@ -269,7 +272,6 @@ void command(UIAction action, Data data) {
     case UIAction.updateTranslation:
       break;
     case UIAction.updateNote:
-      if (activeConversation == null) return;
       NoteData noteData = data;
       activeConversation.notes = noteData.noteText;
       break;
@@ -292,7 +294,6 @@ void command(UIAction action, Data data) {
       platform.signOut();
       break;
     case UIAction.keyPressed:
-      if (activeConversation == null) return;
       KeyPressData keyPressData = data;
       if (keyPressData.key == 'Enter') {
         int nextConversationIndex = filteredConversations.indexOf(activeConversation) + 1;
