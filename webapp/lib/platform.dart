@@ -211,12 +211,12 @@ firestore.Firestore _firestoreInstance;
 
   typedef SuggestedRepliesListener(List<SuggestedReply> replies);
   SuggestedReply _firestoreSuggestedReplyToModelSuggestedReply(firestore.DocumentSnapshot suggestedReply) {
-  var data = suggestedReply.data();
-  return new SuggestedReply()
-      ..shortcut = data["shortcut"]
-      ..suggestedReplyId = suggestedReply.id
-      ..text = data["text"]
-      ..translation = data["translation"];
+    var data = suggestedReply.data();
+    return new SuggestedReply()
+        ..shortcut = data["shortcut"]
+        ..suggestedReplyId = suggestedReply.id
+        ..text = data["text"]
+        ..translation = data["translation"];
   }
 
   void listenForSuggestedReplies(SuggestedRepliesListener listener) {

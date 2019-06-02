@@ -54,6 +54,12 @@ class TranslationData extends Data {
   TranslationData(this.translationText, this.conversationId, this.messageIndex);
 }
 
+class ReplyTranslationData extends Data {
+  String translationText;
+  int replyIndex;
+  ReplyTranslationData(this.translationText, this.replyIndex);
+}
+
 class MessageTagData extends Data {
   String tagId;
   int messageIndex;
@@ -103,7 +109,6 @@ UIActionObject actionObjectState;
 List<model.Conversation> conversations;
 List<model.Conversation> filteredConversations;
 List<model.SuggestedReply> suggestedReplies;
-List<model.Tag> availableTags;
 List<model.Tag> conversationTags;
 List<model.Tag> messageTags;
 List<model.Tag> filterTags;
@@ -119,12 +124,12 @@ void init() async {
 void populateUI() {
 
   conversations = []; 
+  filteredConversations = conversations;
   suggestedReplies = [];
   conversationTags = [];
   messageTags = [];
   
-  // Fill in replyPanelView
-  _populateReplyPanelView(suggestedReplies);
+  activeConversation = updateViewForConversations(filteredConversations);
 
   platform.listenForConversationTags(
     (tags) {
@@ -135,6 +140,8 @@ void populateUI() {
       if (actionObjectState == UIActionObject.conversation) {
         _populateTagPanelView(conversationTags, TagReceiver.Conversation);
       }
+
+     
     }
   );
 
@@ -188,6 +195,15 @@ void populateUI() {
 }
 
 void command(UIAction action, Data data) {
+  // For most actions, a conversation needs to be active.
+  // Early exist if it's not one of the actions valid without an active conversation.
+  if (activeConversation == null &&
+      action != UIAction.addFilterTag && action != UIAction.removeFilterTag &&
+      action != UIAction.signInButtonClicked && action != UIAction.signOutButtonClicked &&
+      action != UIAction.userSignedIn && action != UIAction.userSignedOut) {
+    return;
+  }
+
   switch (action) {
     case UIAction.sendMessage:
       ReplyData replyData = data;
@@ -210,24 +226,12 @@ void command(UIAction action, Data data) {
     case UIAction.addFilterTag:
       FilterTagData tagData = data;
       model.Tag tag = conversationTags.singleWhere((tag) => tag.tagId == tagData.tagId);
-      if (!filterTags.contains(tag)) {
-        filterTags.add(tag);
-        view.urlView.pageUrlFilterTags = filterTags.map((tag) => tag.tagId).toList();
-        view.conversationFilter.addFilterTag(new view.FilterTagView(tag.text, tag.tagId));
-        filteredConversations = filterConversationsByTags(conversations, filterTags);
-        _populateConversationListPanelView(filteredConversations);
-
-        // Replace conversationPanelView with the first conversation in the new filtered list
-        if (filteredConversations.isNotEmpty) {
-          activeConversation = filteredConversations[0];
-          view.conversationListPanelView.selectConversation(activeConversation.deidentifiedPhoneNumber.value);
-          _populateConversationPanelView(activeConversation);
-          view.replyPanelView.noteText = activeConversation.notes;
-        } else {
-          view.conversationPanelView.clear();
-        }
-        actionObjectState = UIActionObject.conversation;
-      }
+      if (filterTags.contains(tag)) break;
+      filterTags.add(tag);
+      view.urlView.pageUrlFilterTags = filterTags.map((tag) => tag.tagId).toList();
+      view.conversationFilter.addFilterTag(new view.FilterTagView(tag.text, tag.tagId));
+      filteredConversations = filterConversationsByTags(conversations, filterTags);
+      activeConversation = updateViewForConversations(filteredConversations);
       break;
     case UIAction.removeConversationTag:
       ConversationTagData conversationTagData = data;
@@ -253,24 +257,15 @@ void command(UIAction action, Data data) {
       view.conversationFilter.removeFilterTag(tag.tagId);
       filteredConversations = filterConversationsByTags(conversations, filterTags);
       _populateConversationListPanelView(filteredConversations);
-
-      // Replace conversationPanelView with the first conversation in the new filtered list
-      if (filteredConversations.isNotEmpty) {
-        activeConversation = filteredConversations[0];
-        view.conversationListPanelView.selectConversation(activeConversation.deidentifiedPhoneNumber.value);
-        _populateConversationPanelView(activeConversation);
-        view.replyPanelView.noteText = activeConversation.notes;
-      } else {
-        view.conversationPanelView.clear();
-      }
-      actionObjectState = UIActionObject.conversation;
+      activeConversation = updateViewForConversations(filteredConversations);
       break;
     case UIAction.selectMessage:
       MessageData messageData = data;
       selectedMessage = activeConversation.messages[messageData.messageIndex];
       view.conversationPanelView.selectMessage(messageData.messageIndex);
-      availableTags = messageTags;
-      _populateTagPanelView(availableTags, TagReceiver.Message);
+      if (actionObjectState == UIActionObject.message) {
+        _populateTagPanelView(messageTags, TagReceiver.Message);
+      }
       switch (actionObjectState) {
         case UIActionObject.conversation:
           actionObjectState = UIActionObject.message;
@@ -286,8 +281,9 @@ void command(UIAction action, Data data) {
         case UIActionObject.message:
           selectedMessage = null;
           view.conversationPanelView.deselectMessage();
-          availableTags = conversationTags;
-          _populateTagPanelView(availableTags, TagReceiver.Conversation);
+          if (actionObjectState == UIActionObject.conversation) {
+            _populateTagPanelView(conversationTags, TagReceiver.Conversation);
+          }
           actionObjectState = UIActionObject.conversation;
           break;
       }
@@ -305,14 +301,16 @@ void command(UIAction action, Data data) {
       break;
     case UIAction.userSignedOut:
       signedInUser = null;
-      view.authView.signOut();
+      view.authHeaderView.signOut();
+      view.initSignedOutView();
       break;
     case UIAction.userSignedIn:
       UserData userData = data;
       signedInUser = new model.User()
         ..userName = userData.displayName
         ..userEmail = userData.email;
-      view.authView.signIn(userData.displayName, userData.photoUrl);
+      view.authHeaderView.signIn(userData.displayName, userData.photoUrl);
+      view.initSignedInView();
       populateUI();
       break;
     case UIAction.signInButtonClicked:
@@ -339,23 +337,44 @@ void command(UIAction action, Data data) {
         return;
       }
       // If the shortcut is for a tag, find it and tag it to the conversation/message
-      var selectedTag = availableTags.where((tag) => tag.shortcut == keyPressData.key);
-      if (selectedTag.isNotEmpty) {
-        assert (selectedTag.length == 1);
-        switch (actionObjectState) {
-          case UIActionObject.conversation:
-            setConversationTag(selectedTag.first, activeConversation);
-            break;
-          case UIActionObject.message:
-            setMessageTag(selectedTag.first, selectedMessage, activeConversation);
-            break;
-        }
-        return;
+      switch (actionObjectState) {
+        case UIActionObject.conversation:
+          var selectedTag = conversationTags.where((tag) => tag.shortcut == keyPressData.key);
+          if (selectedTag.isEmpty) break;
+          assert (selectedTag.length == 1);
+          setConversationTag(selectedTag.first, activeConversation);
+          return;
+        case UIActionObject.message:
+          var selectedTag = messageTags.where((tag) => tag.shortcut == keyPressData.key);
+          if (selectedTag.isEmpty) break;
+          assert (selectedTag.length == 1);
+          setMessageTag(selectedTag.first, selectedMessage, activeConversation);
+          return;
       }
       // There is no matching shortcut in either replies or tags, ignore
       break;
     default:
   }
+}
+
+/// Shows the list of [conversations] and selects the first conversation.
+/// Returns the first conversation in the list, or null if list is empty.
+model.Conversation updateViewForConversations(List<model.Conversation> conversations) {
+  // Update conversationListPanelView
+  _populateConversationListPanelView(conversations);
+  actionObjectState = UIActionObject.conversation;
+
+  // Update conversationPanelView
+  if (conversations.isEmpty) {
+    view.conversationPanelView.clear();
+    view.replyPanelView.noteText = '';
+    return null;
+  }
+  model.Conversation firstConversation = conversations[0];
+  view.conversationListPanelView.selectConversation(firstConversation.deidentifiedPhoneNumber.value);
+  _populateConversationPanelView(firstConversation);
+  view.replyPanelView.noteText = firstConversation.notes;
+  return firstConversation;
 }
 
 void updateViewForConversation(model.Conversation conversation) {
@@ -371,8 +390,7 @@ void updateViewForConversation(model.Conversation conversation) {
     case UIActionObject.message:
       selectedMessage = null;
       view.conversationPanelView.deselectMessage();
-      availableTags = conversationTags;
-      _populateTagPanelView(availableTags, TagReceiver.Conversation);
+      _populateTagPanelView(conversationTags, TagReceiver.Conversation);
       break;
   }
 }

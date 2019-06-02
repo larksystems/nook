@@ -12,7 +12,8 @@ ConversationFilter get conversationFilter => conversationListPanelView.conversat
 ConversationPanelView conversationPanelView;
 ReplyPanelView replyPanelView;
 TagPanelView tagPanelView;
-AuthView authView;
+AuthHeaderView authHeaderView;
+AuthMainView authMainView;
 UrlView urlView;
 
 void init() {
@@ -20,19 +21,39 @@ void init() {
   conversationPanelView = new ConversationPanelView();
   replyPanelView = new ReplyPanelView();
   tagPanelView = new TagPanelView();
-  authView = new AuthView();
+  authHeaderView = new AuthHeaderView();
+  authMainView = new AuthMainView();
   urlView = new UrlView();
+
+  querySelector('header')
+    ..append(authHeaderView.authElement);
+
+  document.onKeyPress.listen((event) => command(UIAction.keyPressed, new KeyPressData(event.key)));
+}
+
+void initSignedInView() {
+  clearMain();
 
   querySelector('main')
     ..append(conversationListPanelView.conversationListPanel)
     ..append(conversationPanelView.conversationPanel)
     ..append(replyPanelView.replyPanel)
     ..append(tagPanelView.tagPanel);
+}
 
-  querySelector('header')
-    ..append(authView.authElement);
+void initSignedOutView() {
+  clearMain();
 
-  document.onKeyPress.listen((event) => command(UIAction.keyPressed, new KeyPressData(event.key)));
+  querySelector('main')
+    ..append(authMainView.authElement);
+}
+
+void clearMain() {
+  conversationListPanelView.conversationListPanel.remove();
+  conversationPanelView.conversationPanel.remove();
+  replyPanelView.replyPanel.remove();
+  tagPanelView.tagPanel.remove();
+  authMainView.authElement.remove();
 }
 
 const REPLY_PANEL_TITLE = 'Suggested responses';
@@ -512,7 +533,7 @@ class ActionView {
     action.append(shortcutElement);
 
     var textElement = new DivElement()
-      ..classes.add('action__text')
+      ..classes.add('action__description')
       ..text = text;
     action.append(textElement);
 
@@ -524,7 +545,24 @@ class ActionView {
 }
 
 class ReplyActionView extends ActionView {
-  ReplyActionView(String text, String shortcut, int replyIndex, String buttonText) : super(text, shortcut, '$replyIndex', buttonText) {
+  ReplyActionView(String text, String translation, String shortcut, int replyIndex, String buttonText) : super(text, shortcut, '$replyIndex', buttonText) {
+    var descriptionElement = action.querySelector('.action__description')
+      ..text = '';
+
+    var actionText = new DivElement()
+      ..classes.add('action__text')
+      ..text = text;
+    descriptionElement.append(actionText);
+
+    var actionTranslation = new DivElement();
+    actionTranslation
+      ..classes.add('action__translation')
+      ..contentEditable = 'true'
+      ..text = translation
+      ..onInput.listen((_) => command(UIAction.updateTranslation, new ReplyTranslationData(actionTranslation.text, replyIndex)))
+      ..onKeyPress.listen((e) => e.stopPropagation());
+    descriptionElement.append(actionTranslation);
+
     var buttonElement = action.querySelector('.action__button');
     buttonElement.onClick.listen((_) => command(UIAction.sendMessage, new ReplyData(replyIndex)));
   }
@@ -553,14 +591,14 @@ class AddAction {
   }
 }
 
-class AuthView {
+class AuthHeaderView {
   DivElement authElement;
   DivElement _userPic;
   DivElement _userName;
   ButtonElement _signOutButton;
   ButtonElement _signInButton;
 
-  AuthView() {
+  AuthHeaderView() {
     authElement = new DivElement()
       ..classes.add('auth');
 
@@ -605,6 +643,44 @@ class AuthView {
 
     // Show sign-in button.
     _signInButton.attributes.remove('hidden');
+  }
+}
+
+class AuthMainView {
+  DivElement authElement;
+  ButtonElement _signInButton;
+
+  final descriptionText1 = 'When you sign in to Nook, you can manage SMS conversations for project X.';
+  final descriptionText2 = 'You can use your Africa\'s Voices or UNICEF email address to log in.';
+
+  AuthMainView() {
+    authElement = new DivElement()
+      ..classes.add('auth-main');
+
+    var logosContainer = new DivElement()
+      ..classes.add('auth-main__logos');
+    authElement.append(logosContainer);
+
+    var avfLogo = new ImageElement(src: 'assets/africas-voices-logo.svg')
+      ..classes.add('partner-logo')
+      ..classes.add('partner-logo--avf');
+    logosContainer.append(avfLogo);
+
+    var unicefLogo = new ImageElement(src: 'assets/UNICEF-logo.svg')
+      ..classes.add('partner-logo')
+      ..classes.add('partner-logo--unicef');
+    logosContainer.append(unicefLogo);
+
+    var shortDescription = new DivElement()
+      ..classes.add('project-description')
+      ..append(new ParagraphElement()..text = descriptionText1)
+      ..append(new ParagraphElement()..text = descriptionText2);
+    authElement.append(shortDescription);
+
+    _signInButton = new ButtonElement()
+      ..text = 'Sign in'
+      ..onClick.listen((_) => command(UIAction.signInButtonClicked, null));
+    authElement.append(_signInButton);
   }
 }
 

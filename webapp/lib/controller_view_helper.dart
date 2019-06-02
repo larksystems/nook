@@ -56,7 +56,7 @@ void _populateReplyPanelView(List<model.SuggestedReply> replies) {
   String buttonText = SEND_REPLY_BUTTON_TEXT;
   for (var reply in replies) {
     int replyIndex = replies.indexOf(reply);
-    view.replyPanelView.addReply(new view.ReplyActionView(reply.text, reply.shortcut, replyIndex, buttonText));
+    view.replyPanelView.addReply(new view.ReplyActionView(reply.text, reply.translation, reply.shortcut, replyIndex, buttonText));
   }
 }
 
