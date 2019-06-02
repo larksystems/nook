@@ -107,15 +107,15 @@ firestore.Firestore _firestoreInstance;
 
   typedef ConversationListener(List<Conversation> conversations);
   DeidentifiedPhoneNumber _firestorePhoneNumberToModelNumber(String deidentifiedNo) {
-  String shortValue = deidentifiedNo.split('uuid-')[1].split('-')[0];
-  return new DeidentifiedPhoneNumber()
-    ..shortValue = shortValue
-    ..value = deidentifiedNo;
+    String shortValue = deidentifiedNo.split('uuid-')[1].split('-')[0];
+    return new DeidentifiedPhoneNumber()
+      ..shortValue = shortValue
+      ..value = deidentifiedNo;
   }
 
   Conversation _firestoreConversationToModelConversation(firestore.DocumentSnapshot conversation) {
     String deidentifiedNo = conversation.id;
-    DeidentifiedPhoneNumber deIdentPhoneNumber = _firestorePhoneNumberToModelNumber(deidentifiedNo);
+    DeidentifiedPhoneNumber deidentPhoneNumber = _firestorePhoneNumberToModelNumber(deidentifiedNo);
     var data = conversation.data();
     Map<String, String> demogInfo = {};
     for (var k in data["demographicsInfo"].keys) {
@@ -143,7 +143,7 @@ firestore.Firestore _firestoreInstance;
     }
 
     return new Conversation()
-      ..deidentifiedPhoneNumber = deIdentPhoneNumber
+      ..deidentifiedPhoneNumber = deidentPhoneNumber
       ..demographicsInfo = demogInfo
       ..tags = tags
       ..messages = messages
@@ -178,7 +178,7 @@ firestore.Firestore _firestoreInstance;
     var data = tag.data();
     return new Tag()
         ..shortcut = data["shortcut"]
-        ..tagId = tag.id 
+        ..tagId = tag.id
         ..text = data["text"]
         ..type = data["type"] == "important" ? TagType.Important : TagType.Normal; // TODO: Generalise
   }

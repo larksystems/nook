@@ -123,14 +123,13 @@ void init() async {
 
 void populateUI() {
 
-  conversations = []; 
+  conversations = [];
   filteredConversations = conversations;
   suggestedReplies = [];
   conversationTags = [];
   messageTags = [];
-  
-  activeConversation = updateViewForConversations(filteredConversations);
 
+  activeConversation = updateViewForConversations(filteredConversations);
   platform.listenForConversationTags(
     (tags) {
       var updatedIds = tags.map((t) => t.tagId).toSet();
