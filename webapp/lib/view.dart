@@ -650,8 +650,8 @@ class AuthMainView {
   DivElement authElement;
   ButtonElement _signInButton;
 
-  final descriptionText1 = 'When you sign in to Nook, you can manage SMS conversations for project X.';
-  final descriptionText2 = 'You can use your Africa\'s Voices or UNICEF email address to log in.';
+  final descriptionText1 = 'Sign in to Nook where you can manage SMS conversations.';
+  final descriptionText2 = 'Please contact Africa\'s Voices for login details.';
 
   AuthMainView() {
     authElement = new DivElement()
