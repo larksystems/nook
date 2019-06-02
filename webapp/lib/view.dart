@@ -8,10 +8,12 @@ import 'controller.dart';
 Logger log = new Logger('view.dart');
 
 ConversationListPanelView conversationListPanelView;
+ConversationFilter get conversationFilter => conversationListPanelView.conversationFilter;
 ConversationPanelView conversationPanelView;
 ReplyPanelView replyPanelView;
 TagPanelView tagPanelView;
 AuthView authView;
+UrlView urlView;
 
 void init() {
   conversationListPanelView = new ConversationListPanelView();
@@ -19,6 +21,7 @@ void init() {
   replyPanelView = new ReplyPanelView();
   tagPanelView = new TagPanelView();
   authView = new AuthView();
+  urlView = new UrlView();
 
   querySelector('main')
     ..append(conversationListPanelView.conversationListPanel)
@@ -253,21 +256,48 @@ class ConversationTagView extends TagView {
   }
 }
 
+class FilterMenuTagView extends TagView {
+  FilterMenuTagView(String text, String tagId, [TagColour tagColour = TagColour.None]) : super(text, tagId, tagColour) {
+    _removeButton.remove();
+    tag.onClick.listen((_) {
+      command(UIAction.addFilterTag, new FilterTagData(tagId));
+    });
+  }
+}
+
+class FilterTagView extends TagView {
+  FilterTagView(String text, String tagId, [TagColour tagColour = TagColour.None]) : super(text, tagId, tagColour) {
+    _removeButton..onClick.listen((_) {
+      command(UIAction.removeFilterTag, new FilterTagData(tagId));
+    });
+  }
+}
+
 class ConversationListPanelView {
   DivElement conversationListPanel;
+  DivElement _conversationList;
+
+  ConversationFilter conversationFilter;
 
   Map<String, ConversationSummary> _phoneToConversations = {};
   ConversationSummary activeConversation;
 
   ConversationListPanelView() {
-    conversationListPanel = new DivElement();
-    conversationListPanel.classes.add('message-list');
+    conversationListPanel = new DivElement()
+      ..classes.add('conversation-list-panel');
+
+    _conversationList = new DivElement()
+      ..classes.add('message-list');
+    conversationListPanel.append(_conversationList);
+
+    conversationFilter = new ConversationFilter();
+    conversationListPanel.append(conversationFilter.conversationFilter);
   }
 
   void addConversation(ConversationSummary conversationSummary, [int position]) {
-    if (position == null || position >= conversationListPanel.children.length) {
+    if (position == null || position >= _conversationList.children.length) {
       // Add at the end
-      conversationListPanel.append(conversationSummary.conversationSummary);
+      _conversationList.append(conversationSummary.conversationSummary);
       _phoneToConversations[conversationSummary.deidentifiedPhoneNumber] = conversationSummary;
       return;
     }
@@ -275,8 +305,8 @@ class ConversationListPanelView {
     if (position < 0) {
       position = 0;
     }
-    Node refChild = conversationListPanel.children[position];
-    conversationListPanel.insertBefore(conversationSummary.conversationSummary, refChild);
+    Node refChild = _conversationList.children[position];
+    _conversationList.insertBefore(conversationSummary.conversationSummary, refChild);
     _phoneToConversations[conversationSummary.deidentifiedPhoneNumber] = conversationSummary;
   }
 
@@ -284,6 +314,71 @@ class ConversationListPanelView {
     activeConversation?._deselect();
     activeConversation = _phoneToConversations[deidentifiedPhoneNumber];
     activeConversation._select();
+  }
+
+  void clearConversationList() {
+    int conversationsNo = _conversationList.children.length;
+    for (int i = 0; i < conversationsNo; i++) {
+      _conversationList.firstChild.remove();
+    }
+    assert(_conversationList.children.length == 0);
+  }
+}
+
+class ConversationFilter {
+  DivElement conversationFilter;
+  DivElement _tagsContainer;
+  DivElement _tagsMenu;
+  DivElement _tagsMenuContainer;
+
+  ConversationFilter() {
+    conversationFilter = new DivElement()
+      ..classes.add('conversation-filter');
+
+    var descriptionText = new DivElement()
+      ..text = 'Filter conversations ▹';
+    conversationFilter.append(descriptionText);
+
+    _tagsMenu = new DivElement()
+      ..classes.add('tags-menu');
+
+    _tagsMenuContainer = new DivElement()
+      ..classes.add('tags-menu__container');
+    _tagsMenu.append(_tagsMenuContainer);
+
+    conversationFilter.append(_tagsMenu);
+
+    _tagsContainer = new DivElement()
+      ..classes.add('tags-container');
+    conversationFilter.append(_tagsContainer);
+  }
+
+  void addMenuTag(FilterMenuTagView tag) {
+    _tagsMenuContainer.append(tag.tag);
+  }
+
+  void addFilterTag(FilterTagView tag) {
+    _tagsContainer.append(tag.tag);
+  }
+
+  void removeFilterTag(String tagId) {
+    _tagsContainer.children.removeWhere((Element d) => d.dataset["id"] == tagId);
+  }
+
+  void clearSelectedTags() {
+    int tagsNo = _tagsContainer.children.length;
+    for (int i = 0; i < tagsNo; i++) {
+      _tagsContainer.firstChild.remove();
+    }
+    assert(_tagsContainer.children.length == 0);
+  }
+
+  void clearMenuTags() {
+    int tagsNo = _tagsMenuContainer.children.length;
+    for (int i = 0; i < tagsNo; i++) {
+      _tagsMenuContainer.firstChild.remove();
+    }
+    assert(_tagsMenuContainer.children.length == 0);
   }
 }
 
@@ -510,5 +605,28 @@ class AuthView {
 
     // Show sign-in button.
     _signInButton.attributes.remove('hidden');
+  }
+}
+
+class UrlView {
+
+  static const String queryFilterKey = 'filter';
+
+  List<String> get pageUrlFilterTags {
+    var uri = Uri.parse(window.location.href);
+    if (uri.queryParameters.containsKey(queryFilterKey)) {
+      List<String> filterTags = uri.queryParameters[queryFilterKey].split(' ');
+      filterTags.removeWhere((tag) => tag == "");
+      return filterTags;
+    }
+    return [];
+  }
+
+  set pageUrlFilterTags(List<String> filterTags) {
+    var uri = Uri.parse(window.location.href);
+    Map<String, String> queryParameters = new Map.from(uri.queryParameters);
+    queryParameters['filter'] = filterTags.join(' ');
+    uri = uri.replace(queryParameters: queryParameters);
+    window.history.pushState('', '', uri.toString());
   }
 }
