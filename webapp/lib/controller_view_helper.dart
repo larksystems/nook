@@ -12,6 +12,17 @@ enum TagReceiver {
 
 // Functions to populate the views with model objects.
 
+void _populateConversationListPanelView(List<model.Conversation> conversations) {
+  view.conversationListPanelView.clearConversationList();
+  for (var conversation in filteredConversations) {
+    view.conversationListPanelView.addConversation(
+      new view.ConversationSummary(
+        conversation.deidentifiedPhoneNumber.value,
+        conversation.messages.first.text)
+    );
+  }
+}
+
 void _populateConversationPanelView(model.Conversation conversation) {
   view.conversationPanelView.clear();
   view.conversationPanelView
@@ -81,5 +92,19 @@ void _populateTagPanelView(List<model.Tag> tags, TagReceiver tagReceiver) {
 
   for (var tag in tags) {
     view.tagPanelView.addTag(new view.TagActionView(tag.text, tag.shortcut, tag.tagId, buttonText));
+  }
+}
+
+void _populateFilterTagsMenu(List<model.Tag> tags) {
+  view.conversationFilter.clearMenuTags();
+  for (var tag in tags) {
+    view.conversationFilter.addMenuTag(new view.FilterMenuTagView(tag.text, tag.tagId));
+  }
+}
+
+void _populateSelectedFilterTags(List<model.Tag> tags) {
+  view.conversationFilter.clearSelectedTags();
+  for (var tag in tags) {
+    view.conversationFilter.addFilterTag(new view.FilterTagView(tag.text, tag.tagId));
   }
 }
