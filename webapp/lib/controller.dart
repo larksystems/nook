@@ -112,6 +112,7 @@ void populateUI() async {
   conversations = await _conversationsFromPlatformData(platform.loadConversations());
   suggestedReplies = await _suggestedRepliesFromPlatformData(platform.loadSuggestedReplies());
   conversationTags = [];
+  messageTags = [];
 
   // Fill in conversationListPanelView
   for (var conversation in conversations) {
@@ -143,6 +144,20 @@ void populateUI() async {
       }
     }
   );
+
+  platform.listenForMessageTags(
+    (tags) {
+      var updatedIds = tags.map((t) => t.tagId).toSet();
+      messageTags.removeWhere((tag) => updatedIds.contains(tag.tagId));
+      messageTags.addAll(tags);
+
+      if (actionObjectState == UIActionObject.message) {
+        _populateTagPanelView(messageTags, TagReceiver.Message);
+      }
+    }
+  );
+
+
 }
 
 void command(UIAction action, Data data) {
