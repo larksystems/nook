@@ -118,20 +118,18 @@ model.User signedInUser;
 
 void init() async {
   view.init();
-  platform.init();
-
+  await platform.init();
 }
 
-void populateUI() async {
+void populateUI() {
 
-  conversations = await _conversationsFromPlatformData(platform.loadConversations());
+  conversations = [];
   filteredConversations = conversations;
   suggestedReplies = [];
   conversationTags = [];
   messageTags = [];
 
   activeConversation = updateViewForConversations(filteredConversations);
-
   platform.listenForConversationTags(
     (tags) {
       var updatedIds = tags.map((t) => t.tagId).toSet();
@@ -141,15 +139,6 @@ void populateUI() async {
       if (actionObjectState == UIActionObject.conversation) {
         _populateTagPanelView(conversationTags, TagReceiver.Conversation);
       }
-
-      // Get any filter tags from the url
-      List<String> filterTagIds = view.urlView.pageUrlFilterTags;
-      filterTags = filterTagIds.map((tagId) => conversationTags.singleWhere((tag) => tag.tagId == tagId)).toList();
-      filteredConversations = filterConversationsByTags(conversations, filterTags);
-      _populateFilterTagsMenu(conversationTags);
-      _populateSelectedFilterTags(filterTags);
-
-      activeConversation = updateViewForConversations(filteredConversations);
     }
   );
 
@@ -174,6 +163,22 @@ void populateUI() async {
       _populateReplyPanelView(suggestedReplies);
     }
   );
+
+  platform.listenForConversations(
+    (updatedConversations) {
+      var updatedIds = updatedConversations.map((t) => t.deidentifiedPhoneNumber.value).toSet();
+      conversations.removeWhere((conversation) => updatedIds.contains(conversation.deidentifiedPhoneNumber.value));
+      conversations.addAll(updatedConversations);
+
+      // Get any filter tags from the url
+      List<String> filterTagIds = view.urlView.pageUrlFilterTags;
+      filterTags = filterTagIds.map((tagId) => conversationTags.singleWhere((tag) => tag.tagId == tagId)).toList();
+      filteredConversations = filterConversationsByTags(conversations, filterTags);
+      _populateFilterTagsMenu(conversationTags);
+      _populateSelectedFilterTags(filterTags);
+
+      activeConversation = updateViewForConversations(filteredConversations);
+    });
 }
 
 void command(UIAction action, Data data) {

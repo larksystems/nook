@@ -39,9 +39,8 @@ firestore.Firestore _firestoreInstance;
       if (photoURL == null) {
         photoURL =  '/assets/user_image_placeholder.png';
       }
-      controller.command(controller.UIAction.userSignedIn, new controller.UserData(user.displayName, user.email, photoURL));
-
       _firestoreInstance = firebase.firestore();
+      controller.command(controller.UIAction.userSignedIn, new controller.UserData(user.displayName, user.email, photoURL));
     });
   }
 
@@ -105,6 +104,74 @@ firestore.Firestore _firestoreInstance;
 
     return new Future.value(data.conversations);
   }
+
+  typedef ConversationListener(List<Conversation> conversations);
+  DeidentifiedPhoneNumber _firestorePhoneNumberToModelNumber(String deidentifiedNo) {
+    String shortValue = deidentifiedNo.split('uuid-')[1].split('-')[0];
+    return new DeidentifiedPhoneNumber()
+      ..shortValue = shortValue
+      ..value = deidentifiedNo;
+  }
+
+  Conversation _firestoreConversationToModelConversation(firestore.DocumentSnapshot conversation) {
+    String deidentifiedNo = conversation.id;
+    DeidentifiedPhoneNumber deidentPhoneNumber = _firestorePhoneNumberToModelNumber(deidentifiedNo);
+    var data = conversation.data();
+    Map<String, String> demogInfo = {};
+    for (var k in data["demographicsInfo"].keys) {
+      demogInfo[k] = data["demographicsInfo"].toString();
+    }
+    
+    List<Tag> tags = [];
+    String notes = ""; // TODO
+
+    List<Message> messages = [];
+    for (Map messageData in data["messages"]) {
+     //{datetime: 2019-05-10T15:19:13.567929+00:00, direction: out, tags: [], text: test message, translation: }
+      MessageDirection direction = messageData["direction"] == "in" ? MessageDirection.In : MessageDirection.Out;
+      DateTime dateTime = DateTime.parse(messageData["datetime"]);
+      String text = messageData["text"];
+      String translation = messageData["translation"];
+      messages.add(
+        new Message()
+          ..direction = direction
+          ..datetime = dateTime
+          ..text = text
+          ..translation = translation
+          ..tags = [] // TODO
+      );
+    }
+
+    return new Conversation()
+      ..deidentifiedPhoneNumber = deidentPhoneNumber
+      ..demographicsInfo = demogInfo
+      ..tags = tags
+      ..messages = messages
+      ..notes = notes;
+  }
+
+  void listenForConversations(ConversationListener listener) async {
+    final conversationsQueryRoot = "/nook_conversations";
+    log.verbose("Root of query: $conversationsQueryRoot");
+
+    _firestoreInstance.collection(conversationsQueryRoot).onSnapshot.listen((querySnapshot) {
+      // No need to process local writes to Firebase
+      if (querySnapshot.metadata.hasPendingWrites) {
+        log.verbose("Skipping processing of local changes");
+        return;
+      }
+
+      log.verbose("Starting processing ${querySnapshot.docChanges().length} tags.");
+
+      List<Conversation> ret = [];
+      querySnapshot.docChanges().forEach((documentChange) {
+        var conversation = documentChange.doc;
+        log.verbose("Processing ${conversation.id}");
+        ret.add(_firestoreConversationToModelConversation(conversation));
+      });
+      listener(ret);
+    });
+  }
   
   typedef TagsUpdatedListener(List<Tag> tags);
   Tag _firestoreTagToModelTag(firestore.DocumentSnapshot tag) {
@@ -115,7 +182,6 @@ firestore.Firestore _firestoreInstance;
         ..text = data["text"]
         ..type = data["type"] == "important" ? TagType.Important : TagType.Normal; // TODO: Generalise
   }
-  
   
   void listenForConversationTags(TagsUpdatedListener listener) => _listenForTags(listener, "/conversationTags");
   void listenForMessageTags(TagsUpdatedListener listener) => _listenForTags(listener, "/messageTags");
