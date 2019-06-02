@@ -25,6 +25,7 @@ class Message {
 }
 
 class SuggestedReply {
+  String suggestedReplyId;
   String text;
   String translation;
   String shortcut;
