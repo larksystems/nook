@@ -120,7 +120,7 @@ void init() async {
 void populateUI() async {
 
   conversations = await _conversationsFromPlatformData(platform.loadConversations());
-  suggestedReplies = await _suggestedRepliesFromPlatformData(platform.loadSuggestedReplies());
+  suggestedReplies = [];
   conversationTags = [];
   messageTags = [];
 
@@ -170,7 +170,15 @@ void populateUI() async {
     }
   );
 
+  platform.listenForSuggestedReplies(
+    (updatedReplies) {
+      var updatedIds = updatedReplies.map((t) => t.suggestedReplyId).toSet();
+      suggestedReplies.removeWhere((suggestedReply) => updatedIds.contains(suggestedReply.suggestedReplyId));
+      suggestedReplies.addAll(updatedReplies);
 
+      _populateReplyPanelView(suggestedReplies);
+    }
+  );
 }
 
 void command(UIAction action, Data data) {

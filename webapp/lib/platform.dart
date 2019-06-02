@@ -143,10 +143,37 @@ firestore.Firestore _firestoreInstance;
     });
   }
 
-  Future loadSuggestedReplies() {
-    log.verbose('Loading suggested replies');
+  typedef SuggestedRepliesListener(List<SuggestedReply> replies);
+  SuggestedReply _firestoreSuggestedReplyToModelSuggestedReply(firestore.DocumentSnapshot suggestedReply) {
+    var data = suggestedReply.data();
+    return new SuggestedReply()
+        ..shortcut = data["shortcut"]
+        ..suggestedReplyId = suggestedReply.id
+        ..text = data["text"]
+        ..translation = data["translation"];
+  }
 
-    return new Future.value(data.suggestedReplies);
+  void listenForSuggestedReplies(SuggestedRepliesListener listener) {
+    final suggestedRepliesRoot = "/suggestedReplies";
+    log.verbose('Loading tags from $suggestedRepliesRoot');
+
+    _firestoreInstance.collection(suggestedRepliesRoot).onSnapshot.listen((querySnapshot) {
+      // No need to process local writes to Firebase
+      if (querySnapshot.metadata.hasPendingWrites) {
+        log.verbose("Skipping processing of local changes");
+        return;
+      }
+
+      log.verbose("Starting processing ${querySnapshot.docChanges().length} suggested replies.");
+
+      List<SuggestedReply> ret = [];
+      querySnapshot.docChanges().forEach((documentChange) {
+        var suggestedReply = documentChange.doc;
+        log.verbose("Processing ${suggestedReply.id}");
+        ret.add(_firestoreSuggestedReplyToModelSuggestedReply(suggestedReply));
+      });
+      listener(ret);
+    });
   }
 
   Future updateConversation(Map conversationData) async {
