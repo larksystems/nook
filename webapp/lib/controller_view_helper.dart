@@ -18,14 +18,14 @@ void _populateConversationPanelView(model.Conversation conversation) {
     ..deidentifiedPhoneNumber = conversation.deidentifiedPhoneNumber.shortValue
     ..demographicsInfo = conversation.demographicsInfo.values.join(', ');
   for (var tag in conversation.tags) {
-    view.conversationPanelView.addTags(new view.TagView(tag.text, tag.tagId));
+    view.conversationPanelView.addTags(new view.ConversationTagView(tag.text, tag.tagId));
   }
 
   for (int i = 0; i < conversation.messages.length; i++) {
     var message = conversation.messages[i];
     List<view.TagView> tags = [];
     for (var tag in message.tags) {
-      tags.add(new view.TagView(tag.text, tag.tagId));
+      tags.add(new view.MessageTagView(tag.text, tag.tagId));
     }
     view.conversationPanelView.addMessage(
       new view.MessageView(

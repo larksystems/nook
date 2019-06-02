@@ -202,8 +202,10 @@ enum TagColour {
   Red
 }
 
-class TagView {
+abstract class TagView {
   DivElement tag;
+  SpanElement _tagText;
+  SpanElement _removeButton;
 
   TagView(String text, String tagId, [TagColour tagColour = TagColour.None]) {
     tag = new DivElement()
@@ -222,24 +224,32 @@ class TagView {
       default:
     }
 
-    var tagText = new SpanElement()
+    _tagText = new SpanElement()
       ..classes.add('tag__name')
       ..text = text;
-    tag.append(tagText);
+    tag.append(_tagText);
 
-    var removeButton = new SpanElement()
-      ..classes.add('tag__remove')
-      ..onClick.listen((_) {
-        DivElement message = getAncestors(tag).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
-        if (message == null) {
-          // Conversation tag not message tag
-          DivElement messageSummary = getAncestors(tag).firstWhere((e) => e.classes.contains('conversation-summary'));
-          command(UIAction.removeTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
-        } else {
-          command(UIAction.removeTag, new MessageTagData(tagId, int.parse(message.dataset['message-index'])));
-        }
-      });
-    tag.append(removeButton);
+    _removeButton = new SpanElement()
+      ..classes.add('tag__remove');
+    tag.append(_removeButton);
+  }
+}
+
+class MessageTagView extends TagView {
+  MessageTagView(String text, String tagId, [TagColour tagColour = TagColour.None]) : super(text, tagId, tagColour) {
+    _removeButton.onClick.listen((_) {
+      DivElement message = getAncestors(tag).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
+      command(UIAction.removeMessageTag, new MessageTagData(tagId, int.parse(message.dataset['message-index'])));
+    });
+  }
+}
+
+class ConversationTagView extends TagView {
+  ConversationTagView(String text, String tagId, [TagColour tagColour = TagColour.None]) : super(text, tagId, tagColour) {
+    _removeButton.onClick.listen((_) {
+      DivElement messageSummary = getAncestors(tag).firstWhere((e) => e.classes.contains('conversation-summary'));
+      command(UIAction.removeConversationTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
+    });
   }
 }
 
