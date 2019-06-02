@@ -140,8 +140,6 @@ void populateUI() {
       if (actionObjectState == UIActionObject.conversation) {
         _populateTagPanelView(conversationTags, TagReceiver.Conversation);
       }
-
-     
     }
   );
 
@@ -180,18 +178,8 @@ void populateUI() {
       _populateFilterTagsMenu(conversationTags);
       _populateSelectedFilterTags(filterTags);
 
-      // Fill in conversationListPanelView
-      _populateConversationListPanelView(filteredConversations);
-
-      // Fill in conversationPanelView
-      if (filteredConversations.isNotEmpty) {
-        activeConversation = filteredConversations.last;
-        view.conversationListPanelView.selectConversation(activeConversation.deidentifiedPhoneNumber.value);
-        _populateConversationPanelView(activeConversation);
-        view.replyPanelView.noteText = activeConversation.notes;
-      }
+      activeConversation = updateViewForConversations(filteredConversations);
     });
-  actionObjectState = UIActionObject.conversation;
 }
 
 void command(UIAction action, Data data) {
