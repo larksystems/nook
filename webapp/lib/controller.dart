@@ -113,36 +113,16 @@ model.User signedInUser;
 
 void init() async {
   view.init();
-  platform.init();
-
+  await platform.init();
 }
 
-void populateUI() async {
+void populateUI() {
 
-  conversations = await _conversationsFromPlatformData(platform.loadConversations());
+  conversations = []; 
   suggestedReplies = [];
   conversationTags = [];
   messageTags = [];
-
-  // Get any filter tags from the url
-  List<String> filterTagIds = view.urlView.pageUrlFilterTags;
-  filterTags = filterTagIds.map((tagId) => conversationTags.singleWhere((tag) => tag.tagId == tagId)).toList();
-  filteredConversations = filterConversationsByTags(conversations, filterTags);
-  _populateFilterTagsMenu(conversationTags);
-  _populateSelectedFilterTags(filterTags);
-
-  // Fill in conversationListPanelView
-  _populateConversationListPanelView(filteredConversations);
-
-  // Fill in conversationPanelView
-  if (filteredConversations.isNotEmpty) {
-    activeConversation = filteredConversations[0];
-    view.conversationListPanelView.selectConversation(activeConversation.deidentifiedPhoneNumber.value);
-    _populateConversationPanelView(activeConversation);
-    view.replyPanelView.noteText = activeConversation.notes;
-  }
-  actionObjectState = UIActionObject.conversation;
-
+  
   // Fill in replyPanelView
   _populateReplyPanelView(suggestedReplies);
 
@@ -179,6 +159,32 @@ void populateUI() async {
       _populateReplyPanelView(suggestedReplies);
     }
   );
+
+  platform.listenForConversations(
+    (updatedConversations) {
+      var updatedIds = updatedConversations.map((t) => t.deidentifiedPhoneNumber.value).toSet();
+      conversations.removeWhere((conversation) => updatedIds.contains(conversation.deidentifiedPhoneNumber.value));
+      conversations.addAll(updatedConversations);
+
+      // Get any filter tags from the url
+      List<String> filterTagIds = view.urlView.pageUrlFilterTags;
+      filterTags = filterTagIds.map((tagId) => conversationTags.singleWhere((tag) => tag.tagId == tagId)).toList();
+      filteredConversations = filterConversationsByTags(conversations, filterTags);
+      _populateFilterTagsMenu(conversationTags);
+      _populateSelectedFilterTags(filterTags);
+
+      // Fill in conversationListPanelView
+      _populateConversationListPanelView(filteredConversations);
+
+      // Fill in conversationPanelView
+      if (filteredConversations.isNotEmpty) {
+        activeConversation = filteredConversations.last;
+        view.conversationListPanelView.selectConversation(activeConversation.deidentifiedPhoneNumber.value);
+        _populateConversationPanelView(activeConversation);
+        view.replyPanelView.noteText = activeConversation.notes;
+      }
+    });
+  actionObjectState = UIActionObject.conversation;
 }
 
 void command(UIAction action, Data data) {
