@@ -54,6 +54,12 @@ class TranslationData extends Data {
   TranslationData(this.translationText, this.conversationId, this.messageIndex);
 }
 
+class ReplyTranslationData extends Data {
+  String translationText;
+  int replyIndex;
+  ReplyTranslationData(this.translationText, this.replyIndex);
+}
+
 class MessageTagData extends Data {
   String tagId;
   int messageIndex;
