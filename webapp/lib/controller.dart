@@ -345,19 +345,39 @@ void command(UIAction action, Data data) {
 model.Conversation updateViewForConversations(List<model.Conversation> conversations) {
   // Update conversationListPanelView
   _populateConversationListPanelView(conversations);
-  actionObjectState = UIActionObject.conversation;
 
   // Update conversationPanelView
   if (conversations.isEmpty) {
     view.conversationPanelView.clear();
     view.replyPanelView.noteText = '';
+    actionObjectState = UIActionObject.conversation;
     return null;
   }
-  model.Conversation firstConversation = conversations[0];
-  view.conversationListPanelView.selectConversation(firstConversation.deidentifiedPhoneNumber.value);
-  _populateConversationPanelView(firstConversation);
-  view.replyPanelView.noteText = firstConversation.notes;
-  return firstConversation;
+
+  if (activeConversation == null) {
+    model.Conversation conversationToSelect = conversations.first;
+    view.conversationListPanelView.selectConversation(conversationToSelect.deidentifiedPhoneNumber.value);
+    _populateConversationPanelView(conversationToSelect);
+    view.replyPanelView.noteText = conversationToSelect.notes;
+    actionObjectState = UIActionObject.conversation;
+    return conversationToSelect;
+  }
+
+  var matches = conversations.where((conversation) => conversation.deidentifiedPhoneNumber.value == activeConversation.deidentifiedPhoneNumber.value).toList();
+  if (matches.length == 0) {
+    model.Conversation conversationToSelect = conversations.first;
+    view.conversationListPanelView.selectConversation(conversationToSelect.deidentifiedPhoneNumber.value);
+    _populateConversationPanelView(conversationToSelect);
+    view.replyPanelView.noteText = conversationToSelect.notes;
+    actionObjectState = UIActionObject.conversation;
+    return conversationToSelect;
+  }
+
+  if (matches.length > 1) {
+    log.warning('Two conversations seem to have the same deidentified phone number: activeConversation.deidentifiedPhoneNumber.value');
+  }
+  view.conversationListPanelView.selectConversation(activeConversation.deidentifiedPhoneNumber.value);
+  return activeConversation;
 }
 
 void updateViewForConversation(model.Conversation conversation) {
