@@ -103,6 +103,7 @@ class ConversationPanelView {
   void addMessage(MessageView message) {
     _messages.append(message.message);
     _messageViews.add(message);
+    message.message.scrollIntoView();
   }
 
   void addTags(TagView tag) {
@@ -335,6 +336,7 @@ class ConversationListPanelView {
     activeConversation?._deselect();
     activeConversation = _phoneToConversations[deidentifiedPhoneNumber];
     activeConversation._select();
+    activeConversation.conversationSummary.scrollIntoView();
   }
 
   void clearConversationList() {
