@@ -6,7 +6,6 @@ import 'package:firebase/firebase.dart' as firebase;
 import 'package:firebase/firestore.dart' as firestore;
 
 import 'logger.dart';
-import 'mock_data.dart' as data;
 import 'controller.dart' as controller;
 import 'platform_constants.dart' as platform_constants;
 
@@ -97,12 +96,6 @@ firestore.Firestore _firestoreInstance;
 
     log.verbose("_sendPubSubMessage response ${response.statusCode}, ${response.body}");
     return response.statusCode == 200;
-  }
-
-  Future loadConversations() {
-    log.verbose('Loading conversations');
-
-    return new Future.value(data.conversations);
   }
 
   typedef ConversationListener(List<Conversation> conversations);
