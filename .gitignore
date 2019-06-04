@@ -17,3 +17,4 @@ node_modules
 .DS_Store
 /public
 /.firebase
+/webapp/web/assets/firebase_constants.json
