@@ -1,4 +1,4 @@
-LogLevel logLevel = LogLevel.DEBUG;
+LogLevel logLevel = LogLevel.VERBOSE;
 
 enum LogLevel {
   ERROR,
