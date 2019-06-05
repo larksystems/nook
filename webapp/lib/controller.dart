@@ -281,6 +281,7 @@ void command(UIAction action, Data data) {
     case UIAction.updateNote:
       NoteData noteData = data;
       activeConversation.notes = noteData.noteText;
+      platform.updateNotes(activeConversation);
       break;
     case UIAction.userSignedOut:
       signedInUser = null;
