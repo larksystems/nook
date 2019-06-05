@@ -220,11 +220,11 @@ class MessageView {
   }
 }
 
-enum TagColour {
+enum TagStyle {
   None,
   Green,
   Yellow,
-  Red
+  Red,
 }
 
 abstract class TagView {
@@ -232,18 +232,18 @@ abstract class TagView {
   SpanElement _tagText;
   SpanElement _removeButton;
 
-  TagView(String text, String tagId, [TagColour tagColour = TagColour.None]) {
+  TagView(String text, String tagId, [TagStyle tagStyle = TagStyle.None]) {
     tag = new DivElement()
       ..classes.add('tag')
       ..dataset['id'] = tagId;
-    switch (tagColour) {
-      case TagColour.Green:
+    switch (tagStyle) {
+      case TagStyle.Green:
         tag.classes.add('tag--green');
         break;
-      case TagColour.Yellow:
+      case TagStyle.Yellow:
         tag.classes.add('tag--yellow');
         break;
-      case TagColour.Red:
+      case TagStyle.Red:
         tag.classes.add('tag--red');
         break;
       default:
@@ -261,7 +261,7 @@ abstract class TagView {
 }
 
 class MessageTagView extends TagView {
-  MessageTagView(String text, String tagId, [TagColour tagColour = TagColour.None]) : super(text, tagId, tagColour) {
+  MessageTagView(String text, String tagId, [TagStyle tagColour = TagStyle.None]) : super(text, tagId, tagColour) {
     _removeButton.onClick.listen((_) {
       DivElement message = getAncestors(tag).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
       command(UIAction.removeMessageTag, new MessageTagData(tagId, int.parse(message.dataset['message-index'])));
@@ -270,7 +270,7 @@ class MessageTagView extends TagView {
 }
 
 class ConversationTagView extends TagView {
-  ConversationTagView(String text, String tagId, [TagColour tagColour = TagColour.None]) : super(text, tagId, tagColour) {
+  ConversationTagView(String text, String tagId, [TagStyle tagColour = TagStyle.None]) : super(text, tagId, tagColour) {
     _removeButton.onClick.listen((_) {
       DivElement messageSummary = getAncestors(tag).firstWhere((e) => e.classes.contains('conversation-summary'));
       command(UIAction.removeConversationTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
@@ -279,7 +279,7 @@ class ConversationTagView extends TagView {
 }
 
 class FilterMenuTagView extends TagView {
-  FilterMenuTagView(String text, String tagId, [TagColour tagColour = TagColour.None]) : super(text, tagId, tagColour) {
+  FilterMenuTagView(String text, String tagId, [TagStyle tagColour = TagStyle.None]) : super(text, tagId, tagColour) {
     _removeButton.remove();
     tag.onClick.listen((_) {
       command(UIAction.addFilterTag, new FilterTagData(tagId));
@@ -288,7 +288,7 @@ class FilterMenuTagView extends TagView {
 }
 
 class FilterTagView extends TagView {
-  FilterTagView(String text, String tagId, [TagColour tagColour = TagColour.None]) : super(text, tagId, tagColour) {
+  FilterTagView(String text, String tagId, [TagStyle tagColour = TagStyle.None]) : super(text, tagId, tagColour) {
     _removeButton..onClick.listen((_) {
       command(UIAction.removeFilterTag, new FilterTagData(tagId));
     });
