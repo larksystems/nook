@@ -14,7 +14,7 @@ enum TagReceiver {
 
 void _populateConversationListPanelView(List<model.Conversation> conversations) {
   view.conversationListPanelView.clearConversationList();
-  for (var conversation in filteredConversations) {
+  for (var conversation in conversations) {
     view.conversationListPanelView.addConversation(
       new view.ConversationSummary(
         conversation.deidentifiedPhoneNumber.value,
