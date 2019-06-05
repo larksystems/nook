@@ -116,7 +116,7 @@ firestore.Firestore _firestoreInstance;
     }
     
     List<Tag> tags = [];
-    String notes = ""; // TODO
+    String notes = data["notes"];
 
     List<Message> messages = [];
     for (Map messageData in data["messages"]) {
