@@ -235,6 +235,14 @@ firestore.Firestore _firestoreInstance;
     });
   }
 
+
+  Future updateNotes(Conversation conversation) {
+    log.verbose("Updating conversation notes for ${conversation.deidentifiedPhoneNumber.value}");
+    return _firestoreInstance.doc("nook_conversations/${conversation.deidentifiedPhoneNumber.value}").update(
+      data: {"notes" : conversation.notes}
+    );
+  }
+
   Future updateConversation(Map conversationData) async {
     // TODO(mariana): implement commication with Firebase/PubSub here
   }
