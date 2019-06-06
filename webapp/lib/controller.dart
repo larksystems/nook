@@ -195,7 +195,6 @@ void populateUI() {
 }
 
 void command(UIAction action, Data data) {
-  print(action);
   // For most actions, a conversation needs to be active.
   // Early exist if it's not one of the actions valid without an active conversation.
   if (activeConversation == null &&
