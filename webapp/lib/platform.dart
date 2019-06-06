@@ -107,7 +107,9 @@ firestore.Firestore _firestoreInstance;
   }
 
   Conversation _firestoreConversationToModelConversation(firestore.DocumentSnapshot conversation) {
+    log.verbose("_firestoreConversationToModelConversation: ${conversation.id}");
     String deidentifiedNo = conversation.id;
+
     DeidentifiedPhoneNumber deidentPhoneNumber = _firestorePhoneNumberToModelNumber(deidentifiedNo);
     var data = conversation.data();
     Map<String, String> demogInfo = {};
@@ -115,9 +117,12 @@ firestore.Firestore _firestoreInstance;
       demogInfo[k] = data["demographicsInfo"].toString();
     }
     
-    List<Tag> tags = [];
-    String notes = data["notes"];
+    List<Tag> allConversationTags = controller.conversationTags;
+    List<Tag> allMessageTags = controller.messageTags;
 
+    String notes = data["notes"];
+    List conversationTagIds = data["tags"];
+    List<Tag> conversationTags = allConversationTags.where((tag) => conversationTagIds.contains(tag.tagId)).toList();
     List<Message> messages = [];
     for (Map messageData in data["messages"]) {
      //{datetime: 2019-05-10T15:19:13.567929+00:00, direction: out, tags: [], text: test message, translation: }
@@ -125,20 +130,24 @@ firestore.Firestore _firestoreInstance;
       DateTime dateTime = DateTime.parse(messageData["datetime"]);
       String text = messageData["text"];
       String translation = messageData["translation"];
+
+      List tagIds = messageData["tags"];
+      List<Tag> messageTags = allMessageTags.where((tag) => tagIds.contains(tag.tagId)).toList();
+      
       messages.add(
         new Message()
           ..direction = direction
           ..datetime = dateTime
           ..text = text
           ..translation = translation
-          ..tags = [] // TODO
+          ..tags = messageTags
       );
     }
 
     return new Conversation()
       ..deidentifiedPhoneNumber = deidentPhoneNumber
       ..demographicsInfo = demogInfo
-      ..tags = tags
+      ..tags = conversationTags
       ..messages = messages
       ..notes = notes;
   }
@@ -257,7 +266,7 @@ firestore.Firestore _firestoreInstance;
         "datetime" : msg.datetime.toIso8601String(),
         "text" : msg.text,
         "translation" : msg.translation,
-        "tags" : [] // TODO
+        "tags" : msg.tags.map((t) => t.tagId).toList()
       });
     }
 
@@ -270,6 +279,13 @@ firestore.Firestore _firestoreInstance;
     log.verbose("Updating conversation notes for ${conversation.deidentifiedPhoneNumber.value}");
     return _firestoreInstance.doc("nook_conversations/${conversation.deidentifiedPhoneNumber.value}").update(
       data: {"notes" : conversation.notes}
+    );
+  }
+
+  Future updateConversationTags(Conversation conversation) {
+    log.verbose("Updating conversation tags for ${conversation.deidentifiedPhoneNumber.value}");
+    return _firestoreInstance.doc("nook_conversations/${conversation.deidentifiedPhoneNumber.value}").update(
+      data: {"tags" : conversation.tags.map((t) => t.tagId).toList()}
     );
   }
 
