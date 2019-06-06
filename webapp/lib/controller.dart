@@ -32,6 +32,8 @@ enum UIAction {
   signInButtonClicked,
   signOutButtonClicked,
   keyPressed,
+  addNewSuggestedReply,
+  addNewTag,
 }
 
 class Data {}
@@ -102,6 +104,12 @@ class UserData extends Data {
 class KeyPressData extends Data {
   String key;
   KeyPressData(this.key);
+}
+
+class AddActionData extends Data {
+  String actionText;
+  String translationText;
+  AddActionData(this.actionText, [this.translationText]);
 }
 
 UIActionObject actionObjectState;
@@ -182,6 +190,7 @@ void populateUI() {
 }
 
 void command(UIAction action, Data data) {
+  print(action);
   // For most actions, a conversation needs to be active.
   // Early exist if it's not one of the actions valid without an active conversation.
   if (activeConversation == null &&
@@ -336,6 +345,14 @@ void command(UIAction action, Data data) {
           return;
       }
       // There is no matching shortcut in either replies or tags, ignore
+      break;
+    case UIAction.addNewSuggestedReply:
+      AddActionData actionData = data;
+      // TODO: call platform
+      break;
+    case UIAction.addNewTag:
+      AddActionData actionData = data;
+      // TODO: call platform
       break;
     default:
   }
