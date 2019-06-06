@@ -207,7 +207,6 @@ void command(UIAction action, Data data) {
         case UIActionObject.message:
           model.Tag tag = messageTags.singleWhere((tag) => tag.tagId == tagData.tagId);
           setMessageTag(tag, selectedMessage, activeConversation);
-          platform.updateConversationMessages(activeConversation);
           break;
       }
       break;
@@ -225,7 +224,7 @@ void command(UIAction action, Data data) {
       ConversationTagData conversationTagData = data;
       model.Tag tag = conversationTags.singleWhere((tag) => tag.tagId == conversationTagData.tagId);
       activeConversation.tags.remove(tag);
-      platform.updateConversation(encodeConversationToPlatformData(activeConversation));
+      platform.updateConversationTags(activeConversation);
       view.conversationPanelView.removeTag(tag.tagId);
       break;
     case UIAction.removeMessageTag:
@@ -434,7 +433,7 @@ void sendReply(model.SuggestedReply reply, model.Conversation conversation) {
 void setConversationTag(model.Tag tag, model.Conversation conversation) {
   if (!conversation.tags.contains(tag)) {
     conversation.tags.add(tag);
-    platform.updateConversation(encodeConversationToPlatformData(conversation));
+    platform.updateConversationTags(activeConversation);
     view.conversationPanelView.addTags(new view.ConversationTagView(tag.text, tag.tagId));
   }
 }
@@ -442,7 +441,7 @@ void setConversationTag(model.Tag tag, model.Conversation conversation) {
 void setMessageTag(model.Tag tag, model.Message message, model.Conversation conversation) {
   if (!message.tags.contains(tag)) {
     message.tags.add(tag);
-    platform.updateConversation(encodeConversationToPlatformData(conversation));
+    platform.updateConversationMessages(activeConversation);
     view.conversationPanelView
       .messageViewAtIndex(conversation.messages.indexOf(message))
       .addTag(new view.MessageTagView(tag.text, tag.tagId));
