@@ -32,6 +32,8 @@ enum UIAction {
   signInButtonClicked,
   signOutButtonClicked,
   keyPressed,
+  addNewSuggestedReply,
+  addNewTag,
 }
 
 class Data {}
@@ -102,6 +104,17 @@ class UserData extends Data {
 class KeyPressData extends Data {
   String key;
   KeyPressData(this.key);
+}
+
+class AddSuggestedReplyData extends Data {
+  String replyText;
+  String translationText;
+  AddSuggestedReplyData(this.replyText, this.translationText);
+}
+
+class AddTagData extends Data {
+  String tagText;
+  AddTagData(this.tagText);
 }
 
 UIActionObject actionObjectState;
@@ -344,6 +357,14 @@ void command(UIAction action, Data data) {
           return;
       }
       // There is no matching shortcut in either replies or tags, ignore
+      break;
+    case UIAction.addNewSuggestedReply:
+      AddSuggestedReplyData replyData = data;
+      // TODO: call platform
+      break;
+    case UIAction.addNewTag:
+      AddTagData tagData = data;
+      // TODO: call platform
       break;
     default:
   }
