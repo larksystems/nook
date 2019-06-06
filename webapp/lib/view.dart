@@ -431,7 +431,7 @@ class ReplyPanelView {
   DivElement _notes;
   DivElement _notesTextarea;
 
-  AddAction _addReply;
+  AddActionView _addReply;
 
   ReplyPanelView() {
     replyPanel = new DivElement()
@@ -450,7 +450,7 @@ class ReplyPanelView {
     _replyList = new DivElement();
     _replies.append(_replyList);
 
-    _addReply = new AddAction(ADD_REPLY_INFO);
+    _addReply = new AddReplyActionView(ADD_REPLY_INFO);
     _replies.append(_addReply.addAction);
 
     _notes = new DivElement()
@@ -485,7 +485,7 @@ class TagPanelView {
   DivElement _tags;
   DivElement _tagList;
 
-  AddAction _addTag;
+  AddActionView _addTag;
 
   TagPanelView() {
     tagPanel = new DivElement()
@@ -504,7 +504,7 @@ class TagPanelView {
     _tagList = new DivElement();
     _tags.append(_tagList);
 
-    _addTag = new AddAction(ADD_TAG_INFO);
+    _addTag = new AddTagActionView(ADD_TAG_INFO);
     _tags.append(_addTag.addAction);
   }
 
@@ -577,19 +577,92 @@ class TagActionView extends ActionView {
   }
 }
 
-class AddAction {
+abstract class AddActionView {
   DivElement addAction;
+  DivElement _newActionBox;
+  DivElement _newActionTextarea;
+  DivElement _newActionTranslationLabel;
+  DivElement _newActionTranslation;
+  DivElement _newActionButton;
 
-  AddAction(String infoText) {
+  AddActionView(String infoText) {
     addAction = new DivElement()
       ..classes.add('add-action');
 
-    var info = new DivElement()
-      ..classes.add('add-action__info')
-      ..text = infoText;
-    addAction.append(info);
+    var button = new DivElement()
+      ..classes.add('add-action__button')
+      ..text = infoText
+      ..onClick.listen((_) {
+        _newActionBox.style.visibility = 'visible';
+        _newActionTextarea.focus();
 
-    // TODO(mariana): fill in functionality for adding new action
+        // Position cursor at the end
+        // See https://stackoverflow.com/questions/1125292/how-to-move-cursor-to-end-of-contenteditable-entity/3866442#3866442
+        var range = document.createRange()
+          ..selectNodeContents(_newActionTextarea)
+          ..collapse(false);
+        window.getSelection()
+          ..removeAllRanges()
+          ..addRange(range);
+
+        // Set a listener for hiding the box if the user clicks outside it
+        var windowClickStream;
+        windowClickStream = window.onMouseDown.listen((e) {
+          var addActionBox = getAncestors(e.target).where((ancestor) => ancestor.classes.contains('add-action__box'));
+          if (addActionBox.isNotEmpty) return; // click inside the box
+          _newActionBox.style.visibility = 'hidden';
+          windowClickStream.cancel();
+        });
+      });
+    addAction.append(button);
+
+    _newActionBox = new DivElement()
+      ..classes.add('add-action__box')
+      ..style.visibility = 'hidden';
+    addAction.append(_newActionBox);
+
+    _newActionTextarea = new DivElement()
+      ..classes.add('add-action__textarea')
+      ..contentEditable = 'true'
+      ..text = ''
+      ..onKeyPress.listen((e) => e.stopPropagation());
+    _newActionBox.append(_newActionTextarea);
+
+    _newActionTranslationLabel = new DivElement()
+      ..text = 'Translation:'
+      ..classes.add('add-action__translation-label');
+    _newActionBox.append(_newActionTranslationLabel);
+
+    _newActionTranslation = new DivElement()
+      ..classes.add('add-action__translation')
+      ..contentEditable = 'true'
+      ..onKeyPress.listen((e) => e.stopPropagation());
+    _newActionBox.append(_newActionTranslation);
+
+    _newActionButton = new DivElement()
+      ..classes.add('add-action__commit-button')
+      ..text = 'Submit'
+      ..onClick.listen((_) {
+        _newActionBox.style.visibility = 'hidden';
+        _newActionTextarea.text = '';
+        _newActionTranslation.text = '';
+      });
+    _newActionBox.append(_newActionButton);
+  }
+}
+
+class AddReplyActionView extends AddActionView {
+  AddReplyActionView(String infoText) : super(infoText) {
+    _newActionButton.onClick.listen((_) => command(UIAction.addNewSuggestedReply, new AddActionData(_newActionTextarea.text, _newActionTranslation.text)));
+  }
+}
+
+class AddTagActionView extends AddActionView {
+  AddTagActionView(String infoText) : super(infoText) {
+    _newActionButton.onClick.listen((_) => command(UIAction.addNewTag, new AddActionData(_newActionTextarea.text)));
+    // No translation for tags
+    _newActionTranslation.remove();
+    _newActionTranslationLabel.remove();
   }
 }
 
