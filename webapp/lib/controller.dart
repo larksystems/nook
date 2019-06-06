@@ -106,10 +106,15 @@ class KeyPressData extends Data {
   KeyPressData(this.key);
 }
 
-class AddActionData extends Data {
-  String actionText;
+class AddSuggestedReplyData extends Data {
+  String replyText;
   String translationText;
-  AddActionData(this.actionText, [this.translationText]);
+  AddSuggestedReplyData(this.replyText, this.translationText);
+}
+
+class AddTagData extends Data {
+  String tagText;
+  AddTagData(this.tagText);
 }
 
 UIActionObject actionObjectState;
@@ -347,11 +352,11 @@ void command(UIAction action, Data data) {
       // There is no matching shortcut in either replies or tags, ignore
       break;
     case UIAction.addNewSuggestedReply:
-      AddActionData actionData = data;
+      AddSuggestedReplyData replyData = data;
       // TODO: call platform
       break;
     case UIAction.addNewTag:
-      AddActionData actionData = data;
+      AddTagData tagData = data;
       // TODO: call platform
       break;
     default:

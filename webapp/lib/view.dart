@@ -653,13 +653,13 @@ abstract class AddActionView {
 
 class AddReplyActionView extends AddActionView {
   AddReplyActionView(String infoText) : super(infoText) {
-    _newActionButton.onClick.listen((_) => command(UIAction.addNewSuggestedReply, new AddActionData(_newActionTextarea.text, _newActionTranslation.text)));
+    _newActionButton.onClick.listen((_) => command(UIAction.addNewSuggestedReply, new AddSuggestedReplyData(_newActionTextarea.text, _newActionTranslation.text)));
   }
 }
 
 class AddTagActionView extends AddActionView {
   AddTagActionView(String infoText) : super(infoText) {
-    _newActionButton.onClick.listen((_) => command(UIAction.addNewTag, new AddActionData(_newActionTextarea.text)));
+    _newActionButton.onClick.listen((_) => command(UIAction.addNewTag, new AddTagData(_newActionTextarea.text)));
     // No translation for tags
     _newActionTranslation.remove();
     _newActionTranslationLabel.remove();
