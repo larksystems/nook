@@ -235,6 +235,36 @@ firestore.Firestore _firestoreInstance;
     });
   }
 
+  Future updateSuggestedReply(SuggestedReply reply) {
+    log.verbose("Updating suggested Reply ${reply.suggestedReplyId}");
+
+    return _firestoreInstance.doc("suggestedReplies/${reply.suggestedReplyId}").update(
+      data: {
+        "shortcut" : reply.shortcut,
+        "text" : reply.text,
+        "translation" : reply.translation
+      }
+    );
+  }
+
+  Future updateConversationMessages(Conversation conversation) {
+    log.verbose("Updating conversation messages for ${conversation.deidentifiedPhoneNumber.value}");
+
+    var messageMaps = [];
+    for (Message msg in conversation.messages) {
+      messageMaps.add({
+        "direction" : msg.direction == MessageDirection.In ? "in" : "out",
+        "datetime" : msg.datetime.toIso8601String(),
+        "text" : msg.text,
+        "translation" : msg.translation,
+        "tags" : [] // TODO
+      });
+    }
+
+    return _firestoreInstance.doc("nook_conversations/${conversation.deidentifiedPhoneNumber.value}").update(
+      data : {"messages" : messageMaps}
+    );
+  }
 
   Future updateNotes(Conversation conversation) {
     log.verbose("Updating conversation notes for ${conversation.deidentifiedPhoneNumber.value}");
