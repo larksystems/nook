@@ -207,6 +207,7 @@ void command(UIAction action, Data data) {
         case UIActionObject.message:
           model.Tag tag = messageTags.singleWhere((tag) => tag.tagId == tagData.tagId);
           setMessageTag(tag, selectedMessage, activeConversation);
+          platform.updateConversationMessages(activeConversation);
           break;
       }
       break;
@@ -231,7 +232,7 @@ void command(UIAction action, Data data) {
       MessageTagData messageTagData = data;
       var message = activeConversation.messages[messageTagData.messageIndex];
       message.tags.removeWhere((t) => t.tagId == messageTagData.tagId);
-      platform.updateConversation(encodeConversationToPlatformData(activeConversation));
+      platform.updateConversationMessages(activeConversation);
       view.conversationPanelView
         .messageViewAtIndex(messageTagData.messageIndex)
         .removeTag(messageTagData.tagId);
@@ -277,6 +278,14 @@ void command(UIAction action, Data data) {
       updateViewForConversation(activeConversation);
       break;
     case UIAction.updateTranslation:
+      if (data is ReplyTranslationData) {
+        suggestedReplies[data.replyIndex].translation = data.translationText;
+        platform.updateSuggestedReply(suggestedReplies[data.replyIndex]);
+      } else if (data is TranslationData) {
+        TranslationData messageTranslation = data;
+        activeConversation.messages[messageTranslation.messageIndex].translation = messageTranslation.translationText;
+        platform.updateConversationMessages(activeConversation);
+      }
       break;
     case UIAction.updateNote:
       NoteData noteData = data;
