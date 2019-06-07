@@ -261,7 +261,7 @@ abstract class TagView {
 }
 
 class MessageTagView extends TagView {
-  MessageTagView(String text, String tagId, [TagStyle tagColour = TagStyle.None]) : super(text, tagId, tagColour) {
+  MessageTagView(String text, String tagId, [TagStyle tagStyle = TagStyle.None]) : super(text, tagId, tagStyle) {
     _removeButton.onClick.listen((_) {
       DivElement message = getAncestors(tag).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
       command(UIAction.removeMessageTag, new MessageTagData(tagId, int.parse(message.dataset['message-index'])));
@@ -270,7 +270,7 @@ class MessageTagView extends TagView {
 }
 
 class ConversationTagView extends TagView {
-  ConversationTagView(String text, String tagId, [TagStyle tagColour = TagStyle.None]) : super(text, tagId, tagColour) {
+  ConversationTagView(String text, String tagId, [TagStyle tagStyle = TagStyle.None]) : super(text, tagId, tagStyle) {
     _removeButton.onClick.listen((_) {
       DivElement messageSummary = getAncestors(tag).firstWhere((e) => e.classes.contains('conversation-summary'));
       command(UIAction.removeConversationTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
@@ -279,7 +279,7 @@ class ConversationTagView extends TagView {
 }
 
 class FilterMenuTagView extends TagView {
-  FilterMenuTagView(String text, String tagId, [TagStyle tagColour = TagStyle.None]) : super(text, tagId, tagColour) {
+  FilterMenuTagView(String text, String tagId, [TagStyle tagStyle = TagStyle.None]) : super(text, tagId, tagStyle) {
     _removeButton.remove();
     tag.onClick.listen((_) {
       command(UIAction.addFilterTag, new FilterTagData(tagId));
@@ -288,7 +288,7 @@ class FilterMenuTagView extends TagView {
 }
 
 class FilterTagView extends TagView {
-  FilterTagView(String text, String tagId, [TagStyle tagColour = TagStyle.None]) : super(text, tagId, tagColour) {
+  FilterTagView(String text, String tagId, [TagStyle tagStyle = TagStyle.None]) : super(text, tagId, tagStyle) {
     _removeButton..onClick.listen((_) {
       command(UIAction.removeFilterTag, new FilterTagData(tagId));
     });
