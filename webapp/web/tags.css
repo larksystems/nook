@@ -4,14 +4,19 @@
   display: flex;
 }
 
-.tag.tag--green {
+.tag--green .tag__name {
   color:  darkgreen;
 }
-.tag.tag--yellow {
+.tag--yellow .tag__name {
   color: darkorange;
 }
-.tag.tag--red {
+.tag--red .tag__name {
   color: crimson;
+}
+.tag--important .tag__name {
+  border-color: crimson;
+  background-color: crimson;
+  color: white;
 }
 
 .tag__name {
