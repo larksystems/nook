@@ -14,7 +14,7 @@ import 'model.dart';
 Logger log = new Logger('platform_utils.dart');
 
 const _SEND_TO_MULTI_IDS_ACTION = "send_to_multi_ids";
-firestore.Firestore _firestoreInstance; 
+firestore.Firestore _firestoreInstance;
 
   init() async {
     await platform_constants.init();
@@ -76,7 +76,7 @@ firestore.Firestore _firestoreInstance;
     //  "message" : "🐱"
     //  }
 
-    Map payload = 
+    Map payload =
       {
         'action' : _SEND_TO_MULTI_IDS_ACTION,
         'ids' : ids,
@@ -116,7 +116,7 @@ firestore.Firestore _firestoreInstance;
     for (var k in data["demographicsInfo"].keys) {
       demogInfo[k] = data["demographicsInfo"].toString();
     }
-    
+
     List<Tag> allConversationTags = controller.conversationTags;
     List<Tag> allMessageTags = controller.messageTags;
 
@@ -133,7 +133,7 @@ firestore.Firestore _firestoreInstance;
 
       List tagIds = messageData["tags"];
       List<Tag> messageTags = allMessageTags.where((tag) => tagIds.contains(tag.tagId)).toList();
-      
+
       messages.add(
         new Message()
           ..direction = direction
@@ -174,7 +174,7 @@ firestore.Firestore _firestoreInstance;
       listener(ret);
     });
   }
-  
+
   typedef TagsUpdatedListener(List<Tag> tags);
   Tag _firestoreTagToModelTag(firestore.DocumentSnapshot tag) {
     var data = tag.data();
@@ -182,9 +182,17 @@ firestore.Firestore _firestoreInstance;
         ..shortcut = data["shortcut"]
         ..tagId = tag.id
         ..text = data["text"]
-        ..type = data["type"] == "important" ? TagType.Important : TagType.Normal; // TODO: Generalise
+        ..type = stringToTagType(data["type"]);
   }
-  
+  TagType stringToTagType(String tagTypeString) {
+    switch (tagTypeString) {
+      case "important":
+        return TagType.Important;
+      default:
+        return TagType.Normal;
+    }
+  }
+
   void listenForConversationTags(TagsUpdatedListener listener) => _listenForTags(listener, "/conversationTags");
   void listenForMessageTags(TagsUpdatedListener listener) => _listenForTags(listener, "/messageTags");
 
