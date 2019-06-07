@@ -167,15 +167,19 @@ void populateUI() {
     }
   );
 
-  platform.listenForSuggestedReplies(
-    (updatedReplies) {
-      var updatedIds = updatedReplies.map((t) => t.suggestedReplyId).toSet();
-      suggestedReplies.removeWhere((suggestedReply) => updatedIds.contains(suggestedReply.suggestedReplyId));
-      suggestedReplies.addAll(updatedReplies);
+  if (view.urlView.shouldDisableReplies) {
+    view.replyPanelView.disableReplies();
+  } else {
+    platform.listenForSuggestedReplies(
+      (updatedReplies) {
+        var updatedIds = updatedReplies.map((t) => t.suggestedReplyId).toSet();
+        suggestedReplies.removeWhere((suggestedReply) => updatedIds.contains(suggestedReply.suggestedReplyId));
+        suggestedReplies.addAll(updatedReplies);
 
-      _populateReplyPanelView(suggestedReplies);
-    }
-  );
+        _populateReplyPanelView(suggestedReplies);
+      }
+    );
+  }
 
   platform.listenForConversations(
     (updatedConversations) {
