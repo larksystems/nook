@@ -235,7 +235,14 @@ void command(UIAction action, Data data) {
       switch (actionObjectState) {
         case UIActionObject.conversation:
           model.Tag tag = conversationTags.singleWhere((tag) => tag.tagId == tagData.tagId);
-          setConversationTag(tag, activeConversation);
+          if (!multiSelectMode) {
+            setConversationTag(tag, activeConversation);
+            return;
+          }
+          if (!view.taggingMultiConversationsUserConfirmation(selectedConversations.length)) {
+            return;
+          }
+          setMultiConversationTag(tag, selectedConversations);
           break;
         case UIActionObject.message:
           model.Tag tag = messageTags.singleWhere((tag) => tag.tagId == tagData.tagId);
@@ -395,6 +402,14 @@ void command(UIAction action, Data data) {
           if (selectedTag.isEmpty) break;
           assert (selectedTag.length == 1);
           setConversationTag(selectedTag.first, activeConversation);
+          if (!multiSelectMode) {
+            setConversationTag(selectedTag.first, activeConversation);
+            return;
+          }
+          if (!view.taggingMultiConversationsUserConfirmation(selectedConversations.length)) {
+            return;
+          }
+          setMultiConversationTag(selectedTag.first, selectedConversations);
           return;
         case UIActionObject.message:
           var selectedTag = messageTags.where((tag) => tag.shortcut == keyPressData.key);
@@ -540,9 +555,21 @@ void sendMultiReply(model.SuggestedReply reply, List<model.Conversation> convers
 void setConversationTag(model.Tag tag, model.Conversation conversation) {
   if (!conversation.tags.contains(tag)) {
     conversation.tags.add(tag);
-    platform.updateConversationTags(activeConversation);
+    platform.updateConversationTags(conversation);
     view.conversationPanelView.addTags(new view.ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
   }
+}
+
+void setMultiConversationTag(model.Tag tag, List<model.Conversation> conversations) {
+  conversations.forEach((conversation) {
+    if (!conversation.tags.contains(tag)) {
+      conversation.tags.add(tag);
+      platform.updateConversationTags(conversation);
+      if (conversation == activeConversation) {
+        view.conversationPanelView.addTags(new view.ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
+      }
+    }
+  });
 }
 
 void setMessageTag(model.Tag tag, model.Message message, model.Conversation conversation) {
