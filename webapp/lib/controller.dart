@@ -24,7 +24,9 @@ enum UIAction {
   removeConversationTag,
   removeMessageTag,
   removeFilterTag,
+  showConversation,
   selectConversation,
+  deselectConversation,
   selectMessage,
   deselectMessage,
   userSignedIn,
@@ -34,6 +36,8 @@ enum UIAction {
   keyPressed,
   addNewSuggestedReply,
   addNewTag,
+  enableMultiSelectMode,
+  disableMultiSelectMode,
 }
 
 class Data {}
@@ -126,8 +130,11 @@ List<model.Tag> conversationTags;
 List<model.Tag> messageTags;
 List<model.Tag> filterTags;
 model.Conversation activeConversation;
+List<model.Conversation> selectedConversations;
 model.Message selectedMessage;
 model.User signedInUser;
+
+bool multiSelectMode;
 
 void init() async {
   view.init();
@@ -141,6 +148,8 @@ void populateUI() {
   suggestedReplies = [];
   conversationTags = [];
   messageTags = [];
+  selectedConversations = [];
+  multiSelectMode = false;
 
   activeConversation = updateViewForConversations(filteredConversations);
   platform.listenForConversationTags(
@@ -212,7 +221,14 @@ void command(UIAction action, Data data) {
     case UIAction.sendMessage:
       ReplyData replyData = data;
       model.SuggestedReply selectedReply = suggestedReplies[replyData.replyIndex];
-      sendReply(selectedReply, activeConversation);
+      if (!multiSelectMode) {
+        sendReply(selectedReply, activeConversation);
+        return;
+      }
+      if (!view.sendingMultiMessagesUserConfirmation(selectedConversations.length)) {
+        return;
+      }
+      sendMultiReply(selectedReply, selectedConversations);
       break;
     case UIAction.addTag:
       TagData tagData = data;
@@ -288,10 +304,20 @@ void command(UIAction action, Data data) {
           break;
       }
       break;
-    case UIAction.selectConversation:
+    case UIAction.showConversation:
       ConversationData conversationData = data;
       activeConversation = filteredConversations.singleWhere((conversation) => conversation.deidentifiedPhoneNumber.value == conversationData.deidentifiedPhoneNumber);
       updateViewForConversation(activeConversation);
+      break;
+    case UIAction.selectConversation:
+      ConversationData conversationData = data;
+      model.Conversation conversation = filteredConversations.singleWhere((conversation) => conversation.deidentifiedPhoneNumber.value == conversationData.deidentifiedPhoneNumber);
+      selectedConversations.add(conversation);
+      break;
+    case UIAction.deselectConversation:
+      ConversationData conversationData = data;
+      model.Conversation conversation = filteredConversations.singleWhere((conversation) => conversation.deidentifiedPhoneNumber.value == conversationData.deidentifiedPhoneNumber);
+      selectedConversations.remove(conversation);
       break;
     case UIAction.updateTranslation:
       if (data is ReplyTranslationData) {
@@ -342,7 +368,14 @@ void command(UIAction action, Data data) {
       var selectedReply = suggestedReplies.where((reply) => reply.shortcut == keyPressData.key);
       if (selectedReply.isNotEmpty) {
         assert (selectedReply.length == 1);
-        sendReply(selectedReply.first, activeConversation);
+        if (!multiSelectMode) {
+          sendReply(selectedReply.first, activeConversation);
+          return;
+        }
+        if (!view.sendingMultiMessagesUserConfirmation(selectedConversations.length)) {
+          return;
+        }
+        sendMultiReply(selectedReply.first, selectedConversations);
         return;
       }
       // If the shortcut is for a tag, find it and tag it to the conversation/message
@@ -369,6 +402,19 @@ void command(UIAction action, Data data) {
     case UIAction.addNewTag:
       AddTagData tagData = data;
       // TODO: call platform
+      break;
+    case UIAction.enableMultiSelectMode:
+      view.conversationListPanelView.showCheckboxes();
+      view.conversationListPanelView.checkAllConversations();
+      selectedConversations.clear();
+      selectedConversations.addAll(filteredConversations);
+      multiSelectMode = true;
+      break;
+    case UIAction.disableMultiSelectMode:
+      view.conversationListPanelView.uncheckAllConversations();
+      view.conversationListPanelView.hideCheckboxes();
+      selectedConversations.clear();
+      multiSelectMode = false;
       break;
     default:
   }
@@ -452,6 +498,32 @@ void sendReply(model.SuggestedReply reply, model.Conversation conversation) {
     .sendMessage(conversation.deidentifiedPhoneNumber.value, reply.text)
     .then((success) {
       log.verbose('controller.sendMessage reponse status $success');
+    });
+}
+
+void sendMultiReply(model.SuggestedReply reply, List<model.Conversation> conversations) {
+  model.Message newMessage = new model.Message()
+    ..text = reply.text
+    ..datetime = new DateTime.now()
+    ..direction = model.MessageDirection.Out
+    ..translation = reply.translation
+    ..tags = [];
+  conversations.forEach((conversation) => conversation.messages.add(newMessage));
+  if (conversations.contains(activeConversation)) {
+    view.conversationPanelView.addMessage(
+      new view.MessageView(
+        newMessage.text,
+        activeConversation.deidentifiedPhoneNumber.value,
+        activeConversation.messages.indexOf(newMessage),
+        translation: newMessage.translation,
+        incoming: false)
+    );
+  }
+  List<String> ids = conversations.map((conversation) => conversation.deidentifiedPhoneNumber.value).toList();
+  platform
+    .sendMultiMessage(ids, newMessage.text)
+    .then((success) {
+      log.verbose('controller.sendMultiMessage reponse status $success');
     });
 }
 
