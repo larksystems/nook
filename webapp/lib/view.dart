@@ -426,10 +426,11 @@ class ConversationSummary {
 
 class ReplyPanelView {
   DivElement replyPanel;
+  DivElement _panelTitle;
   DivElement _replies;
   DivElement _replyList;
   DivElement _notes;
-  DivElement _notesTextarea;
+  TextAreaElement _notesTextarea;
 
   AddActionView _addReply;
 
@@ -437,10 +438,10 @@ class ReplyPanelView {
     replyPanel = new DivElement()
       ..classes.add('reply-panel');
 
-    var panelTitle = new DivElement()
+    _panelTitle = new DivElement()
       ..classes.add('panel-title')
       ..text = REPLY_PANEL_TITLE;
-    replyPanel.append(panelTitle);
+    replyPanel.append(_panelTitle);
 
     _replies = new DivElement()
       ..classes.add('replies')
@@ -457,15 +458,15 @@ class ReplyPanelView {
       ..classes.add('notes-box');
     replyPanel.append(_notes);
 
-    _notesTextarea = new DivElement()
+    _notesTextarea = new TextAreaElement()
       ..classes.add('notes-box__textarea')
       ..contentEditable = 'true'
-      ..onInput.listen((_) => command(UIAction.updateNote, new NoteData(_notesTextarea.text)))
+      ..onInput.listen((_) => command(UIAction.updateNote, new NoteData(_notesTextarea.value)))
       ..onKeyPress.listen((e) => e.stopPropagation());
     _notes.append(_notesTextarea);
   }
 
-  set noteText(String text) => _notesTextarea.text = text;
+  set noteText(String text) => _notesTextarea.value = text;
 
   void addReply(ActionView action) {
     _replyList.append(action.action);
@@ -477,6 +478,18 @@ class ReplyPanelView {
       _replyList.firstChild.remove();
     }
     assert(_replyList.children.length == 0);
+  }
+
+  void disableReplies() {
+    _replies.remove();
+    _panelTitle.text = 'Notes';
+    _notes.classes.toggle('notes-box--fullscreen', true);
+  }
+
+  void enableReplies() {
+    _panelTitle.text = REPLY_PANEL_TITLE;
+    replyPanel.insertBefore(_replies, _notes);
+    _notes.classes.toggle('notes-box--fullscreen', false);
   }
 }
 
@@ -762,6 +775,7 @@ class AuthMainView {
 class UrlView {
 
   static const String queryFilterKey = 'filter';
+  static const String queryDisableRepliesKey = 'disableReplies';
 
   List<String> get pageUrlFilterTags {
     var uri = Uri.parse(window.location.href);
@@ -779,5 +793,13 @@ class UrlView {
     queryParameters['filter'] = filterTags.join(' ');
     uri = uri.replace(queryParameters: queryParameters);
     window.history.pushState('', '', uri.toString());
+  }
+
+  bool get shouldDisableReplies {
+    var uri = Uri.parse(window.location.href);
+    if (uri.queryParameters.containsKey(queryDisableRepliesKey)) {
+      return uri.queryParameters[queryDisableRepliesKey].toLowerCase() == 'true';
+    }
+    return false;
   }
 }
