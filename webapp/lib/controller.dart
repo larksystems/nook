@@ -252,6 +252,11 @@ void command(UIAction action, Data data) {
       view.conversationFilter.addFilterTag(new view.FilterTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
       filteredConversations = filterConversationsByTags(conversations, filterTags);
       activeConversation = updateViewForConversations(filteredConversations);
+      if (multiSelectMode) {
+        view.conversationListPanelView.showCheckboxes();
+        selectedConversations = selectedConversations.toSet().intersection(filteredConversations.toSet()).toList();
+        selectedConversations.forEach((conversation) => view.conversationListPanelView.checkConversation(conversation.deidentifiedPhoneNumber.value));
+      }
       break;
     case UIAction.removeConversationTag:
       ConversationTagData conversationTagData = data;
@@ -278,6 +283,11 @@ void command(UIAction action, Data data) {
       filteredConversations = filterConversationsByTags(conversations, filterTags);
       _populateConversationListPanelView(filteredConversations);
       activeConversation = updateViewForConversations(filteredConversations);
+      if (multiSelectMode) {
+        view.conversationListPanelView.showCheckboxes();
+        selectedConversations = selectedConversations.toSet().intersection(filteredConversations.toSet()).toList();
+        selectedConversations.forEach((conversation) => view.conversationListPanelView.checkConversation(conversation.deidentifiedPhoneNumber.value));
+      }
       break;
     case UIAction.selectMessage:
       MessageData messageData = data;
