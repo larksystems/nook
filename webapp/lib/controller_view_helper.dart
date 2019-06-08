@@ -29,14 +29,14 @@ void _populateConversationPanelView(model.Conversation conversation) {
     ..deidentifiedPhoneNumber = conversation.deidentifiedPhoneNumber.shortValue
     ..demographicsInfo = conversation.demographicsInfo.values.join(', ');
   for (var tag in conversation.tags) {
-    view.conversationPanelView.addTags(new view.ConversationTagView(tag.text, tag.tagId));
+    view.conversationPanelView.addTags(new view.ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
   }
 
   for (int i = 0; i < conversation.messages.length; i++) {
     var message = conversation.messages[i];
     List<view.TagView> tags = [];
     for (var tag in message.tags) {
-      tags.add(new view.MessageTagView(tag.text, tag.tagId));
+      tags.add(new view.MessageTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
     }
     view.conversationPanelView.addMessage(
       new view.MessageView(
@@ -99,13 +99,22 @@ void _populateTagPanelView(List<model.Tag> tags, TagReceiver tagReceiver) {
 void _populateFilterTagsMenu(List<model.Tag> tags) {
   view.conversationFilter.clearMenuTags();
   for (var tag in tags) {
-    view.conversationFilter.addMenuTag(new view.FilterMenuTagView(tag.text, tag.tagId));
+    view.conversationFilter.addMenuTag(new view.FilterMenuTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
   }
 }
 
 void _populateSelectedFilterTags(List<model.Tag> tags) {
   view.conversationFilter.clearSelectedTags();
   for (var tag in tags) {
-    view.conversationFilter.addFilterTag(new view.FilterTagView(tag.text, tag.tagId));
+    view.conversationFilter.addFilterTag(new view.FilterTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
+  }
+}
+
+view.TagStyle tagTypeToStyle(model.TagType tagType) {
+  switch (tagType) {
+    case model.TagType.Important:
+      return view.TagStyle.Important;
+    default:
+      return view.TagStyle.None;
   }
 }

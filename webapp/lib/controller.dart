@@ -233,7 +233,7 @@ void command(UIAction action, Data data) {
       if (filterTags.contains(tag)) break;
       filterTags.add(tag);
       view.urlView.pageUrlFilterTags = filterTags.map((tag) => tag.tagId).toList();
-      view.conversationFilter.addFilterTag(new view.FilterTagView(tag.text, tag.tagId));
+      view.conversationFilter.addFilterTag(new view.FilterTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
       filteredConversations = filterConversationsByTags(conversations, filterTags);
       activeConversation = updateViewForConversations(filteredConversations);
       break;
@@ -459,7 +459,7 @@ void setConversationTag(model.Tag tag, model.Conversation conversation) {
   if (!conversation.tags.contains(tag)) {
     conversation.tags.add(tag);
     platform.updateConversationTags(activeConversation);
-    view.conversationPanelView.addTags(new view.ConversationTagView(tag.text, tag.tagId));
+    view.conversationPanelView.addTags(new view.ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
   }
 }
 
@@ -469,7 +469,7 @@ void setMessageTag(model.Tag tag, model.Message message, model.Conversation conv
     platform.updateConversationMessages(activeConversation);
     view.conversationPanelView
       .messageViewAtIndex(conversation.messages.indexOf(message))
-      .addTag(new view.MessageTagView(tag.text, tag.tagId));
+      .addTag(new view.MessageTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
   }
 }
 
