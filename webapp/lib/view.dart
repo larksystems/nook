@@ -378,6 +378,14 @@ class ConversationListPanelView {
     assert(_conversationList.children.length == 0);
   }
 
+  void checkConversation(String deidentifiedPhoneNumber) {
+    _phoneToConversations[deidentifiedPhoneNumber]._check();
+  }
+
+  void uncheckConversation(String deidentifiedPhoneNumber) {
+    _phoneToConversations[deidentifiedPhoneNumber]._uncheck();
+  }
+
   void checkAllConversations() => _phoneToConversations.forEach((_, conversation) => conversation._check());
   void uncheckAllConversations() => _phoneToConversations.forEach((_, conversation) => conversation._uncheck());
   void showCheckboxes() => _phoneToConversations.forEach((_, conversation) => conversation._showCheckbox());
