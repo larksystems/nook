@@ -434,7 +434,7 @@ class ReplyPanelView {
   DivElement _replies;
   DivElement _replyList;
   DivElement _notes;
-  TextAreaElement _notesTextarea;
+  TextAreaElement _notesTextArea;
 
   AddActionView _addReply;
 
@@ -462,15 +462,15 @@ class ReplyPanelView {
       ..classes.add('notes-box');
     replyPanel.append(_notes);
 
-    _notesTextarea = new TextAreaElement()
+    _notesTextArea = new TextAreaElement()
       ..classes.add('notes-box__textarea')
       ..contentEditable = 'true'
-      ..onInput.listen((_) => command(UIAction.updateNote, new NoteData(_notesTextarea.value)))
+      ..onInput.listen((_) => command(UIAction.updateNote, new NoteData(_notesTextArea.value)))
       ..onKeyPress.listen((e) => e.stopPropagation());
-    _notes.append(_notesTextarea);
+    _notes.append(_notesTextArea);
   }
 
-  set noteText(String text) => _notesTextarea.value = text;
+  set noteText(String text) => _notesTextArea.value = text;
 
   void addReply(ActionView action) {
     _replyList.append(action.action);
@@ -597,7 +597,7 @@ class TagActionView extends ActionView {
 abstract class AddActionView {
   DivElement addAction;
   DivElement _newActionBox;
-  DivElement _newActionTextarea;
+  DivElement _newActionTextArea;
   DivElement _newActionTranslationLabel;
   DivElement _newActionTranslation;
   DivElement _newActionButton;
@@ -611,12 +611,12 @@ abstract class AddActionView {
       ..text = infoText
       ..onClick.listen((_) {
         _newActionBox.style.visibility = 'visible';
-        _newActionTextarea.focus();
+        _newActionTextArea.focus();
 
         // Position cursor at the end
         // See https://stackoverflow.com/questions/1125292/how-to-move-cursor-to-end-of-contenteditable-entity/3866442#3866442
         var range = document.createRange()
-          ..selectNodeContents(_newActionTextarea)
+          ..selectNodeContents(_newActionTextArea)
           ..collapse(false);
         window.getSelection()
           ..removeAllRanges()
@@ -638,12 +638,12 @@ abstract class AddActionView {
       ..style.visibility = 'hidden';
     addAction.append(_newActionBox);
 
-    _newActionTextarea = new DivElement()
+    _newActionTextArea = new DivElement()
       ..classes.add('add-action__textarea')
       ..contentEditable = 'true'
       ..text = ''
       ..onKeyPress.listen((e) => e.stopPropagation());
-    _newActionBox.append(_newActionTextarea);
+    _newActionBox.append(_newActionTextArea);
 
     _newActionTranslationLabel = new DivElement()
       ..text = 'Translation:'
@@ -661,7 +661,7 @@ abstract class AddActionView {
       ..text = 'Submit'
       ..onClick.listen((_) {
         _newActionBox.style.visibility = 'hidden';
-        _newActionTextarea.text = '';
+        _newActionTextArea.text = '';
         _newActionTranslation.text = '';
       });
     _newActionBox.append(_newActionButton);
@@ -670,13 +670,13 @@ abstract class AddActionView {
 
 class AddReplyActionView extends AddActionView {
   AddReplyActionView(String infoText) : super(infoText) {
-    _newActionButton.onClick.listen((_) => command(UIAction.addNewSuggestedReply, new AddSuggestedReplyData(_newActionTextarea.text, _newActionTranslation.text)));
+    _newActionButton.onClick.listen((_) => command(UIAction.addNewSuggestedReply, new AddSuggestedReplyData(_newActionTextArea.text, _newActionTranslation.text)));
   }
 }
 
 class AddTagActionView extends AddActionView {
   AddTagActionView(String infoText) : super(infoText) {
-    _newActionButton.onClick.listen((_) => command(UIAction.addNewTag, new AddTagData(_newActionTextarea.text)));
+    _newActionButton.onClick.listen((_) => command(UIAction.addNewTag, new AddTagData(_newActionTextArea.text)));
     // No translation for tags
     _newActionTranslation.remove();
     _newActionTranslationLabel.remove();
