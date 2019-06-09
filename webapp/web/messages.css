@@ -36,6 +36,11 @@
   border: 2px solid #ccc;
 }
 
+.message__datetime {
+  font-size: .8em;
+  color: #666;
+}
+
 .message__translation {
   font-size: .8em;
   padding-left: 16px;
