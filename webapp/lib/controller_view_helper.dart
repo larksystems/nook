@@ -41,6 +41,7 @@ void _populateConversationPanelView(model.Conversation conversation) {
     view.conversationPanelView.addMessage(
       new view.MessageView(
         message.text,
+        message.datetime,
         conversation.deidentifiedPhoneNumber.value,
         i,
         translation: message.translation,
