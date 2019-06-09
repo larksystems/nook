@@ -101,15 +101,7 @@ class ConversationPanelView {
     _conversationIdCopy = new DivElement()
       ..classes.add('conversation-summary__id-copy')
       ..title = 'Copy full conversation id'
-      ..onClick.listen((_) {
-        final success = _copyToClipboard(_conversationIdCopy.dataset['copy-value']);
-        if (success) {
-          log.verbose('Conversation id copied to clipboard');
-          // TODO: show a message that the copying was successful (or not)
-          return;
-        }
-        log.warning("Conversation id couldn't be copied to clipboard");
-      });
+      ..onClick.listen((_) => window.navigator.clipboard.writeText(_conversationIdCopy.dataset['copy-value']));
     title.append(_conversationIdCopy);
 
     _info = new DivElement()
@@ -171,19 +163,6 @@ class ConversationPanelView {
       _messages.firstChild.remove();
     }
   }
-}
-
-bool _copyToClipboard(String text) {
-  final textarea = new TextAreaElement()
-    ..style.position = 'absolute'
-    ..style.opacity = '0'
-    ..readOnly = true
-    ..text = text;
-  document.body.append(textarea);
-  textarea.select();
-  final ret = document.execCommand('copy');
-  textarea.remove();
-  return ret;
 }
 
 class MessageView {
