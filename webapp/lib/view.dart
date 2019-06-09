@@ -76,7 +76,8 @@ class ConversationPanelView {
   // HTML elements
   DivElement conversationPanel;
   DivElement _messages;
-  DivElement _deidentifiedPhoneNumber;
+  DivElement _conversationId;
+  DivElement _conversationIdCopy;
   DivElement _info;
   DivElement _tags;
 
@@ -91,9 +92,19 @@ class ConversationPanelView {
       ..classes.add('conversation-summary');
     conversationPanel.append(conversationSummary);
 
-    _deidentifiedPhoneNumber = new DivElement()
+    var title = new DivElement()
+      ..classes.add('conversation-summary__title');
+    conversationSummary.append(title);
+
+    _conversationId = new DivElement()
       ..classes.add('conversation-summary__id');
-    conversationSummary.append(_deidentifiedPhoneNumber);
+    title.append(_conversationId);
+
+    _conversationIdCopy = new DivElement()
+      ..classes.add('conversation-summary__id-copy')
+      ..title = 'Copy full conversation id'
+      ..onClick.listen((_) => window.navigator.clipboard.writeText(_conversationIdCopy.dataset['copy-value']));
+    title.append(_conversationIdCopy);
 
     _info = new DivElement()
       ..classes.add('conversation-summary__demographics');
@@ -108,7 +119,8 @@ class ConversationPanelView {
     conversationPanel.append(_messages);
   }
 
-  set deidentifiedPhoneNumber(String deidentifiedPhoneNumber) => _deidentifiedPhoneNumber.text = deidentifiedPhoneNumber;
+  set deidentifiedPhoneNumber(String deidentifiedPhoneNumber) => _conversationIdCopy.dataset['copy-value'] = deidentifiedPhoneNumber;
+  set deidentifiedPhoneNumberShort(String deidentifiedPhoneNumberShort) => _conversationId.text = deidentifiedPhoneNumberShort;
   set demographicsInfo(String demographicsInfo) => _info.text = demographicsInfo;
 
   void addMessage(MessageView message) {
@@ -138,7 +150,8 @@ class ConversationPanelView {
   }
 
   void clear() {
-    _deidentifiedPhoneNumber.text = '';
+    _conversationId.text = '';
+    _conversationIdCopy.dataset['copy-value'] = '';
     _info.text = '';
     _messageViews = [];
 
