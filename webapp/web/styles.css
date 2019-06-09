@@ -158,8 +158,37 @@ main {
     padding: 4px;
 }
 
+.conversation-summary__title {
+    display: flex;
+    align-items: center;
+    align-content: center;
+    justify-items: center;
+    place-content: center;
+}
+
 .conversation-summary__id {
+    flex: 0 0 auto;
     font-size: 18px;
+}
+
+.conversation-summary__id-copy {
+    flex: 0 0 auto;
+    background: url(assets/icon-copy.png);
+    background-size: contain;
+    width: 16px;
+    height: 16px;
+    margin: 6px;
+    opacity: 0.7;
+    visibility: hidden;
+    cursor: pointer;
+}
+
+.conversation-summary__title:hover .conversation-summary__id-copy {
+    visibility: visible;
+}
+
+.conversation-summary__id-copy:hover {
+    background-color: #ddd;
 }
 
 .conversation-summary__demographics {
