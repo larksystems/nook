@@ -1,5 +1,7 @@
 import 'dart:html';
 
+import 'package:intl/intl.dart';
+
 import 'dom_utils.dart';
 import 'logger.dart';
 import 'controller.dart';
@@ -155,13 +157,14 @@ class ConversationPanelView {
 class MessageView {
   DivElement message;
   DivElement _messageBubble;
-  DivElement _messageTags;
+  DivElement _messageDateTime;
   DivElement _messageText;
   DivElement _messageTranslation;
+  DivElement _messageTags;
 
   static MessageView selectedMessageView;
 
-  MessageView(String text, String conversationId, int messageIndex, {String translation = '', bool incoming = true, List<TagView> tags = const[]}) {
+  MessageView(String text, DateTime dateTime, String conversationId, int messageIndex, {String translation = '', bool incoming = true, List<TagView> tags = const[]}) {
     message = new DivElement()
       ..classes.add('message')
       ..classes.add(incoming ? 'message--incoming' : 'message--outgoing')
@@ -176,6 +179,11 @@ class MessageView {
         command(UIAction.selectMessage, new MessageData(conversationId, messageIndex));
       });
     message.append(_messageBubble);
+
+    _messageDateTime = new DivElement()
+      ..classes.add('message__datetime')
+      ..text = _formatDateTime(dateTime);
+    _messageBubble.append(_messageDateTime);
 
     _messageText = new DivElement()
       ..classes.add('message__text')
@@ -227,6 +235,29 @@ class MessageView {
     selectedMessageView?.message?.classes?.remove('message--selected');
     selectedMessageView = null;
   }
+}
+
+final DateFormat _dateFormat = new DateFormat('E d MMM y');
+final DateFormat _dateFormatNoYear = new DateFormat('E d MMM');
+final DateFormat _hourFormat = new DateFormat('H:m');
+
+String _formatDateTime(DateTime dateTime) {
+  DateTime now = DateTime.now();
+  DateTime localDateTime = dateTime.toLocal();
+
+  if (_dateFormat.format(now) == _dateFormat.format(localDateTime)) {
+    // localDateTime is today, return only time
+    return _hourFormat.format(localDateTime);
+  }
+  if (_dateFormat.format(now.subtract(new Duration(days: 1))) == _dateFormat.format(localDateTime)) {
+    // localDateTime is yesterday, return yesterday and the time
+    return 'Yesterday, ${_hourFormat.format(localDateTime)}';
+  }
+  if (now.year == localDateTime.year) {
+    // localDateTime is this year, return date without year and the time
+    return '${_dateFormatNoYear.format(localDateTime)}, ${_hourFormat.format(localDateTime)}';
+  }
+  return '${_dateFormat.format(localDateTime)}, ${_hourFormat.format(localDateTime)}';
 }
 
 enum TagStyle {

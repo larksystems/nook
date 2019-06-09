@@ -514,6 +514,7 @@ void sendReply(model.SuggestedReply reply, model.Conversation conversation) {
   view.conversationPanelView.addMessage(
     new view.MessageView(
       newMessage.text,
+      newMessage.datetime,
       conversation.deidentifiedPhoneNumber.value,
       conversation.messages.indexOf(newMessage),
       translation: newMessage.translation,
@@ -538,6 +539,7 @@ void sendMultiReply(model.SuggestedReply reply, List<model.Conversation> convers
     view.conversationPanelView.addMessage(
       new view.MessageView(
         newMessage.text,
+        newMessage.datetime,
         activeConversation.deidentifiedPhoneNumber.value,
         activeConversation.messages.indexOf(newMessage),
         translation: newMessage.translation,
