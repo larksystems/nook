@@ -56,6 +56,15 @@ void clearMain() {
   authMainView.authElement.remove();
 }
 
+bool sendingMultiMessagesUserConfirmation(int noMessages) {
+  return window.confirm('Are you sure you want to send $noMessages SMS message${noMessages == 1 ? "" : "s" }?');
+}
+
+bool taggingMultiConversationsUserConfirmation(int noConversations) {
+  return window.confirm('Are you sure you want to tag $noConversations conversation${noConversations == 1 ? "" : "s" }?');
+}
+
+const CONVERSATION_LIST_PANEL_TITLE = 'Conversations';
 const REPLY_PANEL_TITLE = 'Suggested responses';
 const TAG_PANEL_TITLE = 'Available tags';
 const ADD_REPLY_INFO = 'Add new suggested response';
@@ -302,6 +311,7 @@ class FilterTagView extends TagView {
 class ConversationListPanelView {
   DivElement conversationListPanel;
   DivElement _conversationList;
+  CheckboxInputElement _selectAllCheckbox;
 
   ConversationFilter conversationFilter;
 
@@ -312,8 +322,25 @@ class ConversationListPanelView {
     conversationListPanel = new DivElement()
       ..classes.add('conversation-list-panel');
 
+    var panelHeader = new DivElement()
+      ..classes.add('conversation-list-header');
+    conversationListPanel.append(panelHeader);
+
+    _selectAllCheckbox = new CheckboxInputElement()
+      ..classes.add('conversation-list-header__checkbox')
+      ..title = 'Select all conversations'
+      ..checked = false
+      ..onClick.listen((_) => _selectAllCheckbox.checked ? command(UIAction.enableMultiSelectMode, null) : command(UIAction.disableMultiSelectMode, null));
+    panelHeader.append(_selectAllCheckbox);
+
+    var panelTitle = new DivElement()
+      ..classes.add('panel-title')
+      ..classes.add('conversation-list-header__title')
+      ..text = CONVERSATION_LIST_PANEL_TITLE;
+    panelHeader.append(panelTitle);
+
     _conversationList = new DivElement()
-      ..classes.add('message-list');
+      ..classes.add('conversation-list');
     conversationListPanel.append(_conversationList);
 
     conversationFilter = new ConversationFilter();
@@ -350,6 +377,19 @@ class ConversationListPanelView {
     }
     assert(_conversationList.children.length == 0);
   }
+
+  void checkConversation(String deidentifiedPhoneNumber) {
+    _phoneToConversations[deidentifiedPhoneNumber]._check();
+  }
+
+  void uncheckConversation(String deidentifiedPhoneNumber) {
+    _phoneToConversations[deidentifiedPhoneNumber]._uncheck();
+  }
+
+  void checkAllConversations() => _phoneToConversations.forEach((_, conversation) => conversation._check());
+  void uncheckAllConversations() => _phoneToConversations.forEach((_, conversation) => conversation._uncheck());
+  void showCheckboxes() => _phoneToConversations.forEach((_, conversation) => conversation._showCheckbox());
+  void hideCheckboxes() => _phoneToConversations.forEach((_, conversation) => conversation._hideCheckbox());
 }
 
 class ConversationFilter {
@@ -411,21 +451,39 @@ class ConversationFilter {
 
 class ConversationSummary {
   DivElement conversationSummary;
+  CheckboxInputElement _selectCheckbox;
 
   String deidentifiedPhoneNumber;
 
   ConversationSummary(this.deidentifiedPhoneNumber, String text) {
     conversationSummary = new DivElement()
+      ..classes.add('conversation-list__item');
+
+    _selectCheckbox = new CheckboxInputElement()
+      ..classes.add('conversation-selector')
+      ..title = 'Select conversation'
+      ..checked = false
+      ..style.visibility = 'hidden'
+      ..onClick.listen((_) => _selectCheckbox.checked ? command(UIAction.selectConversation, new ConversationData(deidentifiedPhoneNumber))
+                                                      : command(UIAction.deselectConversation, new ConversationData(deidentifiedPhoneNumber)));
+    conversationSummary.append(_selectCheckbox);
+
+    var summaryMessage = new DivElement()
       ..classes.add('summary-message')
       ..dataset['id'] = deidentifiedPhoneNumber
       ..text = text
-      ..onClick.listen((_) => command(UIAction.selectConversation, new ConversationData(deidentifiedPhoneNumber)));
+      ..onClick.listen((_) => command(UIAction.showConversation, new ConversationData(deidentifiedPhoneNumber)));
+    conversationSummary.append(summaryMessage);
   }
 
   set text(String text) => conversationSummary.text = text;
 
-  void _deselect() => conversationSummary.classes.remove('summary-message--selected');
-  void _select() => conversationSummary.classes.add('summary-message--selected');
+  void _select() => conversationSummary.classes.add('conversation-list__item--selected');
+  void _deselect() => conversationSummary.classes.remove('conversation-list__item--selected');
+  void _check() => _selectCheckbox.checked = true;
+  void _uncheck() => _selectCheckbox.checked = false;
+  void _showCheckbox() => _selectCheckbox.style.visibility = 'visible';
+  void _hideCheckbox() => _selectCheckbox.style.visibility = 'hidden';
 }
 
 class ReplyPanelView {
