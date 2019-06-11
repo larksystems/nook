@@ -114,7 +114,7 @@ firestore.Firestore _firestoreInstance;
     var data = conversation.data();
     Map<String, String> demogInfo = {};
     for (var k in data["demographicsInfo"].keys) {
-      demogInfo[k] = data["demographicsInfo"].toString();
+      demogInfo[k.toString()] = data["demographicsInfo"][k].toString();
     }
 
     List<Tag> allConversationTags = controller.conversationTags;
