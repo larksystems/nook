@@ -66,7 +66,6 @@ bool taggingMultiConversationsUserConfirmation(int noConversations) {
   return window.confirm('Are you sure you want to tag $noConversations conversation${noConversations == 1 ? "" : "s" }?');
 }
 
-const CONVERSATION_LIST_PANEL_TITLE = 'Conversations';
 const REPLY_PANEL_TITLE = 'Suggested responses';
 const TAG_PANEL_TITLE = 'Available tags';
 const ADD_REPLY_INFO = 'Add new suggested response';
@@ -354,6 +353,7 @@ class FilterTagView extends TagView {
 
 class ConversationListPanelView {
   DivElement conversationListPanel;
+  DivElement _conversationPanelTitle;
   DivElement _conversationList;
   CheckboxInputElement _selectAllCheckbox;
 
@@ -377,11 +377,11 @@ class ConversationListPanelView {
       ..onClick.listen((_) => _selectAllCheckbox.checked ? command(UIAction.enableMultiSelectMode, null) : command(UIAction.disableMultiSelectMode, null));
     panelHeader.append(_selectAllCheckbox);
 
-    var panelTitle = new DivElement()
+    _conversationPanelTitle = new DivElement()
       ..classes.add('panel-title')
       ..classes.add('conversation-list-header__title')
-      ..text = CONVERSATION_LIST_PANEL_TITLE;
-    panelHeader.append(panelTitle);
+      ..text = '0 conversations';
+    panelHeader.append(_conversationPanelTitle);
 
     _conversationList = new DivElement()
       ..classes.add('conversation-list');
@@ -396,6 +396,7 @@ class ConversationListPanelView {
       // Add at the end
       _conversationList.append(conversationSummary.conversationSummary);
       _phoneToConversations[conversationSummary.deidentifiedPhoneNumber] = conversationSummary;
+      _conversationPanelTitle.text = '${_phoneToConversations.length} conversations';
       return;
     }
     // Add before an existing tag
@@ -405,6 +406,7 @@ class ConversationListPanelView {
     Node refChild = _conversationList.children[position];
     _conversationList.insertBefore(conversationSummary.conversationSummary, refChild);
     _phoneToConversations[conversationSummary.deidentifiedPhoneNumber] = conversationSummary;
+    _conversationPanelTitle.text = '${_phoneToConversations.length} conversations';
   }
 
   void selectConversation(String deidentifiedPhoneNumber) {
@@ -420,6 +422,8 @@ class ConversationListPanelView {
       _conversationList.firstChild.remove();
     }
     assert(_conversationList.children.length == 0);
+    _phoneToConversations.clear();
+    _conversationPanelTitle.text = '${_phoneToConversations.length} conversations';
   }
 
   void checkConversation(String deidentifiedPhoneNumber) {
