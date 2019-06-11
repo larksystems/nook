@@ -1,0 +1,10 @@
+{
+    "apiKey" : "AIzaSyDj42Odr-HyZ-72WuIGaA8CeeY35y_-l3g",
+    "authDomain" : "nook-staging-25c48.firebaseapp.com",
+    "databaseURL" : "https://nook-staging-25c48.firebaseio.com",
+    "projectId" : "nook-staging-25c48",
+    "storageBucket" : "nook-staging-25c48.appspot.com",
+    "messagingSenderId" : "116505274471",
+    "logUrl" : "https://us-central1-nook-staging-25c48.cloudfunctions.net/Log",
+    "publishUrl" : "https://us-central1-nook-staging-25c48.cloudfunctions.net/Publish"
+}
