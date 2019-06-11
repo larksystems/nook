@@ -716,7 +716,7 @@ abstract class AddActionView {
       ..classes.add('add-action__button')
       ..text = infoText
       ..onClick.listen((_) {
-        _newActionBox.style.visibility = 'visible';
+        addAction.append(_newActionBox);
         _newActionTextArea.focus();
 
         // Position cursor at the end
@@ -733,16 +733,14 @@ abstract class AddActionView {
         windowClickStream = window.onMouseDown.listen((e) {
           var addActionBox = getAncestors(e.target).where((ancestor) => ancestor.classes.contains('add-action__box'));
           if (addActionBox.isNotEmpty) return; // click inside the box
-          _newActionBox.style.visibility = 'hidden';
+          _newActionBox.remove();
           windowClickStream.cancel();
         });
       });
     addAction.append(button);
 
     _newActionBox = new DivElement()
-      ..classes.add('add-action__box')
-      ..style.visibility = 'hidden';
-    addAction.append(_newActionBox);
+      ..classes.add('add-action__box');
 
     _newActionTextArea = new DivElement()
       ..classes.add('add-action__textarea')
