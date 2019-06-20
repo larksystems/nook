@@ -271,6 +271,20 @@ void command(UIAction action, Data data) {
       activeConversation.tags.remove(tag);
       platform.updateConversationTags(activeConversation);
       view.conversationPanelView.removeTag(tag.tagId);
+      if (filterTags.contains(tag)) {
+        if (filteredConversations.length == 1) {
+          filteredConversations.remove(activeConversation);
+          activeConversation = updateViewForConversations(filteredConversations);
+          return;
+        }
+        int nextConversationIndex = filteredConversations.indexOf(activeConversation);
+        filteredConversations.remove(activeConversation);
+        nextConversationIndex = nextConversationIndex >= filteredConversations.length ? 0 : nextConversationIndex;
+        // Select the next conversation in the list
+        activeConversation = filteredConversations[nextConversationIndex];
+        activeConversation = updateViewForConversations(filteredConversations);
+        updateViewForConversation(activeConversation);
+      }
       break;
     case UIAction.removeMessageTag:
       MessageTagData messageTagData = data;
@@ -288,7 +302,6 @@ void command(UIAction action, Data data) {
       view.urlView.pageUrlFilterTags = filterTags.map((tag) => tag.tagId).toList();
       view.conversationFilter.removeFilterTag(tag.tagId);
       filteredConversations = filterConversationsByTags(conversations, filterTags);
-      _populateConversationListPanelView(filteredConversations);
       activeConversation = updateViewForConversations(filteredConversations);
       if (multiSelectMode) {
         view.conversationListPanelView.showCheckboxes();
