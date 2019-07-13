@@ -1,9 +1,9 @@
 part of controller;
 
-const SEND_REPLY_BUTTON_TEXT = 'SEND message';
+const SEND_REPLY_BUTTON_TEXT = 'SEND';
 
-const TAG_CONVERSATION_BUTTON_TEXT = 'TAG conversation';
-const TAG_MESSAGE_BUTTON_TEXT = 'TAG message';
+const TAG_CONVERSATION_BUTTON_TEXT = 'TAG';
+const TAG_MESSAGE_BUTTON_TEXT = 'TAG';
 
 enum TagReceiver {
   Conversation,

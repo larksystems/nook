@@ -46,6 +46,15 @@ main {
     border-right: 1px solid #ddd;
 }
 
+.tag-panel {
+    max-width: 300px;
+}
+
+.conversation-list-panel,
+.reply-panel {
+    max-width: 500px;
+}
+
 .conversation-list {
     flex: 1 1 auto;
     overflow: scroll;
