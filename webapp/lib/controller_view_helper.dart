@@ -14,9 +14,7 @@ enum TagReceiver {
 
 void _populateConversationListPanelView(List<model.Conversation> conversations) {
   view.conversationListPanelView.clearConversationList();
-  if (conversations.isEmpty) {
-    view.conversationListPanelView.showLoadSpinner();
-  } else {
+  if (conversations.isNotEmpty) {
     view.conversationListPanelView.hideLoadSpinner();
     for (var conversation in conversations) {
       view.conversationListPanelView.addConversation(
