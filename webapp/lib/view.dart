@@ -356,6 +356,7 @@ class ConversationListPanelView {
   DivElement _conversationPanelTitle;
   DivElement _conversationList;
   CheckboxInputElement _selectAllCheckbox;
+  DivElement _loadSpinner;
 
   ConversationFilter conversationFilter;
 
@@ -382,6 +383,10 @@ class ConversationListPanelView {
       ..classes.add('conversation-list-header__title')
       ..text = '0 conversations';
     panelHeader.append(_conversationPanelTitle);
+
+    _loadSpinner = new DivElement()
+      ..classes.add('load-spinner');
+    conversationListPanel.append(_loadSpinner);
 
     _conversationList = new DivElement()
       ..classes.add('conversation-list');
@@ -438,6 +443,14 @@ class ConversationListPanelView {
   void uncheckAllConversations() => _phoneToConversations.forEach((_, conversation) => conversation._uncheck());
   void showCheckboxes() => _phoneToConversations.forEach((_, conversation) => conversation._showCheckbox());
   void hideCheckboxes() => _phoneToConversations.forEach((_, conversation) => conversation._hideCheckbox());
+
+  void hideLoadSpinner() {
+    _loadSpinner.hidden = true;
+  }
+
+  void showLoadSpinner() {
+    _loadSpinner.hidden = false;
+  }
 }
 
 class ConversationFilter {
