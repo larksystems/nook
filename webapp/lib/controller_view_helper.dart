@@ -14,12 +14,15 @@ enum TagReceiver {
 
 void _populateConversationListPanelView(List<model.Conversation> conversations) {
   view.conversationListPanelView.clearConversationList();
-  for (var conversation in conversations) {
-    view.conversationListPanelView.addConversation(
-      new view.ConversationSummary(
-        conversation.deidentifiedPhoneNumber.value,
-        conversation.messages.first.text)
-    );
+  if (conversations.isNotEmpty) {
+    view.conversationListPanelView.hideLoadSpinner();
+    for (var conversation in conversations) {
+      view.conversationListPanelView.addConversation(
+          new view.ConversationSummary(
+              conversation.deidentifiedPhoneNumber.value,
+              conversation.messages.first.text)
+      );
+    }
   }
 }
 
