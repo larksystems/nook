@@ -54,3 +54,13 @@
   align-items: flex-start;
   flex: 0 1 auto;
 }
+
+.status-line {
+  margin-right: 6px;
+  text-align: right;
+  color: #999;
+}
+
+.status-line-warning {
+  color: #c8c832;
+}
