@@ -366,7 +366,7 @@ class FilterTagView extends TagView {
 class ConversationListPanelView {
   DivElement conversationListPanel;
   DivElement _conversationPanelTitle;
-  DivElement _conversationList;
+  _VirtualConversationList _conversationList;
   CheckboxInputElement _selectAllCheckbox;
   DivElement _loadSpinner;
 
@@ -400,28 +400,15 @@ class ConversationListPanelView {
       ..classes.add('load-spinner');
     conversationListPanel.append(_loadSpinner);
 
-    _conversationList = new DivElement()
-      ..classes.add('conversation-list');
-    conversationListPanel.append(_conversationList);
+    _conversationList = new _VirtualConversationList();
+    conversationListPanel.append(_conversationList._conversationList);
 
     conversationFilter = new ConversationFilter();
     conversationListPanel.append(conversationFilter.conversationFilter);
   }
 
   void addConversation(ConversationSummary conversationSummary, [int position]) {
-    if (position == null || position >= _conversationList.children.length) {
-      // Add at the end
-      _conversationList.append(conversationSummary.conversationSummary);
-      _phoneToConversations[conversationSummary.deidentifiedPhoneNumber] = conversationSummary;
-      _conversationPanelTitle.text = '${_phoneToConversations.length} conversations';
-      return;
-    }
-    // Add before an existing tag
-    if (position < 0) {
-      position = 0;
-    }
-    Node refChild = _conversationList.children[position];
-    _conversationList.insertBefore(conversationSummary.conversationSummary, refChild);
+    _conversationList.addConversation(conversationSummary, position);
     _phoneToConversations[conversationSummary.deidentifiedPhoneNumber] = conversationSummary;
     _conversationPanelTitle.text = '${_phoneToConversations.length} conversations';
   }
@@ -430,15 +417,11 @@ class ConversationListPanelView {
     activeConversation?._deselect();
     activeConversation = _phoneToConversations[deidentifiedPhoneNumber];
     activeConversation._select();
-    activeConversation.conversationSummary.scrollIntoView();
+    _conversationList.selectConversation(activeConversation);
   }
 
   void clearConversationList() {
-    int conversationsNo = _conversationList.children.length;
-    for (int i = 0; i < conversationsNo; i++) {
-      _conversationList.firstChild.remove();
-    }
-    assert(_conversationList.children.length == 0);
+    _conversationList.clearConversationList();
     _phoneToConversations.clear();
     _conversationPanelTitle.text = '${_phoneToConversations.length} conversations';
   }
@@ -523,7 +506,7 @@ class ConversationFilter {
 }
 
 class ConversationSummary {
-  DivElement _conversationSummary;
+  DivElement _summaryElement;
   CheckboxInputElement _selectCheckbox;
 
   String deidentifiedPhoneNumber;
@@ -531,9 +514,12 @@ class ConversationSummary {
   bool _checked = false;
   bool _selected = false;
 
+  // For debugging, initialize this value to zero to show count in status line
+  static int _conversationSummaryDomCount; // = 0;
+
   ConversationSummary(this.deidentifiedPhoneNumber, this._text);
 
-  DivElement get conversationSummary => _conversationSummary ??= _buildDivElement();
+  DivElement get summaryElement => _summaryElement ??= _buildDivElement();
 
   DivElement _buildDivElement() {
     var conversationSummary = new DivElement()
@@ -555,16 +541,17 @@ class ConversationSummary {
       ..onClick.listen((_) => command(UIAction.showConversation, new ConversationData(deidentifiedPhoneNumber)));
     if (_selected) conversationSummary.classes.add('conversation-list__item--selected');
     conversationSummary.append(summaryMessage);
+    if (_conversationSummaryDomCount != null) showNormalStatus('${++_conversationSummaryDomCount} DivElements');
     return conversationSummary;
   }
 
   void _select() {
     _selected = true;
-    if (_conversationSummary != null) _conversationSummary.classes.add('conversation-list__item--selected');
+    if (_summaryElement != null) _summaryElement.classes.add('conversation-list__item--selected');
   }
   void _deselect() {
     _selected = false;
-    if (_conversationSummary != null) _conversationSummary.classes.remove('conversation-list__item--selected');
+    if (_summaryElement != null) _summaryElement.classes.remove('conversation-list__item--selected');
   }
   void _check() {
     _checked = true;
@@ -965,5 +952,39 @@ class UrlView {
       return uri.queryParameters[queryDisableRepliesKey].toLowerCase() == 'true';
     }
     return false;
+  }
+}
+
+class _VirtualConversationList {
+  final _summaries = <ConversationSummary>[];
+  final _conversationList = new DivElement();
+
+  _VirtualConversationList() {
+    _conversationList.classes.add('conversation-list');
+  }
+
+  void addConversation(ConversationSummary summary, int position) {
+    if (position == null || position >= _conversationList.children.length) {
+      // Add at the end
+      _conversationList.append(summary.summaryElement);
+      return;
+    }
+    // Add before an existing tag
+    if (position < 0) {
+      position = 0;
+    }
+    Node refChild = _conversationList.children[position];
+    _conversationList.insertBefore(summary.summaryElement, refChild);
+  }
+
+  void clearConversationList() {
+    int conversationsNo = _conversationList.children.length;
+    for (int i = 0; i < conversationsNo; i++) {
+      _conversationList.firstChild.remove();
+    }
+    assert(_conversationList.children.length == 0);}
+
+  void selectConversation(ConversationSummary summary) {
+    summary.summaryElement.scrollIntoView();
   }
 }
