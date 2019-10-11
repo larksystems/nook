@@ -421,7 +421,7 @@ class ConversationListPanelView {
   }
 
   void clearConversationList() {
-    _conversationList.clearConversationList();
+    _conversationList.clearConversations();
     _phoneToConversations.clear();
     _conversationPanelTitle.text = '${_phoneToConversations.length} conversations';
   }
@@ -966,6 +966,7 @@ class _VirtualConversationList {
   void addConversation(ConversationSummary summary, int position) {
     if (position == null || position >= _conversationList.children.length) {
       // Add at the end
+      _summaries.add(summary);
       _conversationList.append(summary.summaryElement);
       return;
     }
@@ -974,15 +975,18 @@ class _VirtualConversationList {
       position = 0;
     }
     Node refChild = _conversationList.children[position];
+    _summaries.insert(position, summary);
     _conversationList.insertBefore(summary.summaryElement, refChild);
   }
 
-  void clearConversationList() {
+  void clearConversations() {
     int conversationsNo = _conversationList.children.length;
     for (int i = 0; i < conversationsNo; i++) {
       _conversationList.firstChild.remove();
     }
-    assert(_conversationList.children.length == 0);}
+    assert(_conversationList.children.length == 0);
+    _summaries.clear();
+  }
 
   void selectConversation(ConversationSummary summary) {
     summary.summaryElement.scrollIntoView();
