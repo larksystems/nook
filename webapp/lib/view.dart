@@ -523,19 +523,26 @@ class ConversationFilter {
 }
 
 class ConversationSummary {
-  DivElement conversationSummary;
+  DivElement _conversationSummary;
   CheckboxInputElement _selectCheckbox;
 
   String deidentifiedPhoneNumber;
+  String _text;
+  bool _checked = false;
+  bool _selected = false;
 
-  ConversationSummary(this.deidentifiedPhoneNumber, String text) {
-    conversationSummary = new DivElement()
+  ConversationSummary(this.deidentifiedPhoneNumber, this._text);
+
+  DivElement get conversationSummary => _conversationSummary ??= _buildDivElement();
+
+  DivElement _buildDivElement() {
+    var conversationSummary = new DivElement()
       ..classes.add('conversation-list__item');
 
     _selectCheckbox = new CheckboxInputElement()
       ..classes.add('conversation-selector')
       ..title = 'Select conversation'
-      ..checked = false
+      ..checked = _checked
       ..style.visibility = 'hidden'
       ..onClick.listen((_) => _selectCheckbox.checked ? command(UIAction.selectConversation, new ConversationData(deidentifiedPhoneNumber))
                                                       : command(UIAction.deselectConversation, new ConversationData(deidentifiedPhoneNumber)));
@@ -544,19 +551,35 @@ class ConversationSummary {
     var summaryMessage = new DivElement()
       ..classes.add('summary-message')
       ..dataset['id'] = deidentifiedPhoneNumber
-      ..text = text
+      ..text = _text
       ..onClick.listen((_) => command(UIAction.showConversation, new ConversationData(deidentifiedPhoneNumber)));
+    if (_selected) conversationSummary.classes.add('conversation-list__item--selected');
     conversationSummary.append(summaryMessage);
+    return conversationSummary;
   }
 
-  set text(String text) => conversationSummary.text = text;
-
-  void _select() => conversationSummary.classes.add('conversation-list__item--selected');
-  void _deselect() => conversationSummary.classes.remove('conversation-list__item--selected');
-  void _check() => _selectCheckbox.checked = true;
-  void _uncheck() => _selectCheckbox.checked = false;
-  void _showCheckbox() => _selectCheckbox.style.visibility = 'visible';
-  void _hideCheckbox() => _selectCheckbox.style.visibility = 'hidden';
+  void _select() {
+    _selected = true;
+    if (_conversationSummary != null) _conversationSummary.classes.add('conversation-list__item--selected');
+  }
+  void _deselect() {
+    _selected = false;
+    if (_conversationSummary != null) _conversationSummary.classes.remove('conversation-list__item--selected');
+  }
+  void _check() {
+    _checked = true;
+    if (_selectCheckbox != null) _selectCheckbox.checked = true;
+  }
+  void _uncheck() {
+    _checked = false;
+    if (_selectCheckbox != null) _selectCheckbox.checked = false;
+  }
+  void _showCheckbox() {
+    if (_selectCheckbox != null) _selectCheckbox.style.visibility = 'visible';
+  }
+  void _hideCheckbox() {
+    if (_selectCheckbox != null) _selectCheckbox.style.visibility = 'hidden';
+  }
 }
 
 class ReplyPanelView {
