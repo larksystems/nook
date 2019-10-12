@@ -514,8 +514,8 @@ class ConversationSummary {
   bool _checked = false;
   bool _selected = false;
 
-  // For debugging, initialize this value to zero to show count in status line
-  static int _conversationSummaryDomCount; // = 0;
+  // For debugging, track the number of [ConversationSummary] DOM elements
+  static int _conversationSummaryDomCount = 0;
 
   ConversationSummary(this.deidentifiedPhoneNumber, this._text);
 
@@ -542,7 +542,6 @@ class ConversationSummary {
     if (_selected) conversationSummary.classes.add('conversation-list__item--selected');
     conversationSummary.append(summaryMessage);
     _conversationSummaryDomCount++;
-    if (_conversationSummaryDomCount != null) showNormalStatus('${_conversationSummaryDomCount} DivElements');
     return conversationSummary;
   }
 
@@ -1060,8 +1059,9 @@ class _VirtualConversationList {
     showDebugStatus();
   }
 
+  /// When debugging, uncomment this code to show information in the status area
   void showDebugStatus() {
-    var desiredScrollLength = _conversationList.scrollTop + 3 * _conversationList.clientHeight;
-    showNormalStatus('${_conversationList.scrollTop}, $_scrollLength, $_scrollWidth, $desiredScrollLength, ${ConversationSummary._conversationSummaryDomCount}');
+    //var desiredScrollLength = _conversationList.scrollTop + 3 * _conversationList.clientHeight;
+    //showNormalStatus('${_conversationList.scrollTop}, $desiredScrollLength, $_scrollLength, $_scrollWidth, ${ConversationSummary._conversationSummaryDomCount}');
   }
 }
