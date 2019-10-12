@@ -41,6 +41,7 @@ void initSignedInView() {
     ..append(conversationPanelView.conversationPanel)
     ..append(replyPanelView.replyPanel)
     ..append(tagPanelView.tagPanel);
+  showNormalStatus('signed in');
 }
 
 void initSignedOutView() {
@@ -48,6 +49,7 @@ void initSignedOutView() {
 
   querySelector('main')
     ..append(authMainView.authElement);
+  showNormalStatus('signed out');
 }
 
 void clearMain() {
@@ -64,6 +66,16 @@ bool sendingMultiMessagesUserConfirmation(int noMessages) {
 
 bool taggingMultiConversationsUserConfirmation(int noConversations) {
   return window.confirm('Are you sure you want to tag $noConversations conversation${noConversations == 1 ? "" : "s" }?');
+}
+
+void showNormalStatus(String text) {
+  tagPanelView._statusText.text = text;
+  tagPanelView._statusPanel.classes.remove('status-line-warning');
+}
+
+void showWarningStatus(String text) {
+  tagPanelView._statusText.text = text;
+  tagPanelView._statusPanel.classes.add('status-line-warning');
 }
 
 const REPLY_PANEL_TITLE = 'Suggested responses';
@@ -620,6 +632,8 @@ class TagPanelView {
   DivElement tagPanel;
   DivElement _tags;
   DivElement _tagList;
+  DivElement _statusPanel;
+  Text _statusText;
 
   AddActionView _addTag;
 
@@ -642,6 +656,12 @@ class TagPanelView {
 
     _addTag = new AddTagActionView(ADD_TAG_INFO);
     _tags.append(_addTag.addAction);
+
+    _statusPanel = new DivElement();
+    _statusText = new Text('loading...');
+    tagPanel.append(_statusPanel
+      ..classes.add('status-line')
+      ..append(_statusText));
   }
 
   void addTag(ActionView action) {
