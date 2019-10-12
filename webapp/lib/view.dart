@@ -976,9 +976,18 @@ class _VirtualConversationList {
   /// in the [_conversationList] in pixels.
   int _scrollLength = 0;
 
+  /// The width of the [_conversationList] scrolling area in pixels
+  /// or `null` if it has not been cached yet.
+  int _scrollWidth = 10;
+
+  /// When the width of the scrolling area changes, a delayed [Future] is
+  /// created to recalculate [_scrollLength].
+  Future _scrollLengthRecalc;
+
   _VirtualConversationList() {
-    _conversationList.classes.add('conversation-list');
-    _conversationList.onScroll.listen(_updateCachedElements);
+    _conversationList
+      ..classes.add('conversation-list')
+      ..onScroll.listen(_updateCachedElements);
   }
 
   void addConversation(ConversationSummary summary, int position) {
@@ -1010,7 +1019,18 @@ class _VirtualConversationList {
   }
 
   void selectConversation(ConversationSummary summary) {
-    summary.summaryElement.scrollIntoView();
+    var position = _summaries.indexOf(summary);
+
+    // Add additional elements to the DOM as necessary
+    // so that the conversation can be selected.
+    while (position >= _conversationList.children.length) {
+      var summary = _summaries[_conversationList.children.length];
+      _conversationList.append(summary.summaryElement);
+    }
+
+    if (position >= 0) {
+      summary.summaryElement.scrollIntoView();
+    }
   }
 
   /// Update the [ConversationSummary] elements cached/displayed in the DOM
@@ -1018,6 +1038,19 @@ class _VirtualConversationList {
   /// the length of the cached/displayed DOM elements "scrollLength",
   /// and the height of the scrolling area.
   void _updateCachedElements([_ignored_]) {
+    if (_scrollWidth == null) {
+      _scrollWidth = _conversationList.clientWidth;
+    } else if (_scrollWidth != _conversationList.clientWidth) {
+      // If the scroll area width changed, then recalculate the scroll length
+      // because the item heights and thus the scroll length depends upon the scroll area width.
+      _scrollLengthRecalc ??= new Future.delayed(const Duration(seconds: 2), () {
+        _scrollLength = _conversationList.children.fold(0, (len, element) => len + element.clientHeight);
+        _scrollWidth = _conversationList.clientWidth;
+        _scrollLengthRecalc = null;
+        showDebugStatus();
+      });
+    }
+
     var desiredScrollLength = _conversationList.scrollTop + 3 * _conversationList.clientHeight;
     while (_scrollLength < desiredScrollLength && _conversationList.children.length < _summaries.length) {
       var summary = _summaries[_conversationList.children.length];
@@ -1029,6 +1062,6 @@ class _VirtualConversationList {
 
   void showDebugStatus() {
     var desiredScrollLength = _conversationList.scrollTop + 3 * _conversationList.clientHeight;
-    showNormalStatus('${_conversationList.scrollTop}, $_scrollLength, $desiredScrollLength, ${ConversationSummary._conversationSummaryDomCount}');
+    showNormalStatus('${_conversationList.scrollTop}, $_scrollLength, $_scrollWidth, $desiredScrollLength, ${ConversationSummary._conversationSummaryDomCount}');
   }
 }
