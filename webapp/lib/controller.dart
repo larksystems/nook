@@ -363,7 +363,15 @@ void command(UIAction action, Data data) {
     case UIAction.updateNote:
       NoteData noteData = data;
       activeConversation.notes = noteData.noteText;
-      platform.updateNotes(activeConversation);
+      view.showNormalStatus('saving...');
+      platform.updateNotes(activeConversation).then((_) {
+        view.showNormalStatus('saved');
+      }).timeout(Duration(seconds: 15), onTimeout: () {
+        // The future returned by a firebase update does not complete when offline
+        view.showWarningStatus('save failed... offline?');
+      }).catchError(() {
+        view.showWarningStatus('save failed');
+      });
       break;
     case UIAction.userSignedOut:
       signedInUser = null;
