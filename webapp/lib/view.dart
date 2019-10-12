@@ -541,8 +541,17 @@ class ConversationSummary {
       ..onClick.listen((_) => command(UIAction.showConversation, new ConversationData(deidentifiedPhoneNumber)));
     if (_selected) conversationSummary.classes.add('conversation-list__item--selected');
     conversationSummary.append(summaryMessage);
-    if (_conversationSummaryDomCount != null) showNormalStatus('${++_conversationSummaryDomCount} DivElements');
+    _conversationSummaryDomCount++;
+    if (_conversationSummaryDomCount != null) showNormalStatus('${_conversationSummaryDomCount} DivElements');
     return conversationSummary;
+  }
+
+  void disposeSummaryElement() {
+    if (_summaryElement != null) {
+      _summaryElement.remove();
+      _summaryElement = null;
+      _conversationSummaryDomCount--;
+    }
   }
 
   void _select() {
@@ -956,39 +965,70 @@ class UrlView {
 }
 
 class _VirtualConversationList {
+  /// The summaries to be displayed.
   final _summaries = <ConversationSummary>[];
+
+  /// The DOM element used to display the summaries
+  /// and typically containing only a subset of the summary elements.
   final _conversationList = new DivElement();
+
+  /// The vertical scroll distance of the summary elements
+  /// in the [_conversationList] in pixels.
+  int _scrollLength = 0;
 
   _VirtualConversationList() {
     _conversationList.classes.add('conversation-list');
+    _conversationList.onScroll.listen(_updateCachedElements);
   }
 
   void addConversation(ConversationSummary summary, int position) {
-    if (position == null || position >= _conversationList.children.length) {
-      // Add at the end
-      _summaries.add(summary);
-      _conversationList.append(summary.summaryElement);
-      return;
-    }
-    // Add before an existing tag
-    if (position < 0) {
+    if (position == null || position > _conversationList.children.length) {
+      position = _conversationList.children.length;
+    } else if (position < 0) {
       position = 0;
     }
-    Node refChild = _conversationList.children[position];
     _summaries.insert(position, summary);
-    _conversationList.insertBefore(summary.summaryElement, refChild);
+    if (position < _conversationList.children.length) {
+      // Insert the summary element into the cached/visible DOM elements
+      Node refChild = _conversationList.children[position];
+      _conversationList.insertBefore(summary.summaryElement, refChild);
+      _scrollLength += summary.summaryElement.clientHeight;
+      showDebugStatus();
+    } else {
+      _updateCachedElements();
+    }
   }
 
   void clearConversations() {
-    int conversationsNo = _conversationList.children.length;
-    for (int i = 0; i < conversationsNo; i++) {
-      _conversationList.firstChild.remove();
+    for (var summary in _summaries) {
+      summary.disposeSummaryElement();
     }
     assert(_conversationList.children.length == 0);
     _summaries.clear();
+    _scrollLength = 0;
+    showDebugStatus();
   }
 
   void selectConversation(ConversationSummary summary) {
     summary.summaryElement.scrollIntoView();
+  }
+
+  /// Update the [ConversationSummary] elements cached/displayed in the DOM
+  /// based on the scroll position "scrollTop",
+  /// the length of the cached/displayed DOM elements "scrollLength",
+  /// and the height of the scrolling area.
+  void _updateCachedElements([_ignored_]) {
+    var desiredScrollLength = _conversationList.scrollTop + 3 * _conversationList.clientHeight;
+    while (_scrollLength < desiredScrollLength && _conversationList.children.length < _summaries.length) {
+      var summary = _summaries[_conversationList.children.length];
+      _conversationList.append(summary.summaryElement);
+      _scrollLength += summary.summaryElement.clientHeight;
+    }
+    showDebugStatus();
+  }
+
+  void showDebugStatus() {
+    var desiredScrollLength = _conversationList.scrollTop + 3 * _conversationList.clientHeight;
+    showNormalStatus('${_conversationList.scrollTop}, $_scrollLength, $desiredScrollLength, ${ConversationSummary._conversationSummaryDomCount}');
   }
 }
