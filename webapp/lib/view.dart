@@ -366,7 +366,7 @@ class FilterTagView extends TagView {
 class ConversationListPanelView {
   DivElement conversationListPanel;
   DivElement _conversationPanelTitle;
-  _VirtualConversationList _conversationList;
+  _ConversationListViewModel _conversationList;
   CheckboxInputElement _selectAllCheckbox;
   DivElement _loadSpinner;
 
@@ -400,7 +400,7 @@ class ConversationListPanelView {
       ..classes.add('load-spinner');
     conversationListPanel.append(_loadSpinner);
 
-    _conversationList = new _VirtualConversationList();
+    _conversationList = new _ConversationListViewModel();
     conversationListPanel.append(_conversationList._conversationList);
 
     conversationFilter = new ConversationFilter();
@@ -963,7 +963,7 @@ class UrlView {
   }
 }
 
-class _VirtualConversationList {
+class _ConversationListViewModel {
   /// The summaries to be displayed.
   final _summaries = <ConversationSummary>[];
 
@@ -983,7 +983,7 @@ class _VirtualConversationList {
   /// created to recalculate [_scrollLength].
   Future _scrollLengthRecalc;
 
-  _VirtualConversationList() {
+  _ConversationListViewModel() {
     _conversationList
       ..classes.add('conversation-list')
       ..onScroll.listen(_updateCachedElements);
@@ -1061,7 +1061,7 @@ class _VirtualConversationList {
 
   /// When debugging, uncomment this code to show information in the status area
   void showDebugStatus() {
-    //var desiredScrollLength = _conversationList.scrollTop + 3 * _conversationList.clientHeight;
-    //showNormalStatus('${_conversationList.scrollTop}, $desiredScrollLength, $_scrollLength, $_scrollWidth, ${ConversationSummary._conversationSummaryDomCount}');
+    var desiredScrollLength = _conversationList.scrollTop + 3 * _conversationList.clientHeight;
+    showNormalStatus('${_conversationList.scrollTop}, $desiredScrollLength, $_scrollLength, $_scrollWidth, ${ConversationSummary._conversationSummaryDomCount}');
   }
 }
