@@ -963,6 +963,13 @@ class UrlView {
   }
 }
 
+/// [_ConversationListViewModel] displays a list of [ConversationSummary],
+/// lazily building DOM elements as they are needed when the list is scrolled.
+///
+/// Currently, DOM elements are lazily created but not disposed until the
+/// list is cleared by calling [clearConversations]. A future enhancement
+/// would be to discard DOM elements earlier in the list as scrolling proceeds
+/// deep into the list.
 class _ConversationListViewModel {
   /// The summaries to be displayed.
   final _summaries = <ConversationSummary>[];
