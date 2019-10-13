@@ -514,9 +514,6 @@ class ConversationSummary {
   bool _checked = false;
   bool _selected = false;
 
-  // For debugging, track the number of [ConversationSummary] DOM elements
-  static int _conversationSummaryDomCount = 0;
-
   ConversationSummary(this.deidentifiedPhoneNumber, this._text);
 
   DivElement get summaryElement => _summaryElement ??= _buildDivElement();
@@ -541,7 +538,6 @@ class ConversationSummary {
       ..onClick.listen((_) => command(UIAction.showConversation, new ConversationData(deidentifiedPhoneNumber)));
     if (_selected) conversationSummary.classes.add('conversation-list__item--selected');
     conversationSummary.append(summaryMessage);
-    _conversationSummaryDomCount++;
     return conversationSummary;
   }
 
@@ -549,7 +545,6 @@ class ConversationSummary {
     if (_summaryElement != null) {
       _summaryElement.remove();
       _summaryElement = null;
-      _conversationSummaryDomCount--;
     }
   }
 
@@ -1008,7 +1003,6 @@ class _ConversationListViewModel {
       Node refChild = _conversationList.children[position];
       _conversationList.insertBefore(summary.summaryElement, refChild);
       _scrollLength += summary.summaryElement.clientHeight;
-      showDebugStatus();
     } else {
       _updateCachedElements();
     }
@@ -1021,7 +1015,6 @@ class _ConversationListViewModel {
     assert(_conversationList.children.length == 0);
     _summaries.clear();
     _scrollLength = 0;
-    showDebugStatus();
   }
 
   void selectConversation(ConversationSummary summary) {
@@ -1053,7 +1046,6 @@ class _ConversationListViewModel {
         _scrollLength = _conversationList.children.fold(0, (len, element) => len + element.clientHeight);
         _scrollWidth = _conversationList.clientWidth;
         _scrollLengthRecalc = null;
-        showDebugStatus();
       });
     }
 
@@ -1063,12 +1055,5 @@ class _ConversationListViewModel {
       _conversationList.append(summary.summaryElement);
       _scrollLength += summary.summaryElement.clientHeight;
     }
-    showDebugStatus();
-  }
-
-  /// When debugging, uncomment this code to show information in the status area
-  void showDebugStatus() {
-    var desiredScrollLength = _conversationList.scrollTop + 3 * _conversationList.clientHeight;
-    showNormalStatus('${_conversationList.scrollTop}, $desiredScrollLength, $_scrollLength, $_scrollWidth, ${ConversationSummary._conversationSummaryDomCount}');
   }
 }
