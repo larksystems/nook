@@ -1,5 +1,7 @@
 library controller;
 
+import 'dart:async';
+
 import 'logger.dart';
 import 'model.dart' as model;
 import 'platform.dart' as platform;
@@ -361,17 +363,7 @@ void command(UIAction action, Data data) {
       }
       break;
     case UIAction.updateNote:
-      NoteData noteData = data;
-      activeConversation.notes = noteData.noteText;
-      view.showNormalStatus('saving...');
-      platform.updateNotes(activeConversation).then((_) {
-        view.showNormalStatus('saved');
-      }).timeout(Duration(seconds: 15), onTimeout: () {
-        // The future returned by a firebase update does not complete when offline
-        view.showWarningStatus('save failed... offline?');
-      }).catchError(() {
-        view.showWarningStatus('save failed');
-      });
+      SaveNoteAction.textChange(activeConversation, (data as NoteData).noteText);
       break;
     case UIAction.userSignedOut:
       signedInUser = null;
@@ -615,4 +607,60 @@ List<model.Conversation> filterConversationsByTags(List<model.Conversation> conv
     filteredConversations.add(conversation);
   });
   return filteredConversations;
+}
+
+/// [SaveNoteAction] manages changes to a conversation's note text
+/// by consolidating multiple keystrokes over a rolling 3 second period
+/// into a single platform update operation.
+///
+/// Call [SaveNoteAction.textChange] when a user changes a note's text.
+class SaveNoteAction {
+  /// The current action
+  static SaveNoteAction _currentAction;
+
+  static void textChange(model.Conversation conversation, String noteText) {
+    assert(conversation != null);
+    if (_currentAction?._conversation != conversation) {
+      _currentAction = new SaveNoteAction(conversation);
+    }
+    _currentAction._updateText(noteText);
+  }
+
+  /// The conversation containing the note needing to be updated with new text.
+  final model.Conversation _conversation;
+
+  /// A timer used to consolidate multiple keystroke changes to a note's text
+  /// into a single save operation, or `null` if the text has been saved.
+  Timer _timer;
+
+  SaveNoteAction(this._conversation);
+
+  void _updateText(String noteText) {
+    view.showNormalStatus('saving...');
+    _conversation.notes = noteText;
+    _timer?.cancel();
+    _timer = new Timer(const Duration(seconds: 3), _updateNodes);
+  }
+
+  void _updateNodes() async {
+    var deidentifiedPhoneNumber = _conversation.deidentifiedPhoneNumber.value;
+    if (_currentAction == this) {
+      _currentAction = null;
+    }
+    try {
+      // The future returned by a firebase update does not complete when offline
+      // thus assume offline after 15 seconds
+      await platform.updateNotes(_conversation).timeout(const Duration(seconds: 15));
+      view.showNormalStatus('saved');
+      log.verbose('note saved: $deidentifiedPhoneNumber');
+    } catch (e, s) {
+      if (e is TimeoutException) {
+        view.showWarningStatus('save failed... offline?');
+        log.warning('save note failed (offline?): $deidentifiedPhoneNumber');
+      } else {
+        view.showWarningStatus('save failed');
+        log.warning('save note failed: $deidentifiedPhoneNumber\n  $e\n$s');
+      }
+    }
+  }
 }
