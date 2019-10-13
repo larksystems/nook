@@ -997,8 +997,8 @@ class _ConversationListViewModel {
   }
 
   void addConversation(ConversationSummary summary, int position) {
-    if (position == null || position > _conversationList.children.length) {
-      position = _conversationList.children.length;
+    if (position == null || position > _summaries.length) {
+      position = _summaries.length;
     } else if (position < 0) {
       position = 0;
     }
