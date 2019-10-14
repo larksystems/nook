@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'dom_utils.dart';
 import 'logger.dart';
 import 'controller.dart';
+import 'lazy_list_view_model.dart';
 
 
 Logger log = new Logger('view.dart');
@@ -366,7 +367,7 @@ class FilterTagView extends TagView {
 class ConversationListPanelView {
   DivElement conversationListPanel;
   DivElement _conversationPanelTitle;
-  _ConversationListViewModel _conversationList;
+  LazyListViewModel _conversationList;
   CheckboxInputElement _selectAllCheckbox;
   DivElement _loadSpinner;
 
@@ -400,15 +401,17 @@ class ConversationListPanelView {
       ..classes.add('load-spinner');
     conversationListPanel.append(_loadSpinner);
 
-    _conversationList = new _ConversationListViewModel();
-    conversationListPanel.append(_conversationList._conversationList);
+    var conversationListElement = new DivElement()
+      ..classes.add('conversation-list');
+    _conversationList = new LazyListViewModel(conversationListElement);
+    conversationListPanel.append(conversationListElement);
 
     conversationFilter = new ConversationFilter();
     conversationListPanel.append(conversationFilter.conversationFilter);
   }
 
   void addConversation(ConversationSummary conversationSummary, [int position]) {
-    _conversationList.addConversation(conversationSummary, position);
+    _conversationList.addItem(conversationSummary, position);
     _phoneToConversations[conversationSummary.deidentifiedPhoneNumber] = conversationSummary;
     _conversationPanelTitle.text = '${_phoneToConversations.length} conversations';
   }
@@ -417,11 +420,11 @@ class ConversationListPanelView {
     activeConversation?._deselect();
     activeConversation = _phoneToConversations[deidentifiedPhoneNumber];
     activeConversation._select();
-    _conversationList.selectConversation(activeConversation);
+    _conversationList.selectItem(activeConversation);
   }
 
   void clearConversationList() {
-    _conversationList.clearConversations();
+    _conversationList.clearItems();
     _phoneToConversations.clear();
     _conversationPanelTitle.text = '${_phoneToConversations.length} conversations';
   }
@@ -505,8 +508,7 @@ class ConversationFilter {
   }
 }
 
-class ConversationSummary {
-  DivElement _summaryElement;
+class ConversationSummary with LazyListViewItem {
   CheckboxInputElement _selectCheckbox;
 
   String deidentifiedPhoneNumber;
@@ -516,9 +518,7 @@ class ConversationSummary {
 
   ConversationSummary(this.deidentifiedPhoneNumber, this._text);
 
-  DivElement get summaryElement => _summaryElement ??= _buildDivElement();
-
-  DivElement _buildDivElement() {
+  Element buildElement() {
     var conversationSummary = new DivElement()
       ..classes.add('conversation-list__item');
 
@@ -541,20 +541,22 @@ class ConversationSummary {
     return conversationSummary;
   }
 
-  void disposeSummaryElement() {
-    if (_summaryElement != null) {
-      _summaryElement.remove();
-      _summaryElement = null;
+  @override
+  void disposeElement() {
+    if (_selectCheckbox != null) {
+      _selectCheckbox.remove();
+      _selectCheckbox = null;
     }
+    super.disposeElement();
   }
 
   void _select() {
     _selected = true;
-    if (_summaryElement != null) _summaryElement.classes.add('conversation-list__item--selected');
+    elementOrNull?.classes?.add('conversation-list__item--selected');
   }
   void _deselect() {
     _selected = false;
-    if (_summaryElement != null) _summaryElement.classes.remove('conversation-list__item--selected');
+    elementOrNull?.classes?.remove('conversation-list__item--selected');
   }
   void _check() {
     _checked = true;
@@ -955,111 +957,5 @@ class UrlView {
       return uri.queryParameters[queryDisableRepliesKey].toLowerCase() == 'true';
     }
     return false;
-  }
-}
-
-/// [_ConversationListViewModel] displays a list of [ConversationSummary],
-/// lazily building DOM elements as they are needed when the list is scrolled.
-///
-/// Currently, DOM elements are lazily created but not disposed until the
-/// list is cleared by calling [clearConversations]. A future enhancement
-/// would be to discard DOM elements earlier in the list as scrolling proceeds
-/// deep into the list.
-class _ConversationListViewModel {
-  /// The summaries to be displayed.
-  final _summaries = <ConversationSummary>[];
-
-  /// The DOM element used to display the summaries
-  /// and typically containing only a subset of the summary elements.
-  final _conversationList = new DivElement();
-
-  /// The vertical scroll distance of the summary elements
-  /// in the [_conversationList] in pixels.
-  int _scrollLength = 0;
-
-  /// The width of the [_conversationList] scrolling area in pixels
-  /// or `null` if it has not been cached yet.
-  int _scrollWidth = 10;
-
-  /// When the width of the scrolling area changes, a delayed [Future] is
-  /// created to recalculate [_scrollLength].
-  Future _scrollLengthRecalc;
-
-  _ConversationListViewModel() {
-    _conversationList
-      ..classes.add('conversation-list')
-      ..onScroll.listen(_updateCachedElements);
-    window.onResize.listen(_windowResized);
-  }
-
-  void addConversation(ConversationSummary summary, int position) {
-    if (position == null || position > _summaries.length) {
-      position = _summaries.length;
-    } else if (position < 0) {
-      position = 0;
-    }
-    _summaries.insert(position, summary);
-    if (position < _conversationList.children.length) {
-      // Insert the summary element into the cached/visible DOM elements
-      Node refChild = _conversationList.children[position];
-      _conversationList.insertBefore(summary.summaryElement, refChild);
-      _scrollLength += summary.summaryElement.clientHeight;
-    } else {
-      _updateCachedElements();
-    }
-  }
-
-  void clearConversations() {
-    for (var summary in _summaries) {
-      summary.disposeSummaryElement();
-    }
-    assert(_conversationList.children.length == 0);
-    _summaries.clear();
-    _scrollLength = 0;
-  }
-
-  void selectConversation(ConversationSummary summary) {
-    var position = _summaries.indexOf(summary);
-
-    // Add additional elements to the DOM as necessary
-    // so that the conversation can be selected.
-    while (position >= _conversationList.children.length) {
-      var summary = _summaries[_conversationList.children.length];
-      _conversationList.append(summary.summaryElement);
-    }
-
-    if (position >= 0) {
-      summary.summaryElement.scrollIntoView();
-    }
-  }
-
-  /// Update the [ConversationSummary] elements cached/displayed in the DOM
-  /// based on the scroll position "scrollTop",
-  /// the length of the cached/displayed DOM elements "scrollLength",
-  /// and the height of the scrolling area.
-  void _updateCachedElements([_ignored_]) {
-    if (_scrollWidth == null) {
-      _scrollWidth = _conversationList.clientWidth;
-    } else if (_scrollWidth != _conversationList.clientWidth) {
-      // If the scroll area width changed, then recalculate the scroll length
-      // because the item heights and thus the scroll length depends upon the scroll area width.
-      _scrollLengthRecalc ??= new Future.delayed(const Duration(seconds: 2), () {
-        _scrollLength = _conversationList.children.fold(0, (len, element) => len + element.clientHeight);
-        _scrollWidth = _conversationList.clientWidth;
-        _scrollLengthRecalc = null;
-      });
-    }
-
-    var desiredScrollLength = _conversationList.scrollTop + 3 * _conversationList.clientHeight;
-    while (_scrollLength < desiredScrollLength && _conversationList.children.length < _summaries.length) {
-      var summary = _summaries[_conversationList.children.length];
-      _conversationList.append(summary.summaryElement);
-      _scrollLength += summary.summaryElement.clientHeight;
-    }
-  }
-
-  void _windowResized(_ignored_) {
-    // Only update the list when it is attached to the DOM
-    if (_conversationList.isConnected) _updateCachedElements();
   }
 }
