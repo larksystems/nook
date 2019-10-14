@@ -989,6 +989,7 @@ class _ConversationListViewModel {
     _conversationList
       ..classes.add('conversation-list')
       ..onScroll.listen(_updateCachedElements);
+    window.onResize.listen(_windowResized);
   }
 
   void addConversation(ConversationSummary summary, int position) {
@@ -1055,5 +1056,10 @@ class _ConversationListViewModel {
       _conversationList.append(summary.summaryElement);
       _scrollLength += summary.summaryElement.clientHeight;
     }
+  }
+
+  void _windowResized(_ignored_) {
+    // Only update the list when it is attached to the DOM
+    if (_conversationList.isConnected) _updateCachedElements();
   }
 }
