@@ -126,7 +126,7 @@ firestore.Firestore _firestoreInstance;
     List<Message> messages = [];
     for (Map messageData in data["messages"]) {
      //{datetime: 2019-05-10T15:19:13.567929+00:00, direction: out, tags: [], text: test message, translation: }
-      MessageDirection direction = messageData["direction"] == "in" ? MessageDirection.In : MessageDirection.Out;
+      MessageDirection direction = MessageDirection_fromString(messageData["direction"] as String);
       DateTime dateTime = DateTime.parse(messageData["datetime"]);
       String text = messageData["text"];
       String translation = messageData["translation"];
@@ -182,15 +182,7 @@ firestore.Firestore _firestoreInstance;
         ..shortcut = data["shortcut"]
         ..tagId = tag.id
         ..text = data["text"]
-        ..type = stringToTagType(data["type"]);
-  }
-  TagType stringToTagType(String tagTypeString) {
-    switch (tagTypeString) {
-      case "important":
-        return TagType.Important;
-      default:
-        return TagType.Normal;
-    }
+        ..type = TagType_fromString(data["type"] as String);
   }
 
   void listenForConversationTags(TagsUpdatedListener listener) => _listenForTags(listener, "/conversationTags");
@@ -270,7 +262,7 @@ firestore.Firestore _firestoreInstance;
     var messageMaps = [];
     for (Message msg in conversation.messages) {
       messageMaps.add({
-        "direction" : msg.direction == MessageDirection.In ? "in" : "out",
+        "direction" : MessageDirection_toString(msg.direction),
         "datetime" : msg.datetime.toIso8601String(),
         "text" : msg.text,
         "translation" : msg.translation,
