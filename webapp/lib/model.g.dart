@@ -1,6 +1,8 @@
 // This generated file is used by `model.dart`
 // and should not be imported or exported by any other file.
 
+import 'package:firebase/firestore.dart' as firestore;
+
 enum MessageDirection {
   In,
   Out,
@@ -21,6 +23,15 @@ class Tag {
   String text;
   TagType type;
   String shortcut;
+
+  static Tag fromFirestore(firestore.DocumentSnapshot doc) {
+    var data = doc.data();
+    return Tag()
+      ..tagId = doc.id
+      ..text = data['text']
+      ..type = TagType_fromString(data['type'] as String)
+      ..shortcut = data['shortcut'];
+  }
 }
 
 enum TagType {
