@@ -16,6 +16,13 @@ String MessageDirection_toString(MessageDirection value, [String defaultText = '
   return defaultText;
 }
 
+class Tag {
+  String tagId;
+  String text;
+  TagType type;
+  String shortcut;
+}
+
 enum TagType {
   Normal,
   Important,
