@@ -4,7 +4,15 @@ export 'model.g.dart';
 class DeidentifiedPhoneNumber {
   String value;
   String shortValue;
+
+  static DeidentifiedPhoneNumber fromConversationId(String conversationId) {
+    String shortValue = conversationId.split('uuid-')[1].split('-')[0];
+    return new DeidentifiedPhoneNumber()
+      ..shortValue = shortValue
+      ..value = conversationId;
+  }
 }
+
 class Conversation {
   DeidentifiedPhoneNumber deidentifiedPhoneNumber;
   Map<String, String> demographicsInfo;

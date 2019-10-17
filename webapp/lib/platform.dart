@@ -99,18 +99,11 @@ firestore.Firestore _firestoreInstance;
   }
 
   typedef ConversationListener(List<Conversation> conversations);
-  DeidentifiedPhoneNumber _firestorePhoneNumberToModelNumber(String deidentifiedNo) {
-    String shortValue = deidentifiedNo.split('uuid-')[1].split('-')[0];
-    return new DeidentifiedPhoneNumber()
-      ..shortValue = shortValue
-      ..value = deidentifiedNo;
-  }
 
   Conversation _firestoreConversationToModelConversation(firestore.DocumentSnapshot conversation) {
     log.verbose("_firestoreConversationToModelConversation: ${conversation.id}");
-    String deidentifiedNo = conversation.id;
 
-    DeidentifiedPhoneNumber deidentPhoneNumber = _firestorePhoneNumberToModelNumber(deidentifiedNo);
+    DeidentifiedPhoneNumber deidentPhoneNumber = DeidentifiedPhoneNumber.fromConversationId(conversation.id);
     var data = conversation.data();
     Map<String, String> demogInfo = {};
     for (var k in data["demographicsInfo"].keys) {
