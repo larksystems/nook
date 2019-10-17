@@ -1,4 +1,5 @@
-// Generated model
+// This generated file is used by `model.dart`
+// and should not be imported or exported by any other file.
 
 enum MessageDirection {
   In,
