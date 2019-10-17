@@ -24,9 +24,9 @@ class SuggestedReply {
   String translation;
   String shortcut;
 
-  static SuggestedReply fromFirestore(firestore.DocumentSnapshot doc) {
+  static SuggestedReply fromFirestore(firestore.DocumentSnapshot doc, [SuggestedReply obj]) {
     var data = doc.data();
-    return SuggestedReply()
+    return (obj ?? SuggestedReply())
       ..suggestedReplyId = doc.id
       ..text = data['text']
       ..translation = data['translation']
@@ -40,9 +40,9 @@ class Tag {
   TagType type;
   String shortcut;
 
-  static Tag fromFirestore(firestore.DocumentSnapshot doc) {
+  static Tag fromFirestore(firestore.DocumentSnapshot doc, [Tag obj]) {
     var data = doc.data();
-    return Tag()
+    return (obj ?? Tag())
       ..tagId = doc.id
       ..text = data['text']
       ..type = TagType_fromString(data['type'] as String)
