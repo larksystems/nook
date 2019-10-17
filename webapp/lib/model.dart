@@ -1,3 +1,5 @@
+import 'model.g.dart' as g;
+export 'model.g.dart';
 
 class DeidentifiedPhoneNumber {
   String value;
@@ -11,13 +13,8 @@ class Conversation {
   String notes;
 }
 
-enum MessageDirection {
-  In,
-  Out
-}
-
 class Message {
-  MessageDirection direction;
+  g.MessageDirection direction;
   DateTime datetime;
   String text;
   String translation;
@@ -34,13 +31,8 @@ class SuggestedReply {
 class Tag {
   String tagId;
   String text;
-  TagType type;
+  g.TagType type;
   String shortcut;
-}
-
-enum TagType {
-  Normal,
-  Important
 }
 
 class User {
