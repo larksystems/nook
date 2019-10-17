@@ -21,13 +21,6 @@ class Message {
   List<g.Tag> tags;
 }
 
-class SuggestedReply {
-  String suggestedReplyId;
-  String text;
-  String translation;
-  String shortcut;
-}
-
 class User {
   String userName;
   String userEmail;

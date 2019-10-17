@@ -204,14 +204,6 @@ firestore.Firestore _firestoreInstance;
   }
 
   typedef SuggestedRepliesListener(List<SuggestedReply> replies);
-  SuggestedReply _firestoreSuggestedReplyToModelSuggestedReply(firestore.DocumentSnapshot suggestedReply) {
-    var data = suggestedReply.data();
-    return new SuggestedReply()
-        ..shortcut = data["shortcut"]
-        ..suggestedReplyId = suggestedReply.id
-        ..text = data["text"]
-        ..translation = data["translation"];
-  }
 
   void listenForSuggestedReplies(SuggestedRepliesListener listener) {
     final suggestedRepliesRoot = "/suggestedReplies";
@@ -230,7 +222,7 @@ firestore.Firestore _firestoreInstance;
       querySnapshot.docChanges().forEach((documentChange) {
         var suggestedReply = documentChange.doc;
         log.verbose("Processing ${suggestedReply.id}");
-        ret.add(_firestoreSuggestedReplyToModelSuggestedReply(suggestedReply));
+        ret.add(SuggestedReply.fromFirestore(suggestedReply));
       });
       listener(ret);
     });

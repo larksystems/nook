@@ -18,6 +18,22 @@ String MessageDirection_toString(MessageDirection value, [String defaultText = '
   return defaultText;
 }
 
+class SuggestedReply {
+  String suggestedReplyId;
+  String text;
+  String translation;
+  String shortcut;
+
+  static SuggestedReply fromFirestore(firestore.DocumentSnapshot doc) {
+    var data = doc.data();
+    return SuggestedReply()
+      ..suggestedReplyId = doc.id
+      ..text = data['text']
+      ..translation = data['translation']
+      ..shortcut = data['shortcut'];
+  }
+}
+
 class Tag {
   String tagId;
   String text;
