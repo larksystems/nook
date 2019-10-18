@@ -3,6 +3,24 @@
 
 import 'package:firebase/firestore.dart' as firestore;
 
+class Message {
+  MessageDirection direction;
+  DateTime datetime;
+  String text;
+  String translation;
+
+  static Message fromFirestore(firestore.DocumentSnapshot doc, [Message obj]) =>
+      fromData(doc.data(), obj);
+
+  static Message fromData(Map data, [Message obj]) {
+    return (obj ?? Message())
+      ..direction = MessageDirection_fromString(data['direction'] as String)
+      ..datetime = DateTime.parse(data['datetime'])
+      ..text = data['text']
+      ..translation = data['translation'];
+  }
+}
+
 enum MessageDirection {
   In,
   Out,
@@ -24,10 +42,11 @@ class SuggestedReply {
   String translation;
   String shortcut;
 
-  static SuggestedReply fromFirestore(firestore.DocumentSnapshot doc) {
-    var data = doc.data();
-    return SuggestedReply()
-      ..suggestedReplyId = doc.id
+  static SuggestedReply fromFirestore(firestore.DocumentSnapshot doc, [SuggestedReply obj]) =>
+      fromData(doc.data(), obj)..suggestedReplyId = doc.id;
+
+  static SuggestedReply fromData(Map data, [SuggestedReply obj]) {
+    return (obj ?? SuggestedReply())
       ..text = data['text']
       ..translation = data['translation']
       ..shortcut = data['shortcut'];
@@ -40,10 +59,11 @@ class Tag {
   TagType type;
   String shortcut;
 
-  static Tag fromFirestore(firestore.DocumentSnapshot doc) {
-    var data = doc.data();
-    return Tag()
-      ..tagId = doc.id
+  static Tag fromFirestore(firestore.DocumentSnapshot doc, [Tag obj]) =>
+      fromData(doc.data(), obj)..tagId = doc.id;
+
+  static Tag fromData(Map data, [Tag obj]) {
+    return (obj ?? Tag())
       ..text = data['text']
       ..type = TagType_fromString(data['type'] as String)
       ..shortcut = data['shortcut'];
