@@ -4,7 +4,7 @@
 import 'package:firebase/firestore.dart' as firestore;
 
 class Conversation {
-  Map<String, dynamic> demographicsInfo;
+  Map<String, String> demographicsInfo;
   String notes;
 
   static Conversation fromFirestore(firestore.DocumentSnapshot doc, [Conversation obj]) =>
@@ -12,7 +12,7 @@ class Conversation {
 
   static Conversation fromData(Map data, [Conversation obj]) {
     return (obj ?? Conversation())
-      ..demographicsInfo = data['demographicsInfo']
+      ..demographicsInfo = toMapString(data['demographicsInfo'])
       ..notes = data['notes'];
   }
 }
@@ -98,3 +98,6 @@ String TagType_toString(TagType value, [String defaultText = 'normal']) {
   if (value == TagType.Important) return 'important';
   return defaultText;
 }
+
+Map<String, String> toMapString(dynamic data) =>
+    (data as Map).map<String, String>((key, value) => MapEntry(key.toString(), value.toString()));
