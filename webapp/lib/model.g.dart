@@ -4,6 +4,7 @@
 import 'package:firebase/firestore.dart' as firestore;
 
 class Conversation {
+  Map<String, dynamic> demographicsInfo;
   String notes;
 
   static Conversation fromFirestore(firestore.DocumentSnapshot doc, [Conversation obj]) =>
@@ -11,6 +12,7 @@ class Conversation {
 
   static Conversation fromData(Map data, [Conversation obj]) {
     return (obj ?? Conversation())
+      ..demographicsInfo = data['demographicsInfo']
       ..notes = data['notes'];
   }
 }

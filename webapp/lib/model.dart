@@ -17,20 +17,14 @@ class DeidentifiedPhoneNumber {
 
 class Conversation extends g.Conversation {
   DeidentifiedPhoneNumber deidentifiedPhoneNumber;
-  Map<String, String> demographicsInfo;
   List<g.Tag> tags;
   List<Message> messages;
 
+  String get demographicsText => demographicsInfo.values.map<String>((value) => value.toString()).join(', ');
+
   static Conversation fromFirestore(firestore.DocumentSnapshot doc) {
-    var data = doc.data();
-    var rawDemographicsInfo = data["demographicsInfo"] as Map<String, dynamic>;
-    Map<String, String> demogInfo = {};
-    for (var k in rawDemographicsInfo.keys) {
-      demogInfo[k] = rawDemographicsInfo[k].toString();
-    }
     var conversation = Conversation()
-      ..deidentifiedPhoneNumber = DeidentifiedPhoneNumber.fromConversationId(doc.id)
-      ..demographicsInfo = demogInfo;
+      ..deidentifiedPhoneNumber = DeidentifiedPhoneNumber.fromConversationId(doc.id);
     return g.Conversation.fromFirestore(doc, conversation);
   }
 }
