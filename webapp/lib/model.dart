@@ -1,10 +1,18 @@
 import 'model.g.dart' as g;
-export 'model.g.dart';
+export 'model.g.dart' hide Message;
 
 class DeidentifiedPhoneNumber {
   String value;
   String shortValue;
+
+  static DeidentifiedPhoneNumber fromConversationId(String conversationId) {
+    String shortValue = conversationId.split('uuid-')[1].split('-')[0];
+    return new DeidentifiedPhoneNumber()
+      ..shortValue = shortValue
+      ..value = conversationId;
+  }
 }
+
 class Conversation {
   DeidentifiedPhoneNumber deidentifiedPhoneNumber;
   Map<String, String> demographicsInfo;
@@ -13,12 +21,12 @@ class Conversation {
   String notes;
 }
 
-class Message {
-  g.MessageDirection direction;
-  DateTime datetime;
-  String text;
-  String translation;
+class Message extends g.Message {
   List<g.Tag> tags;
+
+  static Message fromData(Map messageData) {
+    return g.Message.fromData(messageData, Message());
+  }
 }
 
 class User {
