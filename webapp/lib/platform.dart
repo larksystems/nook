@@ -119,20 +119,12 @@ firestore.Firestore _firestoreInstance;
     List<Message> messages = [];
     for (Map messageData in data["messages"]) {
      //{datetime: 2019-05-10T15:19:13.567929+00:00, direction: out, tags: [], text: test message, translation: }
-      MessageDirection direction = MessageDirection_fromString(messageData["direction"] as String);
-      DateTime dateTime = DateTime.parse(messageData["datetime"]);
-      String text = messageData["text"];
-      String translation = messageData["translation"];
 
       List tagIds = messageData["tags"];
       List<Tag> messageTags = allMessageTags.where((tag) => tagIds.contains(tag.tagId)).toList();
 
       messages.add(
-        new Message()
-          ..direction = direction
-          ..datetime = dateTime
-          ..text = text
-          ..translation = translation
+        Message.fromData(messageData)
           ..tags = messageTags
       );
     }

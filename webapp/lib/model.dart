@@ -23,6 +23,10 @@ class Conversation {
 
 class Message extends g.Message {
   List<g.Tag> tags;
+
+  static Message fromData(Map messageData) {
+    return g.Message.fromData(messageData, Message());
+  }
 }
 
 class User {
