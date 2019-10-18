@@ -31,10 +31,11 @@ class SuggestedReply {
   String translation;
   String shortcut;
 
-  static SuggestedReply fromFirestore(firestore.DocumentSnapshot doc, [SuggestedReply obj]) {
-    var data = doc.data();
+  static SuggestedReply fromFirestore(firestore.DocumentSnapshot doc, [SuggestedReply obj]) =>
+      fromData(doc.data(), obj)..suggestedReplyId = doc.id;
+
+  static SuggestedReply fromData(Map<String, dynamic> data, [SuggestedReply obj]) {
     return (obj ?? SuggestedReply())
-      ..suggestedReplyId = doc.id
       ..text = data['text']
       ..translation = data['translation']
       ..shortcut = data['shortcut'];
@@ -47,10 +48,11 @@ class Tag {
   TagType type;
   String shortcut;
 
-  static Tag fromFirestore(firestore.DocumentSnapshot doc, [Tag obj]) {
-    var data = doc.data();
+  static Tag fromFirestore(firestore.DocumentSnapshot doc, [Tag obj]) =>
+      fromData(doc.data(), obj)..tagId = doc.id;
+
+  static Tag fromData(Map<String, dynamic> data, [Tag obj]) {
     return (obj ?? Tag())
-      ..tagId = doc.id
       ..text = data['text']
       ..type = TagType_fromString(data['type'] as String)
       ..shortcut = data['shortcut'];
