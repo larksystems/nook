@@ -1,5 +1,5 @@
 import 'model.g.dart' as g;
-export 'model.g.dart';
+export 'model.g.dart' hide Message;
 
 class DeidentifiedPhoneNumber {
   String value;
@@ -21,11 +21,7 @@ class Conversation {
   String notes;
 }
 
-class Message {
-  g.MessageDirection direction;
-  DateTime datetime;
-  String text;
-  String translation;
+class Message extends g.Message {
   List<g.Tag> tags;
 }
 

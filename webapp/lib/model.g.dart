@@ -3,6 +3,13 @@
 
 import 'package:firebase/firestore.dart' as firestore;
 
+class Message {
+  MessageDirection direction;
+  DateTime datetime;
+  String text;
+  String translation;
+}
+
 enum MessageDirection {
   In,
   Out,
