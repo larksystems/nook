@@ -3,6 +3,18 @@
 
 import 'package:firebase/firestore.dart' as firestore;
 
+class Conversation {
+  String notes;
+
+  static Conversation fromFirestore(firestore.DocumentSnapshot doc, [Conversation obj]) =>
+      fromData(doc.data(), obj);
+
+  static Conversation fromData(Map data, [Conversation obj]) {
+    return (obj ?? Conversation())
+      ..notes = data['notes'];
+  }
+}
+
 class Message {
   MessageDirection direction;
   DateTime datetime;
