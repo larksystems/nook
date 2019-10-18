@@ -176,14 +176,6 @@ firestore.Firestore _firestoreInstance;
   }
 
   typedef TagsUpdatedListener(List<Tag> tags);
-  Tag _firestoreTagToModelTag(firestore.DocumentSnapshot tag) {
-    var data = tag.data();
-    return new Tag()
-        ..shortcut = data["shortcut"]
-        ..tagId = tag.id
-        ..text = data["text"]
-        ..type = TagType_fromString(data["type"] as String);
-  }
 
   void listenForConversationTags(TagsUpdatedListener listener) => _listenForTags(listener, "/conversationTags");
   void listenForMessageTags(TagsUpdatedListener listener) => _listenForTags(listener, "/messageTags");
@@ -205,21 +197,13 @@ firestore.Firestore _firestoreInstance;
       querySnapshot.docChanges().forEach((documentChange) {
         var tag = documentChange.doc;
         log.verbose("Processing ${tag.id}");
-        ret.add(_firestoreTagToModelTag(tag));
+        ret.add(Tag.fromFirestore(tag));
       });
       listener(ret);
     });
   }
 
   typedef SuggestedRepliesListener(List<SuggestedReply> replies);
-  SuggestedReply _firestoreSuggestedReplyToModelSuggestedReply(firestore.DocumentSnapshot suggestedReply) {
-    var data = suggestedReply.data();
-    return new SuggestedReply()
-        ..shortcut = data["shortcut"]
-        ..suggestedReplyId = suggestedReply.id
-        ..text = data["text"]
-        ..translation = data["translation"];
-  }
 
   void listenForSuggestedReplies(SuggestedRepliesListener listener) {
     final suggestedRepliesRoot = "/suggestedReplies";
@@ -238,7 +222,7 @@ firestore.Firestore _firestoreInstance;
       querySnapshot.docChanges().forEach((documentChange) {
         var suggestedReply = documentChange.doc;
         log.verbose("Processing ${suggestedReply.id}");
-        ret.add(_firestoreSuggestedReplyToModelSuggestedReply(suggestedReply));
+        ret.add(SuggestedReply.fromFirestore(suggestedReply));
       });
       listener(ret);
     });
