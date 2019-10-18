@@ -103,38 +103,27 @@ firestore.Firestore _firestoreInstance;
   Conversation _firestoreConversationToModelConversation(firestore.DocumentSnapshot conversation) {
     log.verbose("_firestoreConversationToModelConversation: ${conversation.id}");
 
-    DeidentifiedPhoneNumber deidentPhoneNumber = DeidentifiedPhoneNumber.fromConversationId(conversation.id);
     var data = conversation.data();
-    Map<String, String> demogInfo = {};
-    for (var k in data["demographicsInfo"].keys) {
-      demogInfo[k.toString()] = data["demographicsInfo"][k].toString();
-    }
 
-    List<Tag> allConversationTags = controller.conversationTags;
-    List<Tag> allMessageTags = controller.messageTags;
-
-    String notes = data["notes"];
     List conversationTagIds = data["tags"];
+    List<Tag> allConversationTags = controller.conversationTags;
     List<Tag> conversationTags = allConversationTags.where((tag) => conversationTagIds.contains(tag.tagId)).toList();
+
     List<Message> messages = [];
+    List<Tag> allMessageTags = controller.messageTags;
     for (Map messageData in data["messages"]) {
      //{datetime: 2019-05-10T15:19:13.567929+00:00, direction: out, tags: [], text: test message, translation: }
-
       List tagIds = messageData["tags"];
       List<Tag> messageTags = allMessageTags.where((tag) => tagIds.contains(tag.tagId)).toList();
-
       messages.add(
         Message.fromData(messageData)
           ..tags = messageTags
       );
     }
 
-    return new Conversation()
-      ..deidentifiedPhoneNumber = deidentPhoneNumber
-      ..demographicsInfo = demogInfo
+    return Conversation.fromFirestore(conversation)
       ..tags = conversationTags
-      ..messages = messages
-      ..notes = notes;
+      ..messages = messages;
   }
 
   void listenForConversations(ConversationListener listener) async {
