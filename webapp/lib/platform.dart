@@ -149,33 +149,8 @@ firestore.Firestore _firestoreInstance;
     });
   }
 
-  typedef TagsUpdatedListener(List<Tag> tags);
-
-  void listenForConversationTags(TagsUpdatedListener listener) => _listenForTags(listener, "/conversationTags");
-  void listenForMessageTags(TagsUpdatedListener listener) => _listenForTags(listener, "/messageTags");
-
-  void _listenForTags(TagsUpdatedListener listener, String tagCollectionRoot) async {
-    log.verbose('Loading tags from $tagCollectionRoot');
-    log.verbose("Root of query: $tagCollectionRoot");
-
-    _firestoreInstance.collection(tagCollectionRoot).onSnapshot.listen((querySnapshot) {
-      // No need to process local writes to Firebase
-      if (querySnapshot.metadata.hasPendingWrites) {
-        log.verbose("Skipping processing of local changes");
-        return;
-      }
-
-      log.verbose("Starting processing ${querySnapshot.docChanges().length} tags.");
-
-      List<Tag> ret = [];
-      querySnapshot.docChanges().forEach((documentChange) {
-        var tag = documentChange.doc;
-        log.verbose("Processing ${tag.id}");
-        ret.add(Tag.fromFirestore(tag));
-      });
-      listener(ret);
-    });
-  }
+  void listenForConversationTags(TagsUpdatedListener listener) => Tag.listen(_firestoreInstance, listener, "/conversationTags");
+  void listenForMessageTags(TagsUpdatedListener listener) => Tag.listen(_firestoreInstance, listener, "/messageTags");
 
   typedef SuggestedRepliesListener(List<SuggestedReply> replies);
 

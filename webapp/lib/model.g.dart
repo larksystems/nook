@@ -3,6 +3,10 @@
 
 import 'package:firebase/firestore.dart' as firestore;
 
+import 'logger.dart';
+
+Logger log = new Logger('model.g.dart');
+
 class Conversation {
   Map<String, String> demographicsInfo;
   String notes;
@@ -82,7 +86,11 @@ class Tag {
       ..type = TagType_fromString(data['type'] as String)
       ..shortcut = data['shortcut'];
   }
+
+  static void listen(firestore.Firestore fs, TagsUpdatedListener listener, String collectionRoot) =>
+      listenForUpdates(fs, listener, collectionRoot, Tag.fromFirestore);
 }
+typedef TagsUpdatedListener(List<Tag> changes);
 
 enum TagType {
   Normal,
@@ -101,3 +109,31 @@ String TagType_toString(TagType value, [String defaultText = 'normal']) {
 
 Map<String, String> toMapString(dynamic data) =>
     (data as Map).map<String, String>((key, value) => MapEntry(key.toString(), value.toString()));
+
+void listenForUpdates<T>(
+    firestore.Firestore fs,
+    void listener(List<T> changes),
+    String collectionRoot,
+    T createModel(firestore.DocumentSnapshot doc),
+    ) async {
+  log.verbose('Loading from $collectionRoot');
+  log.verbose('Query root: $collectionRoot');
+
+  fs.collection(collectionRoot).onSnapshot.listen((querySnapshot) {
+    // No need to process local writes to Firebase
+    if (querySnapshot.metadata.hasPendingWrites) {
+      log.verbose('Skipping processing of local changes');
+      return;
+    }
+
+    List<T> changes = [];
+    var docChanges = querySnapshot.docChanges();
+    log.verbose("Starting processing ${docChanges.length} changes.");
+    querySnapshot.docChanges().forEach((documentChange) {
+      var doc = documentChange.doc;
+      log.verbose('Processing ${doc.id}');
+      changes.add(createModel(doc));
+    });
+    listener(changes);
+  });
+}
