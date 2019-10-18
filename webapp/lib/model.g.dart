@@ -5,7 +5,7 @@ import 'package:firebase/firestore.dart' as firestore;
 
 import 'logger.dart';
 
-Logger log = new Logger('model.g.dart');
+Logger log = Logger('model.g.dart');
 
 class Conversation {
   Map<String, String> demographicsInfo;
