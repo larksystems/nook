@@ -19,7 +19,6 @@ class DeidentifiedPhoneNumber {
 
 class Conversation extends g.Conversation {
   DeidentifiedPhoneNumber deidentifiedPhoneNumber;
-  List<g.Message> messages;
 
   static Conversation fromFirestore(firestore.DocumentSnapshot doc, List<g.Tag> allConversationTags, List<g.Tag> allMessageTags) {
     var data = doc.data();

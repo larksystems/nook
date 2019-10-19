@@ -10,6 +10,7 @@ Logger log = Logger('model.g.dart');
 class Conversation {
   Map<String, String> demographicsInfo;
   List<Tag> tags;
+  List<Message> messages;
   String notes;
 
   static Conversation fromFirestore(firestore.DocumentSnapshot doc, [Conversation obj]) =>
