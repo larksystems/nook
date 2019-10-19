@@ -21,22 +21,17 @@ class Conversation extends g.Conversation {
   DeidentifiedPhoneNumber deidentifiedPhoneNumber;
 
   static Conversation fromFirestore(firestore.DocumentSnapshot doc, List<g.Tag> allConversationTags, List<g.Tag> allMessageTags) {
-    var data = doc.data();
-    List<g.Message> messages = [];
-    for (Map messageData in data["messages"]) {
-      //{datetime: 2019-05-10T15:19:13.567929+00:00, direction: out, tags: [], text: test message, translation: }
-      List tagIds = messageData["tags"];
-      messages.add(
-          g.Message.fromData(messageData)
-            ..tags = allMessageTags.where((tag) => tagIds.contains(tag.tagId)).toList()
-      );
+    var conversation = Conversation();
+    g.Conversation.fromFirestore(doc, conversation);
+    for (var message in conversation.messages) {
+      message
+        ..tags = allMessageTags.where((tag) => message.tagIds_temp.contains(tag.tagId)).toList()
+        ..tagIds_temp = null;
     }
-    List conversationTagIds = data["tags"];
-    var conversation = Conversation()
+    return conversation
       ..deidentifiedPhoneNumber = DeidentifiedPhoneNumber.fromConversationId(doc.id)
-      ..tags = allConversationTags.where((tag) => conversationTagIds.contains(tag.tagId)).toList()
-      ..messages = messages;
-    return g.Conversation.fromFirestore(doc, conversation);
+      ..tags = allConversationTags.where((tag) => conversation.tagIds_temp.contains(tag.tagId)).toList()
+      ..tagIds_temp = null;
   }
 }
 typedef ConversationCollectionListener(List<Conversation> changes);

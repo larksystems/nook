@@ -20,6 +20,8 @@ class Conversation {
   static Conversation fromData(Map data, [Conversation obj]) {
     return (obj ?? Conversation())
       ..demographicsInfo = toMapString(data['demographicsInfo'])
+      ..tagIds_temp = toListString(data['tags'])
+      ..messages = toList<Message>(data['messages'], Message.fromData)
       ..notes = data['notes'];
   }
 
@@ -43,6 +45,7 @@ class Message {
     return (obj ?? Message())
       ..direction = MessageDirection_fromString(data['direction'] as String)
       ..datetime = DateTime.parse(data['datetime'])
+      ..tagIds_temp = toListString(data['tags'])
       ..text = data['text']
       ..translation = data['translation'];
   }
@@ -123,6 +126,12 @@ String TagType_toString(TagType value, [String defaultText = 'normal']) {
   if (value == TagType.Important) return 'important';
   return defaultText;
 }
+
+List<T> toList<T>(dynamic data, T createModel(Map data)) =>
+    (data as List).map<T>((elem) => createModel(elem as Map)).toList();
+
+List<String> toListString(data) =>
+    (data as List).map<String>((elem) => elem.toString()).toList();
 
 Map<String, String> toMapString(dynamic data) =>
     (data as Map).map<String, String>((key, value) => MapEntry(key.toString(), value.toString()));
