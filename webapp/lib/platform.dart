@@ -98,54 +98,10 @@ firestore.Firestore _firestoreInstance;
     return response.statusCode == 200;
   }
 
-  typedef ConversationListener(List<Conversation> conversations);
-
-  Conversation _firestoreConversationToModelConversation(firestore.DocumentSnapshot conversation) {
-    log.verbose("_firestoreConversationToModelConversation: ${conversation.id}");
-
-    var data = conversation.data();
-
-    List conversationTagIds = data["tags"];
-    List<Tag> allConversationTags = controller.conversationTags;
-    List<Tag> conversationTags = allConversationTags.where((tag) => conversationTagIds.contains(tag.tagId)).toList();
-
-    List<Message> messages = [];
-    List<Tag> allMessageTags = controller.messageTags;
-    for (Map messageData in data["messages"]) {
-     //{datetime: 2019-05-10T15:19:13.567929+00:00, direction: out, tags: [], text: test message, translation: }
-      List tagIds = messageData["tags"];
-      List<Tag> messageTags = allMessageTags.where((tag) => tagIds.contains(tag.tagId)).toList();
-      messages.add(
-        Message.fromData(messageData)
-          ..tags = messageTags
-      );
-    }
-
-    return Conversation.fromFirestore(conversation)
-      ..tags = conversationTags
-      ..messages = messages;
-  }
-
-  void listenForConversations(ConversationListener listener) async {
-    final conversationsQueryRoot = "/nook_conversations";
-    log.verbose("Root of query: $conversationsQueryRoot");
-
-    _firestoreInstance.collection(conversationsQueryRoot).onSnapshot.listen((querySnapshot) {
-      // No need to process local writes to Firebase
-      if (querySnapshot.metadata.hasPendingWrites) {
-        log.verbose("Skipping processing of local changes");
-        return;
-      }
-
-      log.verbose("Starting processing ${querySnapshot.docChanges().length} tags.");
-
-      List<Conversation> ret = [];
-      querySnapshot.docChanges().forEach((documentChange) {
-        var conversation = documentChange.doc;
-        log.verbose("Processing ${conversation.id}");
-        ret.add(_firestoreConversationToModelConversation(conversation));
-      });
-      listener(ret);
+  void listenForConversations(ConversationCollectionListener listener) {
+    listenForUpdates<Conversation>(_firestoreInstance, listener, "/nook_conversations", (firestore.DocumentSnapshot conversation) {
+      log.verbose("_firestoreConversationToModelConversation: ${conversation.id}");
+      return Conversation.fromFirestore(conversation, controller.conversationTags, controller.messageTags);
     });
   }
 
