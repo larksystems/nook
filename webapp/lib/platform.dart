@@ -149,8 +149,8 @@ firestore.Firestore _firestoreInstance;
     });
   }
 
-  void listenForConversationTags(TagsUpdatedListener listener) => Tag.listen(_firestoreInstance, listener, "/conversationTags");
-  void listenForMessageTags(TagsUpdatedListener listener) => Tag.listen(_firestoreInstance, listener, "/messageTags");
+  void listenForConversationTags(TagCollectionListener listener) => Tag.listen(_firestoreInstance, listener, "/conversationTags");
+  void listenForMessageTags(TagCollectionListener listener) => Tag.listen(_firestoreInstance, listener, "/messageTags");
 
   typedef SuggestedRepliesListener(List<SuggestedReply> replies);
 

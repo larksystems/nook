@@ -19,7 +19,11 @@ class Conversation {
       ..demographicsInfo = toMapString(data['demographicsInfo'])
       ..notes = data['notes'];
   }
+
+  static void listen(firestore.Firestore fs, ConversationCollectionListener listener, String collectionRoot) =>
+      listenForUpdates(fs, listener, collectionRoot, Conversation.fromFirestore);
 }
+typedef ConversationCollectionListener(List<Conversation> changes);
 
 class Message {
   MessageDirection direction;
@@ -37,7 +41,11 @@ class Message {
       ..text = data['text']
       ..translation = data['translation'];
   }
+
+  static void listen(firestore.Firestore fs, MessageCollectionListener listener, String collectionRoot) =>
+      listenForUpdates(fs, listener, collectionRoot, Message.fromFirestore);
 }
+typedef MessageCollectionListener(List<Message> changes);
 
 enum MessageDirection {
   In,
@@ -69,7 +77,11 @@ class SuggestedReply {
       ..translation = data['translation']
       ..shortcut = data['shortcut'];
   }
+
+  static void listen(firestore.Firestore fs, SuggestedReplyCollectionListener listener, String collectionRoot) =>
+      listenForUpdates(fs, listener, collectionRoot, SuggestedReply.fromFirestore);
 }
+typedef SuggestedReplyCollectionListener(List<SuggestedReply> changes);
 
 class Tag {
   String tagId;
@@ -87,10 +99,10 @@ class Tag {
       ..shortcut = data['shortcut'];
   }
 
-  static void listen(firestore.Firestore fs, TagsUpdatedListener listener, String collectionRoot) =>
+  static void listen(firestore.Firestore fs, TagCollectionListener listener, String collectionRoot) =>
       listenForUpdates(fs, listener, collectionRoot, Tag.fromFirestore);
 }
-typedef TagsUpdatedListener(List<Tag> changes);
+typedef TagCollectionListener(List<Tag> changes);
 
 enum TagType {
   Normal,
