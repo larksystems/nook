@@ -100,28 +100,10 @@ firestore.Firestore _firestoreInstance;
 
   Conversation _firestoreConversationToModelConversation(firestore.DocumentSnapshot conversation) {
     log.verbose("_firestoreConversationToModelConversation: ${conversation.id}");
-
-    var data = conversation.data();
-
-    List conversationTagIds = data["tags"];
     List<Tag> allConversationTags = controller.conversationTags;
-    List<Tag> conversationTags = allConversationTags.where((tag) => conversationTagIds.contains(tag.tagId)).toList();
-
-    List<Message> messages = [];
     List<Tag> allMessageTags = controller.messageTags;
-    for (Map messageData in data["messages"]) {
-     //{datetime: 2019-05-10T15:19:13.567929+00:00, direction: out, tags: [], text: test message, translation: }
-      List tagIds = messageData["tags"];
-      List<Tag> messageTags = allMessageTags.where((tag) => tagIds.contains(tag.tagId)).toList();
-      messages.add(
-        Message.fromData(messageData)
-          ..tags = messageTags
-      );
-    }
 
-    return Conversation.fromFirestore(conversation)
-      ..tags = conversationTags
-      ..messages = messages;
+    return Conversation.fromFirestore(conversation, allConversationTags, allMessageTags);
   }
 
   void listenForConversations(ConversationCollectionListener listener) =>
