@@ -21,7 +21,7 @@ class Conversation {
   }
 
   static void listen(firestore.Firestore fs, ConversationCollectionListener listener, String collectionRoot) =>
-      listenForUpdates(fs, listener, collectionRoot, Conversation.fromFirestore);
+      listenForUpdates<Conversation>(fs, listener, collectionRoot, Conversation.fromFirestore);
 }
 typedef ConversationCollectionListener(List<Conversation> changes);
 
@@ -43,7 +43,7 @@ class Message {
   }
 
   static void listen(firestore.Firestore fs, MessageCollectionListener listener, String collectionRoot) =>
-      listenForUpdates(fs, listener, collectionRoot, Message.fromFirestore);
+      listenForUpdates<Message>(fs, listener, collectionRoot, Message.fromFirestore);
 }
 typedef MessageCollectionListener(List<Message> changes);
 
@@ -79,7 +79,7 @@ class SuggestedReply {
   }
 
   static void listen(firestore.Firestore fs, SuggestedReplyCollectionListener listener, String collectionRoot) =>
-      listenForUpdates(fs, listener, collectionRoot, SuggestedReply.fromFirestore);
+      listenForUpdates<SuggestedReply>(fs, listener, collectionRoot, SuggestedReply.fromFirestore);
 }
 typedef SuggestedReplyCollectionListener(List<SuggestedReply> changes);
 
@@ -100,7 +100,7 @@ class Tag {
   }
 
   static void listen(firestore.Firestore fs, TagCollectionListener listener, String collectionRoot) =>
-      listenForUpdates(fs, listener, collectionRoot, Tag.fromFirestore);
+      listenForUpdates<Tag>(fs, listener, collectionRoot, Tag.fromFirestore);
 }
 typedef TagCollectionListener(List<Tag> changes);
 
