@@ -9,6 +9,7 @@ Logger log = Logger('model.g.dart');
 
 class Conversation {
   Map<String, String> demographicsInfo;
+  List<String> tagIds_temp;
   List<Tag> tags;
   List<Message> messages;
   String notes;
@@ -30,6 +31,7 @@ typedef ConversationCollectionListener(List<Conversation> changes);
 class Message {
   MessageDirection direction;
   DateTime datetime;
+  List<String> tagIds_temp;
   List<Tag> tags;
   String text;
   String translation;
