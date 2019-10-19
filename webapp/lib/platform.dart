@@ -149,58 +149,14 @@ firestore.Firestore _firestoreInstance;
     });
   }
 
-  typedef TagsUpdatedListener(List<Tag> tags);
+  void listenForConversationTags(TagCollectionListener listener) =>
+      Tag.listen(_firestoreInstance, listener, "/conversationTags");
 
-  void listenForConversationTags(TagsUpdatedListener listener) => _listenForTags(listener, "/conversationTags");
-  void listenForMessageTags(TagsUpdatedListener listener) => _listenForTags(listener, "/messageTags");
+  void listenForMessageTags(TagCollectionListener listener) =>
+      Tag.listen(_firestoreInstance, listener, "/messageTags");
 
-  void _listenForTags(TagsUpdatedListener listener, String tagCollectionRoot) async {
-    log.verbose('Loading tags from $tagCollectionRoot');
-    log.verbose("Root of query: $tagCollectionRoot");
-
-    _firestoreInstance.collection(tagCollectionRoot).onSnapshot.listen((querySnapshot) {
-      // No need to process local writes to Firebase
-      if (querySnapshot.metadata.hasPendingWrites) {
-        log.verbose("Skipping processing of local changes");
-        return;
-      }
-
-      log.verbose("Starting processing ${querySnapshot.docChanges().length} tags.");
-
-      List<Tag> ret = [];
-      querySnapshot.docChanges().forEach((documentChange) {
-        var tag = documentChange.doc;
-        log.verbose("Processing ${tag.id}");
-        ret.add(Tag.fromFirestore(tag));
-      });
-      listener(ret);
-    });
-  }
-
-  typedef SuggestedRepliesListener(List<SuggestedReply> replies);
-
-  void listenForSuggestedReplies(SuggestedRepliesListener listener) {
-    final suggestedRepliesRoot = "/suggestedReplies";
-    log.verbose('Loading tags from $suggestedRepliesRoot');
-
-    _firestoreInstance.collection(suggestedRepliesRoot).onSnapshot.listen((querySnapshot) {
-      // No need to process local writes to Firebase
-      if (querySnapshot.metadata.hasPendingWrites) {
-        log.verbose("Skipping processing of local changes");
-        return;
-      }
-
-      log.verbose("Starting processing ${querySnapshot.docChanges().length} suggested replies.");
-
-      List<SuggestedReply> ret = [];
-      querySnapshot.docChanges().forEach((documentChange) {
-        var suggestedReply = documentChange.doc;
-        log.verbose("Processing ${suggestedReply.id}");
-        ret.add(SuggestedReply.fromFirestore(suggestedReply));
-      });
-      listener(ret);
-    });
-  }
+  void listenForSuggestedReplies(SuggestedReplyCollectionListener listener) =>
+      SuggestedReply.listen(_firestoreInstance, listener, "/suggestedReplies");
 
   Future updateSuggestedReply(SuggestedReply reply) {
     log.verbose("Updating suggested Reply ${reply.suggestedReplyId}");

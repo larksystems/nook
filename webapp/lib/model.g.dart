@@ -3,6 +3,10 @@
 
 import 'package:firebase/firestore.dart' as firestore;
 
+import 'logger.dart';
+
+Logger log = Logger('model.g.dart');
+
 class Conversation {
   Map<String, String> demographicsInfo;
   String notes;
@@ -15,7 +19,11 @@ class Conversation {
       ..demographicsInfo = toMapString(data['demographicsInfo'])
       ..notes = data['notes'];
   }
+
+  static void listen(firestore.Firestore fs, ConversationCollectionListener listener, String collectionRoot) =>
+      listenForUpdates(fs, listener, collectionRoot, Conversation.fromFirestore);
 }
+typedef ConversationCollectionListener(List<Conversation> changes);
 
 class Message {
   MessageDirection direction;
@@ -33,7 +41,11 @@ class Message {
       ..text = data['text']
       ..translation = data['translation'];
   }
+
+  static void listen(firestore.Firestore fs, MessageCollectionListener listener, String collectionRoot) =>
+      listenForUpdates(fs, listener, collectionRoot, Message.fromFirestore);
 }
+typedef MessageCollectionListener(List<Message> changes);
 
 enum MessageDirection {
   In,
@@ -65,7 +77,11 @@ class SuggestedReply {
       ..translation = data['translation']
       ..shortcut = data['shortcut'];
   }
+
+  static void listen(firestore.Firestore fs, SuggestedReplyCollectionListener listener, String collectionRoot) =>
+      listenForUpdates(fs, listener, collectionRoot, SuggestedReply.fromFirestore);
 }
+typedef SuggestedReplyCollectionListener(List<SuggestedReply> changes);
 
 class Tag {
   String tagId;
@@ -82,7 +98,11 @@ class Tag {
       ..type = TagType_fromString(data['type'] as String)
       ..shortcut = data['shortcut'];
   }
+
+  static void listen(firestore.Firestore fs, TagCollectionListener listener, String collectionRoot) =>
+      listenForUpdates(fs, listener, collectionRoot, Tag.fromFirestore);
 }
+typedef TagCollectionListener(List<Tag> changes);
 
 enum TagType {
   Normal,
@@ -101,3 +121,31 @@ String TagType_toString(TagType value, [String defaultText = 'normal']) {
 
 Map<String, String> toMapString(dynamic data) =>
     (data as Map).map<String, String>((key, value) => MapEntry(key.toString(), value.toString()));
+
+void listenForUpdates<T>(
+    firestore.Firestore fs,
+    void listener(List<T> changes),
+    String collectionRoot,
+    T createModel(firestore.DocumentSnapshot doc),
+    ) async {
+  log.verbose('Loading from $collectionRoot');
+  log.verbose('Query root: $collectionRoot');
+
+  fs.collection(collectionRoot).onSnapshot.listen((querySnapshot) {
+    // No need to process local writes to Firebase
+    if (querySnapshot.metadata.hasPendingWrites) {
+      log.verbose('Skipping processing of local changes');
+      return;
+    }
+
+    List<T> changes = [];
+    var docChanges = querySnapshot.docChanges();
+    log.verbose("Starting processing ${docChanges.length} changes.");
+    querySnapshot.docChanges().forEach((documentChange) {
+      var doc = documentChange.doc;
+      log.verbose('Processing ${doc.id}');
+      changes.add(createModel(doc));
+    });
+    listener(changes);
+  });
+}
