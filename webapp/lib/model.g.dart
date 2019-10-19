@@ -28,6 +28,7 @@ typedef ConversationCollectionListener(List<Conversation> changes);
 class Message {
   MessageDirection direction;
   DateTime datetime;
+  List<Tag> tags;
   String text;
   String translation;
 
