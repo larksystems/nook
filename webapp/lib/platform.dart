@@ -98,16 +98,12 @@ firestore.Firestore _firestoreInstance;
     return response.statusCode == 200;
   }
 
-  Conversation _firestoreConversationToModelConversation(firestore.DocumentSnapshot conversation) {
-    log.verbose("_firestoreConversationToModelConversation: ${conversation.id}");
-    List<Tag> allConversationTags = controller.conversationTags;
-    List<Tag> allMessageTags = controller.messageTags;
-
-    return Conversation.fromFirestore(conversation, allConversationTags, allMessageTags);
+  void listenForConversations(ConversationCollectionListener listener) {
+    listenForUpdates<Conversation>(_firestoreInstance, listener, "/nook_conversations", (firestore.DocumentSnapshot conversation) {
+      log.verbose("_firestoreConversationToModelConversation: ${conversation.id}");
+      return Conversation.fromFirestore(conversation, controller.conversationTags, controller.messageTags);
+    });
   }
-
-  void listenForConversations(ConversationCollectionListener listener) =>
-      listenForUpdates<Conversation>(_firestoreInstance, listener, "/nook_conversations", _firestoreConversationToModelConversation);
 
   void listenForConversationTags(TagCollectionListener listener) =>
       Tag.listen(_firestoreInstance, listener, "/conversationTags");
