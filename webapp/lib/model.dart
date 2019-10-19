@@ -1,7 +1,9 @@
 import 'package:firebase/firestore.dart' as firestore;
 
 import 'model.g.dart' as g;
-export 'model.g.dart' hide Conversation, Message;
+export 'model.g.dart' hide
+  Conversation, ConversationCollectionListener,
+  Message, MessageCollectionListener;
 
 class DeidentifiedPhoneNumber {
   String value;
@@ -26,6 +28,7 @@ class Conversation extends g.Conversation {
     return g.Conversation.fromFirestore(doc, conversation);
   }
 }
+typedef ConversationCollectionListener(List<Conversation> changes);
 
 class Message extends g.Message {
   List<g.Tag> tags;

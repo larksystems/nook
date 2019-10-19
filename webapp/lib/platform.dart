@@ -98,8 +98,6 @@ firestore.Firestore _firestoreInstance;
     return response.statusCode == 200;
   }
 
-  typedef ConversationListener(List<Conversation> conversations);
-
   Conversation _firestoreConversationToModelConversation(firestore.DocumentSnapshot conversation) {
     log.verbose("_firestoreConversationToModelConversation: ${conversation.id}");
 
@@ -126,28 +124,8 @@ firestore.Firestore _firestoreInstance;
       ..messages = messages;
   }
 
-  void listenForConversations(ConversationListener listener) async {
-    final conversationsQueryRoot = "/nook_conversations";
-    log.verbose("Root of query: $conversationsQueryRoot");
-
-    _firestoreInstance.collection(conversationsQueryRoot).onSnapshot.listen((querySnapshot) {
-      // No need to process local writes to Firebase
-      if (querySnapshot.metadata.hasPendingWrites) {
-        log.verbose("Skipping processing of local changes");
-        return;
-      }
-
-      log.verbose("Starting processing ${querySnapshot.docChanges().length} tags.");
-
-      List<Conversation> ret = [];
-      querySnapshot.docChanges().forEach((documentChange) {
-        var conversation = documentChange.doc;
-        log.verbose("Processing ${conversation.id}");
-        ret.add(_firestoreConversationToModelConversation(conversation));
-      });
-      listener(ret);
-    });
-  }
+  void listenForConversations(ConversationCollectionListener listener) =>
+      listenForUpdates<Conversation>(_firestoreInstance, listener, "/nook_conversations", _firestoreConversationToModelConversation);
 
   void listenForConversationTags(TagCollectionListener listener) =>
       Tag.listen(_firestoreInstance, listener, "/conversationTags");
