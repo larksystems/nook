@@ -149,9 +149,14 @@ firestore.Firestore _firestoreInstance;
     });
   }
 
-  void listenForConversationTags(TagCollectionListener listener) => Tag.listen(_firestoreInstance, listener, "/conversationTags");
-  void listenForMessageTags(TagCollectionListener listener) => Tag.listen(_firestoreInstance, listener, "/messageTags");
-  void listenForSuggestedReplies(SuggestedReplyCollectionListener listener) => SuggestedReply.listen(_firestoreInstance, listener, "/suggestedReplies");
+  void listenForConversationTags(TagCollectionListener listener) =>
+      Tag.listen(_firestoreInstance, listener, "/conversationTags");
+
+  void listenForMessageTags(TagCollectionListener listener) =>
+      Tag.listen(_firestoreInstance, listener, "/messageTags");
+
+  void listenForSuggestedReplies(SuggestedReplyCollectionListener listener) =>
+      SuggestedReply.listen(_firestoreInstance, listener, "/suggestedReplies");
 
   Future updateSuggestedReply(SuggestedReply reply) {
     log.verbose("Updating suggested Reply ${reply.suggestedReplyId}");
