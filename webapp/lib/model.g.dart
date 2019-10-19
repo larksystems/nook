@@ -17,10 +17,10 @@ class Conversation {
   static Conversation fromFirestore(firestore.DocumentSnapshot doc, [Conversation obj]) =>
       fromData(doc.data(), obj);
 
-  static Conversation fromData(Map data, [Conversation obj]) {
+  static Conversation fromData(data, [Conversation obj]) {
     return (obj ?? Conversation())
-      ..demographicsInfo = toMapString(data['demographicsInfo'])
-      ..tagIds_temp = toListString(data['tags'])
+      ..demographicsInfo = toMap<String>(data['demographicsInfo'], String_fromData)
+      ..tagIds_temp = toList<String>(data['tags'], String_fromData)
       ..messages = toList<Message>(data['messages'], Message.fromData)
       ..notes = data['notes'];
   }
@@ -41,11 +41,11 @@ class Message {
   static Message fromFirestore(firestore.DocumentSnapshot doc, [Message obj]) =>
       fromData(doc.data(), obj);
 
-  static Message fromData(Map data, [Message obj]) {
+  static Message fromData(data, [Message obj]) {
     return (obj ?? Message())
       ..direction = MessageDirection_fromString(data['direction'] as String)
       ..datetime = DateTime.parse(data['datetime'])
-      ..tagIds_temp = toListString(data['tags'])
+      ..tagIds_temp = toList<String>(data['tags'], String_fromData)
       ..text = data['text']
       ..translation = data['translation'];
   }
@@ -79,7 +79,7 @@ class SuggestedReply {
   static SuggestedReply fromFirestore(firestore.DocumentSnapshot doc, [SuggestedReply obj]) =>
       fromData(doc.data(), obj)..suggestedReplyId = doc.id;
 
-  static SuggestedReply fromData(Map data, [SuggestedReply obj]) {
+  static SuggestedReply fromData(data, [SuggestedReply obj]) {
     return (obj ?? SuggestedReply())
       ..text = data['text']
       ..translation = data['translation']
@@ -100,7 +100,7 @@ class Tag {
   static Tag fromFirestore(firestore.DocumentSnapshot doc, [Tag obj]) =>
       fromData(doc.data(), obj)..tagId = doc.id;
 
-  static Tag fromData(Map data, [Tag obj]) {
+  static Tag fromData(data, [Tag obj]) {
     return (obj ?? Tag())
       ..text = data['text']
       ..type = TagType_fromString(data['type'] as String)
@@ -127,14 +127,13 @@ String TagType_toString(TagType value, [String defaultText = 'normal']) {
   return defaultText;
 }
 
-List<T> toList<T>(dynamic data, T createModel(Map data)) =>
-    (data as List).map<T>((elem) => createModel(elem as Map)).toList();
+String String_fromData(data) => data.toString();
 
-List<String> toListString(data) =>
-    (data as List).map<String>((elem) => elem.toString()).toList();
+List<T> toList<T>(dynamic data, T createModel(data)) =>
+    (data as List).map<T>((elem) => createModel(elem)).toList();
 
-Map<String, String> toMapString(dynamic data) =>
-    (data as Map).map<String, String>((key, value) => MapEntry(key.toString(), value.toString()));
+Map<String, T> toMap<T>(dynamic data, T createModel(data)) =>
+    (data as Map).map<String, T>((key, value) => MapEntry(key.toString(), createModel(value)));
 
 void listenForUpdates<T>(
     firestore.Firestore fs,
