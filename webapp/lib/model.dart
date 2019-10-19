@@ -24,14 +24,11 @@ class Conversation extends g.Conversation {
     var conversation = Conversation();
     g.Conversation.fromFirestore(doc, conversation);
     for (var message in conversation.messages) {
-      message
-        ..tags = allMessageTags.where((tag) => message.tagIds_temp.contains(tag.tagId)).toList()
-        ..tagIds_temp = null;
+      message.cacheTags(allMessageTags);
     }
     return conversation
       ..deidentifiedPhoneNumber = DeidentifiedPhoneNumber.fromConversationId(doc.id)
-      ..tags = allConversationTags.where((tag) => conversation.tagIds_temp.contains(tag.tagId)).toList()
-      ..tagIds_temp = null;
+      ..cacheTags(allConversationTags);
   }
 }
 typedef ConversationCollectionListener(List<Conversation> changes);
