@@ -9,14 +9,24 @@ Logger log = Logger('model.g.dart');
 
 class Conversation {
   Map<String, String> demographicsInfo;
+  List<String> tags_ids;
+  List<Tag> tags;
+  List<Message> messages;
   String notes;
 
-  static Conversation fromFirestore(firestore.DocumentSnapshot doc, [Conversation obj]) =>
-      fromData(doc.data(), obj);
+  void cacheTags(List<Tag> allTags) {
+    tags = allTags.where((e) => tags_ids.contains(e.tagId)).toList();
+    tags_ids = null;
+  }
 
-  static Conversation fromData(Map data, [Conversation obj]) {
-    return (obj ?? Conversation())
-      ..demographicsInfo = toMapString(data['demographicsInfo'])
+  static Conversation fromFirestore(firestore.DocumentSnapshot doc, [Conversation modelObj]) =>
+      fromData(doc.data(), modelObj);
+
+  static Conversation fromData(data, [Conversation modelObj]) {
+    return (modelObj ?? Conversation())
+      ..demographicsInfo = toMap<String>(data['demographicsInfo'], String_fromData)
+      ..tags_ids = toList<String>(data['tags'], String_fromData)
+      ..messages = toList<Message>(data['messages'], Message.fromData)
       ..notes = data['notes'];
   }
 
@@ -28,16 +38,24 @@ typedef ConversationCollectionListener(List<Conversation> changes);
 class Message {
   MessageDirection direction;
   DateTime datetime;
+  List<String> tags_ids;
+  List<Tag> tags;
   String text;
   String translation;
 
-  static Message fromFirestore(firestore.DocumentSnapshot doc, [Message obj]) =>
-      fromData(doc.data(), obj);
+  void cacheTags(List<Tag> allTags) {
+    tags = allTags.where((e) => tags_ids.contains(e.tagId)).toList();
+    tags_ids = null;
+  }
 
-  static Message fromData(Map data, [Message obj]) {
-    return (obj ?? Message())
+  static Message fromFirestore(firestore.DocumentSnapshot doc, [Message modelObj]) =>
+      fromData(doc.data(), modelObj);
+
+  static Message fromData(data, [Message modelObj]) {
+    return (modelObj ?? Message())
       ..direction = MessageDirection_fromString(data['direction'] as String)
       ..datetime = DateTime.parse(data['datetime'])
+      ..tags_ids = toList<String>(data['tags'], String_fromData)
       ..text = data['text']
       ..translation = data['translation'];
   }
@@ -68,11 +86,11 @@ class SuggestedReply {
   String translation;
   String shortcut;
 
-  static SuggestedReply fromFirestore(firestore.DocumentSnapshot doc, [SuggestedReply obj]) =>
-      fromData(doc.data(), obj)..suggestedReplyId = doc.id;
+  static SuggestedReply fromFirestore(firestore.DocumentSnapshot doc, [SuggestedReply modelObj]) =>
+      fromData(doc.data(), modelObj)..suggestedReplyId = doc.id;
 
-  static SuggestedReply fromData(Map data, [SuggestedReply obj]) {
-    return (obj ?? SuggestedReply())
+  static SuggestedReply fromData(data, [SuggestedReply modelObj]) {
+    return (modelObj ?? SuggestedReply())
       ..text = data['text']
       ..translation = data['translation']
       ..shortcut = data['shortcut'];
@@ -89,11 +107,11 @@ class Tag {
   TagType type;
   String shortcut;
 
-  static Tag fromFirestore(firestore.DocumentSnapshot doc, [Tag obj]) =>
-      fromData(doc.data(), obj)..tagId = doc.id;
+  static Tag fromFirestore(firestore.DocumentSnapshot doc, [Tag modelObj]) =>
+      fromData(doc.data(), modelObj)..tagId = doc.id;
 
-  static Tag fromData(Map data, [Tag obj]) {
-    return (obj ?? Tag())
+  static Tag fromData(data, [Tag modelObj]) {
+    return (modelObj ?? Tag())
       ..text = data['text']
       ..type = TagType_fromString(data['type'] as String)
       ..shortcut = data['shortcut'];
@@ -119,8 +137,13 @@ String TagType_toString(TagType value, [String defaultText = 'normal']) {
   return defaultText;
 }
 
-Map<String, String> toMapString(dynamic data) =>
-    (data as Map).map<String, String>((key, value) => MapEntry(key.toString(), value.toString()));
+String String_fromData(data) => data.toString();
+
+List<T> toList<T>(dynamic data, T createModel(data)) =>
+    (data as List).map<T>((elem) => createModel(elem)).toList();
+
+Map<String, T> toMap<T>(dynamic data, T createModel(data)) =>
+    (data as Map).map<String, T>((key, value) => MapEntry(key.toString(), createModel(value)));
 
 void listenForUpdates<T>(
     firestore.Firestore fs,
