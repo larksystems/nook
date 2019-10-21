@@ -271,7 +271,7 @@ void command(UIAction action, Data data) {
     case UIAction.removeConversationTag:
       ConversationTagData conversationTagData = data;
       model.Tag tag = conversationTags.singleWhere((tag) => tag.tagId == conversationTagData.tagId);
-      activeConversation.tags.remove(tag);
+      activeConversation.tagIds.remove(tag.tagId);
       platform.updateConversationTags(activeConversation);
       view.conversationPanelView.removeTag(tag.tagId);
       if (filterTags.contains(tag)) {
@@ -569,8 +569,8 @@ void sendMultiReply(model.SuggestedReply reply, List<model.Conversation> convers
 }
 
 void setConversationTag(model.Tag tag, model.Conversation conversation) {
-  if (!conversation.tags.contains(tag)) {
-    conversation.tags.add(tag);
+  if (!conversation.tagIds.contains(tag.tagId)) {
+    conversation.tagIds.add(tag.tagId);
     platform.updateConversationTags(conversation);
     view.conversationPanelView.addTags(new view.ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
   }
@@ -578,8 +578,8 @@ void setConversationTag(model.Tag tag, model.Conversation conversation) {
 
 void setMultiConversationTag(model.Tag tag, List<model.Conversation> conversations) {
   conversations.forEach((conversation) {
-    if (!conversation.tags.contains(tag)) {
-      conversation.tags.add(tag);
+    if (!conversation.tagIds.contains(tag.tagId)) {
+      conversation.tagIds.add(tag.tagId);
       platform.updateConversationTags(conversation);
       if (conversation == activeConversation) {
         view.conversationPanelView.addTags(new view.ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
@@ -602,8 +602,9 @@ List<model.Conversation> filterConversationsByTags(List<model.Conversation> conv
   if (filterTags.isEmpty) return conversations;
 
   List<model.Conversation> filteredConversations = [];
+  var filterTagIds = filterTags.map<String>((tag) => tag.tagId).toList();
   conversations.forEach((conversation) {
-    if (!conversation.tags.toSet().containsAll(filterTags)) return;
+    if (!conversation.tagIds.toSet().containsAll(filterTagIds)) return;
     filteredConversations.add(conversation);
   });
   return filteredConversations;

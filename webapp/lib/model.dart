@@ -20,15 +20,26 @@ class DeidentifiedPhoneNumber {
 class Conversation extends g.Conversation {
   DeidentifiedPhoneNumber deidentifiedPhoneNumber;
 
-  static Conversation fromFirestore(firestore.DocumentSnapshot doc, List<g.Tag> allConversationTags, List<g.Tag> allMessageTags) {
+  static Conversation fromFirestore(firestore.DocumentSnapshot doc, List<g.Tag> allMessageTags) {
     var conversation = Conversation();
     g.Conversation.fromFirestore(doc, conversation);
     for (var message in conversation.messages) {
       message.cacheTags(allMessageTags);
     }
     return conversation
-      ..deidentifiedPhoneNumber = DeidentifiedPhoneNumber.fromConversationId(doc.id)
-      ..cacheTags(allConversationTags);
+      ..deidentifiedPhoneNumber = DeidentifiedPhoneNumber.fromConversationId(doc.id);
+  }
+
+  Iterable<g.Tag> tagIdsToTags(Iterable<g.Tag> allTags) {
+    var tags = <g.Tag>[];
+    for (var id in tagIds) {
+      var tag = allTags.firstWhere((tag) => tag.tagId == id, orElse: () {
+        g.log.warning('failed to find Conversation tag: $id');
+        return null;
+      });
+      if (tag != null) tags.add(tag);
+    }
+    return tags;
   }
 }
 typedef ConversationCollectionListener(List<Conversation> changes);

@@ -9,15 +9,9 @@ Logger log = Logger('model.g.dart');
 
 class Conversation {
   Map<String, String> demographicsInfo;
-  List<String> tags_ids;
-  List<Tag> tags;
+  List<String> tagIds;
   List<Message> messages;
   String notes;
-
-  void cacheTags(List<Tag> allTags) {
-    tags = allTags.where((e) => tags_ids.contains(e.tagId)).toList();
-    tags_ids = null;
-  }
 
   static Conversation fromFirestore(firestore.DocumentSnapshot doc, [Conversation modelObj]) =>
       fromData(doc.data(), modelObj);
@@ -25,7 +19,7 @@ class Conversation {
   static Conversation fromData(data, [Conversation modelObj]) {
     return (modelObj ?? Conversation())
       ..demographicsInfo = toMap<String>(data['demographicsInfo'], String_fromData)
-      ..tags_ids = toList<String>(data['tags'], String_fromData)
+      ..tagIds = toList<String>(data['tags'], String_fromData)
       ..messages = toList<Message>(data['messages'], Message.fromData)
       ..notes = data['notes'];
   }
