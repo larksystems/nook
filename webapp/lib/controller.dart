@@ -292,7 +292,7 @@ void command(UIAction action, Data data) {
     case UIAction.removeMessageTag:
       MessageTagData messageTagData = data;
       var message = activeConversation.messages[messageTagData.messageIndex];
-      message.tags.removeWhere((t) => t.tagId == messageTagData.tagId);
+      message.tagIds.removeWhere((id) => id == messageTagData.tagId);
       platform.updateConversationMessages(activeConversation);
       view.conversationPanelView
         .messageViewAtIndex(messageTagData.messageIndex)
@@ -523,7 +523,7 @@ void sendReply(model.SuggestedReply reply, model.Conversation conversation) {
     ..datetime = new DateTime.now()
     ..direction = model.MessageDirection.Out
     ..translation = reply.translation
-    ..tags = [];
+    ..tagIds = [];
   conversation.messages.add(newMessage);
   view.conversationPanelView.addMessage(
     new view.MessageView(
@@ -547,7 +547,7 @@ void sendMultiReply(model.SuggestedReply reply, List<model.Conversation> convers
     ..datetime = new DateTime.now()
     ..direction = model.MessageDirection.Out
     ..translation = reply.translation
-    ..tags = [];
+    ..tagIds = [];
   conversations.forEach((conversation) => conversation.messages.add(newMessage));
   if (conversations.contains(activeConversation)) {
     view.conversationPanelView.addMessage(
@@ -589,8 +589,8 @@ void setMultiConversationTag(model.Tag tag, List<model.Conversation> conversatio
 }
 
 void setMessageTag(model.Tag tag, model.Message message, model.Conversation conversation) {
-  if (!message.tags.contains(tag)) {
-    message.tags.add(tag);
+  if (!message.tagIds.contains(tag.tagId)) {
+    message.tagIds.add(tag.tagId);
     platform.updateConversationMessages(activeConversation);
     view.conversationPanelView
       .messageViewAtIndex(conversation.messages.indexOf(message))

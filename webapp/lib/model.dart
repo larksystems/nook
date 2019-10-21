@@ -23,9 +23,6 @@ class Conversation extends g.Conversation {
   static Conversation fromFirestore(firestore.DocumentSnapshot doc, List<g.Tag> allMessageTags) {
     var conversation = Conversation();
     g.Conversation.fromFirestore(doc, conversation);
-    for (var message in conversation.messages) {
-      message.cacheTags(allMessageTags);
-    }
     return conversation
       ..deidentifiedPhoneNumber = DeidentifiedPhoneNumber.fromConversationId(doc.id);
   }
@@ -43,6 +40,18 @@ class Conversation extends g.Conversation {
   }
 }
 typedef ConversationCollectionListener(List<Conversation> changes);
+
+Iterable<g.Tag> Message_tagIdsToTags(g.Message message, Iterable<g.Tag> allTags) {
+  var tags = <g.Tag>[];
+  for (var id in message.tagIds) {
+    var tag = allTags.firstWhere((tag) => tag.tagId == id, orElse: () {
+      g.log.warning('failed to find Message tag: $id');
+      return null;
+    });
+    if (tag != null) tags.add(tag);
+  }
+  return tags;
+}
 
 class User {
   String userName;

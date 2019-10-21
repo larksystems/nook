@@ -39,7 +39,7 @@ void _populateConversationPanelView(model.Conversation conversation) {
   for (int i = 0; i < conversation.messages.length; i++) {
     var message = conversation.messages[i];
     List<view.TagView> tags = [];
-    for (var tag in message.tags) {
+    for (var tag in model.Message_tagIdsToTags(message, messageTags)) {
       tags.add(new view.MessageTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
     }
     view.conversationPanelView.addMessage(

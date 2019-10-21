@@ -136,7 +136,7 @@ firestore.Firestore _firestoreInstance;
         "datetime" : msg.datetime.toIso8601String(),
         "text" : msg.text,
         "translation" : msg.translation,
-        "tags" : msg.tags.map((t) => t.tagId).toList()
+        "tags" : msg.tagIds,
       });
     }
 

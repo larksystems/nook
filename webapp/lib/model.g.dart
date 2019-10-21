@@ -32,15 +32,9 @@ typedef ConversationCollectionListener(List<Conversation> changes);
 class Message {
   MessageDirection direction;
   DateTime datetime;
-  List<String> tags_ids;
-  List<Tag> tags;
+  List<String> tagIds;
   String text;
   String translation;
-
-  void cacheTags(List<Tag> allTags) {
-    tags = allTags.where((e) => tags_ids.contains(e.tagId)).toList();
-    tags_ids = null;
-  }
 
   static Message fromFirestore(firestore.DocumentSnapshot doc, [Message modelObj]) =>
       fromData(doc.data(), modelObj);
@@ -49,7 +43,7 @@ class Message {
     return (modelObj ?? Message())
       ..direction = MessageDirection_fromString(data['direction'] as String)
       ..datetime = DateTime.parse(data['datetime'])
-      ..tags_ids = toList<String>(data['tags'], String_fromData)
+      ..tagIds = toList<String>(data['tags'], String_fromData)
       ..text = data['text']
       ..translation = data['translation'];
   }
