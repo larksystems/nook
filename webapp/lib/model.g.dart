@@ -27,7 +27,7 @@ class Conversation {
   static void listen(firestore.Firestore fs, ConversationCollectionListener listener, String collectionRoot) =>
       listenForUpdates<Conversation>(fs, listener, collectionRoot, Conversation.fromFirestore);
 }
-typedef ConversationCollectionListener(List<Conversation> changes);
+typedef void ConversationCollectionListener(List<Conversation> changes);
 
 class Message {
   MessageDirection direction;
@@ -51,7 +51,7 @@ class Message {
   static void listen(firestore.Firestore fs, MessageCollectionListener listener, String collectionRoot) =>
       listenForUpdates<Message>(fs, listener, collectionRoot, Message.fromFirestore);
 }
-typedef MessageCollectionListener(List<Message> changes);
+typedef void MessageCollectionListener(List<Message> changes);
 
 enum MessageDirection {
   In,
@@ -87,7 +87,7 @@ class SuggestedReply {
   static void listen(firestore.Firestore fs, SuggestedReplyCollectionListener listener, String collectionRoot) =>
       listenForUpdates<SuggestedReply>(fs, listener, collectionRoot, SuggestedReply.fromFirestore);
 }
-typedef SuggestedReplyCollectionListener(List<SuggestedReply> changes);
+typedef void SuggestedReplyCollectionListener(List<SuggestedReply> changes);
 
 class Tag {
   String tagId;
@@ -108,7 +108,7 @@ class Tag {
   static void listen(firestore.Firestore fs, TagCollectionListener listener, String collectionRoot) =>
       listenForUpdates<Tag>(fs, listener, collectionRoot, Tag.fromFirestore);
 }
-typedef TagCollectionListener(List<Tag> changes);
+typedef void TagCollectionListener(List<Tag> changes);
 
 enum TagType {
   Normal,
@@ -123,6 +123,27 @@ String TagType_toString(TagType value, [String defaultText = 'normal']) {
   if (value == TagType.Normal) return 'normal';
   if (value == TagType.Important) return 'important';
   return defaultText;
+}
+
+bool bool_fromData(data) {
+  if (data is bool) return data;
+  if (data is String) {
+    var boolStr = data.toLowerCase();
+    if (boolStr == 'true') return true;
+    if (boolStr == 'fasle') return false;
+  }
+  log.warning('unknown bool value: ${data?.toString()}');
+  return false;
+}
+
+int int_fromData(data) {
+  if (data is int) return data;
+  if (data is String) {
+    var result = int.tryParse(data);
+    if (result is int) return result;
+  }
+  log.warning('unknown int value: ${data?.toString()}');
+  return 0;
 }
 
 String String_fromData(data) => data.toString();
