@@ -20,7 +20,7 @@ class DeidentifiedPhoneNumber {
 class Conversation extends g.Conversation {
   DeidentifiedPhoneNumber deidentifiedPhoneNumber;
 
-  static Conversation fromFirestore(firestore.DocumentSnapshot doc, List<g.Tag> allMessageTags) {
+  static Conversation fromFirestore(firestore.DocumentSnapshot doc) {
     var conversation = Conversation();
     g.Conversation.fromFirestore(doc, conversation);
     return conversation
