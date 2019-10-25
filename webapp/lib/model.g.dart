@@ -9,15 +9,9 @@ Logger log = Logger('model.g.dart');
 
 class Conversation {
   Map<String, String> demographicsInfo;
-  List<String> tags_ids;
-  List<Tag> tags;
+  List<String> tagIds;
   List<Message> messages;
   String notes;
-
-  void cacheTags(List<Tag> allTags) {
-    tags = allTags.where((e) => tags_ids.contains(e.tagId)).toList();
-    tags_ids = null;
-  }
 
   static Conversation fromFirestore(firestore.DocumentSnapshot doc, [Conversation modelObj]) =>
       fromData(doc.data(), modelObj);
@@ -25,7 +19,7 @@ class Conversation {
   static Conversation fromData(data, [Conversation modelObj]) {
     return (modelObj ?? Conversation())
       ..demographicsInfo = toMap<String>(data['demographicsInfo'], String_fromData)
-      ..tags_ids = toList<String>(data['tags'], String_fromData)
+      ..tagIds = toList<String>(data['tags'], String_fromData)
       ..messages = toList<Message>(data['messages'], Message.fromData)
       ..notes = data['notes'];
   }
@@ -33,20 +27,14 @@ class Conversation {
   static void listen(firestore.Firestore fs, ConversationCollectionListener listener, String collectionRoot) =>
       listenForUpdates<Conversation>(fs, listener, collectionRoot, Conversation.fromFirestore);
 }
-typedef ConversationCollectionListener(List<Conversation> changes);
+typedef void ConversationCollectionListener(List<Conversation> changes);
 
 class Message {
   MessageDirection direction;
   DateTime datetime;
-  List<String> tags_ids;
-  List<Tag> tags;
+  List<String> tagIds;
   String text;
   String translation;
-
-  void cacheTags(List<Tag> allTags) {
-    tags = allTags.where((e) => tags_ids.contains(e.tagId)).toList();
-    tags_ids = null;
-  }
 
   static Message fromFirestore(firestore.DocumentSnapshot doc, [Message modelObj]) =>
       fromData(doc.data(), modelObj);
@@ -55,7 +43,7 @@ class Message {
     return (modelObj ?? Message())
       ..direction = MessageDirection_fromString(data['direction'] as String)
       ..datetime = DateTime.parse(data['datetime'])
-      ..tags_ids = toList<String>(data['tags'], String_fromData)
+      ..tagIds = toList<String>(data['tags'], String_fromData)
       ..text = data['text']
       ..translation = data['translation'];
   }
@@ -63,7 +51,7 @@ class Message {
   static void listen(firestore.Firestore fs, MessageCollectionListener listener, String collectionRoot) =>
       listenForUpdates<Message>(fs, listener, collectionRoot, Message.fromFirestore);
 }
-typedef MessageCollectionListener(List<Message> changes);
+typedef void MessageCollectionListener(List<Message> changes);
 
 enum MessageDirection {
   In,
@@ -99,7 +87,7 @@ class SuggestedReply {
   static void listen(firestore.Firestore fs, SuggestedReplyCollectionListener listener, String collectionRoot) =>
       listenForUpdates<SuggestedReply>(fs, listener, collectionRoot, SuggestedReply.fromFirestore);
 }
-typedef SuggestedReplyCollectionListener(List<SuggestedReply> changes);
+typedef void SuggestedReplyCollectionListener(List<SuggestedReply> changes);
 
 class Tag {
   String tagId;
@@ -120,7 +108,7 @@ class Tag {
   static void listen(firestore.Firestore fs, TagCollectionListener listener, String collectionRoot) =>
       listenForUpdates<Tag>(fs, listener, collectionRoot, Tag.fromFirestore);
 }
-typedef TagCollectionListener(List<Tag> changes);
+typedef void TagCollectionListener(List<Tag> changes);
 
 enum TagType {
   Normal,
@@ -135,6 +123,27 @@ String TagType_toString(TagType value, [String defaultText = 'normal']) {
   if (value == TagType.Normal) return 'normal';
   if (value == TagType.Important) return 'important';
   return defaultText;
+}
+
+bool bool_fromData(data) {
+  if (data is bool) return data;
+  if (data is String) {
+    var boolStr = data.toLowerCase();
+    if (boolStr == 'true') return true;
+    if (boolStr == 'fasle') return false;
+  }
+  log.warning('unknown bool value: ${data?.toString()}');
+  return false;
+}
+
+int int_fromData(data) {
+  if (data is int) return data;
+  if (data is String) {
+    var result = int.tryParse(data);
+    if (result is int) return result;
+  }
+  log.warning('unknown int value: ${data?.toString()}');
+  return 0;
 }
 
 String String_fromData(data) => data.toString();

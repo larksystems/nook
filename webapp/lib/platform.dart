@@ -101,7 +101,7 @@ firestore.Firestore _firestoreInstance;
   void listenForConversations(ConversationCollectionListener listener) {
     listenForUpdates<Conversation>(_firestoreInstance, listener, "/nook_conversations", (firestore.DocumentSnapshot conversation) {
       log.verbose("_firestoreConversationToModelConversation: ${conversation.id}");
-      return Conversation.fromFirestore(conversation, controller.conversationTags, controller.messageTags);
+      return Conversation.fromFirestore(conversation, controller.messageTags);
     });
   }
 
@@ -136,7 +136,7 @@ firestore.Firestore _firestoreInstance;
         "datetime" : msg.datetime.toIso8601String(),
         "text" : msg.text,
         "translation" : msg.translation,
-        "tags" : msg.tags.map((t) => t.tagId).toList()
+        "tags" : msg.tagIds,
       });
     }
 
@@ -155,7 +155,7 @@ firestore.Firestore _firestoreInstance;
   Future updateConversationTags(Conversation conversation) {
     log.verbose("Updating conversation tags for ${conversation.deidentifiedPhoneNumber.value}");
     return _firestoreInstance.doc("nook_conversations/${conversation.deidentifiedPhoneNumber.value}").update(
-      data: {"tags" : conversation.tags.map((t) => t.tagId).toList()}
+      data: {"tags" : conversation.tagIds}
     );
   }
 
