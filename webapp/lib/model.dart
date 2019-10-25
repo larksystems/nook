@@ -31,14 +31,17 @@ class Conversation extends g.Conversation {
 }
 typedef ConversationCollectionListener(List<Conversation> changes);
 
-UnmodifiableListView<g.Tag> tagIdsToTags(List<String> tagIds, Iterable<g.Tag> allTags) =>
-    tagIds
-      .map<g.Tag>((id) => allTags.firstWhere((tag) => tag.tagId == id, orElse: () {
-        g.log.warning('failed to find tag with id: $id');
-        return null;
-      }))
-      .where((tag) => tag != null)
-      .toList();
+UnmodifiableListView<g.Tag> tagIdsToTags(List<String> tagIds, Iterable<g.Tag> allTags) {
+  var tags = <g.Tag>[];
+  for (var id in tagIds) {
+    var tag = allTags.firstWhere((tag) => tag.tagId == id, orElse: () {
+      g.log.warning('failed to find tag with id: $id');
+      return null;
+    });
+    if (tag != null) tags.add(tag);
+  }
+  return UnmodifiableListView(tags);
+}
 
 class User {
   String userName;
