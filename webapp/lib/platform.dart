@@ -101,7 +101,7 @@ firestore.Firestore _firestoreInstance;
   void listenForConversations(ConversationCollectionListener listener) {
     listenForUpdates<Conversation>(_firestoreInstance, listener, "/nook_conversations", (firestore.DocumentSnapshot conversation) {
       log.verbose("_firestoreConversationToModelConversation: ${conversation.id}");
-      return Conversation.fromFirestore(conversation, controller.messageTags);
+      return Conversation.fromFirestore(conversation);
     });
   }
 

@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:firebase/firestore.dart' as firestore;
 
 import 'model.g.dart' as g;
@@ -20,37 +22,25 @@ class DeidentifiedPhoneNumber {
 class Conversation extends g.Conversation {
   DeidentifiedPhoneNumber deidentifiedPhoneNumber;
 
-  static Conversation fromFirestore(firestore.DocumentSnapshot doc, List<g.Tag> allMessageTags) {
+  static Conversation fromFirestore(firestore.DocumentSnapshot doc) {
     var conversation = Conversation();
     g.Conversation.fromFirestore(doc, conversation);
     return conversation
       ..deidentifiedPhoneNumber = DeidentifiedPhoneNumber.fromConversationId(doc.id);
   }
-
-  Iterable<g.Tag> tagIdsToTags(Iterable<g.Tag> allTags) {
-    var tags = <g.Tag>[];
-    for (var id in tagIds) {
-      var tag = allTags.firstWhere((tag) => tag.tagId == id, orElse: () {
-        g.log.warning('failed to find Conversation tag: $id');
-        return null;
-      });
-      if (tag != null) tags.add(tag);
-    }
-    return tags;
-  }
 }
 typedef ConversationCollectionListener(List<Conversation> changes);
 
-Iterable<g.Tag> Message_tagIdsToTags(g.Message message, Iterable<g.Tag> allTags) {
+UnmodifiableListView<g.Tag> tagIdsToTags(List<String> tagIds, Iterable<g.Tag> allTags) {
   var tags = <g.Tag>[];
-  for (var id in message.tagIds) {
+  for (var id in tagIds) {
     var tag = allTags.firstWhere((tag) => tag.tagId == id, orElse: () {
-      g.log.warning('failed to find Message tag: $id');
+      g.log.warning('failed to find tag with id: $id');
       return null;
     });
     if (tag != null) tags.add(tag);
   }
-  return tags;
+  return UnmodifiableListView(tags);
 }
 
 class User {
