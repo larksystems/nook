@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:firebase/firestore.dart' as firestore;
 
 import 'model.g.dart' as g;
@@ -29,7 +31,7 @@ class Conversation extends g.Conversation {
 }
 typedef ConversationCollectionListener(List<Conversation> changes);
 
-List<g.Tag> tagIdsToTags(List<String> tagIds, Iterable<g.Tag> allTags) =>
+UnmodifiableListView<g.Tag> tagIdsToTags(List<String> tagIds, Iterable<g.Tag> allTags) =>
     tagIds
       .map<g.Tag>((id) => allTags.firstWhere((tag) => tag.tagId == id, orElse: () {
         g.log.warning('failed to find tag with id: $id');
