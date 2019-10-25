@@ -1,0 +1,38 @@
+Conversation:
+  demographicsInfo: 'map string'
+  tags: 'array string tagIds'
+  messages: 'array Message'
+  notes: 'string'
+
+Message:
+  direction: 'MessageDirection'
+  datetime: 'datetime'
+  tags: 'array string tagIds'
+  text: 'string'
+  translation: 'string'
+
+MessageDirection:
+  dartType: 'enum'
+  defaultValue: 'Out'
+  dartValues:
+    in: 'In'
+    out: 'Out'
+
+SuggestedReply:
+  firebaseDocId: 'string suggestedReplyId'
+  text: 'string'
+  translation: 'string'
+  shortcut: 'string'
+
+Tag:
+  firebaseDocId: 'string tagId'
+  text: 'string'
+  type: 'TagType'
+  shortcut: 'string'
+
+TagType:
+  dartType: 'enum'
+  defaultValue: 'Normal'
+  dartValues:
+    normal: 'Normal'
+    important: 'Important'
