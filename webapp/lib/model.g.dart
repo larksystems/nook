@@ -41,7 +41,7 @@ class Message {
 
   static Message fromData(data, [Message modelObj]) {
     return (modelObj ?? Message())
-      ..direction = MessageDirection_fromString(data['direction'] as String)
+      ..direction = MessageDirection.fromString(data['direction'] as String)
       ..datetime = DateTime.parse(data['datetime'])
       ..tagIds = toList<String>(data['tags'], String_fromData)
       ..text = data['text']
@@ -53,19 +53,21 @@ class Message {
 }
 typedef void MessageCollectionListener(List<Message> changes);
 
-enum MessageDirection {
-  In,
-  Out,
-}
-MessageDirection MessageDirection_fromString(String text, [MessageDirection defaultValue = MessageDirection.Out]) {
-  if (text == 'in') return MessageDirection.In;
-  if (text == 'out') return MessageDirection.Out;
-  return defaultValue;
-}
-String MessageDirection_toString(MessageDirection value, [String defaultText = 'out']) {
-  if (value == MessageDirection.In) return 'in';
-  if (value == MessageDirection.Out) return 'out';
-  return defaultText;
+class MessageDirection {
+  static const In = MessageDirection('in');
+  static const Out = MessageDirection('out');
+
+  static const allValues = <MessageDirection>[
+    In,
+    Out,
+  ];
+
+  static MessageDirection fromString(String text, [MessageDirection defaultValue = MessageDirection.Out]) =>
+      allValues.firstWhere((value) => value.name == text, orElse: () => defaultValue);
+
+  final String name;
+  const MessageDirection(this.name);
+  String toString() => 'MessageDirection($name)';
 }
 
 class SuggestedReply {
@@ -101,7 +103,7 @@ class Tag {
   static Tag fromData(data, [Tag modelObj]) {
     return (modelObj ?? Tag())
       ..text = data['text']
-      ..type = TagType_fromString(data['type'] as String)
+      ..type = TagType.fromString(data['type'] as String)
       ..shortcut = data['shortcut'];
   }
 
@@ -110,19 +112,21 @@ class Tag {
 }
 typedef void TagCollectionListener(List<Tag> changes);
 
-enum TagType {
-  Normal,
-  Important,
-}
-TagType TagType_fromString(String text, [TagType defaultValue = TagType.Normal]) {
-  if (text == 'normal') return TagType.Normal;
-  if (text == 'important') return TagType.Important;
-  return defaultValue;
-}
-String TagType_toString(TagType value, [String defaultText = 'normal']) {
-  if (value == TagType.Normal) return 'normal';
-  if (value == TagType.Important) return 'important';
-  return defaultText;
+class TagType {
+  static const Normal = TagType('normal');
+  static const Important = TagType('important');
+
+  static const allValues = <TagType>[
+    Normal,
+    Important,
+  ];
+
+  static TagType fromString(String text, [TagType defaultValue = TagType.Normal]) =>
+      allValues.firstWhere((value) => value.name == text, orElse: () => defaultValue);
+
+  final String name;
+  const TagType(this.name);
+  String toString() => 'TagType($name)';
 }
 
 bool bool_fromData(data) {
