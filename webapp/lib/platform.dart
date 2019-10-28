@@ -132,7 +132,7 @@ firestore.Firestore _firestoreInstance;
     var messageMaps = [];
     for (Message msg in conversation.messages) {
       messageMaps.add({
-        "direction" : MessageDirection_toString(msg.direction),
+        "direction" : (msg.direction ?? MessageDirection.Out).name,
         "datetime" : msg.datetime.toIso8601String(),
         "text" : msg.text,
         "translation" : msg.translation,
