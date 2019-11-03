@@ -12,7 +12,7 @@ enum TagReceiver {
 
 // Functions to populate the views with model objects.
 
-void _populateConversationListPanelView(List<model.Conversation> conversations) {
+void _populateConversationListPanelView(Set<model.Conversation> conversations) {
   view.conversationListPanelView.clearConversationList();
   if (conversations.isNotEmpty) {
     view.conversationListPanelView.hideLoadSpinner();

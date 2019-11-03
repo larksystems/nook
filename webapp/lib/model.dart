@@ -22,12 +22,44 @@ class DeidentifiedPhoneNumber {
 class Conversation extends g.Conversation {
   DeidentifiedPhoneNumber deidentifiedPhoneNumber;
 
+  /// Return the most recent inbound message, or `null`
+  g.Message get mostRecentMessageInbound {
+    for (int index = messages.length - 1; index >= 0; --index) {
+      var message = messages[index];
+      if (message.direction == g.MessageDirection.In) {
+        return message;
+      }
+    }
+    return null;
+  }
+
   static Conversation fromFirestore(firestore.DocumentSnapshot doc) {
     var conversation = Conversation();
     g.Conversation.fromFirestore(doc, conversation);
     return conversation
       ..deidentifiedPhoneNumber = DeidentifiedPhoneNumber.fromConversationId(doc.id);
   }
+
+  static Comparator<Conversation> mostRecentInboundFirst = (c1, c2) {
+    var m1 = c1.mostRecentMessageInbound;
+    var m2 = c2.mostRecentMessageInbound;
+    if (m1 == null) {
+      if (m2 == null) {
+        m1 = c1.messages.last;
+        m2 = c2.messages.last;
+      } else{
+        return -1;
+      }
+    } else {
+      if (m2 == null) {
+        return 1;
+      } else {
+        // fall through
+      }
+    }
+    var result = m2.datetime.compareTo(m1.datetime);
+    return result != 0 ? result : c2.hashCode.compareTo(c1.hashCode);
+  };
 }
 typedef ConversationCollectionListener(List<Conversation> changes);
 

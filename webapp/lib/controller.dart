@@ -1,6 +1,7 @@
 library controller;
 
 import 'dart:async';
+import 'dart:collection';
 
 import 'logger.dart';
 import 'model.dart' as model;
@@ -125,8 +126,8 @@ class AddTagData extends Data {
 
 UIActionObject actionObjectState;
 
-List<model.Conversation> conversations;
-List<model.Conversation> filteredConversations;
+Set<model.Conversation> conversations;
+Set<model.Conversation> filteredConversations;
 List<model.SuggestedReply> suggestedReplies;
 List<model.Tag> conversationTags;
 List<model.Tag> messageTags;
@@ -145,7 +146,7 @@ void init() async {
 
 void populateUI() {
 
-  conversations = [];
+  conversations = emptyConversationsSet;
   filteredConversations = conversations;
   suggestedReplies = [];
   conversationTags = [];
@@ -208,6 +209,23 @@ void populateUI() {
 
       activeConversation = updateViewForConversations(filteredConversations);
     });
+}
+
+SplayTreeSet<model.Conversation> get emptyConversationsSet =>
+    SplayTreeSet(model.Conversation.mostRecentInboundFirst);
+
+/// Return the element after [current],
+/// or the first element if [current] is the last or not in the list.
+model.Conversation nextElement(Iterable<model.Conversation> conversations, model.Conversation current) {
+  var iter = conversations.iterator;
+  while (iter.moveNext()) {
+    if (iter.current == current) {
+      if (iter.moveNext()) return iter.current;
+      return conversations.first;
+    }
+  }
+  // did not find [current] in the set... return first conversation
+  return conversations.first;
 }
 
 void command(UIAction action, Data data) {
@@ -275,16 +293,10 @@ void command(UIAction action, Data data) {
       platform.updateConversationTags(activeConversation);
       view.conversationPanelView.removeTag(tag.tagId);
       if (filterTags.contains(tag)) {
-        if (filteredConversations.length == 1) {
-          filteredConversations.remove(activeConversation);
-          activeConversation = updateViewForConversations(filteredConversations);
-          return;
-        }
-        int nextConversationIndex = filteredConversations.indexOf(activeConversation);
-        filteredConversations.remove(activeConversation);
-        nextConversationIndex = nextConversationIndex >= filteredConversations.length ? 0 : nextConversationIndex;
         // Select the next conversation in the list
-        activeConversation = filteredConversations[nextConversationIndex];
+        var nextConversation = nextElement(filteredConversations, activeConversation);
+        filteredConversations.remove(activeConversation);
+        activeConversation = nextConversation;
         activeConversation = updateViewForConversations(filteredConversations);
         updateViewForConversation(activeConversation);
       }
@@ -388,10 +400,8 @@ void command(UIAction action, Data data) {
     case UIAction.keyPressed:
       KeyPressData keyPressData = data;
       if (keyPressData.key == 'Enter') {
-        int nextConversationIndex = filteredConversations.indexOf(activeConversation) + 1;
-        nextConversationIndex = nextConversationIndex >= filteredConversations.length ? 0 : nextConversationIndex;
         // Select the next conversation in the list
-        activeConversation = filteredConversations[nextConversationIndex];
+        activeConversation = nextElement(filteredConversations, activeConversation);
         updateViewForConversation(activeConversation);
         return;
       }
@@ -461,7 +471,7 @@ void command(UIAction action, Data data) {
 
 /// Shows the list of [conversations] and selects the first conversation.
 /// Returns the first conversation in the list, or null if list is empty.
-model.Conversation updateViewForConversations(List<model.Conversation> conversations) {
+model.Conversation updateViewForConversations(Set<model.Conversation> conversations) {
   // Update conversationListPanelView
   _populateConversationListPanelView(conversations);
 
@@ -500,6 +510,7 @@ model.Conversation updateViewForConversations(List<model.Conversation> conversat
 }
 
 void updateViewForConversation(model.Conversation conversation) {
+  if (conversation == null) return;
   // Select the conversation in the list
   view.conversationListPanelView.selectConversation(conversation.deidentifiedPhoneNumber.value);
   // Replace the previous conversation in the conversation panel
@@ -598,10 +609,10 @@ void setMessageTag(model.Tag tag, model.Message message, model.Conversation conv
   }
 }
 
-List<model.Conversation> filterConversationsByTags(List<model.Conversation> conversations, List<model.Tag> filterTags) {
+Set<model.Conversation> filterConversationsByTags(Set<model.Conversation> conversations, List<model.Tag> filterTags) {
   if (filterTags.isEmpty) return conversations;
 
-  List<model.Conversation> filteredConversations = [];
+  var filteredConversations = emptyConversationsSet;
   var filterTagIds = filterTags.map<String>((tag) => tag.tagId).toList();
   conversations.forEach((conversation) {
     if (!conversation.tagIds.toSet().containsAll(filterTagIds)) return;
