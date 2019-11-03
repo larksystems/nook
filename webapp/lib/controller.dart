@@ -216,7 +216,7 @@ SplayTreeSet<model.Conversation> get emptyConversationsSet =>
 
 /// Return the element after [current],
 /// or the first element if [current] is the last or not in the list.
-T nextElement<T>(Iterable<T> conversations, T current) {
+model.Conversation nextElement(Iterable<model.Conversation> conversations, model.Conversation current) {
   var iter = conversations.iterator;
   while (iter.moveNext()) {
     if (iter.current == current) {
@@ -294,7 +294,7 @@ void command(UIAction action, Data data) {
       view.conversationPanelView.removeTag(tag.tagId);
       if (filterTags.contains(tag)) {
         // Select the next conversation in the list
-        var nextConversation = nextElement<model.Conversation>(filteredConversations, activeConversation);
+        var nextConversation = nextElement(filteredConversations, activeConversation);
         filteredConversations.remove(activeConversation);
         activeConversation = nextConversation;
         activeConversation = updateViewForConversations(filteredConversations);
