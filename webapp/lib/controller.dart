@@ -510,6 +510,7 @@ model.Conversation updateViewForConversations(Set<model.Conversation> conversati
 }
 
 void updateViewForConversation(model.Conversation conversation) {
+  if (conversation == null) return;
   // Select the conversation in the list
   view.conversationListPanelView.selectConversation(conversation.deidentifiedPhoneNumber.value);
   // Replace the previous conversation in the conversation panel
