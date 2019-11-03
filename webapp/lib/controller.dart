@@ -146,7 +146,7 @@ void init() async {
 
 void populateUI() {
 
-  conversations = newConversationsSet;
+  conversations = emptyConversationsSet;
   filteredConversations = conversations;
   suggestedReplies = [];
   conversationTags = [];
@@ -211,7 +211,7 @@ void populateUI() {
     });
 }
 
-SplayTreeSet<model.Conversation> get newConversationsSet =>
+SplayTreeSet<model.Conversation> get emptyConversationsSet =>
     SplayTreeSet(model.Conversation.mostRecentInboundFirst);
 
 /// Return the element after [current],
@@ -611,7 +611,7 @@ void setMessageTag(model.Tag tag, model.Message message, model.Conversation conv
 Set<model.Conversation> filterConversationsByTags(Set<model.Conversation> conversations, List<model.Tag> filterTags) {
   if (filterTags.isEmpty) return conversations;
 
-  var filteredConversations = newConversationsSet;
+  var filteredConversations = emptyConversationsSet;
   var filterTagIds = filterTags.map<String>((tag) => tag.tagId).toList();
   conversations.forEach((conversation) {
     if (!conversation.tagIds.toSet().containsAll(filterTagIds)) return;
