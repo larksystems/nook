@@ -5,10 +5,17 @@ if [ $# -ne 1 ]; then
     exit 1
 fi
 
+########## cd to the nook project directory and get the absolute path
+
+cd "$(dirname "$0")"/..
+PROJDIR="$(pwd)"
+
+########## validate argument(s)
+
 FIREBASE_CONSTANTS="$1"
 if [ ! -f "$FIREBASE_CONSTANTS" ]; then
   echo "could not find FIREBASE_CONSTANTS: $FIREBASE_CONSTANTS"
-  echo "  in: `pwd`"
+  echo "  in: $(pwd)"
   exit 1
 fi
 
