@@ -41,8 +41,13 @@ cd ..
 # Copy the constants in the build folder
 cp $FIREBASE_CONSTANTS public/assets/firebase_constants.json
 
+########## deploy webapp
+
 # Get the project id
 PROJECT_ID=$(cat $FIREBASE_CONSTANTS | python -c 'import json,sys; constants=json.load(sys.stdin); print(constants["projectId"])')
 
-# Deploy
-firebase deploy --project $PROJECT_ID --public public
+# Deploy using the local firebase instance
+node $PROJDIR/functions/node_modules/.bin/firebase \
+  deploy \
+  --project $PROJECT_ID \
+  --public public
