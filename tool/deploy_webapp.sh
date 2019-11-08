@@ -19,6 +19,16 @@ if [ ! -f "$FIREBASE_CONSTANTS" ]; then
   exit 1
 fi
 
+########## ensure that node modules have been installed
+
+echo "node version $(node --version)"
+if [ ! -d "$PROJDIR/functions/node_modules" ]; then
+  echo "before deploying, run 'npm install' in $PROJDIR/functions"
+  exit 1
+fi
+
+########## rebuild the webapp
+
 # Remove previous build if it exists
 rm -rf public
 
