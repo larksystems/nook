@@ -134,7 +134,7 @@ bool bool_fromData(data) {
   if (data is String) {
     var boolStr = data.toLowerCase();
     if (boolStr == 'true') return true;
-    if (boolStr == 'fasle') return false;
+    if (boolStr == 'false') return false;
   }
   log.warning('unknown bool value: ${data?.toString()}');
   return false;
