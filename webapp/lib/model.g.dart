@@ -12,6 +12,7 @@ class Conversation {
   List<String> tagIds;
   List<Message> messages;
   String notes;
+  bool unread;
 
   static Conversation fromFirestore(firestore.DocumentSnapshot doc, [Conversation modelObj]) =>
       fromData(doc.data(), modelObj);
@@ -22,7 +23,8 @@ class Conversation {
       ..demographicsInfo = Map_fromData<String>(data['demographicsInfo'], String_fromData)
       ..tagIds = List_fromData<String>(data['tags'], String_fromData)
       ..messages = List_fromData<Message>(data['messages'], Message.fromData)
-      ..notes = String_fromData(data['notes']);
+      ..notes = String_fromData(data['notes'])
+      ..unread = bool_fromData(data['unread']) ?? true;
   }
 
   static void listen(firestore.Firestore fs, ConversationCollectionListener listener, String collectionRoot) =>
