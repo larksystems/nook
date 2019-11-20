@@ -18,9 +18,9 @@ class Conversation {
 
   static Conversation fromData(data, [Conversation modelObj]) {
     return (modelObj ?? Conversation())
-      ..demographicsInfo = toMap<String>(data['demographicsInfo'], String_fromData)
-      ..tagIds = toList<String>(data['tags'], String_fromData)
-      ..messages = toList<Message>(data['messages'], Message.fromData)
+      ..demographicsInfo = Map_fromData<String>(data['demographicsInfo'], String_fromData)
+      ..tagIds = List_fromData<String>(data['tags'], String_fromData)
+      ..messages = List_fromData<Message>(data['messages'], Message.fromData)
       ..notes = data['notes'];
   }
 
@@ -43,7 +43,7 @@ class Message {
     return (modelObj ?? Message())
       ..direction = MessageDirection.fromString(data['direction'] as String)
       ..datetime = DateTime.parse(data['datetime'])
-      ..tagIds = toList<String>(data['tags'], String_fromData)
+      ..tagIds = List_fromData<String>(data['tags'], String_fromData)
       ..text = data['text']
       ..translation = data['translation'];
   }
@@ -152,11 +152,11 @@ int int_fromData(data) {
 
 String String_fromData(data) => data.toString();
 
-List<T> toList<T>(dynamic data, T createModel(data)) =>
-    (data as List).map<T>((elem) => createModel(elem)).toList();
+List<T> List_fromData<T>(dynamic data, T createModel(data)) =>
+    (data as List)?.map<T>((elem) => createModel(elem))?.toList();
 
-Map<String, T> toMap<T>(dynamic data, T createModel(data)) =>
-    (data as Map).map<String, T>((key, value) => MapEntry(key.toString(), createModel(value)));
+Map<String, T> Map_fromData<T>(dynamic data, T createModel(data)) =>
+    (data as Map)?.map<String, T>((key, value) => MapEntry(key.toString(), createModel(value)));
 
 void listenForUpdates<T>(
     firestore.Firestore fs,
