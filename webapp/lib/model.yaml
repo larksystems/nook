@@ -6,7 +6,7 @@ Conversation:
 
 Message:
   direction: 'MessageDirection'
-  datetime: 'datetime'
+  datetime: 'datetime, DateTime.now()'
   tags: 'array string tagIds'
   text: 'string'
   translation: 'string'

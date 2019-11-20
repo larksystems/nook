@@ -42,7 +42,7 @@ class Message {
   static Message fromData(data, [Message modelObj]) {
     return (modelObj ?? Message())
       ..direction = MessageDirection.fromString(data['direction'] as String)
-      ..datetime = DateTime.parse(data['datetime'])
+      ..datetime = DateTime_fromData(data['datetime']) ?? DateTime.now()
       ..tagIds = List_fromData<String>(data['tags'], String_fromData)
       ..text = String_fromData(data['text'])
       ..translation = String_fromData(data['translation']);
@@ -138,6 +138,14 @@ bool bool_fromData(data) {
   }
   log.warning('unknown bool value: ${data?.toString()}');
   return false;
+}
+
+DateTime DateTime_fromData(data) {
+  if (data == null) return null;
+  var datetime = DateTime.tryParse(data);
+  if (datetime != null) return datetime;
+  log.warning('unknown DateTime value: ${data?.toString()}');
+  return null;
 }
 
 int int_fromData(data) {
