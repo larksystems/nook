@@ -130,6 +130,7 @@ class TagType {
 }
 
 bool bool_fromData(data) {
+  if (data == null) return null;
   if (data is bool) return data;
   if (data is String) {
     var boolStr = data.toLowerCase();
@@ -137,7 +138,7 @@ bool bool_fromData(data) {
     if (boolStr == 'false') return false;
   }
   log.warning('unknown bool value: ${data?.toString()}');
-  return false;
+  return null;
 }
 
 DateTime DateTime_fromData(data) {
