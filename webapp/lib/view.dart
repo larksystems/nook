@@ -421,12 +421,21 @@ class ConversationListPanelView {
     activeConversation = _phoneToConversations[deidentifiedPhoneNumber];
     activeConversation._select();
     _conversationList.selectItem(activeConversation);
+    command(UIAction.markConversationRead, ConversationData(deidentifiedPhoneNumber));
   }
 
   void clearConversationList() {
     _conversationList.clearItems();
     _phoneToConversations.clear();
     _conversationPanelTitle.text = '${_phoneToConversations.length} conversations';
+  }
+
+  void markConversationRead(String deidentifiedPhoneNumber) {
+    _phoneToConversations[deidentifiedPhoneNumber]._markRead();
+  }
+
+  void markConversationUnread(String deidentifiedPhoneNumber) {
+    _phoneToConversations[deidentifiedPhoneNumber]._markUnread();
   }
 
   void checkConversation(String deidentifiedPhoneNumber) {
@@ -559,6 +568,14 @@ class ConversationSummary with LazyListViewItem {
   void _deselect() {
     _selected = false;
     elementOrNull?.classes?.remove('conversation-list__item--selected');
+  }
+  void _markRead() {
+    _unread = false;
+    elementOrNull?.classes?.remove('conversation-list__item--unread');
+  }
+  void _markUnread() {
+    _unread = true;
+    elementOrNull?.classes?.add('conversation-list__item--unread');
   }
   void _check() {
     _checked = true;
