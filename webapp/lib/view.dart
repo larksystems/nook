@@ -513,10 +513,11 @@ class ConversationSummary with LazyListViewItem {
 
   String deidentifiedPhoneNumber;
   String _text;
+  bool _unread;
   bool _checked = false;
   bool _selected = false;
 
-  ConversationSummary(this.deidentifiedPhoneNumber, this._text);
+  ConversationSummary(this.deidentifiedPhoneNumber, this._text, this._unread);
 
   Element buildElement() {
     var conversationSummary = new DivElement()
@@ -537,6 +538,7 @@ class ConversationSummary with LazyListViewItem {
       ..text = _text
       ..onClick.listen((_) => command(UIAction.showConversation, new ConversationData(deidentifiedPhoneNumber)));
     if (_selected) conversationSummary.classes.add('conversation-list__item--selected');
+    if (_unread) conversationSummary.classes.add('conversation-list__item--unread');
     conversationSummary.append(summaryMessage);
     return conversationSummary;
   }

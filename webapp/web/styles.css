@@ -143,6 +143,10 @@ main {
     background: #f9f9f9;
 }
 
+.conversation-list__item--unread {
+    font-weight:bold;
+}
+
 .conversation-selector {
     flex: 0 0 auto;
     margin: 12px 8px auto;
