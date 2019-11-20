@@ -17,6 +17,7 @@ class Conversation {
       fromData(doc.data(), modelObj);
 
   static Conversation fromData(data, [Conversation modelObj]) {
+    if (data == null) return null;
     return (modelObj ?? Conversation())
       ..demographicsInfo = Map_fromData<String>(data['demographicsInfo'], String_fromData)
       ..tagIds = List_fromData<String>(data['tags'], String_fromData)
@@ -40,8 +41,9 @@ class Message {
       fromData(doc.data(), modelObj);
 
   static Message fromData(data, [Message modelObj]) {
+    if (data == null) return null;
     return (modelObj ?? Message())
-      ..direction = MessageDirection.fromString(data['direction'] as String)
+      ..direction = MessageDirection.fromString(data['direction'] as String) ?? MessageDirection.Out
       ..datetime = DateTime_fromData(data['datetime']) ?? DateTime.now()
       ..tagIds = List_fromData<String>(data['tags'], String_fromData)
       ..text = String_fromData(data['text'])
@@ -80,6 +82,7 @@ class SuggestedReply {
       fromData(doc.data(), modelObj)..suggestedReplyId = doc.id;
 
   static SuggestedReply fromData(data, [SuggestedReply modelObj]) {
+    if (data == null) return null;
     return (modelObj ?? SuggestedReply())
       ..text = String_fromData(data['text'])
       ..translation = String_fromData(data['translation'])
@@ -101,9 +104,10 @@ class Tag {
       fromData(doc.data(), modelObj)..tagId = doc.id;
 
   static Tag fromData(data, [Tag modelObj]) {
+    if (data == null) return null;
     return (modelObj ?? Tag())
       ..text = String_fromData(data['text'])
-      ..type = TagType.fromString(data['type'] as String)
+      ..type = TagType.fromString(data['type'] as String) ?? TagType.Normal
       ..shortcut = String_fromData(data['shortcut']);
   }
 
