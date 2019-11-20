@@ -149,13 +149,14 @@ DateTime DateTime_fromData(data) {
 }
 
 int int_fromData(data) {
+  if (data == null) return null;
   if (data is int) return data;
   if (data is String) {
     var result = int.tryParse(data);
     if (result is int) return result;
   }
   log.warning('unknown int value: ${data?.toString()}');
-  return 0;
+  return null;
 }
 
 String String_fromData(data) => data?.toString();
