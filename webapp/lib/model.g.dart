@@ -21,7 +21,7 @@ class Conversation {
       ..demographicsInfo = Map_fromData<String>(data['demographicsInfo'], String_fromData)
       ..tagIds = List_fromData<String>(data['tags'], String_fromData)
       ..messages = List_fromData<Message>(data['messages'], Message.fromData)
-      ..notes = data['notes'];
+      ..notes = String_fromData(data['notes']);
   }
 
   static void listen(firestore.Firestore fs, ConversationCollectionListener listener, String collectionRoot) =>
@@ -44,8 +44,8 @@ class Message {
       ..direction = MessageDirection.fromString(data['direction'] as String)
       ..datetime = DateTime.parse(data['datetime'])
       ..tagIds = List_fromData<String>(data['tags'], String_fromData)
-      ..text = data['text']
-      ..translation = data['translation'];
+      ..text = String_fromData(data['text'])
+      ..translation = String_fromData(data['translation']);
   }
 
   static void listen(firestore.Firestore fs, MessageCollectionListener listener, String collectionRoot) =>
@@ -81,9 +81,9 @@ class SuggestedReply {
 
   static SuggestedReply fromData(data, [SuggestedReply modelObj]) {
     return (modelObj ?? SuggestedReply())
-      ..text = data['text']
-      ..translation = data['translation']
-      ..shortcut = data['shortcut'];
+      ..text = String_fromData(data['text'])
+      ..translation = String_fromData(data['translation'])
+      ..shortcut = String_fromData(data['shortcut']);
   }
 
   static void listen(firestore.Firestore fs, SuggestedReplyCollectionListener listener, String collectionRoot) =>
@@ -102,9 +102,9 @@ class Tag {
 
   static Tag fromData(data, [Tag modelObj]) {
     return (modelObj ?? Tag())
-      ..text = data['text']
+      ..text = String_fromData(data['text'])
       ..type = TagType.fromString(data['type'] as String)
-      ..shortcut = data['shortcut'];
+      ..shortcut = String_fromData(data['shortcut']);
   }
 
   static void listen(firestore.Firestore fs, TagCollectionListener listener, String collectionRoot) =>
@@ -150,7 +150,7 @@ int int_fromData(data) {
   return 0;
 }
 
-String String_fromData(data) => data.toString();
+String String_fromData(data) => data?.toString();
 
 List<T> List_fromData<T>(dynamic data, T createModel(data)) =>
     (data as List)?.map<T>((elem) => createModel(elem))?.toList();
