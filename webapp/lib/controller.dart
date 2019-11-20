@@ -355,10 +355,12 @@ void command(UIAction action, Data data) {
     case UIAction.markConversationRead:
       ConversationData conversationData = data;
       view.conversationListPanelView.markConversationRead(conversationData.deidentifiedPhoneNumber);
+      // TODO call platform to mark read
       break;
     case UIAction.markConversationUnread:
       ConversationData conversationData = data;
       view.conversationListPanelView.markConversationUnread(conversationData.deidentifiedPhoneNumber);
+      // TODO call platform to mark unread
       break;
     case UIAction.showConversation:
       ConversationData conversationData = data;
