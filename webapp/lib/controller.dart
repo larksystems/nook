@@ -30,6 +30,8 @@ enum UIAction {
   showConversation,
   selectConversation,
   deselectConversation,
+  markConversationRead,
+  markConversationUnread,
   selectMessage,
   deselectMessage,
   userSignedIn,
@@ -208,6 +210,7 @@ void populateUI() {
       _populateSelectedFilterTags(filterTags);
 
       activeConversation = updateViewForConversations(filteredConversations);
+      command(UIAction.markConversationRead, ConversationData(activeConversation.deidentifiedPhoneNumber.value));
     });
 }
 
@@ -348,6 +351,18 @@ void command(UIAction action, Data data) {
           actionObjectState = UIActionObject.conversation;
           break;
       }
+      break;
+    case UIAction.markConversationRead:
+      ConversationData conversationData = data;
+      view.conversationListPanelView.markConversationRead(conversationData.deidentifiedPhoneNumber);
+      // TODO call platform to mark read
+      log.warning('save "conversation.unread = false" not implemented');
+      break;
+    case UIAction.markConversationUnread:
+      ConversationData conversationData = data;
+      view.conversationListPanelView.markConversationUnread(conversationData.deidentifiedPhoneNumber);
+      // TODO call platform to mark unread
+      log.warning('save "conversation.unread = true" not implemented');
       break;
     case UIAction.showConversation:
       ConversationData conversationData = data;

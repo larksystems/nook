@@ -3,6 +3,7 @@ Conversation:
   tags: 'array string tagIds'
   messages: 'array Message'
   notes: 'string'
+  unread: 'bool, true'
 
 Message:
   direction: 'MessageDirection, MessageDirection.Out'

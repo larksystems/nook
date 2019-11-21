@@ -421,12 +421,21 @@ class ConversationListPanelView {
     activeConversation = _phoneToConversations[deidentifiedPhoneNumber];
     activeConversation._select();
     _conversationList.selectItem(activeConversation);
+    command(UIAction.markConversationRead, ConversationData(deidentifiedPhoneNumber));
   }
 
   void clearConversationList() {
     _conversationList.clearItems();
     _phoneToConversations.clear();
     _conversationPanelTitle.text = '${_phoneToConversations.length} conversations';
+  }
+
+  void markConversationRead(String deidentifiedPhoneNumber) {
+    _phoneToConversations[deidentifiedPhoneNumber]._markRead();
+  }
+
+  void markConversationUnread(String deidentifiedPhoneNumber) {
+    _phoneToConversations[deidentifiedPhoneNumber]._markUnread();
   }
 
   void checkConversation(String deidentifiedPhoneNumber) {
@@ -513,10 +522,11 @@ class ConversationSummary with LazyListViewItem {
 
   String deidentifiedPhoneNumber;
   String _text;
+  bool _unread;
   bool _checked = false;
   bool _selected = false;
 
-  ConversationSummary(this.deidentifiedPhoneNumber, this._text);
+  ConversationSummary(this.deidentifiedPhoneNumber, this._text, this._unread);
 
   Element buildElement() {
     var conversationSummary = new DivElement()
@@ -537,6 +547,7 @@ class ConversationSummary with LazyListViewItem {
       ..text = _text
       ..onClick.listen((_) => command(UIAction.showConversation, new ConversationData(deidentifiedPhoneNumber)));
     if (_selected) conversationSummary.classes.add('conversation-list__item--selected');
+    if (_unread) conversationSummary.classes.add('conversation-list__item--unread');
     conversationSummary.append(summaryMessage);
     return conversationSummary;
   }
@@ -557,6 +568,14 @@ class ConversationSummary with LazyListViewItem {
   void _deselect() {
     _selected = false;
     elementOrNull?.classes?.remove('conversation-list__item--selected');
+  }
+  void _markRead() {
+    _unread = false;
+    elementOrNull?.classes?.remove('conversation-list__item--unread');
+  }
+  void _markUnread() {
+    _unread = true;
+    elementOrNull?.classes?.add('conversation-list__item--unread');
   }
   void _check() {
     _checked = true;
