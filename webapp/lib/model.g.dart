@@ -17,11 +17,12 @@ class Conversation {
       fromData(doc.data(), modelObj);
 
   static Conversation fromData(data, [Conversation modelObj]) {
+    if (data == null) return null;
     return (modelObj ?? Conversation())
-      ..demographicsInfo = toMap<String>(data['demographicsInfo'], String_fromData)
-      ..tagIds = toList<String>(data['tags'], String_fromData)
-      ..messages = toList<Message>(data['messages'], Message.fromData)
-      ..notes = data['notes'];
+      ..demographicsInfo = Map_fromData<String>(data['demographicsInfo'], String_fromData)
+      ..tagIds = List_fromData<String>(data['tags'], String_fromData)
+      ..messages = List_fromData<Message>(data['messages'], Message.fromData)
+      ..notes = String_fromData(data['notes']);
   }
 
   static void listen(firestore.Firestore fs, ConversationCollectionListener listener, String collectionRoot) =>
@@ -40,12 +41,13 @@ class Message {
       fromData(doc.data(), modelObj);
 
   static Message fromData(data, [Message modelObj]) {
+    if (data == null) return null;
     return (modelObj ?? Message())
-      ..direction = MessageDirection.fromString(data['direction'] as String)
-      ..datetime = DateTime.parse(data['datetime'])
-      ..tagIds = toList<String>(data['tags'], String_fromData)
-      ..text = data['text']
-      ..translation = data['translation'];
+      ..direction = MessageDirection.fromString(data['direction'] as String) ?? MessageDirection.Out
+      ..datetime = DateTime_fromData(data['datetime']) ?? DateTime.now()
+      ..tagIds = List_fromData<String>(data['tags'], String_fromData)
+      ..text = String_fromData(data['text'])
+      ..translation = String_fromData(data['translation']);
   }
 
   static void listen(firestore.Firestore fs, MessageCollectionListener listener, String collectionRoot) =>
@@ -80,10 +82,11 @@ class SuggestedReply {
       fromData(doc.data(), modelObj)..suggestedReplyId = doc.id;
 
   static SuggestedReply fromData(data, [SuggestedReply modelObj]) {
+    if (data == null) return null;
     return (modelObj ?? SuggestedReply())
-      ..text = data['text']
-      ..translation = data['translation']
-      ..shortcut = data['shortcut'];
+      ..text = String_fromData(data['text'])
+      ..translation = String_fromData(data['translation'])
+      ..shortcut = String_fromData(data['shortcut']);
   }
 
   static void listen(firestore.Firestore fs, SuggestedReplyCollectionListener listener, String collectionRoot) =>
@@ -101,10 +104,11 @@ class Tag {
       fromData(doc.data(), modelObj)..tagId = doc.id;
 
   static Tag fromData(data, [Tag modelObj]) {
+    if (data == null) return null;
     return (modelObj ?? Tag())
-      ..text = data['text']
-      ..type = TagType.fromString(data['type'] as String)
-      ..shortcut = data['shortcut'];
+      ..text = String_fromData(data['text'])
+      ..type = TagType.fromString(data['type'] as String) ?? TagType.Normal
+      ..shortcut = String_fromData(data['shortcut']);
   }
 
   static void listen(firestore.Firestore fs, TagCollectionListener listener, String collectionRoot) =>
@@ -130,6 +134,7 @@ class TagType {
 }
 
 bool bool_fromData(data) {
+  if (data == null) return null;
   if (data is bool) return data;
   if (data is String) {
     var boolStr = data.toLowerCase();
@@ -137,26 +142,35 @@ bool bool_fromData(data) {
     if (boolStr == 'false') return false;
   }
   log.warning('unknown bool value: ${data?.toString()}');
-  return false;
+  return null;
+}
+
+DateTime DateTime_fromData(data) {
+  if (data == null) return null;
+  var datetime = DateTime.tryParse(data);
+  if (datetime != null) return datetime;
+  log.warning('unknown DateTime value: ${data?.toString()}');
+  return null;
 }
 
 int int_fromData(data) {
+  if (data == null) return null;
   if (data is int) return data;
   if (data is String) {
     var result = int.tryParse(data);
     if (result is int) return result;
   }
   log.warning('unknown int value: ${data?.toString()}');
-  return 0;
+  return null;
 }
 
-String String_fromData(data) => data.toString();
+String String_fromData(data) => data?.toString();
 
-List<T> toList<T>(dynamic data, T createModel(data)) =>
-    (data as List).map<T>((elem) => createModel(elem)).toList();
+List<T> List_fromData<T>(dynamic data, T createModel(data)) =>
+    (data as List)?.map<T>((elem) => createModel(elem))?.toList();
 
-Map<String, T> toMap<T>(dynamic data, T createModel(data)) =>
-    (data as Map).map<String, T>((key, value) => MapEntry(key.toString(), createModel(value)));
+Map<String, T> Map_fromData<T>(dynamic data, T createModel(data)) =>
+    (data as Map)?.map<String, T>((key, value) => MapEntry(key.toString(), createModel(value)));
 
 void listenForUpdates<T>(
     firestore.Firestore fs,

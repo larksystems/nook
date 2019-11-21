@@ -5,8 +5,8 @@ Conversation:
   notes: 'string'
 
 Message:
-  direction: 'MessageDirection'
-  datetime: 'datetime'
+  direction: 'MessageDirection, MessageDirection.Out'
+  datetime: 'datetime, DateTime.now()'
   tags: 'array string tagIds'
   text: 'string'
   translation: 'string'
@@ -27,7 +27,7 @@ SuggestedReply:
 Tag:
   firebaseDocId: 'string tagId'
   text: 'string'
-  type: 'TagType'
+  type: 'TagType, TagType.Normal'
   shortcut: 'string'
 
 TagType:
