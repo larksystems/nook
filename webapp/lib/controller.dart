@@ -356,11 +356,13 @@ void command(UIAction action, Data data) {
       ConversationData conversationData = data;
       view.conversationListPanelView.markConversationRead(conversationData.deidentifiedPhoneNumber);
       // TODO call platform to mark read
+      log.warning('save "conversation.unread = false" not implemented');
       break;
     case UIAction.markConversationUnread:
       ConversationData conversationData = data;
       view.conversationListPanelView.markConversationUnread(conversationData.deidentifiedPhoneNumber);
       // TODO call platform to mark unread
+      log.warning('save "conversation.unread = true" not implemented');
       break;
     case UIAction.showConversation:
       ConversationData conversationData = data;
