@@ -4,8 +4,11 @@ import 'package:firebase/firestore.dart' as firestore;
 
 import 'model.g.dart' as g;
 export 'model.g.dart' hide
-  Conversation, ConversationCollectionListener,
-  MessageCollectionListener;
+  Conversation,
+  ConversationCollectionListener,
+  MessageCollectionListener,
+  MessageDirection_fromStringOverride,
+  TagType_fromStringOverride;
 
 class DeidentifiedPhoneNumber {
   String value;

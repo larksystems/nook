@@ -67,8 +67,8 @@ class MessageDirection {
   ];
 
   static MessageDirection fromString(String text, [MessageDirection defaultValue = MessageDirection.Out]) {
-    if (fromStringOverride != null) {
-      var value = fromStringOverride(text);
+    if (MessageDirection_fromStringOverride != null) {
+      var value = MessageDirection_fromStringOverride(text);
       if (value != null) return value;
     }
     if (text != null) {
@@ -84,8 +84,8 @@ class MessageDirection {
   final String name;
   const MessageDirection(this.name);
   String toString() => 'MessageDirection.$name';
-  static MessageDirection Function(String text) fromStringOverride;
 }
+MessageDirection Function(String text) MessageDirection_fromStringOverride;
 
 class SuggestedReply {
   String suggestedReplyId;
@@ -141,8 +141,8 @@ class TagType {
   ];
 
   static TagType fromString(String text, [TagType defaultValue = TagType.Normal]) {
-    if (fromStringOverride != null) {
-      var value = fromStringOverride(text);
+    if (TagType_fromStringOverride != null) {
+      var value = TagType_fromStringOverride(text);
       if (value != null) return value;
     }
     if (text != null) {
@@ -158,8 +158,8 @@ class TagType {
   final String name;
   const TagType(this.name);
   String toString() => 'TagType.$name';
-  static TagType Function(String text) fromStringOverride;
 }
+TagType Function(String text) TagType_fromStringOverride;
 
 bool bool_fromData(data) {
   if (data == null) return null;
