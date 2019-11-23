@@ -152,6 +152,15 @@ Future updateNotes(Conversation conversation) {
   );
 }
 
+Future updateUnread(Conversation conversation, bool newValue) {
+  // TODO consider replacing this with pub/sub
+  log.verbose("Updating conversation unread flag for ${conversation.deidentifiedPhoneNumber.value}");
+  conversation.unread = newValue;
+  return _firestoreInstance.doc("nook_conversations/${conversation.deidentifiedPhoneNumber.value}").update(
+    data: {"unread" : newValue}
+  );
+}
+
 Future updateConversationTags(Conversation conversation) {
   log.verbose("Updating conversation tags for ${conversation.deidentifiedPhoneNumber.value}");
   return _firestoreInstance.doc("nook_conversations/${conversation.deidentifiedPhoneNumber.value}").update(
