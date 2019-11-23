@@ -83,6 +83,7 @@ const REPLY_PANEL_TITLE = 'Suggested responses';
 const TAG_PANEL_TITLE = 'Available tags';
 const ADD_REPLY_INFO = 'Add new suggested response';
 const ADD_TAG_INFO = 'Add new tag';
+const MARK_UNREAD_INFO = 'Mark unread';
 
 class ConversationPanelView {
   // HTML elements
@@ -396,6 +397,15 @@ class ConversationListPanelView {
       ..classes.add('conversation-list-header__title')
       ..text = '0 conversations';
     panelHeader.append(_conversationPanelTitle);
+
+    var _markUnreadButton = new DivElement()
+      ..classes.add('add-action__button')
+      ..title = 'Mark current conversation unread'
+      ..text = MARK_UNREAD_INFO;
+    var _markUnreadArea = new DivElement()
+      ..classes.add('conversation-list-header__markUnread')
+      ..append(_markUnreadButton);
+    panelHeader.append(_markUnreadArea);
 
     _loadSpinner = new DivElement()
       ..classes.add('load-spinner');
