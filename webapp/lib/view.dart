@@ -84,6 +84,7 @@ const TAG_PANEL_TITLE = 'Available tags';
 const ADD_REPLY_INFO = 'Add new suggested response';
 const ADD_TAG_INFO = 'Add new tag';
 const MARK_UNREAD_INFO = 'Mark unread';
+const MARK_SELECTED_UNREAD_INFO = 'Mark selected unread';
 
 class ConversationPanelView {
   // HTML elements
@@ -455,8 +456,14 @@ class ConversationListPanelView {
 
   void checkAllConversations() => _phoneToConversations.forEach((_, conversation) => conversation._check());
   void uncheckAllConversations() => _phoneToConversations.forEach((_, conversation) => conversation._uncheck());
-  void showCheckboxes() => _phoneToConversations.forEach((_, conversation) => conversation._showCheckbox());
-  void hideCheckboxes() => _phoneToConversations.forEach((_, conversation) => conversation._hideCheckbox());
+  void showCheckboxes() {
+    _phoneToConversations.forEach((_, conversation) => conversation._showCheckbox());
+    _markUnread.multiSelectMode(true);
+  }
+  void hideCheckboxes() {
+    _phoneToConversations.forEach((_, conversation) => conversation._hideCheckbox());
+    _markUnread.multiSelectMode(false);
+  }
 
   void hideLoadSpinner() {
     _loadSpinner.hidden = true;
@@ -867,13 +874,24 @@ class MarkUnreadActionView {
   MarkUnreadActionView() {
     markUnreadAction = new DivElement()
       ..classes.add('add-action__button')
-      ..title = 'Mark current conversation unread'
-      ..text = MARK_UNREAD_INFO
       ..onClick.listen(markConversationsUnread);
+    multiSelectMode(false);
   }
 
   void markConversationsUnread([_]) {
     command(UIAction.markConversationUnread, ConversationData(activeConversation.deidentifiedPhoneNumber.value));
+  }
+
+  void multiSelectMode(bool enabled) {
+    if (enabled) {
+      markUnreadAction
+        ..title = 'Mark selected conversations unread'
+        ..text = MARK_SELECTED_UNREAD_INFO;
+    } else {
+      markUnreadAction
+        ..title = 'Mark current conversation unread'
+        ..text = MARK_UNREAD_INFO;
+    }
   }
 }
 
