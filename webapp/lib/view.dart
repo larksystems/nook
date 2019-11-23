@@ -368,6 +368,7 @@ class FilterTagView extends TagView {
 class ConversationListPanelView {
   DivElement conversationListPanel;
   DivElement _conversationPanelTitle;
+  MarkUnreadActionView _markUnread;
   LazyListViewModel _conversationList;
   CheckboxInputElement _selectAllCheckbox;
   DivElement _loadSpinner;
@@ -398,14 +399,10 @@ class ConversationListPanelView {
       ..text = '0 conversations';
     panelHeader.append(_conversationPanelTitle);
 
-    var _markUnreadButton = new DivElement()
-      ..classes.add('add-action__button')
-      ..title = 'Mark current conversation unread'
-      ..text = MARK_UNREAD_INFO;
-    var _markUnreadArea = new DivElement()
+    _markUnread = MarkUnreadActionView();
+    panelHeader.append(new DivElement()
       ..classes.add('conversation-list-header__markUnread')
-      ..append(_markUnreadButton);
-    panelHeader.append(_markUnreadArea);
+      ..append(_markUnread.markUnreadAction));
 
     _loadSpinner = new DivElement()
       ..classes.add('load-spinner');
@@ -861,6 +858,22 @@ class AddTagActionView extends AddActionView {
     // No translation for tags
     _newActionTranslation.remove();
     _newActionTranslationLabel.remove();
+  }
+}
+
+class MarkUnreadActionView {
+  DivElement markUnreadAction;
+
+  MarkUnreadActionView() {
+    markUnreadAction = new DivElement()
+      ..classes.add('add-action__button')
+      ..title = 'Mark current conversation unread'
+      ..text = MARK_UNREAD_INFO
+      ..onClick.listen(markConversationsUnread);
+  }
+
+  void markConversationsUnread([_]) {
+    command(UIAction.markConversationUnread, ConversationData(activeConversation.deidentifiedPhoneNumber.value));
   }
 }
 
