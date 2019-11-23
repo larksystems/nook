@@ -61,18 +61,31 @@ class MessageDirection {
   static const In = MessageDirection('in');
   static const Out = MessageDirection('out');
 
-  static const allValues = <MessageDirection>[
+  static const values = <MessageDirection>[
     In,
     Out,
   ];
 
-  static MessageDirection fromString(String text, [MessageDirection defaultValue = MessageDirection.Out]) =>
-      allValues.firstWhere((value) => value.name == text, orElse: () => defaultValue);
+  static MessageDirection fromString(String text, [MessageDirection defaultValue = MessageDirection.Out]) {
+    if (MessageDirection_fromStringOverride != null) {
+      var value = MessageDirection_fromStringOverride(text);
+      if (value != null) return value;
+    }
+    if (text != null) {
+      String valueName = text.startsWith('MessageDirection.') ? text.substring(17) : text;
+      for (var value in values) {
+        if (value.name == valueName) return value;
+      }
+    }
+    log.warning('unknown MessageDirection $text');
+    return defaultValue;
+  }
 
   final String name;
   const MessageDirection(this.name);
-  String toString() => 'MessageDirection($name)';
+  String toString() => 'MessageDirection.$name';
 }
+MessageDirection Function(String text) MessageDirection_fromStringOverride;
 
 class SuggestedReply {
   String suggestedReplyId;
@@ -122,18 +135,31 @@ class TagType {
   static const Normal = TagType('normal');
   static const Important = TagType('important');
 
-  static const allValues = <TagType>[
+  static const values = <TagType>[
     Normal,
     Important,
   ];
 
-  static TagType fromString(String text, [TagType defaultValue = TagType.Normal]) =>
-      allValues.firstWhere((value) => value.name == text, orElse: () => defaultValue);
+  static TagType fromString(String text, [TagType defaultValue = TagType.Normal]) {
+    if (TagType_fromStringOverride != null) {
+      var value = TagType_fromStringOverride(text);
+      if (value != null) return value;
+    }
+    if (text != null) {
+      String valueName = text.startsWith('TagType.') ? text.substring(8) : text;
+      for (var value in values) {
+        if (value.name == valueName) return value;
+      }
+    }
+    log.warning('unknown TagType $text');
+    return defaultValue;
+  }
 
   final String name;
   const TagType(this.name);
-  String toString() => 'TagType($name)';
+  String toString() => 'TagType.$name';
 }
+TagType Function(String text) TagType_fromStringOverride;
 
 bool bool_fromData(data) {
   if (data == null) return null;
