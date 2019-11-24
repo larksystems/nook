@@ -128,28 +128,12 @@ Future updateSuggestedReply(SuggestedReply reply) {
 
 Future updateConversationMessages(Conversation conversation) {
   log.verbose("Updating conversation messages for ${conversation.deidentifiedPhoneNumber.value}");
-
-  var messageMaps = [];
-  for (Message msg in conversation.messages) {
-    messageMaps.add({
-      "direction" : (msg.direction ?? MessageDirection.Out).name,
-      "datetime" : msg.datetime.toIso8601String(),
-      "text" : msg.text,
-      "translation" : msg.translation,
-      "tags" : msg.tagIds,
-    });
-  }
-
-  return _firestoreInstance.doc(conversation.documentPath).update(
-    data : {"messages" : messageMaps}
-  );
+  return conversation.updateMessages(_firestoreInstance, conversation.documentPath, conversation.messages).commit();
 }
 
 Future updateNotes(Conversation conversation) {
   log.verbose("Updating conversation notes for ${conversation.deidentifiedPhoneNumber.value}");
-  return _firestoreInstance.doc(conversation.documentPath).update(
-    data: {"notes" : conversation.notes}
-  );
+  return conversation.updateNotes(_firestoreInstance, conversation.documentPath, conversation.notes).commit();
 }
 
 Future updateUnread(List<Conversation> conversations, bool newValue) {
@@ -159,19 +143,15 @@ Future updateUnread(List<Conversation> conversations, bool newValue) {
       ? conversations[0].deidentifiedPhoneNumber.value
       : "${conversations.length} conversations"
   }");
+  if (conversations.isEmpty) return null;
   var batch = _firestoreInstance.batch();
   for (var conversation in conversations) {
-    conversation.unread = newValue;
-    batch.update(_firestoreInstance.doc(conversation.documentPath), data: {"unread" : newValue});
+    conversation.updateUnread(_firestoreInstance, conversation.documentPath, newValue, batch);
   }
   return batch.commit();
 }
 
 Future updateConversationTags(Conversation conversation) {
   log.verbose("Updating conversation tags for ${conversation.deidentifiedPhoneNumber.value}");
-  return _firestoreInstance.doc(conversation.documentPath).update(data: {"tags" : conversation.tagIds});
-}
-
-Future updateConversation(Map conversationData) async {
-  // TODO(mariana): implement commication with Firebase/PubSub here
+  return conversation.updateTagIds(_firestoreInstance, conversation.documentPath, conversation.tagIds).commit();
 }
