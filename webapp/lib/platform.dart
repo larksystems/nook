@@ -99,7 +99,7 @@ Future _sendPubSubMessage(String topic, Map payload) async {
 }
 
 void listenForConversations(ConversationCollectionListener listener) {
-  listenForUpdates<Conversation>(_firestoreInstance, listener, "/nook_conversations", (firestore.DocumentSnapshot conversation) {
+  listenForUpdates<Conversation>(_firestoreInstance, listener, "/${Conversation.collectionName}", (firestore.DocumentSnapshot conversation) {
     log.verbose("_firestoreConversationToModelConversation: ${conversation.id}");
     return Conversation.fromFirestore(conversation);
   });
@@ -140,14 +140,14 @@ Future updateConversationMessages(Conversation conversation) {
     });
   }
 
-  return _firestoreInstance.doc("nook_conversations/${conversation.deidentifiedPhoneNumber.value}").update(
+  return _firestoreInstance.doc(conversation.documentPath).update(
     data : {"messages" : messageMaps}
   );
 }
 
 Future updateNotes(Conversation conversation) {
   log.verbose("Updating conversation notes for ${conversation.deidentifiedPhoneNumber.value}");
-  return _firestoreInstance.doc("nook_conversations/${conversation.deidentifiedPhoneNumber.value}").update(
+  return _firestoreInstance.doc(conversation.documentPath).update(
     data: {"notes" : conversation.notes}
   );
 }
@@ -162,18 +162,14 @@ Future updateUnread(List<Conversation> conversations, bool newValue) {
   var batch = _firestoreInstance.batch();
   for (var conversation in conversations) {
     conversation.unread = newValue;
-    batch.update(
-      _firestoreInstance.doc("nook_conversations/${conversation.deidentifiedPhoneNumber.value}"),
-      data: {"unread" : newValue});
+    batch.update(_firestoreInstance.doc(conversation.documentPath), data: {"unread" : newValue});
   }
   return batch.commit();
 }
 
 Future updateConversationTags(Conversation conversation) {
   log.verbose("Updating conversation tags for ${conversation.deidentifiedPhoneNumber.value}");
-  return _firestoreInstance.doc("nook_conversations/${conversation.deidentifiedPhoneNumber.value}").update(
-    data: {"tags" : conversation.tagIds}
-  );
+  return _firestoreInstance.doc(conversation.documentPath).update(data: {"tags" : conversation.tagIds});
 }
 
 Future updateConversation(Map conversationData) async {
