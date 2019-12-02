@@ -54,7 +54,7 @@ class Conversation extends g.Conversation {
       if (m2 == null) {
         m1 = c1.messages.last;
         m2 = c2.messages.last;
-      } else{
+      } else {
         return -1;
       }
     } else {

@@ -139,7 +139,7 @@ Future updateNotes(Conversation conversation) {
 
 Future updateUnread(List<Conversation> conversations, bool newValue) async {
   // TODO consider replacing this with pub/sub
-  log.verbose("Updating conversation unread=$newValue for ${
+  log.verbose("Updating unread=$newValue for ${
     conversations.length == 1
       ? conversations[0].deidentifiedPhoneNumber.value
       : "${conversations.length} conversations"
