@@ -109,8 +109,8 @@ main {
 
 
 .panel-title {
-    text-align: center;
-    padding: 12px;
+    text-align: left;
+    padding: 12px 8px;
     color: #666;
 }
 
@@ -126,6 +126,11 @@ main {
 .conversation-list-header__checkbox {
     flex: 0 0 auto;
     margin: 16px 8px auto;
+}
+
+.conversation-list-header__markUnread {
+    flex: 0 0 auto;
+    padding: 12px;
 }
 
 .conversation-list__item {

@@ -83,6 +83,8 @@ const REPLY_PANEL_TITLE = 'Suggested responses';
 const TAG_PANEL_TITLE = 'Available tags';
 const ADD_REPLY_INFO = 'Add new suggested response';
 const ADD_TAG_INFO = 'Add new tag';
+const MARK_UNREAD_INFO = 'Mark unread';
+const MARK_SELECTED_UNREAD_INFO = 'Mark selected unread';
 
 class ConversationPanelView {
   // HTML elements
@@ -367,6 +369,7 @@ class FilterTagView extends TagView {
 class ConversationListPanelView {
   DivElement conversationListPanel;
   DivElement _conversationPanelTitle;
+  MarkUnreadActionView _markUnread;
   LazyListViewModel _conversationList;
   CheckboxInputElement _selectAllCheckbox;
   DivElement _loadSpinner;
@@ -396,6 +399,11 @@ class ConversationListPanelView {
       ..classes.add('conversation-list-header__title')
       ..text = '0 conversations';
     panelHeader.append(_conversationPanelTitle);
+
+    _markUnread = MarkUnreadActionView();
+    panelHeader.append(new DivElement()
+      ..classes.add('conversation-list-header__markUnread')
+      ..append(_markUnread.markUnreadAction));
 
     _loadSpinner = new DivElement()
       ..classes.add('load-spinner');
@@ -448,8 +456,14 @@ class ConversationListPanelView {
 
   void checkAllConversations() => _phoneToConversations.forEach((_, conversation) => conversation._check());
   void uncheckAllConversations() => _phoneToConversations.forEach((_, conversation) => conversation._uncheck());
-  void showCheckboxes() => _phoneToConversations.forEach((_, conversation) => conversation._showCheckbox());
-  void hideCheckboxes() => _phoneToConversations.forEach((_, conversation) => conversation._hideCheckbox());
+  void showCheckboxes() {
+    _phoneToConversations.forEach((_, conversation) => conversation._showCheckbox());
+    _markUnread.multiSelectMode(true);
+  }
+  void hideCheckboxes() {
+    _phoneToConversations.forEach((_, conversation) => conversation._hideCheckbox());
+    _markUnread.multiSelectMode(false);
+  }
 
   void hideLoadSpinner() {
     _loadSpinner.hidden = true;
@@ -851,6 +865,33 @@ class AddTagActionView extends AddActionView {
     // No translation for tags
     _newActionTranslation.remove();
     _newActionTranslationLabel.remove();
+  }
+}
+
+class MarkUnreadActionView {
+  DivElement markUnreadAction;
+
+  MarkUnreadActionView() {
+    markUnreadAction = new DivElement()
+      ..classes.add('add-action__button')
+      ..onClick.listen(markConversationsUnread);
+    multiSelectMode(false);
+  }
+
+  void markConversationsUnread([_]) {
+    command(UIAction.markConversationUnread, ConversationData(activeConversation.deidentifiedPhoneNumber.value));
+  }
+
+  void multiSelectMode(bool enabled) {
+    if (enabled) {
+      markUnreadAction
+        ..title = 'Mark selected conversations unread'
+        ..text = MARK_SELECTED_UNREAD_INFO;
+    } else {
+      markUnreadAction
+        ..title = 'Mark current conversation unread'
+        ..text = MARK_UNREAD_INFO;
+    }
   }
 }
 
