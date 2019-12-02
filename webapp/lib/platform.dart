@@ -14,6 +14,7 @@ import 'model.dart';
 Logger log = new Logger('platform_utils.dart');
 
 const _SEND_TO_MULTI_IDS_ACTION = "send_to_multi_ids";
+const _MAX_BATCH_SIZE = 250;
 firestore.Firestore _firestoreInstance;
 
 init() async {
@@ -99,7 +100,7 @@ Future _sendPubSubMessage(String topic, Map payload) async {
 }
 
 void listenForConversations(ConversationCollectionListener listener) {
-  listenForUpdates<Conversation>(_firestoreInstance, listener, "/nook_conversations", (firestore.DocumentSnapshot conversation) {
+  listenForUpdates<Conversation>(_firestoreInstance, listener, "/${Conversation.collectionName}", (firestore.DocumentSnapshot conversation) {
     log.verbose("_firestoreConversationToModelConversation: ${conversation.id}");
     return Conversation.fromFirestore(conversation);
   });
@@ -128,54 +129,36 @@ Future updateSuggestedReply(SuggestedReply reply) {
 
 Future updateConversationMessages(Conversation conversation) {
   log.verbose("Updating conversation messages for ${conversation.deidentifiedPhoneNumber.value}");
-
-  var messageMaps = [];
-  for (Message msg in conversation.messages) {
-    messageMaps.add({
-      "direction" : (msg.direction ?? MessageDirection.Out).name,
-      "datetime" : msg.datetime.toIso8601String(),
-      "text" : msg.text,
-      "translation" : msg.translation,
-      "tags" : msg.tagIds,
-    });
-  }
-
-  return _firestoreInstance.doc("nook_conversations/${conversation.deidentifiedPhoneNumber.value}").update(
-    data : {"messages" : messageMaps}
-  );
+  return conversation.updateMessages(_firestoreInstance, conversation.documentPath, conversation.messages).commit();
 }
 
 Future updateNotes(Conversation conversation) {
   log.verbose("Updating conversation notes for ${conversation.deidentifiedPhoneNumber.value}");
-  return _firestoreInstance.doc("nook_conversations/${conversation.deidentifiedPhoneNumber.value}").update(
-    data: {"notes" : conversation.notes}
-  );
+  return conversation.updateNotes(_firestoreInstance, conversation.documentPath, conversation.notes).commit();
 }
 
-Future updateUnread(List<Conversation> conversations, bool newValue) {
+Future updateUnread(List<Conversation> conversations, bool newValue) async {
   // TODO consider replacing this with pub/sub
-  log.verbose("Updating conversation unread=$newValue for ${
+  log.verbose("Updating unread=$newValue for ${
     conversations.length == 1
       ? conversations[0].deidentifiedPhoneNumber.value
       : "${conversations.length} conversations"
   }");
+  if (conversations.isEmpty) return null;
   var batch = _firestoreInstance.batch();
+  int batchSize = 0;
   for (var conversation in conversations) {
-    conversation.unread = newValue;
-    batch.update(
-      _firestoreInstance.doc("nook_conversations/${conversation.deidentifiedPhoneNumber.value}"),
-      data: {"unread" : newValue});
+    conversation.updateUnread(_firestoreInstance, conversation.documentPath, newValue, batch);
+    if (batchSize == _MAX_BATCH_SIZE) {
+      await batch.commit();
+      batch = _firestoreInstance.batch();
+      batchSize = 0;
+    }
   }
   return batch.commit();
 }
 
 Future updateConversationTags(Conversation conversation) {
   log.verbose("Updating conversation tags for ${conversation.deidentifiedPhoneNumber.value}");
-  return _firestoreInstance.doc("nook_conversations/${conversation.deidentifiedPhoneNumber.value}").update(
-    data: {"tags" : conversation.tagIds}
-  );
-}
-
-Future updateConversation(Map conversationData) async {
-  // TODO(mariana): implement commication with Firebase/PubSub here
+  return conversation.updateTagIds(_firestoreInstance, conversation.documentPath, conversation.tagIds).commit();
 }

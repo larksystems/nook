@@ -23,7 +23,11 @@ class DeidentifiedPhoneNumber {
 }
 
 class Conversation extends g.Conversation {
+  static const collectionName = 'nook_conversations';
+
   DeidentifiedPhoneNumber deidentifiedPhoneNumber;
+
+  String get documentPath => "$collectionName/${deidentifiedPhoneNumber.value}";
 
   /// Return the most recent inbound message, or `null`
   g.Message get mostRecentMessageInbound {
@@ -50,7 +54,7 @@ class Conversation extends g.Conversation {
       if (m2 == null) {
         m1 = c1.messages.last;
         m2 = c2.messages.last;
-      } else{
+      } else {
         return -1;
       }
     } else {

@@ -29,6 +29,51 @@ class Conversation {
 
   static void listen(firestore.Firestore fs, ConversationCollectionListener listener, String collectionRoot) =>
       listenForUpdates<Conversation>(fs, listener, collectionRoot, Conversation.fromFirestore);
+
+  Map<String, dynamic> toData() {
+    return {
+      if (demographicsInfo != null) 'demographicsInfo': demographicsInfo,
+      if (tagIds != null) 'tags': tagIds,
+      if (messages != null) 'messages': messages.map((elem) => elem?.toData()).toList(),
+      if (notes != null) 'notes': notes,
+      if (unread != null) 'unread': unread,
+    };
+  }
+
+  firestore.WriteBatch updateDemographicsInfo(firestore.Firestore fs, String documentPath, Map<String, String> newValue, [firestore.WriteBatch batch]) {
+    demographicsInfo = newValue;
+    batch ??= fs.batch();
+    batch.update(fs.doc(documentPath), data: {'demographicsInfo': newValue});
+    return batch;
+  }
+
+  firestore.WriteBatch updateTagIds(firestore.Firestore fs, String documentPath, List<String> newValue, [firestore.WriteBatch batch]) {
+    tagIds = newValue;
+    batch ??= fs.batch();
+    batch.update(fs.doc(documentPath), data: {'tags': newValue});
+    return batch;
+  }
+
+  firestore.WriteBatch updateMessages(firestore.Firestore fs, String documentPath, List<Message> newValue, [firestore.WriteBatch batch]) {
+    messages = newValue;
+    batch ??= fs.batch();
+    batch.update(fs.doc(documentPath), data: {'messages': newValue?.map((elem) => elem?.toData())?.toList()});
+    return batch;
+  }
+
+  firestore.WriteBatch updateNotes(firestore.Firestore fs, String documentPath, String newValue, [firestore.WriteBatch batch]) {
+    notes = newValue;
+    batch ??= fs.batch();
+    batch.update(fs.doc(documentPath), data: {'notes': newValue});
+    return batch;
+  }
+
+  firestore.WriteBatch updateUnread(firestore.Firestore fs, String documentPath, bool newValue, [firestore.WriteBatch batch]) {
+    unread = newValue;
+    batch ??= fs.batch();
+    batch.update(fs.doc(documentPath), data: {'unread': newValue});
+    return batch;
+  }
 }
 typedef void ConversationCollectionListener(List<Conversation> changes);
 
@@ -54,6 +99,51 @@ class Message {
 
   static void listen(firestore.Firestore fs, MessageCollectionListener listener, String collectionRoot) =>
       listenForUpdates<Message>(fs, listener, collectionRoot, Message.fromFirestore);
+
+  Map<String, dynamic> toData() {
+    return {
+      if (direction != null) 'direction': direction.toString(),
+      if (datetime != null) 'datetime': datetime.toIso8601String(),
+      if (tagIds != null) 'tags': tagIds,
+      if (text != null) 'text': text,
+      if (translation != null) 'translation': translation,
+    };
+  }
+
+  firestore.WriteBatch updateDirection(firestore.Firestore fs, String documentPath, MessageDirection newValue, [firestore.WriteBatch batch]) {
+    direction = newValue;
+    batch ??= fs.batch();
+    batch.update(fs.doc(documentPath), data: {'direction': newValue?.toString()});
+    return batch;
+  }
+
+  firestore.WriteBatch updateDatetime(firestore.Firestore fs, String documentPath, DateTime newValue, [firestore.WriteBatch batch]) {
+    datetime = newValue;
+    batch ??= fs.batch();
+    batch.update(fs.doc(documentPath), data: {'datetime': newValue?.toIso8601String()});
+    return batch;
+  }
+
+  firestore.WriteBatch updateTagIds(firestore.Firestore fs, String documentPath, List<String> newValue, [firestore.WriteBatch batch]) {
+    tagIds = newValue;
+    batch ??= fs.batch();
+    batch.update(fs.doc(documentPath), data: {'tags': newValue});
+    return batch;
+  }
+
+  firestore.WriteBatch updateText(firestore.Firestore fs, String documentPath, String newValue, [firestore.WriteBatch batch]) {
+    text = newValue;
+    batch ??= fs.batch();
+    batch.update(fs.doc(documentPath), data: {'text': newValue});
+    return batch;
+  }
+
+  firestore.WriteBatch updateTranslation(firestore.Firestore fs, String documentPath, String newValue, [firestore.WriteBatch batch]) {
+    translation = newValue;
+    batch ??= fs.batch();
+    batch.update(fs.doc(documentPath), data: {'translation': newValue});
+    return batch;
+  }
 }
 typedef void MessageCollectionListener(List<Message> changes);
 
@@ -72,7 +162,8 @@ class MessageDirection {
       if (value != null) return value;
     }
     if (text != null) {
-      String valueName = text.startsWith('MessageDirection.') ? text.substring(17) : text;
+      const prefix = 'MessageDirection.';
+      String valueName = text.startsWith(prefix) ? text.substring(prefix.length) : text;
       for (var value in values) {
         if (value.name == valueName) return value;
       }
@@ -106,6 +197,35 @@ class SuggestedReply {
 
   static void listen(firestore.Firestore fs, SuggestedReplyCollectionListener listener, String collectionRoot) =>
       listenForUpdates<SuggestedReply>(fs, listener, collectionRoot, SuggestedReply.fromFirestore);
+
+  Map<String, dynamic> toData() {
+    return {
+      if (text != null) 'text': text,
+      if (translation != null) 'translation': translation,
+      if (shortcut != null) 'shortcut': shortcut,
+    };
+  }
+
+  firestore.WriteBatch updateText(firestore.Firestore fs, String documentPath, String newValue, [firestore.WriteBatch batch]) {
+    text = newValue;
+    batch ??= fs.batch();
+    batch.update(fs.doc(documentPath), data: {'text': newValue});
+    return batch;
+  }
+
+  firestore.WriteBatch updateTranslation(firestore.Firestore fs, String documentPath, String newValue, [firestore.WriteBatch batch]) {
+    translation = newValue;
+    batch ??= fs.batch();
+    batch.update(fs.doc(documentPath), data: {'translation': newValue});
+    return batch;
+  }
+
+  firestore.WriteBatch updateShortcut(firestore.Firestore fs, String documentPath, String newValue, [firestore.WriteBatch batch]) {
+    shortcut = newValue;
+    batch ??= fs.batch();
+    batch.update(fs.doc(documentPath), data: {'shortcut': newValue});
+    return batch;
+  }
 }
 typedef void SuggestedReplyCollectionListener(List<SuggestedReply> changes);
 
@@ -128,6 +248,35 @@ class Tag {
 
   static void listen(firestore.Firestore fs, TagCollectionListener listener, String collectionRoot) =>
       listenForUpdates<Tag>(fs, listener, collectionRoot, Tag.fromFirestore);
+
+  Map<String, dynamic> toData() {
+    return {
+      if (text != null) 'text': text,
+      if (type != null) 'type': type.toString(),
+      if (shortcut != null) 'shortcut': shortcut,
+    };
+  }
+
+  firestore.WriteBatch updateText(firestore.Firestore fs, String documentPath, String newValue, [firestore.WriteBatch batch]) {
+    text = newValue;
+    batch ??= fs.batch();
+    batch.update(fs.doc(documentPath), data: {'text': newValue});
+    return batch;
+  }
+
+  firestore.WriteBatch updateType(firestore.Firestore fs, String documentPath, TagType newValue, [firestore.WriteBatch batch]) {
+    type = newValue;
+    batch ??= fs.batch();
+    batch.update(fs.doc(documentPath), data: {'type': newValue?.toString()});
+    return batch;
+  }
+
+  firestore.WriteBatch updateShortcut(firestore.Firestore fs, String documentPath, String newValue, [firestore.WriteBatch batch]) {
+    shortcut = newValue;
+    batch ??= fs.batch();
+    batch.update(fs.doc(documentPath), data: {'shortcut': newValue});
+    return batch;
+  }
 }
 typedef void TagCollectionListener(List<Tag> changes);
 
@@ -146,7 +295,8 @@ class TagType {
       if (value != null) return value;
     }
     if (text != null) {
-      String valueName = text.startsWith('TagType.') ? text.substring(8) : text;
+      const prefix = 'TagType.';
+      String valueName = text.startsWith(prefix) ? text.substring(prefix.length) : text;
       for (var value in values) {
         if (value.name == valueName) return value;
       }

@@ -367,7 +367,7 @@ void command(UIAction action, Data data) {
           }
         }
         platform.updateUnread(markedConversations, true);
-      } else{
+      } else {
         view.conversationListPanelView.markConversationUnread(activeConversation.deidentifiedPhoneNumber.value);
         platform.updateUnread([activeConversation], true);
       }
