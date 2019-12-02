@@ -402,7 +402,7 @@ class ConversationListPanelView {
 
     _markUnread = MarkUnreadActionView();
     panelHeader.append(new DivElement()
-      ..classes.add('conversation-list-header__markUnread')
+      ..classes.add('conversation-list-header__mark-unread')
       ..append(_markUnread.markUnreadAction));
 
     _loadSpinner = new DivElement()
