@@ -152,6 +152,23 @@ Future updateNotes(Conversation conversation) {
   );
 }
 
+Future updateUnread(List<Conversation> conversations, bool newValue) {
+  // TODO consider replacing this with pub/sub
+  log.verbose("Updating conversation unread=$newValue for ${
+    conversations.length == 1
+      ? conversations[0].deidentifiedPhoneNumber.value
+      : "${conversations.length} conversations"
+  }");
+  var batch = _firestoreInstance.batch();
+  for (var conversation in conversations) {
+    conversation.unread = newValue;
+    batch.update(
+      _firestoreInstance.doc("nook_conversations/${conversation.deidentifiedPhoneNumber.value}"),
+      data: {"unread" : newValue});
+  }
+  return batch.commit();
+}
+
 Future updateConversationTags(Conversation conversation) {
   log.verbose("Updating conversation tags for ${conversation.deidentifiedPhoneNumber.value}");
   return _firestoreInstance.doc("nook_conversations/${conversation.deidentifiedPhoneNumber.value}").update(

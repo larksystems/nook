@@ -355,14 +355,22 @@ void command(UIAction action, Data data) {
     case UIAction.markConversationRead:
       ConversationData conversationData = data;
       view.conversationListPanelView.markConversationRead(conversationData.deidentifiedPhoneNumber);
-      // TODO call platform to mark read
-      log.warning('save "conversation.unread = false" not implemented');
+      platform.updateUnread([activeConversation], false);
       break;
     case UIAction.markConversationUnread:
-      ConversationData conversationData = data;
-      view.conversationListPanelView.markConversationUnread(conversationData.deidentifiedPhoneNumber);
-      // TODO call platform to mark unread
-      log.warning('save "conversation.unread = true" not implemented');
+      if (multiSelectMode) {
+        var markedConversations = <model.Conversation>[];
+        for (var conversation in selectedConversations) {
+          if (!conversation.unread) {
+            markedConversations.add(conversation);
+            view.conversationListPanelView.markConversationUnread(conversation.deidentifiedPhoneNumber.value);
+          }
+        }
+        platform.updateUnread(markedConversations, true);
+      } else{
+        view.conversationListPanelView.markConversationUnread(activeConversation.deidentifiedPhoneNumber.value);
+        platform.updateUnread([activeConversation], true);
+      }
       break;
     case UIAction.showConversation:
       ConversationData conversationData = data;
