@@ -14,6 +14,7 @@ import 'model.dart';
 Logger log = new Logger('platform_utils.dart');
 
 const _SEND_TO_MULTI_IDS_ACTION = "send_to_multi_ids";
+const _MAX_BATCH_SIZE = 250;
 firestore.Firestore _firestoreInstance;
 
 init() async {
@@ -136,7 +137,7 @@ Future updateNotes(Conversation conversation) {
   return conversation.updateNotes(_firestoreInstance, conversation.documentPath, conversation.notes).commit();
 }
 
-Future updateUnread(List<Conversation> conversations, bool newValue) {
+Future updateUnread(List<Conversation> conversations, bool newValue) async {
   // TODO consider replacing this with pub/sub
   log.verbose("Updating conversation unread=$newValue for ${
     conversations.length == 1
@@ -145,8 +146,14 @@ Future updateUnread(List<Conversation> conversations, bool newValue) {
   }");
   if (conversations.isEmpty) return null;
   var batch = _firestoreInstance.batch();
+  int batchSize = 0;
   for (var conversation in conversations) {
     conversation.updateUnread(_firestoreInstance, conversation.documentPath, newValue, batch);
+    if (batchSize == _MAX_BATCH_SIZE) {
+      await batch.commit();
+      batch = _firestoreInstance.batch();
+      batchSize = 0;
+    }
   }
   return batch.commit();
 }
