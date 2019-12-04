@@ -1,0 +1,10 @@
+{
+    "apiKey" : "AIzaSyASzTc1FgvDJA0GQLGhbl3Nyg24CCM5Z88",
+    "authDomain" : "nook-csap.firebaseapp.com",
+    "databaseURL" : "https://nook-csap.firebaseio.com",
+    "projectId" : "nook-csap",
+    "storageBucket" : "nook-csap.appspot.com",
+    "messagingSenderId" : "533121854264",
+    "logUrl" : "https://us-central1-nook-csap.cloudfunctions.net/Log",
+    "publishUrl" : "https://us-central1-nook-csap.cloudfunctions.net/Publish"
+}
