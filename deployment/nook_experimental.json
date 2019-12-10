@@ -6,5 +6,7 @@
   "storageBucket": "nook-experimental.appspot.com",
   "messagingSenderId": "884026794139",
   "appId": "1:884026794139:web:98e7d62025be76c824a63e",
-  "measurementId": "G-QRD5X3Y2MB"
+  "measurementId": "G-QRD5X3Y2MB",
+  "logUrl" : "https://us-central1-nook-experimental.cloudfunctions.net/Log",
+  "publishUrl" : "https://us-central1-nook-experimental.cloudfunctions.net/Publish"
 }
