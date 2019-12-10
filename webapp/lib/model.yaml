@@ -1,16 +1,16 @@
 Conversation:
   demographicsInfo: 'map string'
-  tags: 'array string tagIds'
-  messages: 'array Message'
-  notes: 'string'
-  unread: 'bool, true'
+  tags: 'update array string tagIds'
+  messages: 'update array Message'
+  notes: 'update string'
+  unread: 'update bool, true'
 
 Message:
   direction: 'MessageDirection, MessageDirection.Out'
   datetime: 'datetime, DateTime.now()'
-  tags: 'array string tagIds'
+  tags: 'update array string tagIds'
   text: 'string'
-  translation: 'string'
+  translation: 'update string'
 
 MessageDirection:
   dartType: 'enum'
@@ -21,15 +21,15 @@ MessageDirection:
 
 SuggestedReply:
   firebaseDocId: 'string suggestedReplyId'
-  text: 'string'
-  translation: 'string'
+  text: 'update string'
+  translation: 'update string'
   shortcut: 'string'
 
 Tag:
   firebaseDocId: 'string tagId'
-  text: 'string'
-  type: 'TagType, TagType.Normal'
-  shortcut: 'string'
+  text: 'update string'
+  type: 'update TagType, TagType.Normal'
+  shortcut: 'update string'
 
 TagType:
   dartType: 'enum'
