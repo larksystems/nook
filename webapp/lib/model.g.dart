@@ -40,13 +40,6 @@ class Conversation {
     };
   }
 
-  firestore.WriteBatch updateDemographicsInfo(firestore.Firestore fs, String documentPath, Map<String, String> newValue, [firestore.WriteBatch batch]) {
-    demographicsInfo = newValue;
-    batch ??= fs.batch();
-    batch.update(fs.doc(documentPath), data: {'demographicsInfo': newValue});
-    return batch;
-  }
-
   firestore.WriteBatch updateTagIds(firestore.Firestore fs, String documentPath, List<String> newValue, [firestore.WriteBatch batch]) {
     tagIds = newValue;
     batch ??= fs.batch();
@@ -110,31 +103,10 @@ class Message {
     };
   }
 
-  firestore.WriteBatch updateDirection(firestore.Firestore fs, String documentPath, MessageDirection newValue, [firestore.WriteBatch batch]) {
-    direction = newValue;
-    batch ??= fs.batch();
-    batch.update(fs.doc(documentPath), data: {'direction': newValue?.toString()});
-    return batch;
-  }
-
-  firestore.WriteBatch updateDatetime(firestore.Firestore fs, String documentPath, DateTime newValue, [firestore.WriteBatch batch]) {
-    datetime = newValue;
-    batch ??= fs.batch();
-    batch.update(fs.doc(documentPath), data: {'datetime': newValue?.toIso8601String()});
-    return batch;
-  }
-
   firestore.WriteBatch updateTagIds(firestore.Firestore fs, String documentPath, List<String> newValue, [firestore.WriteBatch batch]) {
     tagIds = newValue;
     batch ??= fs.batch();
     batch.update(fs.doc(documentPath), data: {'tags': newValue});
-    return batch;
-  }
-
-  firestore.WriteBatch updateText(firestore.Firestore fs, String documentPath, String newValue, [firestore.WriteBatch batch]) {
-    text = newValue;
-    batch ??= fs.batch();
-    batch.update(fs.doc(documentPath), data: {'text': newValue});
     return batch;
   }
 
@@ -217,13 +189,6 @@ class SuggestedReply {
     translation = newValue;
     batch ??= fs.batch();
     batch.update(fs.doc(documentPath), data: {'translation': newValue});
-    return batch;
-  }
-
-  firestore.WriteBatch updateShortcut(firestore.Firestore fs, String documentPath, String newValue, [firestore.WriteBatch batch]) {
-    shortcut = newValue;
-    batch ??= fs.batch();
-    batch.update(fs.doc(documentPath), data: {'shortcut': newValue});
     return batch;
   }
 }
