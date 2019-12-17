@@ -34,7 +34,9 @@ rm -rf public
 
 # Build
 cd webapp
+echo "building webapp ..."
 webdev build
+echo "build complete"
 mv build ../public
 cd ..
 
@@ -44,10 +46,13 @@ cp $FIREBASE_CONSTANTS public/assets/firebase_constants.json
 ########## deploy webapp
 
 # Get the project id
+echo "getting project id..."
 PROJECT_ID=$(cat $FIREBASE_CONSTANTS | python -c 'import json,sys; constants=json.load(sys.stdin); print(constants["projectId"])')
+echo "project id: $PROJECT_ID"
 
 # Deploy using the local firebase instance
 node $PROJDIR/functions/node_modules/.bin/firebase \
   deploy \
   --project $PROJECT_ID \
   --public public
+echo "firebase deploy result: $?"
