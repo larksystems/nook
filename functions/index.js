@@ -50,6 +50,16 @@ exports.Publish = functions.https.onRequest((req, res) => {
           )
         );
       return;
+    } else if (!data.fbUserIdToken) {
+        console.log(`fbUserIdToken not provided`);
+      res
+        .status(500)
+        .send(
+          new Error(
+            'Firebase user id token not provided. Make sure you have a "fbUserIdToken" property in your request'
+          )
+        );
+      return;
     }
 
     // References an existing topic
