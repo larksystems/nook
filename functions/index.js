@@ -1,4 +1,10 @@
+// The Cloud Functions for Firebase SDK to create Cloud Functions and setup triggers.
 const functions = require('firebase-functions');
+
+// The Firebase Admin SDK to authenticate publish requests.
+const admin = require('firebase-admin');
+admin.initializeApp();
+
 const cors = require('cors')({origin: true});
 const {PubSub} = require('@google-cloud/pubsub');
 const pubsub = new PubSub();
@@ -45,18 +51,29 @@ exports.Publish = functions.https.onRequest((req, res) => {
         payload: data.payload,
     };
 
-    console.log(`Publishing Topic: ${topic} Payload: ${payload}`);
+    fbUserIdToken = data.fbUserIdToken;
+    console.log(`Validating: ${fbUserIdToken}`);
 
-    publisher = topic.publisher();
-  
-    // Publishes a message
-    publisher
-      .publish(Buffer.from(JSON.stringify(payload)))
-      .then(() => res.status(200).send('Message published.'))
-      .catch(err => {
+    // Validate the user making the request
+    admin.auth()
+      .verifyIdToken(data.fbUserIdToken)
+      .then((decodedToken) => {
+        // Lookup the user
+        userId = decodedToken.uid;
+        console.log(`Looking up: ${userId}`);
+        return admin.auth().getUser(userId);
+      }).then((user) => {
+        // Publish the message
+        console.log(`${user.email} publishing topic: ${topic} payload: ${payload}`);
+        publisher = topic.publisher();
+        return publisher.publish(Buffer.from(JSON.stringify(payload)));
+      }).then(() => {
+        // Send response indicating success
+        return res.status(200).send('Message published.');
+      }).catch(err => {
+        // Log the error and respond indicating failure
         console.error(err);
         res.status(500).send(err);
-        return Promise.reject(err);
       });
     });
   });
