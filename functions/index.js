@@ -25,40 +25,17 @@ exports.Log = functions.https.onRequest((request, response) => {
 
 exports.Publish = functions.https.onRequest((req, res) => {
   cors(req, res, () => {
-    console.log(`Execution of publish starting`);
     console.log(`Request body ${req.body}`);
     data = JSON.parse(req.body);
 
-    if (!data.topic) {
-        console.log(`Topic not provided`);
-
-      res
-        .status(500)
-        .send(
-          new Error(
-            'Topic not provided. Make sure you have a "topic" property in your request'
-          )
-        );
+    if (!data.fbUserIdToken) {
+      reportMissingField(res, 'fbUserIdToken');
+      return;
+    } else if (!data.topic) {
+      reportMissingField(res, 'topic');
       return;
     } else if (!data.payload) {
-        console.log(`Payload not provided`);
-      res
-        .status(500)
-        .send(
-          new Error(
-            'Payload not provided. Make sure you have a "payload" property in your request'
-          )
-        );
-      return;
-    } else if (!data.fbUserIdToken) {
-        console.log(`fbUserIdToken not provided`);
-      res
-        .status(500)
-        .send(
-          new Error(
-            'Firebase user id token not provided. Make sure you have a "fbUserIdToken" property in your request'
-          )
-        );
+      reportMissingField(res, 'payload');
       return;
     }
 
@@ -83,3 +60,9 @@ exports.Publish = functions.https.onRequest((req, res) => {
       });
     });
   });
+
+function reportMissingField(res, fieldName) {
+  errorMsg = `Missing ${fieldName} field in request body.`;
+  console.error(Error(errorMsg));
+  res.status(500).json({"error": errorMsg});
+}
