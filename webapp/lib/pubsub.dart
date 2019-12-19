@@ -14,7 +14,11 @@ class PubSubClient {
 
   Future<bool> publish(String topic, Map payload) async {
     log.verbose("publish $topic $payload");
-    String body = json.encode({"topic": topic, "payload": payload});
+    String body = json.encode({
+      "fbUserIdToken": "some-random-string",
+      "topic": topic,
+      "payload": payload,
+    });
     log.verbose("publish About to send: ${body}");
 
     var client = new BrowserClient();
