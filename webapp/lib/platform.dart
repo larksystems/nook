@@ -30,8 +30,9 @@ init() async {
     messagingSenderId: platform_constants.messagingSenderId);
 
   // Firebase login
-  firebaseAuth.onAuthStateChanged.listen((firebase.User user) {
+  firebaseAuth.onAuthStateChanged.listen((firebase.User user) async {
     if (user == null) { // User signed out
+      _pubsubInstance.fbUserIdToken = null;
       controller.command(controller.UIAction.userSignedOut, null);
       return;
     }
@@ -41,6 +42,7 @@ init() async {
       photoURL =  '/assets/user_image_placeholder.png';
     }
     _firestoreInstance = firebase.firestore();
+    _pubsubInstance.fbUserIdToken = await user.getIdToken(true);
     controller.command(controller.UIAction.userSignedIn, new controller.UserData(user.displayName, user.email, photoURL));
   });
 }

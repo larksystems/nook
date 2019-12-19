@@ -10,14 +10,18 @@ Logger log = new Logger('pubsub.dart');
 class PubSubClient {
   final String publishUrl;
 
+  // The firebase token used to authenticate pub/sub operations.
+  // This is dynamically set and cleared when a user signs in and out.
+  String fbUserIdToken;
+
   PubSubClient(this.publishUrl);
 
   Future<bool> publish(String topic, Map payload) async {
     log.verbose("publish $topic $payload");
     String body = json.encode({
-      "fbUserIdToken": "some-random-string",
       "topic": topic,
       "payload": payload,
+      "fbUserIdToken": fbUserIdToken,
     });
     log.verbose("publish About to send: ${body}");
 
