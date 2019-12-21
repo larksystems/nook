@@ -1,6 +1,7 @@
 import "dart:async";
 import "dart:convert";
 
+import 'package:firebase/firebase.dart' as firebase;
 import 'package:http/browser_client.dart';
 
 import 'logger.dart';
@@ -10,18 +11,23 @@ Logger log = new Logger('pubsub.dart');
 class PubSubClient {
   final String publishUrl;
 
-  // The firebase token used to authenticate pub/sub operations.
-  // This is dynamically set and cleared when a user signs in and out.
-  String fbUserIdToken;
+  // The firebase user from which the user JWT auth token is obtained.
+  final firebase.User user;
 
-  PubSubClient(this.publishUrl);
+  PubSubClient(this.publishUrl, this.user);
 
   Future<bool> publish(String topic, Map payload) async {
     log.verbose("publish $topic $payload");
+
+    // The user JWT auth token used to authorize the pub/sub operation
+    // is only valid for 1 hour. Don't cache it so that the firebase
+    // user object can manage refreshing it as needed.
+    // See https://firebase.google.com/docs/auth/admin/manage-sessions
+
     String body = json.encode({
       "topic": topic,
       "payload": payload,
-      "fbUserIdToken": fbUserIdToken,
+      "fbUserIdToken": await user.getIdToken(),
     });
     log.verbose("publish About to send: ${body}");
 
