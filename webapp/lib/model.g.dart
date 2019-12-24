@@ -276,6 +276,9 @@ class TagType {
 }
 TagType Function(String text) TagType_fromStringOverride;
 
+// ======================================================================
+// Core firebase/yaml utilities
+
 bool bool_fromData(data) {
   if (data == null) return null;
   if (data is bool) return data;
@@ -342,3 +345,6 @@ void listenForUpdates<T>(
     listener(changes);
   });
 }
+
+// ======================================================================
+// Core pub/sub utilities
