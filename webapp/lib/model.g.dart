@@ -73,6 +73,7 @@ typedef void ConversationCollectionListener(List<Conversation> changes);
 class Message {
   MessageDirection direction;
   DateTime datetime;
+  MessageStatus status;
   List<String> tagIds;
   String text;
   String translation;
@@ -85,6 +86,7 @@ class Message {
     return (modelObj ?? Message())
       ..direction = MessageDirection.fromString(data['direction'] as String) ?? MessageDirection.Out
       ..datetime = DateTime_fromData(data['datetime']) ?? DateTime.now()
+      ..status = MessageStatus.fromString(data['status'] as String)
       ..tagIds = List_fromData<String>(data['tags'], String_fromData)
       ..text = String_fromData(data['text'])
       ..translation = String_fromData(data['translation']);
@@ -97,6 +99,7 @@ class Message {
     return {
       if (direction != null) 'direction': direction.toString(),
       if (datetime != null) 'datetime': datetime.toIso8601String(),
+      if (status != null) 'status': status.toString(),
       if (tagIds != null) 'tags': tagIds,
       if (text != null) 'text': text,
       if (translation != null) 'translation': translation,
@@ -149,6 +152,41 @@ class MessageDirection {
   String toString() => 'MessageDirection.$name';
 }
 MessageDirection Function(String text) MessageDirection_fromStringOverride;
+
+class MessageStatus {
+  static const pending = MessageStatus('pending');
+  static const confirmed = MessageStatus('confirmed');
+  static const failed = MessageStatus('failed');
+  static const unknown = MessageStatus('unknown');
+
+  static const values = <MessageStatus>[
+    pending,
+    confirmed,
+    failed,
+    unknown,
+  ];
+
+  static MessageStatus fromString(String text, [MessageStatus defaultValue = MessageStatus.unknown]) {
+    if (MessageStatus_fromStringOverride != null) {
+      var value = MessageStatus_fromStringOverride(text);
+      if (value != null) return value;
+    }
+    if (text != null) {
+      const prefix = 'MessageStatus.';
+      String valueName = text.startsWith(prefix) ? text.substring(prefix.length) : text;
+      for (var value in values) {
+        if (value.name == valueName) return value;
+      }
+    }
+    log.warning('unknown MessageStatus $text');
+    return defaultValue;
+  }
+
+  final String name;
+  const MessageStatus(this.name);
+  String toString() => 'MessageStatus.$name';
+}
+MessageStatus Function(String text) MessageStatus_fromStringOverride;
 
 class SuggestedReply {
   String suggestedReplyId;
