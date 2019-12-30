@@ -126,6 +126,8 @@ class AddTagData extends Data {
   AddTagData(this.tagText);
 }
 
+List<model.SystemMessage> systemMessages;
+
 UIActionObject actionObjectState;
 
 Set<model.Conversation> conversations;
@@ -147,7 +149,7 @@ void init() async {
 }
 
 void populateUI() {
-
+  systemMessages = [];
   conversations = emptyConversationsSet;
   filteredConversations = conversations;
   suggestedReplies = [];
@@ -211,6 +213,14 @@ void populateUI() {
 
       activeConversation = updateViewForConversations(filteredConversations);
       command(UIAction.markConversationRead, ConversationData(activeConversation.deidentifiedPhoneNumber.value));
+    });
+
+  platform.listenForSystemMessages(
+    (updatedMessages) {
+      var updatedIds = updatedMessages.map((m) => m.msgId).toSet();
+      systemMessages.removeWhere((m) => updatedIds.contains(m.msgId));
+      systemMessages.addAll(systemMessages.where((m) => !m.expired));
+      // TODO display the system messages in a banner
     });
 }
 
