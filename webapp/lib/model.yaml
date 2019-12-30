@@ -49,6 +49,7 @@ TagType:
     important: 'Important'
 
 SystemMessage:
+  firebaseCollectionName: 'systemMessages'
   firebaseDocId: 'string msgId'
   text: string
   expired: 'bool, false'

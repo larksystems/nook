@@ -315,6 +315,8 @@ class TagType {
 TagType Function(String text) TagType_fromStringOverride;
 
 class SystemMessage {
+  static const collectionName = 'systemMessages';
+
   String msgId;
   String text;
   bool expired;
@@ -329,7 +331,8 @@ class SystemMessage {
       ..expired = bool_fromData(data['expired']) ?? false;
   }
 
-  static void listen(firestore.Firestore fs, SystemMessageCollectionListener listener, String collectionRoot) =>
+  static void listen(firestore.Firestore fs, SystemMessageCollectionListener listener,
+          {String collectionRoot = '/$collectionName'}) =>
       listenForUpdates<SystemMessage>(fs, listener, collectionRoot, SystemMessage.fromFirestore);
 
   Map<String, dynamic> toData() {
