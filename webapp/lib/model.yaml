@@ -47,3 +47,9 @@ TagType:
   dartValues:
     normal: 'Normal'
     important: 'Important'
+
+SystemMessage:
+  firebaseCollectionName: 'systemMessages'
+  firebaseDocId: 'string msgId'
+  text: string
+  expired: 'bool, false'

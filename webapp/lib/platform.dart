@@ -89,6 +89,9 @@ Future<bool> sendMultiMessage(List<String> ids, String message) {
   return _pubsubInstance.publish(platform_constants.smsTopic, payload);
 }
 
+void listenForSystemMessages(SystemMessageCollectionListener listener) =>
+    SystemMessage.listen(_firestoreInstance, listener);
+
 void listenForConversations(ConversationCollectionListener listener) {
   listenForUpdates<Conversation>(_firestoreInstance, listener, "/${Conversation.collectionName}", (firestore.DocumentSnapshot conversation) {
     log.verbose("_firestoreConversationToModelConversation: ${conversation.id}");

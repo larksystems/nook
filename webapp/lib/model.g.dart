@@ -314,6 +314,36 @@ class TagType {
 }
 TagType Function(String text) TagType_fromStringOverride;
 
+class SystemMessage {
+  static const collectionName = 'systemMessages';
+
+  String msgId;
+  String text;
+  bool expired;
+
+  static SystemMessage fromFirestore(firestore.DocumentSnapshot doc, [SystemMessage modelObj]) =>
+      fromData(doc.data(), modelObj)..msgId = doc.id;
+
+  static SystemMessage fromData(data, [SystemMessage modelObj]) {
+    if (data == null) return null;
+    return (modelObj ?? SystemMessage())
+      ..text = String_fromData(data['text'])
+      ..expired = bool_fromData(data['expired']) ?? false;
+  }
+
+  static void listen(firestore.Firestore fs, SystemMessageCollectionListener listener,
+          {String collectionRoot = '/$collectionName'}) =>
+      listenForUpdates<SystemMessage>(fs, listener, collectionRoot, SystemMessage.fromFirestore);
+
+  Map<String, dynamic> toData() {
+    return {
+      if (text != null) 'text': text,
+      if (expired != null) 'expired': expired,
+    };
+  }
+}
+typedef void SystemMessageCollectionListener(List<SystemMessage> changes);
+
 // ======================================================================
 // Core firebase/yaml utilities
 
