@@ -8,6 +8,7 @@ Conversation:
 Message:
   direction: 'MessageDirection, MessageDirection.Out'
   datetime: 'datetime, DateTime.now()'
+  status: MessageStatus
   tags: 'updatable array string tagIds'
   text: 'string'
   translation: 'updatable string'
@@ -18,6 +19,15 @@ MessageDirection:
   dartValues:
     in: 'In'
     out: 'Out'
+
+MessageStatus:
+  dartType: 'enum'
+  defaultValue: 'unknown'
+  dartValues:
+    - pending
+    - confirmed
+    - failed
+    - unknown
 
 SuggestedReply:
   firebaseDocId: 'string suggestedReplyId'
