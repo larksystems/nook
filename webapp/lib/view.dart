@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:html';
 
 import 'package:intl/intl.dart';
@@ -18,6 +19,7 @@ TagPanelView tagPanelView;
 AuthHeaderView authHeaderView;
 AuthMainView authMainView;
 UrlView urlView;
+SnackbarView snackbarView;
 
 void init() {
   conversationListPanelView = new ConversationListPanelView();
@@ -27,6 +29,7 @@ void init() {
   authHeaderView = new AuthHeaderView();
   authMainView = new AuthMainView();
   urlView = new UrlView();
+  snackbarView = new SnackbarView();
 
   querySelector('header')
     ..append(authHeaderView.authElement);
@@ -41,7 +44,8 @@ void initSignedInView() {
     ..append(conversationListPanelView.conversationListPanel)
     ..append(conversationPanelView.conversationPanel)
     ..append(replyPanelView.replyPanel)
-    ..append(tagPanelView.tagPanel);
+    ..append(tagPanelView.tagPanel)
+    ..append(snackbarView.snackbarElement);
   showNormalStatus('signed in');
 }
 
@@ -59,6 +63,7 @@ void clearMain() {
   replyPanelView.replyPanel.remove();
   tagPanelView.tagPanel.remove();
   authMainView.authElement.remove();
+  snackbarView.snackbarElement.remove();
 }
 
 bool sendingMultiMessagesUserConfirmation(int noMessages) {
@@ -1017,5 +1022,43 @@ class UrlView {
       return uri.queryParameters[queryDisableRepliesKey].toLowerCase() == 'true';
     }
     return false;
+  }
+}
+
+enum SnackbarNotificationType {
+  info,
+  success,
+  warning,
+  error
+}
+
+class SnackbarView {
+  DivElement snackbarElement;
+  DivElement _contents;
+
+  SnackbarView() {
+    snackbarElement = new DivElement()
+      ..id = 'snackbar'
+      ..classes.add('hidden')
+      ..title = 'Click to close notification.'
+      ..onClick.listen((_) => hideSnackbar());
+
+    _contents = new DivElement()
+      ..classes.add('contents');
+    snackbarElement.append(_contents);
+  }
+
+  showSnackbar(String message, SnackbarNotificationType type) {
+    _contents.text = message;
+    snackbarElement.classes.remove('hidden');
+    snackbarElement.setAttribute('type', type.toString().replaceAll('SnackbarNotificationType.', ''));
+    new Timer(new Duration(seconds: 3), () => hideSnackbar());
+  }
+
+  hideSnackbar() {
+    snackbarElement.classes.add('hidden');
+    snackbarElement.attributes.remove('type');
+    // Remove the contents after the animation ends - the duration here must match the animation lenth
+    new Timer(new Duration(milliseconds: 200), () => _contents.text = '');
   }
 }
