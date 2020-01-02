@@ -438,6 +438,10 @@ void command(UIAction action, Data data) {
         updateViewForConversation(activeConversation);
         return;
       }
+      if (keyPressData.key == 'Esc' || keyPressData.key == 'Escape') {
+        // Hide the snackbar if it's visible
+        view.snackbarView.hideSnackbar();
+      }
       // If the shortcut is for a reply, find it and send it
       var selectedReply = suggestedReplies.where((reply) => reply.shortcut == keyPressData.key);
       if (selectedReply.isNotEmpty) {

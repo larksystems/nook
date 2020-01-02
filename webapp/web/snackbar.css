@@ -1,0 +1,50 @@
+#snackbar {
+  position: fixed;
+  left: 50%;
+  bottom: 30px;
+  width: 250px;
+  margin: 0 -125px; /* half of width to be able to center horizontally with left: 50% */
+  padding: 12px;
+  box-shadow: #cccccc 0px 0px 3px 0px;
+  text-align: center;
+  background: #ffffff;
+  border: 3px solid #ffffff;
+
+  /* Copy the style from buttons */
+  -webkit-appearance: none;
+  border-radius: 1px;
+
+  /* A little animation on hide and show */
+  visibility: visible;
+  transition: all 0.2s;
+}
+
+#snackbar[type=info] {
+  border-left: 3px solid #b3b3b3;
+  border-right: 3px solid #b3b3b3;
+}
+
+#snackbar[type=success] {
+  border-left: 3px solid #10c443;
+  border-right: 3px solid #10c443;
+}
+
+#snackbar[type=warning] {
+  border-left: 3px solid #ffd238;
+  border-right: 3px solid #ffd238;
+}
+
+#snackbar[type=error] {
+  border-left: 3px solid #ff6238;
+  border-right: 3px solid #ff6238;
+}
+
+#snackbar.hidden {
+  bottom: -50px;
+  visibility: hidden;
+}
+
+#snackbar .contents {
+  color: #3e3e3e;
+  visibility: visible;
+}
