@@ -1058,7 +1058,8 @@ class SnackbarView {
   hideSnackbar() {
     snackbarElement.classes.toggle('hidden', true);
     snackbarElement.attributes.remove('type');
-    // Remove the contents after the animation ends - the duration here must match the animation lenth
+    // Remove the contents after the animation ends
+    // The duration here must match the animation length set in snackbar.css
     new Timer(new Duration(milliseconds: 200), () => _contents.text = '');
   }
 }
