@@ -1075,6 +1075,10 @@ class BannerView {
   DivElement bannerElement;
   DivElement _contents;
 
+  /// The length of the animation in milliseconds.
+  /// This must match the animation length set in banner.css
+  static const ANIMATION_LENGTH_MS = 200;
+
   BannerView() {
     bannerElement = new DivElement()
       ..id = 'banner'
@@ -1092,7 +1096,7 @@ class BannerView {
 
   hideBanner() {
     bannerElement.classes.add('hidden');
-    // Remove the contents after the animation ends - the duration here must match the animation lenth
-    new Timer(new Duration(milliseconds: 200), () => _contents.text = '');
+    // Remove the contents after the animation ends
+    new Timer(new Duration(milliseconds: ANIMATION_LENGTH_MS), () => _contents.text = '');
   }
 }
