@@ -1036,6 +1036,13 @@ class SnackbarView {
   DivElement snackbarElement;
   DivElement _contents;
 
+  /// How many seconds the snackbar will be displayed on screen before disappearing.
+  static const SECONDS_ON_SCREEN = 3;
+
+  /// The length of the animation in milliseconds.
+  /// This must match the animation length set in snackbar.css
+  static const ANIMATION_LENGTH_MS = 200;
+
   SnackbarView() {
     snackbarElement = new DivElement()
       ..id = 'snackbar'
@@ -1052,14 +1059,13 @@ class SnackbarView {
     _contents.text = message;
     snackbarElement.classes.remove('hidden');
     snackbarElement.setAttribute('type', type.toString().replaceAll('SnackbarNotificationType.', ''));
-    new Timer(new Duration(seconds: 3), () => hideSnackbar());
+    new Timer(new Duration(seconds: SECONDS_ON_SCREEN), () => hideSnackbar());
   }
 
   hideSnackbar() {
     snackbarElement.classes.toggle('hidden', true);
     snackbarElement.attributes.remove('type');
     // Remove the contents after the animation ends
-    // The duration here must match the animation length set in snackbar.css
-    new Timer(new Duration(milliseconds: 200), () => _contents.text = '');
+    new Timer(new Duration(milliseconds: ANIMATION_LENGTH_MS), () => _contents.text = '');
   }
 }
