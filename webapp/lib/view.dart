@@ -34,7 +34,7 @@ void init() {
   querySelector('header')
     ..append(authHeaderView.authElement);
 
-  document.onKeyPress.listen((event) => command(UIAction.keyPressed, new KeyPressData(event.key)));
+  document.onKeyDown.listen((event) => command(UIAction.keyPressed, new KeyPressData(event.key)));
 }
 
 void initSignedInView() {
@@ -1056,7 +1056,7 @@ class SnackbarView {
   }
 
   hideSnackbar() {
-    snackbarElement.classes.add('hidden');
+    snackbarElement.classes.toggle('hidden', true);
     snackbarElement.attributes.remove('type');
     // Remove the contents after the animation ends - the duration here must match the animation lenth
     new Timer(new Duration(milliseconds: 200), () => _contents.text = '');
