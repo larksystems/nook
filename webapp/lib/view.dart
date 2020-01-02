@@ -20,6 +20,7 @@ AuthHeaderView authHeaderView;
 AuthMainView authMainView;
 UrlView urlView;
 SnackbarView snackbarView;
+BannerView bannerView;
 
 void init() {
   conversationListPanelView = new ConversationListPanelView();
@@ -30,9 +31,10 @@ void init() {
   authMainView = new AuthMainView();
   urlView = new UrlView();
   snackbarView = new SnackbarView();
+  bannerView = new BannerView();
 
-  querySelector('header')
-    ..append(authHeaderView.authElement);
+  querySelector('header').insertAdjacentElement('beforeBegin', bannerView.bannerElement);
+  querySelector('header').append(authHeaderView.authElement);
 
   document.onKeyDown.listen((event) => command(UIAction.keyPressed, new KeyPressData(event.key)));
 }
@@ -52,8 +54,7 @@ void initSignedInView() {
 void initSignedOutView() {
   clearMain();
 
-  querySelector('main')
-    ..append(authMainView.authElement);
+  querySelector('main').append(authMainView.authElement);
   showNormalStatus('signed out');
 }
 
@@ -1067,5 +1068,31 @@ class SnackbarView {
     snackbarElement.attributes.remove('type');
     // Remove the contents after the animation ends
     new Timer(new Duration(milliseconds: ANIMATION_LENGTH_MS), () => _contents.text = '');
+  }
+}
+
+class BannerView {
+  DivElement bannerElement;
+  DivElement _contents;
+
+  BannerView() {
+    bannerElement = new DivElement()
+      ..id = 'banner'
+      ..classes.add('hidden');
+
+    _contents = new DivElement()
+      ..classes.add('contents');
+    bannerElement.append(_contents);
+  }
+
+  showBanner(String message) {
+    _contents.text = message;
+    bannerElement.classes.remove('hidden');
+  }
+
+  hideBanner() {
+    bannerElement.classes.add('hidden');
+    // Remove the contents after the animation ends - the duration here must match the animation lenth
+    new Timer(new Duration(milliseconds: 200), () => _contents.text = '');
   }
 }
