@@ -43,6 +43,7 @@ enum UIAction {
   addNewTag,
   enableMultiSelectMode,
   disableMultiSelectMode,
+  updateSystemMessages,
 }
 
 class Data {}
@@ -124,6 +125,11 @@ class AddSuggestedReplyData extends Data {
 class AddTagData extends Data {
   String tagText;
   AddTagData(this.tagText);
+}
+
+class SystemMessagesData extends Data {
+  List<model.SystemMessage> messages;
+  SystemMessagesData(this.messages);
 }
 
 List<model.SystemMessage> systemMessages;
@@ -220,7 +226,7 @@ void populateUI() {
       var updatedIds = updatedMessages.map((m) => m.msgId).toSet();
       systemMessages.removeWhere((m) => updatedIds.contains(m.msgId));
       systemMessages.addAll(systemMessages.where((m) => !m.expired));
-      // TODO display the system messages in a banner
+      command(UIAction.updateSystemMessages, SystemMessagesData(systemMessages));
     });
 }
 
@@ -501,6 +507,15 @@ void command(UIAction action, Data data) {
       view.conversationListPanelView.hideCheckboxes();
       selectedConversations.clear();
       multiSelectMode = false;
+      break;
+    case UIAction.updateSystemMessages:
+      SystemMessagesData msgData = data;
+      if (msgData.messages.isNotEmpty) {
+        var lines = msgData.messages.map((m) => m.text);
+        view.bannerView.showBanner(lines.join(', '));
+      } else {
+        view.bannerView.hideBanner();
+      }
       break;
     default:
   }
