@@ -225,7 +225,7 @@ void populateUI() {
     (updatedMessages) {
       var updatedIds = updatedMessages.map((m) => m.msgId).toSet();
       systemMessages.removeWhere((m) => updatedIds.contains(m.msgId));
-      systemMessages.addAll(systemMessages.where((m) => !m.expired));
+      systemMessages.addAll(updatedMessages.where((m) => !m.expired));
       command(UIAction.updateSystemMessages, SystemMessagesData(systemMessages));
     });
 }
