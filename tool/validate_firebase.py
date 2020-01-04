@@ -65,6 +65,7 @@ if not os.path.isfile(crypto_token_path):
     exit(1)
 
 init(crypto_token_path)
+validate_documents("suggestedReplies",   model.validate_SuggestedReply_doc)
 validate_documents("conversationTags",   custom.validate_ConversationTag)
 validate_documents("messageTags",        custom.validate_MessageTag)
 validate_documents("nook_conversations", custom.validate_Conversation)

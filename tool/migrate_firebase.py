@@ -134,6 +134,7 @@ doc_count = 0
 skip_count = 0
 migration_count = 0
 init(crypto_token_path)
+# migrate_collection("suggestedReplies",   migrate_nook_model.migrate_SuggestedReply)
 migrate_collection("nook_conversations", migrate_nook_model.migrate_Conversation)
 migrate_collection("conversationTags",   migrate_nook_model.migrate_Tag)
 migrate_collection("messageTags",        migrate_nook_model.migrate_Tag)
