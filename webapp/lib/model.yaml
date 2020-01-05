@@ -30,6 +30,7 @@ MessageStatus:
     - unknown
 
 SuggestedReply:
+  firebaseCollectionName: 'suggestedReplies'
   firebaseDocId: 'string suggestedReplyId'
   text: 'updatable string'
   translation: 'updatable string'

@@ -189,6 +189,8 @@ class MessageStatus {
 MessageStatus Function(String text) MessageStatus_fromStringOverride;
 
 class SuggestedReply {
+  static const collectionName = 'suggestedReplies';
+
   String suggestedReplyId;
   String text;
   String translation;
@@ -205,7 +207,8 @@ class SuggestedReply {
       ..shortcut = String_fromData(data['shortcut']);
   }
 
-  static void listen(firestore.Firestore fs, SuggestedReplyCollectionListener listener, String collectionRoot) =>
+  static void listen(firestore.Firestore fs, SuggestedReplyCollectionListener listener,
+          {String collectionRoot = '/$collectionName'}) =>
       listenForUpdates<SuggestedReply>(fs, listener, collectionRoot, SuggestedReply.fromFirestore);
 
   Map<String, dynamic> toData() {

@@ -106,12 +106,12 @@ void listenForMessageTags(TagCollectionListener listener) =>
     Tag.listen(_firestoreInstance, listener, "/messageTags");
 
 void listenForSuggestedReplies(SuggestedReplyCollectionListener listener) =>
-    SuggestedReply.listen(_firestoreInstance, listener, "/suggestedReplies");
+    SuggestedReply.listen(_firestoreInstance, listener);
 
 Future updateSuggestedReply(SuggestedReply reply) {
   log.verbose("Updating suggested Reply ${reply.suggestedReplyId}");
 
-  return _firestoreInstance.doc("suggestedReplies/${reply.suggestedReplyId}").update(
+  return _firestoreInstance.doc("${SuggestedReply.collectionName}/${reply.suggestedReplyId}").update(
     data: {
       "shortcut" : reply.shortcut,
       "text" : reply.text,
