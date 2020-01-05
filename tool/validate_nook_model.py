@@ -82,14 +82,14 @@ def validate_SuggestedReply_field(fieldPath, data, required = True):
         return
     validate_SuggestedReply(fieldPath, data[fieldName])
 
+def validate_SuggestedReply_doc(fieldPath, docId, data):
+    validate_String(f"{fieldPath}/doc-id", docId, prefix = "reply-")
+    validate_SuggestedReply(fieldPath, data)
+
 def validate_SuggestedReply(fieldPath, data):
     validate_String_field(f"{fieldPath}/text", data)
     validate_String_field(f"{fieldPath}/translation", data)
     validate_String_field(f"{fieldPath}/shortcut", data, required = False)
-
-def validate_SuggestedReply_doc(fieldPath, docId, data):
-    validate_String(f"{fieldPath}/doc-id", docId, prefix = "reply-")
-    validate_SuggestedReply(fieldPath, data)
 
 def validate_Tag_field(fieldPath, data, required = True):
     fieldName = fieldPath.split('/')[-1]
