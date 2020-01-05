@@ -22,6 +22,9 @@ def migrate_Message(data):
 
     if migrate_MessageDirection(data, "direction"):
         changed = True
+    # TODO at some point, message status should be required
+    if migrate_MessageStatus(data, "status", required = False):
+        changed = True
 
     return changed
 
@@ -40,6 +43,38 @@ def migrate_MessageDirection(data, key):
         newValue = "MessageDirection.out"
     else:
         warning(f"Unknown MessageDirection: {value}")
+        return False
+
+    data[key] = newValue
+    return True
+
+# Migrate the enum and return True
+# or return False if the enum has already been migrated
+def migrate_MessageStatus(data, key, required = True):
+    if not key in data:
+        if required:
+            warning(f"Missing MessageStatus")
+        return False
+    value = data[key]
+
+    if value == "MessageStatus.pending":
+        return False
+    elif value == "MessageStatus.confirmed":
+        return False
+    elif value == "MessageStatus.failed":
+        return False
+    elif value == "MessageStatus.unknown":
+        return False
+    elif value == "pending":
+        newValue = "MessageStatus.pending"
+    elif value == "confirmed":
+        newValue = "MessageStatus.confirmed"
+    elif value == "failed":
+        newValue = "MessageStatus.failed"
+    elif value == "unknown":
+        newValue = "MessageStatus.unknown"
+    else:
+        warning(f"Unknown MessageStatus: {value}")
         return False
 
     data[key] = newValue

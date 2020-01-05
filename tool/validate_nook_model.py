@@ -34,6 +34,8 @@ def validate_Message_field(fieldPath, data, required = True):
 def validate_Message(fieldPath, data):
     validate_MessageDirection_field(f"{fieldPath}/direction", data)
     validate_DateTime_field(f"{fieldPath}/datetime", data)
+    # TODO message status should be required at some point
+    validate_MessageStatus_field(f"{fieldPath}/status", data, required = False)
     validate_List_field(f"{fieldPath}/tags", data, custom.validate_MessageTagId, notEmpty = False)
     validate_String_field(f"{fieldPath}/text", data)
     validate_String_field(f"{fieldPath}/translation", data)
@@ -53,6 +55,25 @@ def validate_MessageDirection(fieldPath, value):
         return
     raise ValidationError(f"{fieldPath} is invalid: {value}")
 
+def validate_MessageStatus_field(fieldPath, data, required = True):
+    fieldName = fieldPath.split('/')[-1]
+    if not fieldName in data:
+        if required:
+            raise ValidationError(f"{fieldPath} is missing")
+        return
+    validate_MessageStatus(fieldPath, data[fieldName])
+
+def validate_MessageStatus(fieldPath, value):
+    if value == "MessageStatus.pending":
+        return
+    if value == "MessageStatus.confirmed":
+        return
+    if value == "MessageStatus.failed":
+        return
+    if value == "MessageStatus.unknown":
+        return
+    raise ValidationError(f"{fieldPath} is invalid: {value}")
+
 def validate_SuggestedReply_field(fieldPath, data, required = True):
     fieldName = fieldPath.split('/')[-1]
     if not fieldName in data:
@@ -64,7 +85,11 @@ def validate_SuggestedReply_field(fieldPath, data, required = True):
 def validate_SuggestedReply(fieldPath, data):
     validate_String_field(f"{fieldPath}/text", data)
     validate_String_field(f"{fieldPath}/translation", data)
-    validate_String_field(f"{fieldPath}/shortcut", data)
+    validate_String_field(f"{fieldPath}/shortcut", data, required = False)
+
+def validate_SuggestedReply_doc(fieldPath, docId, data):
+    validate_String(f"{fieldPath}/doc-id", docId, prefix = "reply-")
+    validate_SuggestedReply(fieldPath, data)
 
 def validate_Tag_field(fieldPath, data, required = True):
     fieldName = fieldPath.split('/')[-1]
@@ -164,20 +189,28 @@ def validate_DateTime(fieldPath, value):
     except ValueError as e:
         raise ValidationError(f"{fieldPath} invalid: {value}")
 
-def validate_String_field(fieldPath, data, required = True, notEmpty = True):
+def validate_String_field(fieldPath, data, required = True, notEmpty = True, prefix = None):
     fieldName = fieldPath.split('/')[-1]
     if not fieldName in data:
         if required:
             raise ValidationError(f"{fieldPath} is missing")
         return
-    validate_String(fieldPath, data[fieldName], notEmpty)
+    validate_String(fieldPath, data[fieldName], notEmpty, prefix)
 
-def validate_String(fieldPath, value, notEmpty = True):
+def validate_String(fieldPath, value, notEmpty = True, prefix = None):
     if value is None:
         raise ValidationError(f"{fieldPath} is undefined")
     if not value:
         if notEmpty:
             raise ValidationError(f"{fieldPath} is empty")
+    if prefix is None:
+        return
+    if value.startswith(prefix):
+        return
+    # print prefix to disclose hidden characters before raising an exception
+    for index in range(len(prefix)):
+        print(f"  char {index} : {value[index]} : {ord(value[index])}")
+    raise ValidationError(f"{fieldPath} invalid: {value}")
 
 class ValidationError(Exception):
     """Exception raised for errors in the input.
