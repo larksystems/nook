@@ -82,14 +82,14 @@ def validate_SuggestedReply_field(fieldPath, data, required = True):
         return
     validate_SuggestedReply(fieldPath, data[fieldName])
 
+def validate_SuggestedReply_doc(fieldPath, docId, data):
+    validate_String(f"{fieldPath}/doc-id", docId, prefix = "reply-")
+    validate_SuggestedReply(fieldPath, data)
+
 def validate_SuggestedReply(fieldPath, data):
     validate_String_field(f"{fieldPath}/text", data)
     validate_String_field(f"{fieldPath}/translation", data)
     validate_String_field(f"{fieldPath}/shortcut", data, required = False)
-
-def validate_SuggestedReply_doc(fieldPath, docId, data):
-    validate_String(f"{fieldPath}/doc-id", docId, prefix = "reply-")
-    validate_SuggestedReply(fieldPath, data)
 
 def validate_Tag_field(fieldPath, data, required = True):
     fieldName = fieldPath.split('/')[-1]
@@ -118,6 +118,22 @@ def validate_TagType(fieldPath, value):
     if value == "TagType.important":
         return
     raise ValidationError(f"{fieldPath} is invalid: {value}")
+
+def validate_SystemMessage_field(fieldPath, data, required = True):
+    fieldName = fieldPath.split('/')[-1]
+    if not fieldName in data:
+        if required:
+            raise ValidationError(f"{fieldPath} is missing")
+        return
+    validate_SystemMessage(fieldPath, data[fieldName])
+
+def validate_SystemMessage_doc(fieldPath, docId, data):
+    validate_String(f"{fieldPath}/doc-id", docId, prefix = "sysmsg-")
+    validate_SystemMessage(fieldPath, data)
+
+def validate_SystemMessage(fieldPath, data):
+    validate_String_field(f"{fieldPath}/text", data)
+    validate_bool_field(f"{fieldPath}/expired", data, required = False)
 
 # ----------------------------------------------------------------------
 # Generated core type validation functions
