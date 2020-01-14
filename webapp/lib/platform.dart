@@ -95,7 +95,7 @@ void listenForSystemMessages(SystemMessageCollectionListener listener) =>
 void listenForConversations(ConversationCollectionListener listener) {
   listenForUpdates<Conversation>(_firestoreInstance, listener, "/${Conversation.collectionName}", (DocSnapshot conversation) {
     log.verbose("_firestoreConversationToModelConversation: ${conversation.id}");
-    return Conversation.fromFirestore(conversation);
+    return Conversation.fromSnapshot(conversation);
   });
 }
 

@@ -14,7 +14,7 @@ class Conversation {
   String notes;
   bool unread;
 
-  static Conversation fromFirestore(DocSnapshot doc, [Conversation modelObj]) =>
+  static Conversation fromSnapshot(DocSnapshot doc, [Conversation modelObj]) =>
       fromData(doc.data, modelObj);
 
   static Conversation fromData(data, [Conversation modelObj]) {
@@ -28,7 +28,7 @@ class Conversation {
   }
 
   static void listen(firestore.Firestore fs, ConversationCollectionListener listener, String collectionRoot) =>
-      listenForUpdates<Conversation>(fs, listener, collectionRoot, Conversation.fromFirestore);
+      listenForUpdates<Conversation>(fs, listener, collectionRoot, Conversation.fromSnapshot);
 
   Map<String, dynamic> toData() {
     return {
@@ -78,7 +78,7 @@ class Message {
   String text;
   String translation;
 
-  static Message fromFirestore(DocSnapshot doc, [Message modelObj]) =>
+  static Message fromSnapshot(DocSnapshot doc, [Message modelObj]) =>
       fromData(doc.data, modelObj);
 
   static Message fromData(data, [Message modelObj]) {
@@ -93,7 +93,7 @@ class Message {
   }
 
   static void listen(firestore.Firestore fs, MessageCollectionListener listener, String collectionRoot) =>
-      listenForUpdates<Message>(fs, listener, collectionRoot, Message.fromFirestore);
+      listenForUpdates<Message>(fs, listener, collectionRoot, Message.fromSnapshot);
 
   Map<String, dynamic> toData() {
     return {
@@ -196,7 +196,7 @@ class SuggestedReply {
   String translation;
   String shortcut;
 
-  static SuggestedReply fromFirestore(DocSnapshot doc, [SuggestedReply modelObj]) =>
+  static SuggestedReply fromSnapshot(DocSnapshot doc, [SuggestedReply modelObj]) =>
       fromData(doc.data, modelObj)..suggestedReplyId = doc.id;
 
   static SuggestedReply fromData(data, [SuggestedReply modelObj]) {
@@ -209,7 +209,7 @@ class SuggestedReply {
 
   static void listen(firestore.Firestore fs, SuggestedReplyCollectionListener listener,
           {String collectionRoot = '/$collectionName'}) =>
-      listenForUpdates<SuggestedReply>(fs, listener, collectionRoot, SuggestedReply.fromFirestore);
+      listenForUpdates<SuggestedReply>(fs, listener, collectionRoot, SuggestedReply.fromSnapshot);
 
   Map<String, dynamic> toData() {
     return {
@@ -241,7 +241,7 @@ class Tag {
   TagType type;
   String shortcut;
 
-  static Tag fromFirestore(DocSnapshot doc, [Tag modelObj]) =>
+  static Tag fromSnapshot(DocSnapshot doc, [Tag modelObj]) =>
       fromData(doc.data, modelObj)..tagId = doc.id;
 
   static Tag fromData(data, [Tag modelObj]) {
@@ -253,7 +253,7 @@ class Tag {
   }
 
   static void listen(firestore.Firestore fs, TagCollectionListener listener, String collectionRoot) =>
-      listenForUpdates<Tag>(fs, listener, collectionRoot, Tag.fromFirestore);
+      listenForUpdates<Tag>(fs, listener, collectionRoot, Tag.fromSnapshot);
 
   Map<String, dynamic> toData() {
     return {
@@ -324,7 +324,7 @@ class SystemMessage {
   String text;
   bool expired;
 
-  static SystemMessage fromFirestore(DocSnapshot doc, [SystemMessage modelObj]) =>
+  static SystemMessage fromSnapshot(DocSnapshot doc, [SystemMessage modelObj]) =>
       fromData(doc.data, modelObj)..msgId = doc.id;
 
   static SystemMessage fromData(data, [SystemMessage modelObj]) {
@@ -336,7 +336,7 @@ class SystemMessage {
 
   static void listen(firestore.Firestore fs, SystemMessageCollectionListener listener,
           {String collectionRoot = '/$collectionName'}) =>
-      listenForUpdates<SystemMessage>(fs, listener, collectionRoot, SystemMessage.fromFirestore);
+      listenForUpdates<SystemMessage>(fs, listener, collectionRoot, SystemMessage.fromSnapshot);
 
   Map<String, dynamic> toData() {
     return {

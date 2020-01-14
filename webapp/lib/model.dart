@@ -40,9 +40,9 @@ class Conversation extends g.Conversation {
     return null;
   }
 
-  static Conversation fromFirestore(g.DocSnapshot doc) {
+  static Conversation fromSnapshot(g.DocSnapshot doc) {
     var conversation = Conversation();
-    g.Conversation.fromFirestore(doc, conversation);
+    g.Conversation.fromSnapshot(doc, conversation);
     return conversation
       ..deidentifiedPhoneNumber = DeidentifiedPhoneNumber.fromConversationId(doc.id);
   }
