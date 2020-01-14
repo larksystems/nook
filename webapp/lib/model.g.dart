@@ -14,8 +14,8 @@ class Conversation {
   String notes;
   bool unread;
 
-  static Conversation fromFirestore(firestore.DocumentSnapshot doc, [Conversation modelObj]) =>
-      fromData(doc.data(), modelObj);
+  static Conversation fromFirestore(DocSnapshot doc, [Conversation modelObj]) =>
+      fromData(doc.data, modelObj);
 
   static Conversation fromData(data, [Conversation modelObj]) {
     if (data == null) return null;
@@ -78,8 +78,8 @@ class Message {
   String text;
   String translation;
 
-  static Message fromFirestore(firestore.DocumentSnapshot doc, [Message modelObj]) =>
-      fromData(doc.data(), modelObj);
+  static Message fromFirestore(DocSnapshot doc, [Message modelObj]) =>
+      fromData(doc.data, modelObj);
 
   static Message fromData(data, [Message modelObj]) {
     if (data == null) return null;
@@ -196,8 +196,8 @@ class SuggestedReply {
   String translation;
   String shortcut;
 
-  static SuggestedReply fromFirestore(firestore.DocumentSnapshot doc, [SuggestedReply modelObj]) =>
-      fromData(doc.data(), modelObj)..suggestedReplyId = doc.id;
+  static SuggestedReply fromFirestore(DocSnapshot doc, [SuggestedReply modelObj]) =>
+      fromData(doc.data, modelObj)..suggestedReplyId = doc.id;
 
   static SuggestedReply fromData(data, [SuggestedReply modelObj]) {
     if (data == null) return null;
@@ -241,8 +241,8 @@ class Tag {
   TagType type;
   String shortcut;
 
-  static Tag fromFirestore(firestore.DocumentSnapshot doc, [Tag modelObj]) =>
-      fromData(doc.data(), modelObj)..tagId = doc.id;
+  static Tag fromFirestore(DocSnapshot doc, [Tag modelObj]) =>
+      fromData(doc.data, modelObj)..tagId = doc.id;
 
   static Tag fromData(data, [Tag modelObj]) {
     if (data == null) return null;
@@ -324,8 +324,8 @@ class SystemMessage {
   String text;
   bool expired;
 
-  static SystemMessage fromFirestore(firestore.DocumentSnapshot doc, [SystemMessage modelObj]) =>
-      fromData(doc.data(), modelObj)..msgId = doc.id;
+  static SystemMessage fromFirestore(DocSnapshot doc, [SystemMessage modelObj]) =>
+      fromData(doc.data, modelObj)..msgId = doc.id;
 
   static SystemMessage fromData(data, [SystemMessage modelObj]) {
     if (data == null) return null;
@@ -393,7 +393,7 @@ void listenForUpdates<T>(
     firestore.Firestore fs,
     void listener(List<T> changes),
     String collectionRoot,
-    T createModel(firestore.DocumentSnapshot doc),
+    T createModel(DocSnapshot doc),
     ) async {
   log.verbose('Loading from $collectionRoot');
   log.verbose('Query root: $collectionRoot');
@@ -411,10 +411,17 @@ void listenForUpdates<T>(
     querySnapshot.docChanges().forEach((documentChange) {
       var doc = documentChange.doc;
       log.verbose('Processing ${doc.id}');
-      changes.add(createModel(doc));
+      changes.add(createModel(DocSnapshot(doc.id, doc.data())));
     });
     listener(changes);
   });
+}
+
+class DocSnapshot {
+  final String id;
+  final Map<String, dynamic> data;
+
+  DocSnapshot(this.id, this.data);
 }
 
 // ======================================================================

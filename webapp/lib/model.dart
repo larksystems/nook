@@ -40,7 +40,7 @@ class Conversation extends g.Conversation {
     return null;
   }
 
-  static Conversation fromFirestore(firestore.DocumentSnapshot doc) {
+  static Conversation fromFirestore(g.DocSnapshot doc) {
     var conversation = Conversation();
     g.Conversation.fromFirestore(doc, conversation);
     return conversation
