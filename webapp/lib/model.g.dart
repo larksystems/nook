@@ -1,6 +1,8 @@
 // This generated file is used by `model.dart`
 // and should not be imported or exported by any other file.
 
+import 'dart:async';
+
 import 'package:firebase/firestore.dart' as firestore;
 
 import 'logger.dart';
@@ -389,32 +391,55 @@ List<T> List_fromData<T>(dynamic data, T createModel(data)) =>
 Map<String, T> Map_fromData<T>(dynamic data, T createModel(data)) =>
     (data as Map)?.map<String, T>((key, value) => MapEntry(key.toString(), createModel(value)));
 
-void listenForUpdates<T>(
+StreamSubscription<List<DocSnapshot>> listenForUpdates<T>(
     firestore.Firestore fs,
     void listener(List<T> changes),
     String collectionRoot,
     T createModel(DocSnapshot doc),
-    ) async {
+    ) {
   log.verbose('Loading from $collectionRoot');
   log.verbose('Query root: $collectionRoot');
-
-  fs.collection(collectionRoot).onSnapshot.listen((querySnapshot) {
-    // No need to process local writes to Firebase
-    if (querySnapshot.metadata.hasPendingWrites) {
-      log.verbose('Skipping processing of local changes');
-      return;
-    }
-
+  return FsDocStorage(fs).onChange(collectionRoot).listen((List<DocSnapshot> snapshots) {
     List<T> changes = [];
-    var docChanges = querySnapshot.docChanges();
-    log.verbose("Starting processing ${docChanges.length} changes.");
-    querySnapshot.docChanges().forEach((documentChange) {
-      var doc = documentChange.doc;
-      log.verbose('Processing ${doc.id}');
-      changes.add(createModel(DocSnapshot(doc.id, doc.data())));
-    });
+    log.verbose("Starting processing ${snapshots.length} changes.");
+    for (var snapshot in snapshots) {
+      log.verbose('Processing ${snapshot.id}');
+      changes.add(createModel(snapshot));
+    }
     listener(changes);
   });
+}
+
+/// Document storage interface.
+/// See [FsDocStorage] for a firebase specific version of this.
+abstract class DocStorage {
+  Stream<List<DocSnapshot>> onChange(String collectionRoot);
+}
+
+/// Firebase specific document storage.
+class FsDocStorage implements DocStorage {
+  final firestore.Firestore fs;
+
+  FsDocStorage(this.fs);
+
+  @override
+  Stream<List<DocSnapshot>> onChange(String collectionRoot) {
+    return fs.collection(collectionRoot).onSnapshot.transform<List<DocSnapshot>>(StreamTransformer.fromHandlers(
+      handleData: (firestore.QuerySnapshot querySnapshot, EventSink<List<DocSnapshot>> sink) {
+        // No need to process local writes to Firebase
+        if (querySnapshot.metadata.hasPendingWrites) {
+          log.verbose('Skipping processing of local changes');
+          return;
+        }
+        var event = <DocSnapshot>[];
+        for (var change in querySnapshot.docChanges()) {
+          var doc = change.doc;
+          event.add(DocSnapshot(doc.id, doc.data()));
+        }
+        sink.add(event);
+      },
+    ));
+  }
 }
 
 /// A snapshot of a document's id and data at a particular moment in time.
