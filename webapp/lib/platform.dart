@@ -12,6 +12,9 @@ import 'pubsub.dart';
 Logger log = new Logger('platform.dart');
 
 const _SEND_TO_MULTI_IDS_ACTION = "send_to_multi_ids";
+
+/// Each batch of writes can write to a maximum of 500 documents
+/// See https://firebase.google.com/docs/firestore/manage-data/transactions
 const _MAX_BATCH_SIZE = 250;
 
 firestore.Firestore _firestoreInstance;
@@ -138,13 +141,14 @@ Future updateUnread(List<Conversation> conversations, bool newValue) async {
       : "${conversations.length} conversations"
   }");
   if (conversations.isEmpty) return null;
-  var batch = _firestoreInstance.batch();
+  var batch = FirestoreDocUpdateBatch(_firestoreInstance.batch());
   int batchSize = 0;
   for (var conversation in conversations) {
     conversation.updateUnread(_firestoreInstance, conversation.documentPath, newValue, batch);
+    ++batchSize;
     if (batchSize == _MAX_BATCH_SIZE) {
       await batch.commit();
-      batch = _firestoreInstance.batch();
+      batch = FirestoreDocUpdateBatch(_firestoreInstance.batch());
       batchSize = 0;
     }
   }
