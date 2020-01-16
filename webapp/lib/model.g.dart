@@ -40,30 +40,30 @@ class Conversation {
     };
   }
 
-  DocUpdate updateTagIds(firestore.Firestore fs, String documentPath, List<String> newValue, [DocUpdate batch]) {
+  DocUpdateBatch updateTagIds(firestore.Firestore fs, String documentPath, List<String> newValue, [DocUpdateBatch batch]) {
     tagIds = newValue;
-    batch ??= FirestoreDocUpdate(fs.batch());
+    batch ??= FirestoreDocUpdateBatch(fs.batch());
     batch.update(fs.doc(documentPath), data: {'tags': newValue});
     return batch;
   }
 
-  DocUpdate updateMessages(firestore.Firestore fs, String documentPath, List<Message> newValue, [DocUpdate batch]) {
+  DocUpdateBatch updateMessages(firestore.Firestore fs, String documentPath, List<Message> newValue, [DocUpdateBatch batch]) {
     messages = newValue;
-    batch ??= FirestoreDocUpdate(fs.batch());
+    batch ??= FirestoreDocUpdateBatch(fs.batch());
     batch.update(fs.doc(documentPath), data: {'messages': newValue?.map((elem) => elem?.toData())?.toList()});
     return batch;
   }
 
-  DocUpdate updateNotes(firestore.Firestore fs, String documentPath, String newValue, [DocUpdate batch]) {
+  DocUpdateBatch updateNotes(firestore.Firestore fs, String documentPath, String newValue, [DocUpdateBatch batch]) {
     notes = newValue;
-    batch ??= FirestoreDocUpdate(fs.batch());
+    batch ??= FirestoreDocUpdateBatch(fs.batch());
     batch.update(fs.doc(documentPath), data: {'notes': newValue});
     return batch;
   }
 
-  DocUpdate updateUnread(firestore.Firestore fs, String documentPath, bool newValue, [DocUpdate batch]) {
+  DocUpdateBatch updateUnread(firestore.Firestore fs, String documentPath, bool newValue, [DocUpdateBatch batch]) {
     unread = newValue;
-    batch ??= FirestoreDocUpdate(fs.batch());
+    batch ??= FirestoreDocUpdateBatch(fs.batch());
     batch.update(fs.doc(documentPath), data: {'unread': newValue});
     return batch;
   }
@@ -106,16 +106,16 @@ class Message {
     };
   }
 
-  DocUpdate updateTagIds(firestore.Firestore fs, String documentPath, List<String> newValue, [DocUpdate batch]) {
+  DocUpdateBatch updateTagIds(firestore.Firestore fs, String documentPath, List<String> newValue, [DocUpdateBatch batch]) {
     tagIds = newValue;
-    batch ??= FirestoreDocUpdate(fs.batch());
+    batch ??= FirestoreDocUpdateBatch(fs.batch());
     batch.update(fs.doc(documentPath), data: {'tags': newValue});
     return batch;
   }
 
-  DocUpdate updateTranslation(firestore.Firestore fs, String documentPath, String newValue, [DocUpdate batch]) {
+  DocUpdateBatch updateTranslation(firestore.Firestore fs, String documentPath, String newValue, [DocUpdateBatch batch]) {
     translation = newValue;
-    batch ??= FirestoreDocUpdate(fs.batch());
+    batch ??= FirestoreDocUpdateBatch(fs.batch());
     batch.update(fs.doc(documentPath), data: {'translation': newValue});
     return batch;
   }
@@ -219,16 +219,16 @@ class SuggestedReply {
     };
   }
 
-  DocUpdate updateText(firestore.Firestore fs, String documentPath, String newValue, [DocUpdate batch]) {
+  DocUpdateBatch updateText(firestore.Firestore fs, String documentPath, String newValue, [DocUpdateBatch batch]) {
     text = newValue;
-    batch ??= FirestoreDocUpdate(fs.batch());
+    batch ??= FirestoreDocUpdateBatch(fs.batch());
     batch.update(fs.doc(documentPath), data: {'text': newValue});
     return batch;
   }
 
-  DocUpdate updateTranslation(firestore.Firestore fs, String documentPath, String newValue, [DocUpdate batch]) {
+  DocUpdateBatch updateTranslation(firestore.Firestore fs, String documentPath, String newValue, [DocUpdateBatch batch]) {
     translation = newValue;
-    batch ??= FirestoreDocUpdate(fs.batch());
+    batch ??= FirestoreDocUpdateBatch(fs.batch());
     batch.update(fs.doc(documentPath), data: {'translation': newValue});
     return batch;
   }
@@ -263,23 +263,23 @@ class Tag {
     };
   }
 
-  DocUpdate updateText(firestore.Firestore fs, String documentPath, String newValue, [DocUpdate batch]) {
+  DocUpdateBatch updateText(firestore.Firestore fs, String documentPath, String newValue, [DocUpdateBatch batch]) {
     text = newValue;
-    batch ??= FirestoreDocUpdate(fs.batch());
+    batch ??= FirestoreDocUpdateBatch(fs.batch());
     batch.update(fs.doc(documentPath), data: {'text': newValue});
     return batch;
   }
 
-  DocUpdate updateType(firestore.Firestore fs, String documentPath, TagType newValue, [DocUpdate batch]) {
+  DocUpdateBatch updateType(firestore.Firestore fs, String documentPath, TagType newValue, [DocUpdateBatch batch]) {
     type = newValue;
-    batch ??= FirestoreDocUpdate(fs.batch());
+    batch ??= FirestoreDocUpdateBatch(fs.batch());
     batch.update(fs.doc(documentPath), data: {'type': newValue?.toString()});
     return batch;
   }
 
-  DocUpdate updateShortcut(firestore.Firestore fs, String documentPath, String newValue, [DocUpdate batch]) {
+  DocUpdateBatch updateShortcut(firestore.Firestore fs, String documentPath, String newValue, [DocUpdateBatch batch]) {
     shortcut = newValue;
-    batch ??= FirestoreDocUpdate(fs.batch());
+    batch ??= FirestoreDocUpdateBatch(fs.batch());
     batch.update(fs.doc(documentPath), data: {'shortcut': newValue});
     return batch;
   }
@@ -428,7 +428,7 @@ class DocSnapshot {
 /// A batch update, used to perform multiple writes as a single atomic unit.
 /// None of the writes are committed (or visible locally) until
 /// [DocUpdate.commit()] is called.
-abstract class DocUpdate {
+abstract class DocUpdateBatch {
   /// Commits all of the writes in this write batch as a single atomic unit.
   /// Returns non-null [Future] that resolves once all of the writes in the
   /// batch have been successfully written to the backend as an atomic unit.
@@ -441,10 +441,10 @@ abstract class DocUpdate {
 }
 
 /// A batch update for documents in firestore.
-class FirestoreDocUpdate implements DocUpdate {
+class FirestoreDocUpdateBatch implements DocUpdateBatch {
   final firestore.WriteBatch _batch;
 
-  FirestoreDocUpdate(this._batch);
+  FirestoreDocUpdateBatch(this._batch);
 
   @override
   Future<Null> commit() => _batch.commit();

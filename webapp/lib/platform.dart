@@ -141,14 +141,14 @@ Future updateUnread(List<Conversation> conversations, bool newValue) async {
       : "${conversations.length} conversations"
   }");
   if (conversations.isEmpty) return null;
-  var batch = FirestoreDocUpdate(_firestoreInstance.batch());
+  var batch = FirestoreDocUpdateBatch(_firestoreInstance.batch());
   int batchSize = 0;
   for (var conversation in conversations) {
     conversation.updateUnread(_firestoreInstance, conversation.documentPath, newValue, batch);
     ++batchSize;
     if (batchSize == _MAX_BATCH_SIZE) {
       await batch.commit();
-      batch = FirestoreDocUpdate(_firestoreInstance.batch());
+      batch = FirestoreDocUpdateBatch(_firestoreInstance.batch());
       batchSize = 0;
     }
   }
