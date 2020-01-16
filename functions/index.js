@@ -74,7 +74,8 @@ exports.Publish = functions.https.onRequest((req, res) => {
       }).then((user) => {
         // Publish the message
         console.log(`${user.email} publishing topic: ${topic} payload: ${payload}`);
-        publisher = topic.publisher();
+        // console.log(objDetails("topic", topic));
+        publisher = topic.publisher;
         return publisher.publish(Buffer.from(JSON.stringify(payload)));
       }).then(() => {
         // Send response indicating success
@@ -91,4 +92,18 @@ function reportMissingField(res, fieldName) {
   errorMsg = `Missing ${fieldName} field in request body.`;
   console.error(Error(errorMsg));
   res.status(500).json({"error": errorMsg});
+}
+
+// Utility function for debugging that returns a description an object's properties and methods
+function objDetails(objName, obj) {
+  let properties = new Set();
+  let currentObj = obj;
+  do {
+    Object.getOwnPropertyNames(currentObj).map(item => properties.add(item))
+  } while ((currentObj = Object.getPrototypeOf(currentObj)));
+  let description = `${objName} object details:`;
+  let items = [...properties.keys()];
+  items.sort();
+  items.forEach(item => description = description.concat("\n", item, " --> ", typeof obj[item]));
+  return description;
 }
