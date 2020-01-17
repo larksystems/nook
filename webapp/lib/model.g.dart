@@ -399,7 +399,7 @@ StreamSubscription<List<DocSnapshot>> listenForUpdates<T>(
     ) {
   log.verbose('Loading from $collectionRoot');
   log.verbose('Query root: $collectionRoot');
-  return FsDocStorage(fs).onChange(collectionRoot).listen((List<DocSnapshot> snapshots) {
+  return FirestoreDocStorage(fs).onChange(collectionRoot).listen((List<DocSnapshot> snapshots) {
     List<T> changes = [];
     log.verbose("Starting processing ${snapshots.length} changes.");
     for (var snapshot in snapshots) {
@@ -411,16 +411,16 @@ StreamSubscription<List<DocSnapshot>> listenForUpdates<T>(
 }
 
 /// Document storage interface.
-/// See [FsDocStorage] for a firebase specific version of this.
+/// See [FirestoreDocStorage] for a firebase specific version of this.
 abstract class DocStorage {
   Stream<List<DocSnapshot>> onChange(String collectionRoot);
 }
 
 /// Firebase specific document storage.
-class FsDocStorage implements DocStorage {
+class FirestoreDocStorage implements DocStorage {
   final firestore.Firestore fs;
 
-  FsDocStorage(this.fs);
+  FirestoreDocStorage(this.fs);
 
   @override
   Stream<List<DocSnapshot>> onChange(String collectionRoot) {
