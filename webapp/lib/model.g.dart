@@ -460,7 +460,7 @@ class DocSnapshot {
 
 /// A batch update, used to perform multiple writes as a single atomic unit.
 /// None of the writes are committed (or visible locally) until
-/// [DocUpdate.commit()] is called.
+/// [DocBatchUpdate.commit()] is called.
 abstract class DocBatchUpdate {
   /// Commits all of the writes in this write batch as a single atomic unit.
   /// Returns non-null [Future] that resolves once all of the writes in the
