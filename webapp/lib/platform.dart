@@ -18,6 +18,7 @@ const _SEND_TO_MULTI_IDS_ACTION = "send_to_multi_ids";
 const _MAX_BATCH_SIZE = 250;
 
 firestore.Firestore _firestoreInstance;
+DocStorage _docStorage;
 PubSubClient _pubsubInstance;
 
 init() async {
@@ -44,6 +45,7 @@ init() async {
       photoURL =  '/assets/user_image_placeholder.png';
     }
     _firestoreInstance = firebase.firestore();
+    _docStorage = FirebaseDocStorage(_firestoreInstance);
     _pubsubInstance = new PubSubClient(platform_constants.publishUrl, user);
     controller.command(controller.UIAction.userSignedIn, new controller.UserData(user.displayName, user.email, photoURL));
   });
@@ -93,23 +95,23 @@ Future<bool> sendMultiMessage(List<String> ids, String message) {
 }
 
 void listenForSystemMessages(SystemMessageCollectionListener listener) =>
-    SystemMessage.listen(_firestoreInstance, listener);
+    SystemMessage.listen(_docStorage, listener);
 
 void listenForConversations(ConversationCollectionListener listener) {
-  listenForUpdates<Conversation>(_firestoreInstance, listener, "/${Conversation.collectionName}", (DocSnapshot conversation) {
+  listenForUpdates<Conversation>(_docStorage, listener, "/${Conversation.collectionName}", (DocSnapshot conversation) {
     log.verbose("_firestoreConversationToModelConversation: ${conversation.id}");
     return Conversation.fromSnapshot(conversation);
   });
 }
 
 void listenForConversationTags(TagCollectionListener listener) =>
-    Tag.listen(_firestoreInstance, listener, "/conversationTags");
+    Tag.listen(_docStorage, listener, "/conversationTags");
 
 void listenForMessageTags(TagCollectionListener listener) =>
-    Tag.listen(_firestoreInstance, listener, "/messageTags");
+    Tag.listen(_docStorage, listener, "/messageTags");
 
 void listenForSuggestedReplies(SuggestedReplyCollectionListener listener) =>
-    SuggestedReply.listen(_firestoreInstance, listener);
+    SuggestedReply.listen(_docStorage, listener);
 
 Future updateSuggestedReply(SuggestedReply reply) {
   log.verbose("Updating suggested Reply ${reply.suggestedReplyId}");
@@ -125,12 +127,12 @@ Future updateSuggestedReply(SuggestedReply reply) {
 
 Future updateConversationMessages(Conversation conversation) {
   log.verbose("Updating conversation messages for ${conversation.deidentifiedPhoneNumber.value}");
-  return conversation.updateMessages(_firestoreInstance, conversation.documentPath, conversation.messages).commit();
+  return conversation.updateMessages(_docStorage, conversation.documentPath, conversation.messages).commit();
 }
 
 Future updateNotes(Conversation conversation) {
   log.verbose("Updating conversation notes for ${conversation.deidentifiedPhoneNumber.value}");
-  return conversation.updateNotes(_firestoreInstance, conversation.documentPath, conversation.notes).commit();
+  return conversation.updateNotes(_docStorage, conversation.documentPath, conversation.notes).commit();
 }
 
 Future updateUnread(List<Conversation> conversations, bool newValue) async {
@@ -141,14 +143,14 @@ Future updateUnread(List<Conversation> conversations, bool newValue) async {
       : "${conversations.length} conversations"
   }");
   if (conversations.isEmpty) return null;
-  var batch = FirebaseBatchUpdate(_firestoreInstance.batch());
+  var batch = _docStorage.batch();
   int batchSize = 0;
   for (var conversation in conversations) {
-    conversation.updateUnread(_firestoreInstance, conversation.documentPath, newValue, batch);
+    conversation.updateUnread(_docStorage, conversation.documentPath, newValue, batch);
     ++batchSize;
     if (batchSize == _MAX_BATCH_SIZE) {
       await batch.commit();
-      batch = FirebaseBatchUpdate(_firestoreInstance.batch());
+      batch = _docStorage.batch();
       batchSize = 0;
     }
   }
@@ -157,5 +159,5 @@ Future updateUnread(List<Conversation> conversations, bool newValue) async {
 
 Future updateConversationTags(Conversation conversation) {
   log.verbose("Updating conversation tags for ${conversation.deidentifiedPhoneNumber.value}");
-  return conversation.updateTagIds(_firestoreInstance, conversation.documentPath, conversation.tagIds).commit();
+  return conversation.updateTagIds(_docStorage, conversation.documentPath, conversation.tagIds).commit();
 }
