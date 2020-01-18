@@ -29,8 +29,8 @@ class Conversation {
       ..unread = bool_fromData(data['unread']) ?? true;
   }
 
-  static void listen(firestore.Firestore fs, ConversationCollectionListener listener, String collectionRoot) =>
-      listenForUpdates<Conversation>(fs, listener, collectionRoot, Conversation.fromSnapshot);
+  static void listen(DocStorage docStorage, ConversationCollectionListener listener, String collectionRoot) =>
+      listenForUpdates<Conversation>(docStorage, listener, collectionRoot, Conversation.fromSnapshot);
 
   Map<String, dynamic> toData() {
     return {
@@ -42,10 +42,10 @@ class Conversation {
     };
   }
 
-  DocBatchUpdate updateTagIds(firestore.Firestore fs, String documentPath, List<String> newValue, [DocBatchUpdate batch]) {
+  DocBatchUpdate updateTagIds(DocStorage docStorage, String documentPath, List<String> newValue, [DocBatchUpdate batch]) {
     tagIds = newValue;
-    batch ??= FirebaseBatchUpdate(fs.batch());
-    batch.update(fs.doc(documentPath), data: {'tags': newValue});
+    batch ??= docStorage.batch();
+    batch.update(documentPath, data: {'tags': newValue});
     return batch;
   }
 
@@ -94,8 +94,8 @@ class Message {
       ..translation = String_fromData(data['translation']);
   }
 
-  static void listen(firestore.Firestore fs, MessageCollectionListener listener, String collectionRoot) =>
-      listenForUpdates<Message>(fs, listener, collectionRoot, Message.fromSnapshot);
+  static void listen(DocStorage docStorage, MessageCollectionListener listener, String collectionRoot) =>
+      listenForUpdates<Message>(docStorage, listener, collectionRoot, Message.fromSnapshot);
 
   Map<String, dynamic> toData() {
     return {
@@ -209,9 +209,9 @@ class SuggestedReply {
       ..shortcut = String_fromData(data['shortcut']);
   }
 
-  static void listen(firestore.Firestore fs, SuggestedReplyCollectionListener listener,
+  static void listen(DocStorage docStorage, SuggestedReplyCollectionListener listener,
           {String collectionRoot = '/$collectionName'}) =>
-      listenForUpdates<SuggestedReply>(fs, listener, collectionRoot, SuggestedReply.fromSnapshot);
+      listenForUpdates<SuggestedReply>(docStorage, listener, collectionRoot, SuggestedReply.fromSnapshot);
 
   Map<String, dynamic> toData() {
     return {
@@ -254,8 +254,8 @@ class Tag {
       ..shortcut = String_fromData(data['shortcut']);
   }
 
-  static void listen(firestore.Firestore fs, TagCollectionListener listener, String collectionRoot) =>
-      listenForUpdates<Tag>(fs, listener, collectionRoot, Tag.fromSnapshot);
+  static void listen(DocStorage docStorage, TagCollectionListener listener, String collectionRoot) =>
+      listenForUpdates<Tag>(docStorage, listener, collectionRoot, Tag.fromSnapshot);
 
   Map<String, dynamic> toData() {
     return {
@@ -336,9 +336,9 @@ class SystemMessage {
       ..expired = bool_fromData(data['expired']) ?? false;
   }
 
-  static void listen(firestore.Firestore fs, SystemMessageCollectionListener listener,
+  static void listen(DocStorage docStorage, SystemMessageCollectionListener listener,
           {String collectionRoot = '/$collectionName'}) =>
-      listenForUpdates<SystemMessage>(fs, listener, collectionRoot, SystemMessage.fromSnapshot);
+      listenForUpdates<SystemMessage>(docStorage, listener, collectionRoot, SystemMessage.fromSnapshot);
 
   Map<String, dynamic> toData() {
     return {
@@ -392,14 +392,14 @@ Map<String, T> Map_fromData<T>(dynamic data, T createModel(data)) =>
     (data as Map)?.map<String, T>((key, value) => MapEntry(key.toString(), createModel(value)));
 
 StreamSubscription<List<DocSnapshot>> listenForUpdates<T>(
-    firestore.Firestore fs,
+    DocStorage docStorage,
     void listener(List<T> changes),
     String collectionRoot,
     T createModel(DocSnapshot doc),
     ) {
   log.verbose('Loading from $collectionRoot');
   log.verbose('Query root: $collectionRoot');
-  return FirebaseDocStorage(fs).onChange(collectionRoot).listen((List<DocSnapshot> snapshots) {
+  return docStorage.onChange(collectionRoot).listen((List<DocSnapshot> snapshots) {
     List<T> changes = [];
     log.verbose("Starting processing ${snapshots.length} changes.");
     for (var snapshot in snapshots) {
@@ -413,7 +413,12 @@ StreamSubscription<List<DocSnapshot>> listenForUpdates<T>(
 /// Document storage interface.
 /// See [FirebaseDocStorage] for a firebase specific version of this.
 abstract class DocStorage {
+  /// Return a stream of document snapshots
   Stream<List<DocSnapshot>> onChange(String collectionRoot);
+
+  /// Return a object for batching document updates.
+  /// Call [DocBatchUpdate.commit] after the changes have been made.
+  DocBatchUpdate batch();
 }
 
 /// Firebase specific document storage.
@@ -440,6 +445,9 @@ class FirebaseDocStorage implements DocStorage {
       },
     ));
   }
+
+  @override
+  DocBatchUpdate batch() => FirebaseBatchUpdate(fs, fs.batch());
 }
 
 /// A snapshot of a document's id and data at a particular moment in time.
@@ -462,21 +470,22 @@ abstract class DocBatchUpdate {
 
   /// Updates fields in the document referred to by this [DocumentReference].
   /// The update will fail if applied to a document that does not exist.
-  void update(firestore.DocumentReference doc, {Map<String, dynamic> data});
+  void update(String documentPath, {Map<String, dynamic> data});
 }
 
 /// A batch update for documents in firestore.
 class FirebaseBatchUpdate implements DocBatchUpdate {
+  final firestore.Firestore _firestore;
   final firestore.WriteBatch _batch;
 
-  FirebaseBatchUpdate(this._batch);
+  FirebaseBatchUpdate(this._firestore, this._batch);
 
   @override
   Future<Null> commit() => _batch.commit();
 
   @override
-  void update(firestore.DocumentReference doc, {Map<String, dynamic> data}) {
-    _batch.update(doc, data: data);
+  void update(String documentPath, {Map<String, dynamic> data}) {
+    _batch.update(_firestore.doc(documentPath), data: data);
   }
 }
 
