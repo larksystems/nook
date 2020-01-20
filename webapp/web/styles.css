@@ -41,14 +41,13 @@ main {
 }
 
 .conversation-panel {
-    flex: 1;
+    width: 40%;
 }
 
 .conversation-list-panel,
 .reply-panel,
 .tag-panel {
     width: 20%;
-    max-width: 500px;
 }
 
 .conversation-list {
