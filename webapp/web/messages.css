@@ -20,6 +20,8 @@
   border-radius: 6px;
   flex: 0 1 auto;
   flex-wrap: inherit;
+  word-wrap: break-word;
+  overflow: hidden;
 }
 
 .message.message--incoming .message__bubble {

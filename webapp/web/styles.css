@@ -36,22 +36,18 @@ main {
 .conversation-panel,
 .reply-panel,
 .tag-panel {
-    flex: 1;
     display: flex;
     flex-direction: column;
 }
 
-.conversation-list-panel {
-    width: 300px;
-    border-right: 1px solid #ddd;
-}
-
-.tag-panel {
-    max-width: 300px;
+.conversation-panel {
+    flex: 1;
 }
 
 .conversation-list-panel,
-.reply-panel {
+.reply-panel,
+.tag-panel {
+    width: 20%;
     max-width: 500px;
 }
 
@@ -100,6 +96,10 @@ main {
     background: white;
     padding: 8px;
     margin: 16px;
+}
+
+.conversation-list-panel {
+    border-right: 1px solid #ddd;
 }
 
 .reply-panel,
