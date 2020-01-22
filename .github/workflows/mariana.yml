@@ -10,7 +10,9 @@ jobs:
   automate-project-columns:
     runs-on: ubuntu-latest
     steps: 
-      - uses: alex-page/github-project-automation-plus@v0.1.2
+      - name: Run if the assignee is set as the user
+        if: github.event.issues.assignee == 'marianamarasoiu' || github.event.pull_request.requested_reviewers.contains('marianamarasoiu')
+        uses: alex-page/github-project-automation-plus@v0.1.2
         with:
           project: Mariana
           column: To do
