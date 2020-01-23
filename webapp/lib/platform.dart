@@ -6,6 +6,7 @@ import 'package:firebase/firestore.dart' as firestore;
 import 'controller.dart' as controller;
 import 'logger.dart';
 import 'model.dart';
+import 'model_firebase.dart';
 import 'platform_constants.dart' as platform_constants;
 import 'pubsub.dart';
 
