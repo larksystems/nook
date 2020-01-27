@@ -100,6 +100,7 @@ class ConversationPanelView {
   DivElement _conversationIdCopy;
   DivElement _info;
   DivElement _tags;
+  AfterDateFilterView _afterDateFilterView;
 
   List<MessageView> _messageViews = [];
 
@@ -137,6 +138,9 @@ class ConversationPanelView {
     _messages = new DivElement()
       ..classes.add('messages');
     conversationPanel.append(_messages);
+
+    _afterDateFilterView = AfterDateFilterView();
+    conversationPanel.append(_afterDateFilterView.panel);
   }
 
   set deidentifiedPhoneNumber(String deidentifiedPhoneNumber) => _conversationIdCopy.dataset['copy-value'] = deidentifiedPhoneNumber;
@@ -187,10 +191,45 @@ class ConversationPanelView {
   }
 
   void showAfterDateFilterPrompt(DateTime dateTime) {
-    log.warning("showAfterDateFilterPrompt");
-    // TODO prompt for after date filter
+    _afterDateFilterView.showPrompt(dateTime);
+  }
+}
+
+class AfterDateFilterView {
+  DivElement panel;
+
+  AfterDateFilterView() {
+    panel = DivElement()
+      ..classes.add('after-date-prompt')
+      ..append(_addButton('Apply')..onClick.listen(applyFilter))
+      ..append(_addButton('Cancel')..onClick.listen(hidePrompt));
+  }
+
+  DivElement _addButton(String text) {
+    return DivElement()
+      ..classes.add('after-date-prompt__button')
+      ..append(SpanElement()
+        ..classes.add('after-date-prompt__button-text')
+        ..text = text);
+  }
+
+  void showPrompt(DateTime dateTime) {
+    log.warning("AfterDateFilterView.showPrompt");
     dateTime ??= DateTime.now();
+    // TODO populate the fields with dateTime
+    panel.classes.add('after-date-prompt__visible');
+  }
+
+  void applyFilter(MouseEvent event) {
+    log.warning("AfterDateFilterView.applyFilter");
+    // TODO parse input and apply filter
+    var dateTime = DateTime.now();
     command(UIAction.updateAfterDateFilter, new AfterDateFilterData(AFTER_DATE_TAG_ID, dateTime));
+    hidePrompt();
+  }
+
+  void hidePrompt([_]) {
+    panel.classes.remove('after-date-prompt__visible');
   }
 }
 
