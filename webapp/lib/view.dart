@@ -185,6 +185,13 @@ class ConversationPanelView {
       _messages.firstChild.remove();
     }
   }
+
+  void showAfterDateFilterPrompt(DateTime dateTime) {
+    log.warning("showAfterDateFilterPrompt");
+    // TODO prompt for after date filter
+    dateTime ??= DateTime.now();
+    command(UIAction.updateAfterDateFilter, new AfterDateFilterData(AFTER_DATE_TAG_ID, dateTime));
+  }
 }
 
 class MessageView {
@@ -378,28 +385,28 @@ class FilterTagView extends TagView {
   }
 }
 
+const AFTER_DATE_TAG_ID = "after-date";
+final DateFormat _afterDateFilterFormat = DateFormat('yyyy.MM.dd HH:mm');
+
 class AfterDateFilterMenuTagView extends FilterMenuTagView {
   AfterDateFilterMenuTagView() : super("after date", AFTER_DATE_TAG_ID, TagStyle.None);
 
   @override
   void handleClicked(String tagId) {
-    command(UIAction.addAfterDateFilter, new FilterTagData(tagId));
+    command(UIAction.promptAfterDateFilter, new AfterDateFilterData(tagId));
   }
 }
 
-const AFTER_DATE_TAG_ID = "after-date";
-final DateFormat _afterDateFormat = DateFormat('yyyy.MM.dd HH:mm');
-
-class DateFilterTagView extends FilterTagView {
-  DateFilterTagView(DateTime dateTime) : super(filterText(dateTime), AFTER_DATE_TAG_ID, TagStyle.None);
+class AfterDateFilterTagView extends FilterTagView {
+  AfterDateFilterTagView(DateTime dateTime) : super(filterText(dateTime), AFTER_DATE_TAG_ID, TagStyle.None);
 
   static String filterText(DateTime dateTime) {
-    return "after date ${_afterDateFormat.format(dateTime)}";
+    return "after date ${_afterDateFilterFormat.format(dateTime)}";
   }
 
   @override
   void handleClicked(String tagId) {
-    command(UIAction.removeAfterDateFilter, new FilterTagData(tagId));
+    command(UIAction.updateAfterDateFilter, new AfterDateFilterData(tagId, null));
   }
 }
 

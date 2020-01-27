@@ -24,11 +24,11 @@ enum UIAction {
   sendMessage,
   addTag,
   addFilterTag,
-  addAfterDateFilter,
   removeConversationTag,
   removeMessageTag,
   removeFilterTag,
-  removeAfterDateFilter,
+  promptAfterDateFilter,
+  updateAfterDateFilter,
   showConversation,
   selectConversation,
   deselectConversation,
@@ -89,6 +89,12 @@ class ConversationTagData extends Data {
 class FilterTagData extends Data {
   String tagId;
   FilterTagData(this.tagId);
+}
+
+class AfterDateFilterData extends Data {
+  String tagId;
+  DateTime afterDateFilter;
+  AfterDateFilterData(this.tagId, [this.afterDateFilter]);
 }
 
 class ConversationData extends Data {
@@ -255,7 +261,7 @@ void command(UIAction action, Data data) {
   // Early exist if it's not one of the actions valid without an active conversation.
   if (activeConversation == null &&
       action != UIAction.addFilterTag && action != UIAction.removeFilterTag &&
-      action != UIAction.addAfterDateFilter && action != UIAction.removeAfterDateFilter &&
+      action != UIAction.promptAfterDateFilter && action != UIAction.updateAfterDateFilter &&
       action != UIAction.signInButtonClicked && action != UIAction.signOutButtonClicked &&
       action != UIAction.userSignedIn && action != UIAction.userSignedOut) {
     return;
@@ -303,14 +309,6 @@ void command(UIAction action, Data data) {
       view.conversationFilter.addFilterTag(new view.FilterTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
       updateFilteredConversationList();
       break;
-    case UIAction.addAfterDateFilter:
-      FilterTagData tagData = data;
-      // TODO prompt for new date filter
-      afterDateFilter = DateTime.now();
-      view.conversationFilter.removeFilterTag(tagData.tagId);
-      view.conversationFilter.addFilterTag(new view.DateFilterTagView(afterDateFilter));
-      updateFilteredConversationList();
-      break;
     case UIAction.removeConversationTag:
       ConversationTagData conversationTagData = data;
       model.Tag tag = conversationTags.singleWhere((tag) => tag.tagId == conversationTagData.tagId);
@@ -343,10 +341,17 @@ void command(UIAction action, Data data) {
       view.conversationFilter.removeFilterTag(tag.tagId);
       updateFilteredConversationList();
       break;
-    case UIAction.removeAfterDateFilter:
-      FilterTagData tagData = data;
-      afterDateFilter = null;
-      view.conversationFilter.removeFilterTag(tagData.tagId);
+    case UIAction.promptAfterDateFilter:
+      AfterDateFilterData filterData = data;
+      view.conversationPanelView.showAfterDateFilterPrompt(filterData.afterDateFilter ?? afterDateFilter);
+      break;
+    case UIAction.updateAfterDateFilter:
+      AfterDateFilterData filterData = data;
+      afterDateFilter = filterData.afterDateFilter;
+      view.conversationFilter.removeFilterTag(filterData.tagId);
+      if (afterDateFilter != null) {
+        view.conversationFilter.addFilterTag(new view.AfterDateFilterTagView(afterDateFilter));
+      }
       updateFilteredConversationList();
       break;
     case UIAction.selectMessage:
@@ -683,6 +688,8 @@ Set<model.Conversation> filterConversationsByTags(Set<model.Conversation> conver
   var filteredConversations = emptyConversationsSet;
   var filterTagIds = filterTags.map<String>((tag) => tag.tagId).toList();
   conversations.forEach((conversation) {
+    // Filter by the last (most recent) conversation
+    // TODO consider an option to filter by the first conversation
     if (afterDateFilter != null && conversation.messages.last.datetime.isBefore(afterDateFilter)) return;
     if (!conversation.tagIds.toSet().containsAll(filterTagIds)) return;
     filteredConversations.add(conversation);
