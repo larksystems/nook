@@ -1,0 +1,40 @@
+name: Add assigned issues and review requests to Mariana's project
+
+on:
+  issues:
+    types: [assigned]
+  pull_request:
+    types: [opened, review_requested]
+
+jobs:
+  automate-project-columns:
+    runs-on: ubuntu-latest
+    steps: 
+      - name: Add assigned issues to Mariana's project
+        if: github.event_name == 'issues' &&
+            github.event.assignee.login == 'marianamarasoiu'
+        uses: alex-page/github-project-automation-plus@v0.1.2
+        with:
+          project: Mariana
+          column: To do
+          repo-token: ${{ secrets.GITHUB_MM_PAT }}
+
+      - name: Add opened pull requests to Mariana's project
+        if: github.event_name == 'pull_request' &&
+            github.event.action == 'opened' &&
+            github.event.pull_request.user.login == 'marianamarasoiu'
+        uses: alex-page/github-project-automation-plus@v0.1.2
+        with:
+          project: Mariana
+          column: In progress
+          repo-token: ${{ secrets.GITHUB_MM_PAT }}
+
+      - name: Add review requests to Mariana's project
+        if: github.event_name == 'pull_request' &&
+            github.event.action == 'review_requested' &&
+            github.event.requested_reviewer.login == 'marianamarasoiu'
+        uses: alex-page/github-project-automation-plus@v0.1.2
+        with:
+          project: Mariana
+          column: To do
+          repo-token: ${{ secrets.GITHUB_MM_PAT }}
