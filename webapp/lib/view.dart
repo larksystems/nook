@@ -359,16 +359,47 @@ class FilterMenuTagView extends TagView {
   FilterMenuTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle) {
     _removeButton.remove();
     tag.onClick.listen((_) {
-      command(UIAction.addFilterTag, new FilterTagData(tagId));
+      handleClicked(tagId);
     });
+  }
+
+  void handleClicked(String tagId) {
+    command(UIAction.addFilterTag, new FilterTagData(tagId));
   }
 }
 
 class FilterTagView extends TagView {
   FilterTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle) {
-    _removeButton..onClick.listen((_) {
-      command(UIAction.removeFilterTag, new FilterTagData(tagId));
-    });
+    _removeButton.onClick.listen((_) => handleClicked(tagId));
+  }
+
+  void handleClicked(String tagId) {
+    command(UIAction.removeFilterTag, new FilterTagData(tagId));
+  }
+}
+
+class AfterDateFilterMenuTagView extends FilterMenuTagView {
+  AfterDateFilterMenuTagView() : super("after date", AFTER_DATE_TAG_ID, TagStyle.None);
+
+  @override
+  void handleClicked(String tagId) {
+    command(UIAction.addAfterDateFilter, new FilterTagData(tagId));
+  }
+}
+
+const AFTER_DATE_TAG_ID = "after-date";
+final DateFormat _afterDateFormat = DateFormat('yyyy.MM.dd HH:mm');
+
+class DateFilterTagView extends FilterTagView {
+  DateFilterTagView(DateTime dateTime) : super(filterText(dateTime), AFTER_DATE_TAG_ID, TagStyle.None);
+
+  static String filterText(DateTime dateTime) {
+    return "after date ${_afterDateFormat.format(dateTime)}";
+  }
+
+  @override
+  void handleClicked(String tagId) {
+    command(UIAction.removeAfterDateFilter, new FilterTagData(tagId));
   }
 }
 
