@@ -1,7 +1,5 @@
 import 'dart:collection';
 
-import 'package:firebase/firestore.dart' as firestore;
-
 import 'model.g.dart' as g;
 export 'model.g.dart' hide
   Conversation,

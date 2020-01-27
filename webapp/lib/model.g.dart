@@ -3,8 +3,6 @@
 
 import 'dart:async';
 
-import 'package:firebase/firestore.dart' as firestore;
-
 import 'logger.dart';
 
 Logger log = Logger('model.g.dart');
@@ -421,35 +419,6 @@ abstract class DocStorage {
   DocBatchUpdate batch();
 }
 
-/// Firebase specific document storage.
-class FirebaseDocStorage implements DocStorage {
-  final firestore.Firestore fs;
-
-  FirebaseDocStorage(this.fs);
-
-  @override
-  Stream<List<DocSnapshot>> onChange(String collectionRoot) {
-    return fs.collection(collectionRoot).onSnapshot.transform<List<DocSnapshot>>(StreamTransformer.fromHandlers(
-      handleData: (firestore.QuerySnapshot querySnapshot, EventSink<List<DocSnapshot>> sink) {
-        // No need to process local writes to Firebase
-        if (querySnapshot.metadata.hasPendingWrites) {
-          log.verbose('Skipping processing of local changes');
-          return;
-        }
-        var event = <DocSnapshot>[];
-        for (var change in querySnapshot.docChanges()) {
-          var doc = change.doc;
-          event.add(DocSnapshot(doc.id, doc.data()));
-        }
-        sink.add(event);
-      },
-    ));
-  }
-
-  @override
-  DocBatchUpdate batch() => FirebaseBatchUpdate(fs, fs.batch());
-}
-
 /// A snapshot of a document's id and data at a particular moment in time.
 class DocSnapshot {
   final String id;
@@ -471,22 +440,6 @@ abstract class DocBatchUpdate {
   /// Updates fields in the document referred to by this [DocumentReference].
   /// The update will fail if applied to a document that does not exist.
   void update(String documentPath, {Map<String, dynamic> data});
-}
-
-/// A batch update for documents in firestore.
-class FirebaseBatchUpdate implements DocBatchUpdate {
-  final firestore.Firestore _firestore;
-  final firestore.WriteBatch _batch;
-
-  FirebaseBatchUpdate(this._firestore, this._batch);
-
-  @override
-  Future<Null> commit() => _batch.commit();
-
-  @override
-  void update(String documentPath, {Map<String, dynamic> data}) {
-    _batch.update(_firestore.doc(documentPath), data: data);
-  }
 }
 
 // ======================================================================
