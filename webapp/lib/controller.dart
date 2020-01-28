@@ -27,6 +27,8 @@ enum UIAction {
   removeConversationTag,
   removeMessageTag,
   removeFilterTag,
+  promptAfterDateFilter,
+  updateAfterDateFilter,
   showConversation,
   selectConversation,
   deselectConversation,
@@ -89,6 +91,12 @@ class FilterTagData extends Data {
   FilterTagData(this.tagId);
 }
 
+class AfterDateFilterData extends Data {
+  String tagId;
+  DateTime afterDateFilter;
+  AfterDateFilterData(this.tagId, [this.afterDateFilter]);
+}
+
 class ConversationData extends Data {
   String deidentifiedPhoneNumber;
   ConversationData(this.deidentifiedPhoneNumber);
@@ -142,6 +150,7 @@ List<model.SuggestedReply> suggestedReplies;
 List<model.Tag> conversationTags;
 List<model.Tag> messageTags;
 List<model.Tag> filterTags;
+DateTime afterDateFilter;
 model.Conversation activeConversation;
 List<model.Conversation> selectedConversations;
 model.Message selectedMessage;
@@ -213,7 +222,7 @@ void populateUI() {
       // Get any filter tags from the url
       List<String> filterTagIds = view.urlView.pageUrlFilterTags;
       filterTags = filterTagIds.map((tagId) => conversationTags.singleWhere((tag) => tag.tagId == tagId)).toList();
-      filteredConversations = filterConversationsByTags(conversations, filterTags);
+      filteredConversations = filterConversationsByTags(conversations, filterTags, afterDateFilter);
       _populateFilterTagsMenu(conversationTags);
       _populateSelectedFilterTags(filterTags);
 
@@ -252,6 +261,7 @@ void command(UIAction action, Data data) {
   // Early exist if it's not one of the actions valid without an active conversation.
   if (activeConversation == null &&
       action != UIAction.addFilterTag && action != UIAction.removeFilterTag &&
+      action != UIAction.promptAfterDateFilter && action != UIAction.updateAfterDateFilter &&
       action != UIAction.signInButtonClicked && action != UIAction.signOutButtonClicked &&
       action != UIAction.userSignedIn && action != UIAction.userSignedOut) {
     return;
@@ -297,13 +307,7 @@ void command(UIAction action, Data data) {
       filterTags.add(tag);
       view.urlView.pageUrlFilterTags = filterTags.map((tag) => tag.tagId).toList();
       view.conversationFilter.addFilterTag(new view.FilterTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
-      filteredConversations = filterConversationsByTags(conversations, filterTags);
-      activeConversation = updateViewForConversations(filteredConversations);
-      if (multiSelectMode) {
-        view.conversationListPanelView.showCheckboxes();
-        selectedConversations = selectedConversations.toSet().intersection(filteredConversations.toSet()).toList();
-        selectedConversations.forEach((conversation) => view.conversationListPanelView.checkConversation(conversation.deidentifiedPhoneNumber.value));
-      }
+      updateFilteredConversationList();
       break;
     case UIAction.removeConversationTag:
       ConversationTagData conversationTagData = data;
@@ -335,13 +339,20 @@ void command(UIAction action, Data data) {
       filterTags.remove(tag);
       view.urlView.pageUrlFilterTags = filterTags.map((tag) => tag.tagId).toList();
       view.conversationFilter.removeFilterTag(tag.tagId);
-      filteredConversations = filterConversationsByTags(conversations, filterTags);
-      activeConversation = updateViewForConversations(filteredConversations);
-      if (multiSelectMode) {
-        view.conversationListPanelView.showCheckboxes();
-        selectedConversations = selectedConversations.toSet().intersection(filteredConversations.toSet()).toList();
-        selectedConversations.forEach((conversation) => view.conversationListPanelView.checkConversation(conversation.deidentifiedPhoneNumber.value));
+      updateFilteredConversationList();
+      break;
+    case UIAction.promptAfterDateFilter:
+      AfterDateFilterData filterData = data;
+      view.conversationPanelView.showAfterDateFilterPrompt(filterData.afterDateFilter ?? afterDateFilter);
+      break;
+    case UIAction.updateAfterDateFilter:
+      AfterDateFilterData filterData = data;
+      afterDateFilter = filterData.afterDateFilter;
+      view.conversationFilter.removeFilterTag(filterData.tagId);
+      if (afterDateFilter != null) {
+        view.conversationFilter.addFilterTag(new view.AfterDateFilterTagView(afterDateFilter));
       }
+      updateFilteredConversationList();
       break;
     case UIAction.selectMessage:
       MessageData messageData = data;
@@ -521,6 +532,16 @@ void command(UIAction action, Data data) {
   }
 }
 
+void updateFilteredConversationList() {
+  filteredConversations = filterConversationsByTags(conversations, filterTags, afterDateFilter);
+  activeConversation = updateViewForConversations(filteredConversations);
+  if (multiSelectMode) {
+    view.conversationListPanelView.showCheckboxes();
+    selectedConversations = selectedConversations.toSet().intersection(filteredConversations.toSet()).toList();
+    selectedConversations.forEach((conversation) => view.conversationListPanelView.checkConversation(conversation.deidentifiedPhoneNumber.value));
+  }
+}
+
 /// Shows the list of [conversations] and selects the first conversation.
 /// Returns the first conversation in the list, or null if list is empty.
 model.Conversation updateViewForConversations(Set<model.Conversation> conversations) {
@@ -661,12 +682,15 @@ void setMessageTag(model.Tag tag, model.Message message, model.Conversation conv
   }
 }
 
-Set<model.Conversation> filterConversationsByTags(Set<model.Conversation> conversations, List<model.Tag> filterTags) {
-  if (filterTags.isEmpty) return conversations;
+Set<model.Conversation> filterConversationsByTags(Set<model.Conversation> conversations, List<model.Tag> filterTags, DateTime afterDateFilter) {
+  if (filterTags.isEmpty && afterDateFilter == null) return conversations;
 
   var filteredConversations = emptyConversationsSet;
   var filterTagIds = filterTags.map<String>((tag) => tag.tagId).toList();
   conversations.forEach((conversation) {
+    // Filter by the last (most recent) conversation
+    // TODO consider an option to filter by the first conversation
+    if (afterDateFilter != null && conversation.messages.last.datetime.isBefore(afterDateFilter)) return;
     if (!conversation.tagIds.toSet().containsAll(filterTagIds)) return;
     filteredConversations.add(conversation);
   });

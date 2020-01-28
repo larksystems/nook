@@ -107,6 +107,7 @@ void _populateFilterTagsMenu(List<model.Tag> tags) {
   for (var tag in tags) {
     view.conversationFilter.addMenuTag(new view.FilterMenuTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
   }
+  view.conversationFilter.addMenuTag(view.AfterDateFilterMenuTagView());
 }
 
 void _populateSelectedFilterTags(List<model.Tag> tags) {

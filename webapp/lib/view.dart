@@ -100,6 +100,7 @@ class ConversationPanelView {
   DivElement _conversationIdCopy;
   DivElement _info;
   DivElement _tags;
+  AfterDateFilterView _afterDateFilterView;
 
   List<MessageView> _messageViews = [];
 
@@ -137,6 +138,9 @@ class ConversationPanelView {
     _messages = new DivElement()
       ..classes.add('messages');
     conversationPanel.append(_messages);
+
+    _afterDateFilterView = AfterDateFilterView();
+    conversationPanel.append(_afterDateFilterView.panel);
   }
 
   set deidentifiedPhoneNumber(String deidentifiedPhoneNumber) => _conversationIdCopy.dataset['copy-value'] = deidentifiedPhoneNumber;
@@ -184,6 +188,104 @@ class ConversationPanelView {
     for (int i = 0; i < messagesNo; i++) {
       _messages.firstChild.remove();
     }
+  }
+
+  void showAfterDateFilterPrompt(DateTime dateTime) {
+    _afterDateFilterView.showPrompt(dateTime);
+  }
+}
+
+class AfterDateFilterView {
+  DivElement panel;
+  TextAreaElement _textArea;
+
+  AfterDateFilterView() {
+    _textArea = new TextAreaElement()
+      ..classes.add('after-date-prompt__textarea')
+      ..contentEditable = 'true'
+      ..onInput.listen((e) => e.stopPropagation())
+      ..onKeyDown.listen((e) => e.stopPropagation())
+      ..onKeyUp.listen((e) => e.stopPropagation())
+      ..onKeyPress.listen((e) {
+        e.stopPropagation();
+        if (e.keyCode == KeyCode.ENTER) {
+          e.stopImmediatePropagation();
+          applyFilter();
+        }
+      });
+
+    panel = DivElement()
+      ..classes.add('after-date-prompt')
+      ..append(SpanElement()
+        ..classes.add('after-date-prompt__prompt-text')
+        ..text = 'Enter "after date" filter as yyyy-mm-dd hh:')
+      ..append(_textArea)
+      ..append(_addButton('Apply')..onClick.listen(applyFilter))
+      ..append(_addButton('Cancel')..onClick.listen(hidePrompt));
+  }
+
+  DivElement _addButton(String text) {
+    return DivElement()
+      ..classes.add('after-date-prompt__button')
+      ..append(SpanElement()
+        ..classes.add('after-date-prompt__button-text')
+        ..text = text);
+  }
+
+  void showPrompt(DateTime dateTime) {
+    dateTime ??= DateTime.now();
+    // TODO populate the fields with dateTime
+    panel.classes.add('after-date-prompt__visible');
+    _textArea
+      ..text = _afterDateFilterFormat.format(dateTime)
+      ..setSelectionRange(5, _textArea.text.length)
+      ..focus();
+  }
+
+  void applyFilter([_]) {
+    DateTime dateTime;
+    try {
+      dateTime = parseAfterDateFilterText(_textArea.value);
+    } on FormatException catch (e) {
+      snackbarView.showSnackbar("Invalid date/time format: ${e.message}", SnackbarNotificationType.error);
+      return;
+    }
+    command(UIAction.updateAfterDateFilter, new AfterDateFilterData(AFTER_DATE_TAG_ID, dateTime));
+    hidePrompt();
+  }
+
+  void hidePrompt([_]) {
+    panel.classes.remove('after-date-prompt__visible');
+  }
+
+  DateTime parseAfterDateFilterText(String text) {
+    text = text.trim();
+    if (text.length < 4) throw FormatException('Expected 4 digit year');
+    int year = int.tryParse(text.substring(0, 4));
+    if (year == null) throw FormatException('Invalid 4 digit year');
+    int index = 4;
+
+    int nextGroup() {
+      while (true) {
+        if (index == text.length) return null;
+        var ch = text.codeUnitAt(index);
+        if (0x30 <= ch && ch <= 0x39) break;
+        ++index;
+      }
+      int end = index + 1;
+      if (end < text.length) {
+        var ch = text.codeUnitAt(index);
+        if (0x30 <= ch && ch <= 0x39) ++end;
+      }
+      var value = int.tryParse(text.substring(index, end));
+      index = end;
+      return value;
+    }
+
+    int month = nextGroup() ?? 1;
+    int day = nextGroup() ?? 1;
+    int hour = nextGroup() ?? 12;
+    return new DateTime(year, month, day, hour);
   }
 }
 
@@ -359,16 +461,47 @@ class FilterMenuTagView extends TagView {
   FilterMenuTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle) {
     _removeButton.remove();
     tag.onClick.listen((_) {
-      command(UIAction.addFilterTag, new FilterTagData(tagId));
+      handleClicked(tagId);
     });
+  }
+
+  void handleClicked(String tagId) {
+    command(UIAction.addFilterTag, new FilterTagData(tagId));
   }
 }
 
 class FilterTagView extends TagView {
   FilterTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle) {
-    _removeButton..onClick.listen((_) {
-      command(UIAction.removeFilterTag, new FilterTagData(tagId));
-    });
+    _removeButton.onClick.listen((_) => handleClicked(tagId));
+  }
+
+  void handleClicked(String tagId) {
+    command(UIAction.removeFilterTag, new FilterTagData(tagId));
+  }
+}
+
+const AFTER_DATE_TAG_ID = "after-date";
+final DateFormat _afterDateFilterFormat = DateFormat('yyyy.MM.dd HH:mm');
+
+class AfterDateFilterMenuTagView extends FilterMenuTagView {
+  AfterDateFilterMenuTagView() : super("after date", AFTER_DATE_TAG_ID, TagStyle.None);
+
+  @override
+  void handleClicked(String tagId) {
+    command(UIAction.promptAfterDateFilter, new AfterDateFilterData(tagId));
+  }
+}
+
+class AfterDateFilterTagView extends FilterTagView {
+  AfterDateFilterTagView(DateTime dateTime) : super(filterText(dateTime), AFTER_DATE_TAG_ID, TagStyle.None);
+
+  static String filterText(DateTime dateTime) {
+    return "after date ${_afterDateFilterFormat.format(dateTime)}";
+  }
+
+  @override
+  void handleClicked(String tagId) {
+    command(UIAction.updateAfterDateFilter, new AfterDateFilterData(tagId, null));
   }
 }
 
