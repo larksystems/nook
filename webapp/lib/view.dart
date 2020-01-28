@@ -206,7 +206,13 @@ class AfterDateFilterView {
       ..onInput.listen((e) => e.stopPropagation())
       ..onKeyDown.listen((e) => e.stopPropagation())
       ..onKeyUp.listen((e) => e.stopPropagation())
-      ..onKeyPress.listen((e) => e.stopPropagation());
+      ..onKeyPress.listen((e) {
+        e.stopPropagation();
+        if (e.keyCode == KeyCode.ENTER) {
+          e.stopImmediatePropagation();
+          applyFilter();
+        }
+      });
 
     panel = DivElement()
       ..classes.add('after-date-prompt')
@@ -236,7 +242,7 @@ class AfterDateFilterView {
       ..focus();
   }
 
-  void applyFilter(MouseEvent event) {
+  void applyFilter([_]) {
     DateTime dateTime;
     try {
       dateTime = parseAfterDateFilterText(_textArea.value);
