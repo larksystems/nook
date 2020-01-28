@@ -197,10 +197,23 @@ class ConversationPanelView {
 
 class AfterDateFilterView {
   DivElement panel;
+  TextAreaElement _textArea;
 
   AfterDateFilterView() {
+    _textArea = new TextAreaElement()
+      ..classes.add('after-date-prompt__textarea')
+      ..contentEditable = 'true'
+      ..onInput.listen((e) => e.stopPropagation())
+      ..onKeyDown.listen((e) => e.stopPropagation())
+      ..onKeyUp.listen((e) => e.stopPropagation())
+      ..onKeyPress.listen((e) => e.stopPropagation());
+
     panel = DivElement()
       ..classes.add('after-date-prompt')
+      ..append(SpanElement()
+        ..classes.add('after-date-prompt__prompt-text')
+        ..text = 'Enter date:')
+      ..append(_textArea)
       ..append(_addButton('Apply')..onClick.listen(applyFilter))
       ..append(_addButton('Cancel')..onClick.listen(hidePrompt));
   }

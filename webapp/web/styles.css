@@ -171,28 +171,41 @@ main {
 }
 
 .after-date-prompt {
-  height: 0px;
-  display: flex;
-  flex-direction: row;
-  visibility: hidden;
+    height: 0px;
+    display: flex;
+    flex-direction: row;
+    visibility: hidden;
 }
 
 .after-date-prompt__visible {
-  visibility: visible;
-  height: 24px;
+    visibility: visible;
+    height: 24px;
+}
+
+.after-date-prompt__prompt-text {
+    padding: 2px 5px;
+    margin: 1px 0;
+}
+
+.after-date-prompt__textarea {
+    flex: 1 1 auto;
+    resize: none;
+    color: #555;
+    font-size: 12px;
+    background: #fafafa;
 }
 
 .after-date-prompt__button {
-  font-size: 12px;
-  font-style: italic;
-  display: flex;
+    font-size: 12px;
+    font-style: italic;
+    display: flex;
 }
 
 .after-date-prompt__button-text {
-  padding: 2px 5px;
-  margin: 1px 0;
-  border-radius: 2px;
-  border: 1px solid #ddd;
+    padding: 2px 5px;
+    margin: 1px 0;
+    border-radius: 2px;
+    border: 1px solid #ddd;
 }
 
 .conversation-summary {
