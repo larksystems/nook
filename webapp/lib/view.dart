@@ -227,7 +227,6 @@ class AfterDateFilterView {
   }
 
   void showPrompt(DateTime dateTime) {
-    log.warning("AfterDateFilterView.showPrompt");
     dateTime ??= DateTime.now();
     // TODO populate the fields with dateTime
     panel.classes.add('after-date-prompt__visible');
@@ -238,15 +237,49 @@ class AfterDateFilterView {
   }
 
   void applyFilter(MouseEvent event) {
-    log.warning("AfterDateFilterView.applyFilter");
-    // TODO parse input and apply filter
-    var dateTime = DateTime.now();
+    DateTime dateTime;
+    try {
+      dateTime = parseAfterDateFilterText(_textArea.value);
+    } on FormatException catch (e) {
+      snackbarView.showSnackbar("Invalid date/time format: ${e.message}", SnackbarNotificationType.error);
+      return;
+    }
     command(UIAction.updateAfterDateFilter, new AfterDateFilterData(AFTER_DATE_TAG_ID, dateTime));
     hidePrompt();
   }
 
   void hidePrompt([_]) {
     panel.classes.remove('after-date-prompt__visible');
+  }
+
+  DateTime parseAfterDateFilterText(String text) {
+    text = text.trim();
+    if (text.length < 4) throw FormatException('Expected 4 digit year');
+    int year = int.tryParse(text.substring(0, 4));
+    if (year == null) throw FormatException('Invalid 4 digit year');
+    int index = 4;
+
+    int nextGroup() {
+      while (true) {
+        if (index == text.length) return null;
+        var ch = text.codeUnitAt(index);
+        if (0x30 <= ch && ch <= 0x39) break;
+        ++index;
+      }
+      int end = index + 1;
+      if (end < text.length) {
+        var ch = text.codeUnitAt(index);
+        if (0x30 <= ch && ch <= 0x39) ++end;
+      }
+      var value = int.tryParse(text.substring(index, end));
+      index = end;
+      return value;
+    }
+
+    int month = nextGroup() ?? 1;
+    int day = nextGroup() ?? 1;
+    int hour = nextGroup() ?? 12;
+    return new DateTime(year, month, day, hour);
   }
 }
 
