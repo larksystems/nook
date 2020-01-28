@@ -231,6 +231,10 @@ class AfterDateFilterView {
     dateTime ??= DateTime.now();
     // TODO populate the fields with dateTime
     panel.classes.add('after-date-prompt__visible');
+    _textArea
+      ..text = _afterDateFilterFormat.format(dateTime)
+      ..setSelectionRange(5, _textArea.text.length)
+      ..focus();
   }
 
   void applyFilter(MouseEvent event) {
