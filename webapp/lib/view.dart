@@ -218,7 +218,7 @@ class AfterDateFilterView {
       ..classes.add('after-date-prompt')
       ..append(SpanElement()
         ..classes.add('after-date-prompt__prompt-text')
-        ..text = 'Enter date for "after date" filter:')
+        ..text = 'Enter "after date" filter as yyyy-mm-dd hh:')
       ..append(_textArea)
       ..append(_addButton('Apply')..onClick.listen(applyFilter))
       ..append(_addButton('Cancel')..onClick.listen(hidePrompt));
