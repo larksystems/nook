@@ -8,7 +8,7 @@ Conversation:
 
 Message:
   direction: 'MessageDirection, MessageDirection.Out'
-  datetime: 'datetime, DateTime.now()'
+  datetime: 'datetime'
   status: MessageStatus
   tags: 'updatable array string tagIds'
   text: 'string'

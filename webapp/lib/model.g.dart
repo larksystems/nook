@@ -88,7 +88,7 @@ class Message {
     if (data == null) return null;
     return (modelObj ?? Message())
       ..direction = MessageDirection.fromString(data['direction'] as String) ?? MessageDirection.Out
-      ..datetime = DateTime_fromData(data['datetime']) ?? DateTime.now()
+      ..datetime = DateTime_fromData(data['datetime'])
       ..status = MessageStatus.fromString(data['status'] as String)
       ..tagIds = List_fromData<String>(data['tags'], String_fromData)
       ..text = String_fromData(data['text'])
