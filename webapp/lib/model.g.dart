@@ -8,6 +8,8 @@ import 'logger.dart';
 Logger log = Logger('model.g.dart');
 
 class Conversation {
+  static const collectionName = 'nook_conversations';
+
   Map<String, String> demographicsInfo;
   List<String> tagIds;
   List<Message> messages;
@@ -27,7 +29,8 @@ class Conversation {
       ..unread = bool_fromData(data['unread']) ?? true;
   }
 
-  static void listen(DocStorage docStorage, ConversationCollectionListener listener, String collectionRoot) =>
+  static void listen(DocStorage docStorage, ConversationCollectionListener listener,
+          {String collectionRoot = '/$collectionName'}) =>
       listenForUpdates<Conversation>(docStorage, listener, collectionRoot, Conversation.fromSnapshot);
 
   Map<String, dynamic> toData() {
