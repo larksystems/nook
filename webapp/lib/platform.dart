@@ -147,7 +147,7 @@ Future updateUnread(List<Conversation> conversations, bool newValue) async {
   var batch = _docStorage.batch();
   int batchSize = 0;
   for (var conversation in conversations) {
-    conversation.updateUnread(_docStorage, conversation.documentPath, newValue, batch);
+    batch = conversation.updateUnread(_docStorage, conversation.documentPath, newValue, batch);
     ++batchSize;
     if (batchSize == _MAX_BATCH_SIZE) {
       await batch.commit();

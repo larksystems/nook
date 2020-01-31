@@ -21,7 +21,7 @@ class DeidentifiedPhoneNumber {
 }
 
 class Conversation extends g.Conversation {
-  static const collectionName = 'nook_conversations';
+  static const collectionName = g.Conversation.collectionName;
 
   DeidentifiedPhoneNumber deidentifiedPhoneNumber;
 
