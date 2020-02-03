@@ -103,17 +103,17 @@ void _populateTagPanelView(List<model.Tag> tags, TagReceiver tagReceiver) {
 }
 
 void _populateFilterTagsMenu(List<model.Tag> tags) {
-  view.conversationFilter.clearMenuTags();
+  view.conversationIncludeFilter.clearMenuTags();
   for (var tag in tags) {
-    view.conversationFilter.addMenuTag(new view.FilterMenuTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
+    view.conversationIncludeFilter.addMenuTag(new view.FilterMenuTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
   }
-  view.conversationFilter.addMenuTag(view.AfterDateFilterMenuTagView());
+  view.conversationIncludeFilter.addMenuTag(view.AfterDateFilterMenuTagView());
 }
 
 void _populateSelectedFilterTags(List<model.Tag> tags) {
-  view.conversationFilter.clearSelectedTags();
+  view.conversationIncludeFilter.clearSelectedTags();
   for (var tag in tags) {
-    view.conversationFilter.addFilterTag(new view.FilterTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
+    view.conversationIncludeFilter.addFilterTag(new view.FilterTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
   }
 }
 
