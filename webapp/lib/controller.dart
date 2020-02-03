@@ -306,7 +306,7 @@ void command(UIAction action, Data data) {
       if (filterTags.contains(tag)) break;
       filterTags.add(tag);
       view.urlView.pageUrlFilterTags = filterTags.map((tag) => tag.tagId).toList();
-      view.conversationFilter.addFilterTag(new view.FilterTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
+      view.conversationIncludeFilter.addFilterTag(new view.FilterTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
       updateFilteredConversationList();
       break;
     case UIAction.removeConversationTag:
@@ -338,7 +338,7 @@ void command(UIAction action, Data data) {
       model.Tag tag = conversationTags.singleWhere((tag) => tag.tagId == tagData.tagId);
       filterTags.remove(tag);
       view.urlView.pageUrlFilterTags = filterTags.map((tag) => tag.tagId).toList();
-      view.conversationFilter.removeFilterTag(tag.tagId);
+      view.conversationIncludeFilter.removeFilterTag(tag.tagId);
       updateFilteredConversationList();
       break;
     case UIAction.promptAfterDateFilter:
@@ -348,9 +348,9 @@ void command(UIAction action, Data data) {
     case UIAction.updateAfterDateFilter:
       AfterDateFilterData filterData = data;
       afterDateFilter = filterData.afterDateFilter;
-      view.conversationFilter.removeFilterTag(filterData.tagId);
+      view.conversationIncludeFilter.removeFilterTag(filterData.tagId);
       if (afterDateFilter != null) {
-        view.conversationFilter.addFilterTag(new view.AfterDateFilterTagView(afterDateFilter));
+        view.conversationIncludeFilter.addFilterTag(new view.AfterDateFilterTagView(afterDateFilter));
       }
       updateFilteredConversationList();
       break;

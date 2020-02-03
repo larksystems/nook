@@ -12,7 +12,8 @@ import 'lazy_list_view_model.dart';
 Logger log = new Logger('view.dart');
 
 ConversationListPanelView conversationListPanelView;
-ConversationFilter get conversationFilter => conversationListPanelView.conversationFilter;
+ConversationIncludeFilter get conversationIncludeFilter => conversationListPanelView.conversationIncludeFilter;
+ConversationExcludeFilter get conversationExcludeFilter => conversationListPanelView.conversationExcludeFilter;
 ConversationPanelView conversationPanelView;
 ReplyPanelView replyPanelView;
 TagPanelView tagPanelView;
@@ -520,7 +521,8 @@ class ConversationListPanelView {
   CheckboxInputElement _selectAllCheckbox;
   DivElement _loadSpinner;
 
-  ConversationFilter conversationFilter;
+  ConversationIncludeFilter conversationIncludeFilter;
+  ConversationExcludeFilter conversationExcludeFilter;
 
   Map<String, ConversationSummary> _phoneToConversations = {};
   ConversationSummary activeConversation;
@@ -560,8 +562,15 @@ class ConversationListPanelView {
     _conversationList = new LazyListViewModel(conversationListElement);
     conversationListPanel.append(conversationListElement);
 
-    conversationFilter = new ConversationFilter();
-    conversationListPanel.append(conversationFilter.conversationFilter);
+    var conversationFilterContainer = new DivElement()
+      ..classes.add('conversation-filter-container');
+    conversationListPanel.append(conversationFilterContainer);
+
+    conversationIncludeFilter = new ConversationIncludeFilter();
+    conversationFilterContainer.append(conversationIncludeFilter.filterElement);
+
+    conversationExcludeFilter = new ConversationExcludeFilter();
+    conversationFilterContainer.append(conversationExcludeFilter.filterElement);
   }
 
   void addConversation(ConversationSummary conversationSummary, [int position]) {
@@ -621,18 +630,32 @@ class ConversationListPanelView {
 }
 
 class ConversationFilter {
-  DivElement conversationFilter;
+  DivElement filterElement;
+  SpanElement _label;
   DivElement _tagsContainer;
   DivElement _tagsMenu;
   DivElement _tagsMenuContainer;
 
   ConversationFilter() {
-    conversationFilter = new DivElement()
+    filterElement = new DivElement()
       ..classes.add('conversation-filter');
 
-    var descriptionText = new DivElement()
-      ..text = 'Filter conversations ▹';
-    conversationFilter.append(descriptionText);
+    var descriptionText = new DivElement();
+    filterElement.append(descriptionText);
+
+    _label = new SpanElement();
+    descriptionText.append(_label);
+
+    var allOrAny = new SpanElement()
+      ..classes.add('conversation-filter__include__toggle')
+      ..classes.add('conversation-filter__include__toggle--all');
+    allOrAny.onClick.listen((_) {
+      bool any = allOrAny.classes.toggle('conversation-filter__include__toggle--any');
+      allOrAny.classes.toggle('conversation-filter__include__toggle--all', !any);
+      allOrAny.dataset['all-or-any'] = any ? 'any' : 'all';
+      // TODO(mariana): propagate this change to the controller.
+    });
+    descriptionText.append(allOrAny);
 
     _tagsMenu = new DivElement()
       ..classes.add('tags-menu');
@@ -641,11 +664,11 @@ class ConversationFilter {
       ..classes.add('tags-menu__container');
     _tagsMenu.append(_tagsMenuContainer);
 
-    conversationFilter.append(_tagsMenu);
+    filterElement.append(_tagsMenu);
 
     _tagsContainer = new DivElement()
       ..classes.add('tags-container');
-    conversationFilter.append(_tagsContainer);
+    filterElement.append(_tagsContainer);
   }
 
   void addMenuTag(FilterMenuTagView tag) {
@@ -674,6 +697,18 @@ class ConversationFilter {
       _tagsMenuContainer.firstChild.remove();
     }
     assert(_tagsMenuContainer.children.length == 0);
+  }
+}
+
+class ConversationIncludeFilter extends ConversationFilter {
+  ConversationIncludeFilter() {
+    _label.text = 'Show';
+  }
+}
+
+class ConversationExcludeFilter extends ConversationFilter {
+  ConversationExcludeFilter() {
+    _label.text = 'Hide';
   }
 }
 
