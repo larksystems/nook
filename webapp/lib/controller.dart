@@ -88,13 +88,15 @@ class ConversationTagData extends Data {
 
 class FilterTagData extends Data {
   String tagId;
-  FilterTagData(this.tagId);
+  FilterType filterType;
+  FilterTagData(this.tagId, this.filterType);
 }
 
 class AfterDateFilterData extends Data {
   String tagId;
   DateTime afterDateFilter;
-  AfterDateFilterData(this.tagId, [this.afterDateFilter]);
+  FilterType filterType;
+  AfterDateFilterData(this.tagId, this.filterType, [this.afterDateFilter]);
 }
 
 class ConversationData extends Data {
@@ -140,6 +142,31 @@ class SystemMessagesData extends Data {
   SystemMessagesData(this.messages);
 }
 
+enum FilterType {
+  include,
+  exclude
+}
+
+enum FilterOperation {
+  all,
+  any
+}
+
+class ConversationFilter {
+  List<model.Tag> includeTags = [];
+  FilterOperation includeLogic = FilterOperation.all;
+  List<model.Tag> excludeTags = [];
+  FilterOperation excludeLogic = FilterOperation.all;
+  DateTime afterDateFilter;
+
+  static final defaultIncludeLogic = FilterOperation.all;
+  static final defaultExcludeLogic = FilterOperation.all;
+
+  bool contains(model.Tag tag) {
+    return includeTags.contains(tag) || excludeTags.contains(tag);
+  }
+}
+
 List<model.SystemMessage> systemMessages;
 
 UIActionObject actionObjectState;
@@ -149,7 +176,7 @@ Set<model.Conversation> filteredConversations;
 List<model.SuggestedReply> suggestedReplies;
 List<model.Tag> conversationTags;
 List<model.Tag> messageTags;
-List<model.Tag> filterTags;
+ConversationFilter conversationFilter;
 DateTime afterDateFilter;
 model.Conversation activeConversation;
 List<model.Conversation> selectedConversations;
@@ -179,7 +206,8 @@ void populateUI() {
       var updatedIds = tags.map((t) => t.tagId).toSet();
       conversationTags.removeWhere((tag) => updatedIds.contains(tag.tagId));
       conversationTags.addAll(tags);
-      _populateFilterTagsMenu(conversationTags);
+      _populateFilterTagsMenu(conversationTags, FilterType.include);
+      _populateFilterTagsMenu(conversationTags, FilterType.exclude);
 
       if (actionObjectState == UIActionObject.conversation) {
         _populateTagPanelView(conversationTags, TagReceiver.Conversation);
@@ -219,12 +247,11 @@ void populateUI() {
       conversations.removeWhere((conversation) => updatedIds.contains(conversation.deidentifiedPhoneNumber.value));
       conversations.addAll(updatedConversations);
 
-      // Get any filter tags from the url
-      List<String> filterTagIds = view.urlView.pageUrlFilterTags;
-      filterTags = filterTagIds.map((tagId) => conversationTags.singleWhere((tag) => tag.tagId == tagId)).toList();
-      filteredConversations = filterConversationsByTags(conversations, filterTags, afterDateFilter);
-      _populateFilterTagsMenu(conversationTags);
-      _populateSelectedFilterTags(filterTags);
+      conversationFilter = createConversationFilterFromUrl();
+      filteredConversations = filterConversationsByTags(conversations, conversationFilter);
+      _populateFilterTagsMenu(conversationTags, FilterType.include);
+      _populateFilterTagsMenu(conversationTags, FilterType.exclude);
+      _populateSelectedFilterTags(conversationFilter);
 
       activeConversation = updateViewForConversations(filteredConversations);
       command(UIAction.markConversationRead, ConversationData(activeConversation.deidentifiedPhoneNumber.value));
@@ -237,6 +264,30 @@ void populateUI() {
       systemMessages.addAll(updatedMessages.where((m) => !m.expired));
       command(UIAction.updateSystemMessages, SystemMessagesData(systemMessages));
     });
+}
+
+ConversationFilter createConversationFilterFromUrl() {
+  // include filter
+  conversationFilter = new ConversationFilter();
+  List<String> filterTagIds = view.urlView.readPageUrlFilterTags(FilterType.include);
+  conversationFilter.includeTags = filterTagIds.map((tagId) => conversationTags.singleWhere((tag) => tag.tagId == tagId)).toList();
+
+  var operation = view.urlView.readPageUrlFilterOperation(FilterType.include);
+  conversationFilter.includeLogic = operation ?? ConversationFilter.defaultIncludeLogic;
+
+  // exclude filter
+  conversationFilter = new ConversationFilter();
+  filterTagIds = view.urlView.readPageUrlFilterTags(FilterType.exclude);
+  conversationFilter.excludeTags = filterTagIds.map((tagId) => conversationTags.singleWhere((tag) => tag.tagId == tagId)).toList();
+
+  operation = view.urlView.readPageUrlFilterOperation(FilterType.exclude);
+  conversationFilter.excludeLogic = operation ?? ConversationFilter.defaultExcludeLogic;
+
+  // after date filter
+  // TODO(mariana): this filter doesn't make it into the URL yet, but it should
+  conversationFilter.afterDateFilter = afterDateFilter;
+
+  return conversationFilter;
 }
 
 SplayTreeSet<model.Conversation> get emptyConversationsSet =>
@@ -303,10 +354,12 @@ void command(UIAction action, Data data) {
     case UIAction.addFilterTag:
       FilterTagData tagData = data;
       model.Tag tag = conversationTags.singleWhere((tag) => tag.tagId == tagData.tagId);
-      if (filterTags.contains(tag)) break;
-      filterTags.add(tag);
-      view.urlView.pageUrlFilterTags = filterTags.map((tag) => tag.tagId).toList();
-      view.conversationIncludeFilter.addFilterTag(new view.FilterTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
+      List<model.Tag> tags = tagData.filterType == FilterType.include ? conversationFilter.includeTags : conversationFilter.excludeTags;
+      if (tags.contains(tag)) break;
+      tags.add(tag);
+      view.urlView.writePageUrlFilterTags(tagData.filterType, tags.map((tag) => tag.tagId).toList());
+      view.ConversationFilterView conversationFilterView = tagData.filterType == FilterType.include ? view.conversationIncludeFilter : view.conversationExcludeFilter;
+      conversationFilterView.addFilterTag(new view.FilterTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type), tagData.filterType));
       updateFilteredConversationList();
       break;
     case UIAction.removeConversationTag:
@@ -315,7 +368,7 @@ void command(UIAction action, Data data) {
       activeConversation.tagIds.remove(tag.tagId);
       platform.updateConversationTags(activeConversation);
       view.conversationPanelView.removeTag(tag.tagId);
-      if (filterTags.contains(tag)) {
+      if (conversationFilter.contains(tag)) {
         // Select the next conversation in the list
         var nextConversation = nextElement(filteredConversations, activeConversation);
         filteredConversations.remove(activeConversation);
@@ -336,21 +389,23 @@ void command(UIAction action, Data data) {
     case UIAction.removeFilterTag:
       FilterTagData tagData = data;
       model.Tag tag = conversationTags.singleWhere((tag) => tag.tagId == tagData.tagId);
-      filterTags.remove(tag);
-      view.urlView.pageUrlFilterTags = filterTags.map((tag) => tag.tagId).toList();
-      view.conversationIncludeFilter.removeFilterTag(tag.tagId);
+      List<model.Tag> tags = tagData.filterType == FilterType.include ? conversationFilter.includeTags : conversationFilter.excludeTags;
+      tags.remove(tag);
+      view.urlView.writePageUrlFilterTags(tagData.filterType, tags.map((tag) => tag.tagId).toList());
+      view.ConversationFilterView conversationFilterView = tagData.filterType == FilterType.include ? view.conversationIncludeFilter : view.conversationExcludeFilter;
+      conversationFilterView.removeFilterTag(tag.tagId);
       updateFilteredConversationList();
       break;
     case UIAction.promptAfterDateFilter:
       AfterDateFilterData filterData = data;
-      view.conversationPanelView.showAfterDateFilterPrompt(filterData.afterDateFilter ?? afterDateFilter);
+      view.conversationPanelView.showAfterDateFilterPrompt(filterData.afterDateFilter ?? afterDateFilter, filterData.filterType);
       break;
     case UIAction.updateAfterDateFilter:
       AfterDateFilterData filterData = data;
       afterDateFilter = filterData.afterDateFilter;
       view.conversationIncludeFilter.removeFilterTag(filterData.tagId);
       if (afterDateFilter != null) {
-        view.conversationIncludeFilter.addFilterTag(new view.AfterDateFilterTagView(afterDateFilter));
+        view.conversationIncludeFilter.addFilterTag(new view.AfterDateFilterTagView(afterDateFilter, filterData.filterType));
       }
       updateFilteredConversationList();
       break;
@@ -541,7 +596,7 @@ void command(UIAction action, Data data) {
 }
 
 void updateFilteredConversationList() {
-  filteredConversations = filterConversationsByTags(conversations, filterTags, afterDateFilter);
+  filteredConversations = filterConversationsByTags(conversations, conversationFilter);
   activeConversation = updateViewForConversations(filteredConversations);
   if (multiSelectMode) {
     view.conversationListPanelView.showCheckboxes();
@@ -690,16 +745,39 @@ void setMessageTag(model.Tag tag, model.Message message, model.Conversation conv
   }
 }
 
-Set<model.Conversation> filterConversationsByTags(Set<model.Conversation> conversations, List<model.Tag> filterTags, DateTime afterDateFilter) {
-  if (filterTags.isEmpty && afterDateFilter == null) return conversations;
+Set<model.Conversation> filterConversationsByTags(Set<model.Conversation> conversations, ConversationFilter conversationFilter) {
+  if (conversationFilter.includeTags.isEmpty &&
+      conversationFilter.excludeTags.isEmpty &&
+      afterDateFilter == null) {
+    return conversations;
+  }
 
   var filteredConversations = emptyConversationsSet;
-  var filterTagIds = filterTags.map<String>((tag) => tag.tagId).toList();
+  var includeFilterTagIds = conversationFilter.includeTags.map<String>((tag) => tag.tagId).toSet();
+  var excludeFilterTagIds = conversationFilter.excludeTags.map<String>((tag) => tag.tagId).toSet();
   conversations.forEach((conversation) {
-    // Filter by the last (most recent) conversation
-    // TODO consider an option to filter by the first conversation
+    // Filter by the last (most recent) message
+    // TODO consider an option to filter by the first message
     if (afterDateFilter != null && conversation.messages.last.datetime.isBefore(afterDateFilter)) return;
-    if (!conversation.tagIds.toSet().containsAll(filterTagIds)) return;
+
+    switch (conversationFilter.includeLogic) {
+      case FilterOperation.all:
+        if (!conversation.tagIds.toSet().containsAll(includeFilterTagIds)) return;
+        break;
+      case FilterOperation.any:
+        if (!conversation.tagIds.toSet().intersection(includeFilterTagIds).isNotEmpty) return;
+        break;
+    }
+
+    switch (conversationFilter.excludeLogic) {
+      case FilterOperation.all:
+        if (conversation.tagIds.toSet().containsAll(excludeFilterTagIds)) return;
+        break;
+      case FilterOperation.any:
+        if (conversation.tagIds.toSet().intersection(excludeFilterTagIds).isNotEmpty) return;
+        break;
+    }
+
     filteredConversations.add(conversation);
   });
   return filteredConversations;
