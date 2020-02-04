@@ -326,3 +326,28 @@ img.partner-logo--unicef {
     margin: 16px 0;
     text-align: center;
 }
+
+/****** Conversation filters *****/
+
+.conversation-filter__include__toggle::before {
+    cursor: pointer;
+    padding: 0 6px;
+    border-right: 1px solid #999;
+    border-bottom: 1px solid #999;
+}
+
+.conversation-filter__include__toggle:hover {
+    background: #eee;
+}
+
+.conversation-filter__include__toggle:active {
+    background: #e6e6e6;
+}
+
+.conversation-filter__include__toggle--all::before {
+    content: 'all';
+}
+
+.conversation-filter__include__toggle--any::before {
+    content: 'any';
+}
