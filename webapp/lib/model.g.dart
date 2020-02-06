@@ -10,6 +10,7 @@ Logger log = Logger('model.g.dart');
 class Conversation {
   static const collectionName = 'nook_conversations';
 
+  String docId;
   Map<String, String> demographicsInfo;
   List<String> tagIds;
   List<Message> messages;
@@ -17,7 +18,7 @@ class Conversation {
   bool unread;
 
   static Conversation fromSnapshot(DocSnapshot doc, [Conversation modelObj]) =>
-      fromData(doc.data, modelObj);
+      fromData(doc.data, modelObj)..docId = doc.id;
 
   static Conversation fromData(data, [Conversation modelObj]) {
     if (data == null) return null;
