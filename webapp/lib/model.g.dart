@@ -65,21 +65,9 @@ class Conversation {
     return batch;
   }
 
-  DocBatchUpdate updateUnread(DocStorage docStorage, String documentPath, bool newValue, [DocBatchUpdate batch]) {
+  Future<bool> setUnread(DocPubSubUpdate pubSubClient, bool newValue) {
     unread = newValue;
-    batch ??= docStorage.batch();
-    batch.update(documentPath, data: {'unread': newValue});
-    return batch;
-  }
-
-  void setUnread(PubSubClient pubSubClient, bool newValue) {
-    unread = newValue;
-    pubSubClient.publish(platform_constants.smsTopic, {
-      "action": "update_firebase",
-      "collection": Conversation.collectionName,
-      "ids": [conversationId],
-      "changes": {"unread": newValue}
-    });
+    return pubSubClient.publishDocChange(collectionName, [conversationId], {"unread": newValue});
   }
 }
 typedef void ConversationCollectionListener(List<Conversation> changes);
@@ -458,3 +446,10 @@ abstract class DocBatchUpdate {
 
 // ======================================================================
 // Core pub/sub utilities
+
+/// A pub/sub based mechanism for updating documents
+abstract class DocPubSubUpdate {
+  /// Publish the given document changes,
+  /// where [changes] is a mapping of field name to new value
+  Future<bool> publishDocChange(String collectionName, List<String> docIds, Map<String, dynamic> changes);
+}

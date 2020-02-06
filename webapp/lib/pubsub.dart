@@ -5,10 +5,12 @@ import 'package:firebase/firebase.dart' as firebase;
 import 'package:http/browser_client.dart';
 
 import 'logger.dart';
+import 'model.dart' show DocPubSubUpdate;
+import 'platform_constants.dart' as platform_constants;
 
 Logger log = new Logger('pubsub.dart');
 
-class PubSubClient {
+class PubSubClient extends DocPubSubUpdate {
   final String publishUrl;
 
   // The firebase user from which the user JWT auth token is obtained.
@@ -36,5 +38,16 @@ class PubSubClient {
 
     log.verbose("publish response ${response.statusCode}, ${response.body}");
     return response.statusCode == 200;
+  }
+
+  @override
+  Future<bool> publishDocChange(String collectionName, List<String> docIds,
+      Map<String, dynamic> changes) {
+    return publish(platform_constants.smsTopic, {
+      "action": "update_firebase",
+      "collection": collectionName,
+      "ids": docIds,
+      "changes": changes,
+    });
   }
 }
