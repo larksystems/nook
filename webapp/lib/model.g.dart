@@ -71,6 +71,16 @@ class Conversation {
     batch.update(documentPath, data: {'unread': newValue});
     return batch;
   }
+
+  void setUnread(PubSubClient pubSubClient, bool newValue) {
+    unread = newValue;
+    pubSubClient.publish(platform_constants.smsTopic, {
+      "action": "update_firebase",
+      "collection": Conversation.collectionName,
+      "ids": [conversationId],
+      "changes": {"unread": newValue}
+    });
+  }
 }
 typedef void ConversationCollectionListener(List<Conversation> changes);
 
