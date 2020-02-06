@@ -5,7 +5,7 @@ Conversation:
   tags: 'updatable array string tagIds'
   messages: 'updatable array Message'
   notes: 'updatable string'
-  unread: 'updatable bool, true'
+  unread: 'publishable bool, true'
 
 Message:
   direction: 'MessageDirection, MessageDirection.Out'
