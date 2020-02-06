@@ -66,8 +66,19 @@ class Conversation {
   }
 
   Future<bool> setUnread(DocPubSubUpdate pubSubClient, bool newValue) {
-    unread = newValue;
-    return pubSubClient.publishDocChange(collectionName, [conversationId], {"unread": newValue});
+    return setAllUnread(pubSubClient, [this], newValue);
+  }
+
+  static Future<bool> setAllUnread(DocPubSubUpdate pubSubClient, List<Conversation> docs, bool newValue) async {
+    final docIds = <String>[];
+    for (var doc in docs) {
+      if (doc.unread != newValue) {
+        doc.unread = newValue;
+        docIds.add(doc.docId);
+      }
+    }
+    if (docIds.isEmpty) return true;
+    return pubSubClient.publishDocChange(collectionName, docIds, {"unread": newValue});
   }
 }
 typedef void ConversationCollectionListener(List<Conversation> changes);

@@ -65,6 +65,10 @@ class Conversation extends g.Conversation {
     var result = m2.datetime.compareTo(m1.datetime);
     return result != 0 ? result : c2.hashCode.compareTo(c1.hashCode);
   };
+
+  static Future<bool> setAllUnread(g.DocPubSubUpdate pubSubClient, List<Conversation> docs, bool newValue) {
+    g.Conversation.setAllUnread(pubSubClient, docs, newValue);
+  }
 }
 typedef ConversationCollectionListener(List<Conversation> changes);
 
