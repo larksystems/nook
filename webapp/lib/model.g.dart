@@ -10,6 +10,7 @@ Logger log = Logger('model.g.dart');
 class Conversation {
   static const collectionName = 'nook_conversations';
 
+  String docId;
   Map<String, String> demographicsInfo;
   List<String> tagIds;
   List<Message> messages;
@@ -17,7 +18,7 @@ class Conversation {
   bool unread;
 
   static Conversation fromSnapshot(DocSnapshot doc, [Conversation modelObj]) =>
-      fromData(doc.data, modelObj);
+      fromData(doc.data, modelObj)..docId = doc.id;
 
   static Conversation fromData(data, [Conversation modelObj]) {
     if (data == null) return null;
@@ -64,11 +65,20 @@ class Conversation {
     return batch;
   }
 
-  DocBatchUpdate updateUnread(DocStorage docStorage, String documentPath, bool newValue, [DocBatchUpdate batch]) {
-    unread = newValue;
-    batch ??= docStorage.batch();
-    batch.update(documentPath, data: {'unread': newValue});
-    return batch;
+  Future<bool> setUnread(DocPubSubUpdate pubSubClient, bool newValue) {
+    return setAllUnread(pubSubClient, [this], newValue);
+  }
+
+  static Future<bool> setAllUnread(DocPubSubUpdate pubSubClient, List<Conversation> docs, bool newValue) async {
+    final docIds = <String>[];
+    for (var doc in docs) {
+      if (doc.unread != newValue) {
+        doc.unread = newValue;
+        docIds.add(doc.docId);
+      }
+    }
+    if (docIds.isEmpty) return true;
+    return pubSubClient.publishDocChange(collectionName, docIds, {"unread": newValue});
   }
 }
 typedef void ConversationCollectionListener(List<Conversation> changes);
@@ -447,3 +457,10 @@ abstract class DocBatchUpdate {
 
 // ======================================================================
 // Core pub/sub utilities
+
+/// A pub/sub based mechanism for updating documents
+abstract class DocPubSubUpdate {
+  /// Publish the given document changes,
+  /// where [changes] is a mapping of field name to new value
+  Future<bool> publishDocChange(String collectionName, List<String> docIds, Map<String, dynamic> changes);
+}
