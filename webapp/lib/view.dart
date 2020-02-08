@@ -783,7 +783,12 @@ class ReplyPanelView {
     _notesTextArea = new TextAreaElement()
       ..classes.add('notes-box__textarea')
       ..contentEditable = 'true'
-      ..onInput.listen((_) => command(UIAction.updateNote, new NoteData(_notesTextArea.value)))
+      ..onInput.listen((e) {
+        command(UIAction.updateNote, new NoteData(_notesTextArea.value));
+        e.stopPropagation();
+      })
+      ..onKeyDown.listen((e) => e.stopPropagation())
+      ..onKeyUp.listen((e) => e.stopPropagation())
       ..onKeyPress.listen((e) => e.stopPropagation());
     _notes.append(_notesTextArea);
   }
