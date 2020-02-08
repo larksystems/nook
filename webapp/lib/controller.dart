@@ -734,24 +734,17 @@ class SaveNoteAction {
   }
 
   void _updateNotes() async {
-    var deidentifiedPhoneNumber = _conversation.deidentifiedPhoneNumber.value;
+    var docId = _conversation.docId;
     if (_currentAction == this) {
       _currentAction = null;
     }
     try {
-      // The future returned by a firebase update does not complete when offline
-      // thus assume offline after 15 seconds
-      await platform.updateNotes(_conversation, _updatedText).timeout(const Duration(seconds: 15));
+      await platform.updateNotes(_conversation, _updatedText);
       view.showNormalStatus('saved');
-      log.verbose('note saved: $deidentifiedPhoneNumber');
+      log.verbose('note saved: $docId');
     } catch (e, s) {
-      if (e is TimeoutException) {
-        view.showWarningStatus('save failed... offline?');
-        log.warning('save note failed (offline?): $deidentifiedPhoneNumber');
-      } else {
-        view.showWarningStatus('save failed');
-        log.warning('save note failed: $deidentifiedPhoneNumber\n  $e\n$s');
-      }
+      view.showWarningStatus('save failed');
+      log.warning('save note failed: $docId\n  $e\n$s');
     }
   }
 }
