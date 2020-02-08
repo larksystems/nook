@@ -58,11 +58,20 @@ class Conversation {
     return batch;
   }
 
-  DocBatchUpdate updateNotes(DocStorage docStorage, String documentPath, String newValue, [DocBatchUpdate batch]) {
-    notes = newValue;
-    batch ??= docStorage.batch();
-    batch.update(documentPath, data: {'notes': newValue});
-    return batch;
+  Future<bool> setNotes(DocPubSubUpdate pubSubClient, String newValue) {
+    return setAllNotes(pubSubClient, [this], newValue);
+  }
+
+  static Future<bool> setAllNotes(DocPubSubUpdate pubSubClient, List<Conversation> docs, String newValue) async {
+    final docIds = <String>[];
+    for (var doc in docs) {
+      if (doc.notes != newValue) {
+        doc.notes = newValue;
+        docIds.add(doc.docId);
+      }
+    }
+    if (docIds.isEmpty) return true;
+    return pubSubClient.publishDocChange(collectionName, docIds, {"notes": newValue});
   }
 
   Future<bool> setUnread(DocPubSubUpdate pubSubClient, bool newValue) {

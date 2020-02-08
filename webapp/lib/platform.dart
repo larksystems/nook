@@ -127,9 +127,9 @@ Future updateConversationMessages(Conversation conversation) {
   return conversation.updateMessages(_docStorage, conversation.documentPath, conversation.messages).commit();
 }
 
-Future updateNotes(Conversation conversation) {
+Future updateNotes(Conversation conversation, String updatedText) {
   log.verbose("Updating conversation notes for ${conversation.deidentifiedPhoneNumber.value}");
-  return conversation.updateNotes(_docStorage, conversation.documentPath, conversation.notes).commit();
+  return conversation.setNotes(_pubsubInstance, updatedText);
 }
 
 Future updateUnread(List<Conversation> conversations, bool newValue) async {
