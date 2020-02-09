@@ -1,10 +1,9 @@
 Conversation:
   firebaseCollectionName: 'nook_conversations'
-  firebaseDocId: 'string docId'
   demographicsInfo: 'map string'
   tags: 'updatable array string tagIds'
   messages: 'updatable array Message'
-  notes: 'updatable string'
+  notes: 'publishable string'
   unread: 'publishable bool, true'
 
 Message:

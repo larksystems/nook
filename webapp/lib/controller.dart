@@ -721,16 +721,19 @@ class SaveNoteAction {
   /// into a single save operation, or `null` if the text has been saved.
   Timer _timer;
 
+  /// The text that should be saved
+  String _updatedText = "";
+
   SaveNoteAction(this._conversation);
 
   void _updateText(String noteText) {
+    _updatedText = noteText;
     view.showNormalStatus('saving...');
-    _conversation.notes = noteText;
     _timer?.cancel();
-    _timer = new Timer(const Duration(seconds: 3), _updateNodes);
+    _timer = new Timer(const Duration(seconds: 3), _updateNotes);
   }
 
-  void _updateNodes() async {
+  void _updateNotes() async {
     var deidentifiedPhoneNumber = _conversation.deidentifiedPhoneNumber.value;
     if (_currentAction == this) {
       _currentAction = null;
@@ -738,7 +741,7 @@ class SaveNoteAction {
     try {
       // The future returned by a firebase update does not complete when offline
       // thus assume offline after 15 seconds
-      await platform.updateNotes(_conversation).timeout(const Duration(seconds: 15));
+      await platform.updateNotes(_conversation, _updatedText).timeout(const Duration(seconds: 15));
       view.showNormalStatus('saved');
       log.verbose('note saved: $deidentifiedPhoneNumber');
     } catch (e, s) {
