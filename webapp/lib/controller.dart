@@ -425,7 +425,11 @@ void command(UIAction action, Data data) {
       }
       break;
     case UIAction.updateNote:
-      SaveTextAction.textChange(activeConversation, (data as NoteData).noteText);
+      SaveTextAction.textChange(
+        "${activeConversation.docId}.notes",
+        (data as NoteData).noteText,
+        (newText) => platform.updateNotes(activeConversation, newText),
+      );
       break;
     case UIAction.userSignedOut:
       signedInUser = null;
@@ -706,16 +710,21 @@ class SaveTextAction {
   /// The current action
   static SaveTextAction _currentAction;
 
-  static void textChange(model.Conversation conversation, String newText) {
-    assert(conversation != null);
-    if (_currentAction?._conversation != conversation) {
-      _currentAction = new SaveTextAction._(conversation);
+  /// Update the text fields in a delayed fashion, where
+  /// [changeId] is the id uniquely identifying the field being changed.
+  static void textChange(String changeId, String newText, SaveText saveText) {
+    assert(changeId != null);
+    if (_currentAction?._changeId != changeId) {
+      _currentAction = new SaveTextAction._(changeId, saveText);
     }
-    _currentAction._updateText(newText);
+    _currentAction._textChanged(newText);
   }
 
-  /// The model object containing the field needing to be updated with new text.
-  final model.Conversation _conversation;
+  /// The identifier uniquely identifying the field being changed.
+  final String _changeId;
+
+  /// The function that will be called to store the new text
+  final SaveText _saveText;
 
   /// A timer used to consolidate multiple keystroke changes to a field's text
   /// into a single save operation, or `null` if the text has been saved.
@@ -724,27 +733,29 @@ class SaveTextAction {
   /// The text that should be saved
   String _newText = "";
 
-  SaveTextAction._(this._conversation);
+  SaveTextAction._(this._changeId, this._saveText);
 
-  void _updateText(String newText) {
+  void _textChanged(String newText) {
     _newText = newText;
     view.showNormalStatus('saving...');
     _timer?.cancel();
-    _timer = new Timer(const Duration(seconds: 3), _saveText);
+    _timer = new Timer(const Duration(seconds: 3), _updateField);
   }
 
-  void _saveText() async {
-    var docId = _conversation.docId;
+  void _updateField() async {
     if (_currentAction == this) {
       _currentAction = null;
     }
     try {
-      await platform.updateNotes(_conversation, _newText);
+      var newText = _newText;
+      await _saveText(newText);
       view.showNormalStatus('saved');
-      log.verbose('note saved: $docId');
+      log.verbose('note saved: $_changeId');
     } catch (e, s) {
       view.showWarningStatus('save failed');
-      log.warning('save note failed: $docId\n  $e\n$s');
+      log.warning('save note failed: $_changeId\n  $e\n$s');
     }
   }
 }
+
+typedef Future<dynamic> SaveText(String newText);
