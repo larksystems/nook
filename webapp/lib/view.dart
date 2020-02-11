@@ -789,12 +789,10 @@ class ReplyPanelView {
 
     _notesTextArea = new TextAreaElement()
       ..classes.add('notes-box__textarea');
-    makeEditable(_notesTextArea, onChange: () => noteChanged());
+    makeEditable(_notesTextArea, onChange: () => () {
+      command(UIAction.updateNote, new NoteData(_notesTextArea.value));
+    }());
     _notes.append(_notesTextArea);
-  }
-
-  void noteChanged() {
-    command(UIAction.updateNote, new NoteData(_notesTextArea.value));
   }
 
   set noteText(String text) => _notesTextArea.value = text;
