@@ -425,7 +425,7 @@ void command(UIAction action, Data data) {
       }
       break;
     case UIAction.updateNote:
-      SaveNoteAction.textChange(activeConversation, (data as NoteData).noteText);
+      SaveTextAction.textChange(activeConversation, (data as NoteData).noteText);
       break;
     case UIAction.userSignedOut:
       signedInUser = null;
@@ -697,19 +697,19 @@ Set<model.Conversation> filterConversationsByTags(Set<model.Conversation> conver
   return filteredConversations;
 }
 
-/// [SaveNoteAction] manages changes to a conversation's note text
+/// [SaveTextAction] manages changes to a conversation's note text
 /// by consolidating multiple keystrokes over a rolling 3 second period
 /// into a single platform update operation.
 ///
-/// Call [SaveNoteAction.textChange] when a user changes a note's text.
-class SaveNoteAction {
+/// Call [SaveTextAction.textChange] when a user changes a note's text.
+class SaveTextAction {
   /// The current action
-  static SaveNoteAction _currentAction;
+  static SaveTextAction _currentAction;
 
   static void textChange(model.Conversation conversation, String noteText) {
     assert(conversation != null);
     if (_currentAction?._conversation != conversation) {
-      _currentAction = new SaveNoteAction(conversation);
+      _currentAction = new SaveTextAction._(conversation);
     }
     _currentAction._updateText(noteText);
   }
@@ -724,7 +724,7 @@ class SaveNoteAction {
   /// The text that should be saved
   String _updatedText = "";
 
-  SaveNoteAction(this._conversation);
+  SaveTextAction._(this._conversation);
 
   void _updateText(String noteText) {
     _updatedText = noteText;
