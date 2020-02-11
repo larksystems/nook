@@ -697,49 +697,49 @@ Set<model.Conversation> filterConversationsByTags(Set<model.Conversation> conver
   return filteredConversations;
 }
 
-/// [SaveTextAction] manages changes to a conversation's note text
+/// [SaveTextAction] manages changes to a model object's text field
 /// by consolidating multiple keystrokes over a rolling 3 second period
 /// into a single platform update operation.
 ///
-/// Call [SaveTextAction.textChange] when a user changes a note's text.
+/// Call [SaveTextAction.textChange] when a user modifies the field's text.
 class SaveTextAction {
   /// The current action
   static SaveTextAction _currentAction;
 
-  static void textChange(model.Conversation conversation, String noteText) {
+  static void textChange(model.Conversation conversation, String newText) {
     assert(conversation != null);
     if (_currentAction?._conversation != conversation) {
       _currentAction = new SaveTextAction._(conversation);
     }
-    _currentAction._updateText(noteText);
+    _currentAction._updateText(newText);
   }
 
-  /// The conversation containing the note needing to be updated with new text.
+  /// The model object containing the field needing to be updated with new text.
   final model.Conversation _conversation;
 
-  /// A timer used to consolidate multiple keystroke changes to a note's text
+  /// A timer used to consolidate multiple keystroke changes to a field's text
   /// into a single save operation, or `null` if the text has been saved.
   Timer _timer;
 
   /// The text that should be saved
-  String _updatedText = "";
+  String _newText = "";
 
   SaveTextAction._(this._conversation);
 
-  void _updateText(String noteText) {
-    _updatedText = noteText;
+  void _updateText(String newText) {
+    _newText = newText;
     view.showNormalStatus('saving...');
     _timer?.cancel();
-    _timer = new Timer(const Duration(seconds: 3), _updateNotes);
+    _timer = new Timer(const Duration(seconds: 3), _saveText);
   }
 
-  void _updateNotes() async {
+  void _saveText() async {
     var docId = _conversation.docId;
     if (_currentAction == this) {
       _currentAction = null;
     }
     try {
-      await platform.updateNotes(_conversation, _updatedText);
+      await platform.updateNotes(_conversation, _newText);
       view.showNormalStatus('saved');
       log.verbose('note saved: $docId');
     } catch (e, s) {
