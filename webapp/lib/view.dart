@@ -85,6 +85,24 @@ void showWarningStatus(String text) {
   tagPanelView._statusPanel.classes.add('status-line-warning');
 }
 
+void makeEditable(Element element, {void onChange(), void onEnter()}) {
+  element
+    ..contentEditable = 'true'
+    ..onInput.listen((e) {
+      if (onChange != null) onChange();
+      e.stopPropagation();
+    })
+    ..onKeyDown.listen((e) => e.stopPropagation())
+    ..onKeyUp.listen((e) => e.stopPropagation())
+    ..onKeyPress.listen((e) {
+      e.stopPropagation();
+      if (onEnter != null && e.keyCode == KeyCode.ENTER) {
+        e.stopImmediatePropagation();
+        onEnter();
+      }
+    });
+}
+
 const REPLY_PANEL_TITLE = 'Suggested responses';
 const TAG_PANEL_TITLE = 'Available tags';
 const ADD_REPLY_INFO = 'Add new suggested response';
@@ -201,18 +219,8 @@ class AfterDateFilterView {
 
   AfterDateFilterView() {
     _textArea = new TextAreaElement()
-      ..classes.add('after-date-prompt__textarea')
-      ..contentEditable = 'true'
-      ..onInput.listen((e) => e.stopPropagation())
-      ..onKeyDown.listen((e) => e.stopPropagation())
-      ..onKeyUp.listen((e) => e.stopPropagation())
-      ..onKeyPress.listen((e) {
-        e.stopPropagation();
-        if (e.keyCode == KeyCode.ENTER) {
-          e.stopImmediatePropagation();
-          applyFilter();
-        }
-      });
+      ..classes.add('after-date-prompt__textarea');
+    makeEditable(_textArea, onEnter: () => applyFilter());
 
     panel = DivElement()
       ..classes.add('after-date-prompt')
@@ -327,17 +335,16 @@ class MessageView {
 
     _messageTranslation = new DivElement()
       ..classes.add('message__translation')
-      ..contentEditable = 'true'
-      ..text = translation
-      ..onInput.listen((_) => command(UIAction.updateTranslation, new TranslationData(_messageTranslation.text, conversationId, messageIndex)))
-      ..onKeyPress.listen((e) => e.stopPropagation());
+      ..text = translation;
+    makeEditable(_messageTranslation, onChange: () {
+      command(UIAction.updateTranslation, new TranslationData(_messageTranslation.text, conversationId, messageIndex));
+    });
     _messageBubble.append(_messageTranslation);
 
     _messageTags = new DivElement()
       ..classes.add('message__tags');
     tags.forEach((tag) => _messageTags.append(tag.tag));
     message.append(_messageTags);
-
   }
 
   set translation(String translation) => _messageTranslation.text = translation;
@@ -781,15 +788,10 @@ class ReplyPanelView {
     replyPanel.append(_notes);
 
     _notesTextArea = new TextAreaElement()
-      ..classes.add('notes-box__textarea')
-      ..contentEditable = 'true'
-      ..onInput.listen((e) {
-        command(UIAction.updateNote, new NoteData(_notesTextArea.value));
-        e.stopPropagation();
-      })
-      ..onKeyDown.listen((e) => e.stopPropagation())
-      ..onKeyUp.listen((e) => e.stopPropagation())
-      ..onKeyPress.listen((e) => e.stopPropagation());
+      ..classes.add('notes-box__textarea');
+    makeEditable(_notesTextArea, onChange: () {
+      command(UIAction.updateNote, new NoteData(_notesTextArea.value));
+    });
     _notes.append(_notesTextArea);
   }
 
@@ -907,10 +909,10 @@ class ReplyActionView extends ActionView {
     var actionTranslation = new DivElement();
     actionTranslation
       ..classes.add('action__translation')
-      ..contentEditable = 'true'
-      ..text = translation
-      ..onInput.listen((_) => command(UIAction.updateTranslation, new ReplyTranslationData(actionTranslation.text, replyIndex)))
-      ..onKeyPress.listen((e) => e.stopPropagation());
+      ..text = translation;
+    makeEditable(actionTranslation, onChange: () {
+      command(UIAction.updateTranslation, new ReplyTranslationData(actionTranslation.text, replyIndex));
+    });
     descriptionElement.append(actionTranslation);
 
     var buttonElement = action.querySelector('.action__button');
@@ -969,9 +971,8 @@ abstract class AddActionView {
 
     _newActionTextArea = new DivElement()
       ..classes.add('add-action__textarea')
-      ..contentEditable = 'true'
-      ..text = ''
-      ..onKeyPress.listen((e) => e.stopPropagation());
+      ..text = '';
+    makeEditable(_newActionTextArea);
     _newActionBox.append(_newActionTextArea);
 
     _newActionTranslationLabel = new DivElement()
@@ -980,9 +981,8 @@ abstract class AddActionView {
     _newActionBox.append(_newActionTranslationLabel);
 
     _newActionTranslation = new DivElement()
-      ..classes.add('add-action__translation')
-      ..contentEditable = 'true'
-      ..onKeyPress.listen((e) => e.stopPropagation());
+      ..classes.add('add-action__translation');
+    makeEditable(_newActionTranslation);
     _newActionBox.append(_newActionTranslation);
 
     _newActionButton = new DivElement()
