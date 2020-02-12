@@ -416,8 +416,12 @@ void command(UIAction action, Data data) {
       break;
     case UIAction.updateTranslation:
       if (data is ReplyTranslationData) {
-        suggestedReplies[data.replyIndex].translation = data.translationText;
-        platform.updateSuggestedReply(suggestedReplies[data.replyIndex]);
+        var reply = suggestedReplies[data.replyIndex];
+        SaveTextAction.textChange(
+          "${reply.docId}.translation",
+          data.translationText,
+          (newText) => platform.updateSuggestedReplyTranslation(reply, newText),
+        );
       } else if (data is TranslationData) {
         TranslationData messageTranslation = data;
         activeConversation.messages[messageTranslation.messageIndex].translation = messageTranslation.translationText;

@@ -33,8 +33,8 @@ MessageStatus:
 SuggestedReply:
   firebaseCollectionName: 'suggestedReplies'
   firebaseDocId: 'string suggestedReplyId'
-  text: 'updatable string'
-  translation: 'updatable string'
+  text: 'string'
+  translation: 'publishable string'
   shortcut: 'string'
 
 Tag:

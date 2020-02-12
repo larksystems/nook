@@ -213,13 +213,15 @@ MessageStatus Function(String text) MessageStatus_fromStringOverride;
 class SuggestedReply {
   static const collectionName = 'suggestedReplies';
 
-  String suggestedReplyId;
+  String docId;
   String text;
   String translation;
   String shortcut;
 
+  String get suggestedReplyId => docId;
+
   static SuggestedReply fromSnapshot(DocSnapshot doc, [SuggestedReply modelObj]) =>
-      fromData(doc.data, modelObj)..suggestedReplyId = doc.id;
+      fromData(doc.data, modelObj)..docId = doc.id;
 
   static SuggestedReply fromData(data, [SuggestedReply modelObj]) {
     if (data == null) return null;
@@ -241,18 +243,20 @@ class SuggestedReply {
     };
   }
 
-  DocBatchUpdate updateText(DocStorage docStorage, String documentPath, String newValue, [DocBatchUpdate batch]) {
-    text = newValue;
-    batch ??= docStorage.batch();
-    batch.update(documentPath, data: {'text': newValue});
-    return batch;
+  Future<bool> setTranslation(DocPubSubUpdate pubSubClient, String newValue) {
+    return setAllTranslation(pubSubClient, [this], newValue);
   }
 
-  DocBatchUpdate updateTranslation(DocStorage docStorage, String documentPath, String newValue, [DocBatchUpdate batch]) {
-    translation = newValue;
-    batch ??= docStorage.batch();
-    batch.update(documentPath, data: {'translation': newValue});
-    return batch;
+  static Future<bool> setAllTranslation(DocPubSubUpdate pubSubClient, List<SuggestedReply> docs, String newValue) async {
+    final docIds = <String>[];
+    for (var doc in docs) {
+      if (doc.translation != newValue) {
+        doc.translation = newValue;
+        docIds.add(doc.docId);
+      }
+    }
+    if (docIds.isEmpty) return true;
+    return pubSubClient.publishDocChange(collectionName, docIds, {"translation": newValue});
   }
 }
 typedef void SuggestedReplyCollectionListener(List<SuggestedReply> changes);
