@@ -7,6 +7,7 @@ Conversation:
   unread: 'publishable bool, true'
 
 Message:
+  firebaseDocId: 'none'
   direction: 'MessageDirection, MessageDirection.Out'
   datetime: 'datetime'
   status: MessageStatus

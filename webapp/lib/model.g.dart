@@ -100,9 +100,6 @@ class Message {
   String text;
   String translation;
 
-  static Message fromSnapshot(DocSnapshot doc, [Message modelObj]) =>
-      fromData(doc.data, modelObj);
-
   static Message fromData(data, [Message modelObj]) {
     if (data == null) return null;
     return (modelObj ?? Message())
@@ -113,9 +110,6 @@ class Message {
       ..text = String_fromData(data['text'])
       ..translation = String_fromData(data['translation']);
   }
-
-  static void listen(DocStorage docStorage, MessageCollectionListener listener, String collectionRoot) =>
-      listenForUpdates<Message>(docStorage, listener, collectionRoot, Message.fromSnapshot);
 
   Map<String, dynamic> toData() {
     return {
