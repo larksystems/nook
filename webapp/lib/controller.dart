@@ -157,7 +157,8 @@ class ConversationFilter {
   FilterOperation includeLogic = FilterOperation.all;
   List<model.Tag> excludeTags = [];
   FilterOperation excludeLogic = FilterOperation.all;
-  DateTime afterDateFilter;
+  DateTime includeAfterDateFilter;
+  DateTime excludeAfterDateFilter;
 
   static final defaultIncludeLogic = FilterOperation.all;
   static final defaultExcludeLogic = FilterOperation.all;
@@ -177,7 +178,6 @@ List<model.SuggestedReply> suggestedReplies;
 List<model.Tag> conversationTags;
 List<model.Tag> messageTags;
 ConversationFilter conversationFilter;
-DateTime afterDateFilter;
 model.Conversation activeConversation;
 List<model.Conversation> selectedConversations;
 model.Message selectedMessage;
@@ -276,7 +276,6 @@ ConversationFilter createConversationFilterFromUrl() {
   conversationFilter.includeLogic = operation ?? ConversationFilter.defaultIncludeLogic;
 
   // exclude filter
-  conversationFilter = new ConversationFilter();
   filterTagIds = view.urlView.readPageUrlFilterTags(FilterType.exclude);
   conversationFilter.excludeTags = filterTagIds.map((tagId) => conversationTags.singleWhere((tag) => tag.tagId == tagId)).toList();
 
@@ -285,7 +284,8 @@ ConversationFilter createConversationFilterFromUrl() {
 
   // after date filter
   // TODO(mariana): this filter doesn't make it into the URL yet, but it should
-  conversationFilter.afterDateFilter = afterDateFilter;
+  conversationFilter.includeAfterDateFilter = view.urlView.readPageUrlFilterAfterDate(FilterType.include);
+  conversationFilter.excludeAfterDateFilter = view.urlView.readPageUrlFilterAfterDate(FilterType.exclude);
 
   return conversationFilter;
 }
@@ -398,14 +398,26 @@ void command(UIAction action, Data data) {
       break;
     case UIAction.promptAfterDateFilter:
       AfterDateFilterData filterData = data;
-      view.conversationPanelView.showAfterDateFilterPrompt(filterData.afterDateFilter ?? afterDateFilter, filterData.filterType);
+      DateTime existingAfterDateFilter = filterData.filterType == FilterType.include ? conversationFilter.includeAfterDateFilter : conversationFilter.excludeAfterDateFilter;
+      view.conversationPanelView.showAfterDateFilterPrompt(filterData.afterDateFilter ?? existingAfterDateFilter, filterData.filterType);
       break;
     case UIAction.updateAfterDateFilter:
       AfterDateFilterData filterData = data;
-      afterDateFilter = filterData.afterDateFilter;
-      view.conversationIncludeFilter.removeFilterTag(filterData.tagId);
-      if (afterDateFilter != null) {
-        view.conversationIncludeFilter.addFilterTag(new view.AfterDateFilterTagView(afterDateFilter, filterData.filterType));
+      switch (filterData.filterType) {
+        case FilterType.include:
+          conversationFilter.includeAfterDateFilter = filterData.afterDateFilter;
+          view.conversationIncludeFilter.removeFilterTag(filterData.tagId);
+          if (filterData.afterDateFilter != null) {
+            view.conversationIncludeFilter.addFilterTag(new view.AfterDateFilterTagView(filterData.afterDateFilter, filterData.filterType));
+          }
+          break;
+        case FilterType.exclude:
+          conversationFilter.excludeAfterDateFilter = filterData.afterDateFilter;
+          view.conversationExcludeFilter.removeFilterTag(filterData.tagId);
+          if (filterData.afterDateFilter != null) {
+            view.conversationExcludeFilter.addFilterTag(new view.AfterDateFilterTagView(filterData.afterDateFilter, filterData.filterType));
+          }
+          break;
       }
       updateFilteredConversationList();
       break;
@@ -748,7 +760,8 @@ void setMessageTag(model.Tag tag, model.Message message, model.Conversation conv
 Set<model.Conversation> filterConversationsByTags(Set<model.Conversation> conversations, ConversationFilter conversationFilter) {
   if (conversationFilter.includeTags.isEmpty &&
       conversationFilter.excludeTags.isEmpty &&
-      afterDateFilter == null) {
+      conversationFilter.includeAfterDateFilter == null &&
+      conversationFilter.excludeAfterDateFilter == null) {
     return conversations;
   }
 
@@ -758,7 +771,8 @@ Set<model.Conversation> filterConversationsByTags(Set<model.Conversation> conver
   conversations.forEach((conversation) {
     // Filter by the last (most recent) message
     // TODO consider an option to filter by the first message
-    if (afterDateFilter != null && conversation.messages.last.datetime.isBefore(afterDateFilter)) return;
+    if (conversationFilter.includeAfterDateFilter != null && conversation.messages.last.datetime.isBefore(conversationFilter.includeAfterDateFilter)) return;
+    if (conversationFilter.excludeAfterDateFilter != null && conversation.messages.last.datetime.isAfter(conversationFilter.includeAfterDateFilter)) return;
 
     switch (conversationFilter.includeLogic) {
       case FilterOperation.all:
@@ -769,13 +783,15 @@ Set<model.Conversation> filterConversationsByTags(Set<model.Conversation> conver
         break;
     }
 
-    switch (conversationFilter.excludeLogic) {
-      case FilterOperation.all:
-        if (conversation.tagIds.toSet().containsAll(excludeFilterTagIds)) return;
-        break;
-      case FilterOperation.any:
-        if (conversation.tagIds.toSet().intersection(excludeFilterTagIds).isNotEmpty) return;
-        break;
+    if (conversationFilter.excludeTags.isNotEmpty) {
+      switch (conversationFilter.excludeLogic) {
+        case FilterOperation.all:
+          if (conversation.tagIds.toSet().containsAll(excludeFilterTagIds)) return;
+          break;
+        case FilterOperation.any:
+          if (conversation.tagIds.toSet().intersection(excludeFilterTagIds).isNotEmpty) return;
+          break;
+      }
     }
 
     filteredConversations.add(conversation);

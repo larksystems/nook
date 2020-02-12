@@ -1192,6 +1192,7 @@ class UrlView {
 
   static const String queryFilterKey = 'Filter';
   static const String queryFilterTypeKey = 'Type';
+  static const String queryFilterAfterDateKey = 'AfterDate';
   static const String queryDisableRepliesKey = 'disableReplies';
 
   List<String> readPageUrlFilterTags(FilterType type) {
@@ -1218,8 +1219,8 @@ class UrlView {
     var uri = Uri.parse(window.location.href);
     var queryKey = '${type.value}$queryFilterTypeKey';
     if (uri.queryParameters.containsKey(queryKey)) {
-      String filterType = uri.queryParameters[queryKey];
-      return FilterOperationHelper.fromValue(filterType);
+      String operationType = uri.queryParameters[queryKey];
+      return FilterOperationHelper.fromValue(operationType);
     }
     return null;
   }
@@ -1229,6 +1230,30 @@ class UrlView {
     var queryKey = '${type.value}$queryFilterTypeKey';
     Map<String, String> queryParameters = new Map.from(uri.queryParameters);
     queryParameters[queryKey] = operation.value;
+    uri = uri.replace(queryParameters: queryParameters);
+    window.history.pushState('', '', uri.toString());
+  }
+
+  DateTime readPageUrlFilterAfterDate(FilterType type) {
+    var uri = Uri.parse(window.location.href);
+    var queryKey = '${type.value}$queryFilterAfterDateKey';
+    if (uri.queryParameters.containsKey(queryKey)) {
+      String filterType = uri.queryParameters[queryKey];
+      try {
+        return _afterDateFilterFormat.parse(filterType);
+      } on FormatException catch (e) {
+        snackbarView.showSnackbar("Invalid date/time format for filter in URL: ${e.message}", SnackbarNotificationType.error);
+        return null;
+      }
+    }
+    return null;
+  }
+
+  void writePageUrlFilterAfterDate(FilterType type, DateTime afterDate) {
+    var uri = Uri.parse(window.location.href);
+    var queryKey = '${type.value}$queryFilterAfterDateKey';
+    Map<String, String> queryParameters = new Map.from(uri.queryParameters);
+    queryParameters[queryKey] = _afterDateFilterFormat.format(afterDate);
     uri = uri.replace(queryParameters: queryParameters);
     window.history.pushState('', '', uri.toString());
   }
