@@ -12,6 +12,8 @@ pubspec.lock
 # If you don't generate documentation locally you can remove this line.
 doc/api/
 
+# Ignore IntelliJ project files
+*.iml
 
 node_modules
 .DS_Store
