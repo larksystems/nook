@@ -110,16 +110,9 @@ void listenForMessageTags(TagCollectionListener listener) =>
 void listenForSuggestedReplies(SuggestedReplyCollectionListener listener) =>
     SuggestedReply.listen(_docStorage, listener);
 
-Future updateSuggestedReply(SuggestedReply reply) {
-  log.verbose("Updating suggested Reply ${reply.suggestedReplyId}");
-
-  return _firestoreInstance.doc("${SuggestedReply.collectionName}/${reply.suggestedReplyId}").update(
-    data: {
-      "shortcut" : reply.shortcut,
-      "text" : reply.text,
-      "translation" : reply.translation
-    }
-  );
+Future updateSuggestedReplyTranslation(SuggestedReply reply, String newText) {
+  log.verbose("Updating suggested reply translation ${reply.suggestedReplyId}, '$newText'");
+  return reply.setTranslation(_pubsubInstance, newText);
 }
 
 Future updateConversationMessages(Conversation conversation) {
