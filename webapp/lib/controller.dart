@@ -290,7 +290,6 @@ ConversationFilter createConversationFilterFromUrl() {
   conversationFilter.excludeLogic = operation ?? ConversationFilter.defaultExcludeLogic;
 
   // after date filter
-  // TODO(mariana): this filter doesn't make it into the URL yet, but it should
   conversationFilter.includeAfterDateFilter = view.urlView.readPageUrlFilterAfterDate(FilterType.include);
   conversationFilter.excludeAfterDateFilter = view.urlView.readPageUrlFilterAfterDate(FilterType.exclude);
 
