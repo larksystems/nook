@@ -29,6 +29,7 @@ enum UIAction {
   removeFilterTag,
   promptAfterDateFilter,
   updateAfterDateFilter,
+  filterOperationChanged,
   showConversation,
   selectConversation,
   deselectConversation,
@@ -97,6 +98,12 @@ class AfterDateFilterData extends Data {
   DateTime afterDateFilter;
   FilterType filterType;
   AfterDateFilterData(this.tagId, this.filterType, [this.afterDateFilter]);
+}
+
+class FilterOperationData extends Data {
+  FilterType filterType;
+  FilterOperation filterOperation;
+  FilterOperationData(this.filterOperation, this.filterType);
 }
 
 class ConversationData extends Data {
@@ -313,6 +320,7 @@ void command(UIAction action, Data data) {
   if (activeConversation == null &&
       action != UIAction.addFilterTag && action != UIAction.removeFilterTag &&
       action != UIAction.promptAfterDateFilter && action != UIAction.updateAfterDateFilter &&
+      action != UIAction.filterOperationChanged &&
       action != UIAction.signInButtonClicked && action != UIAction.signOutButtonClicked &&
       action != UIAction.userSignedIn && action != UIAction.userSignedOut) {
     return;
@@ -406,6 +414,7 @@ void command(UIAction action, Data data) {
       switch (filterData.filterType) {
         case FilterType.include:
           conversationFilter.includeAfterDateFilter = filterData.afterDateFilter;
+          view.urlView.writePageUrlFilterAfterDate(filterData.filterType, filterData.afterDateFilter);
           view.conversationIncludeFilter.removeFilterTag(filterData.tagId);
           if (filterData.afterDateFilter != null) {
             view.conversationIncludeFilter.addFilterTag(new view.AfterDateFilterTagView(filterData.afterDateFilter, filterData.filterType));
@@ -413,6 +422,7 @@ void command(UIAction action, Data data) {
           break;
         case FilterType.exclude:
           conversationFilter.excludeAfterDateFilter = filterData.afterDateFilter;
+          view.urlView.writePageUrlFilterAfterDate(filterData.filterType, filterData.afterDateFilter);
           view.conversationExcludeFilter.removeFilterTag(filterData.tagId);
           if (filterData.afterDateFilter != null) {
             view.conversationExcludeFilter.addFilterTag(new view.AfterDateFilterTagView(filterData.afterDateFilter, filterData.filterType));
@@ -420,6 +430,19 @@ void command(UIAction action, Data data) {
           break;
       }
       updateFilteredConversationList();
+      break;
+    case UIAction.filterOperationChanged:
+      FilterOperationData operationData = data;
+      switch (operationData.filterType) {
+        case FilterType.include:
+          conversationFilter.includeLogic = operationData.filterOperation;
+          break;
+        case FilterType.exclude:
+          conversationFilter.excludeLogic = operationData.filterOperation;
+          break;
+      }
+      updateFilteredConversationList();
+      view.urlView.writePageUrlFilterOperation(operationData.filterType, operationData.filterOperation);
       break;
     case UIAction.selectMessage:
       MessageData messageData = data;
@@ -603,7 +626,6 @@ void command(UIAction action, Data data) {
         view.bannerView.hideBanner();
       }
       break;
-    default:
   }
 }
 
@@ -772,15 +794,17 @@ Set<model.Conversation> filterConversationsByTags(Set<model.Conversation> conver
     // Filter by the last (most recent) message
     // TODO consider an option to filter by the first message
     if (conversationFilter.includeAfterDateFilter != null && conversation.messages.last.datetime.isBefore(conversationFilter.includeAfterDateFilter)) return;
-    if (conversationFilter.excludeAfterDateFilter != null && conversation.messages.last.datetime.isAfter(conversationFilter.includeAfterDateFilter)) return;
+    if (conversationFilter.excludeAfterDateFilter != null && conversation.messages.last.datetime.isAfter(conversationFilter.excludeAfterDateFilter)) return;
 
-    switch (conversationFilter.includeLogic) {
-      case FilterOperation.all:
-        if (!conversation.tagIds.toSet().containsAll(includeFilterTagIds)) return;
-        break;
-      case FilterOperation.any:
-        if (!conversation.tagIds.toSet().intersection(includeFilterTagIds).isNotEmpty) return;
-        break;
+    if (conversationFilter.includeTags.isNotEmpty) {
+      switch (conversationFilter.includeLogic) {
+        case FilterOperation.all:
+          if (!conversation.tagIds.toSet().containsAll(includeFilterTagIds)) return;
+          break;
+        case FilterOperation.any:
+          if (!conversation.tagIds.toSet().intersection(includeFilterTagIds).isNotEmpty) return;
+          break;
+      }
     }
 
     if (conversationFilter.excludeTags.isNotEmpty) {

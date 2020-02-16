@@ -640,6 +640,9 @@ class ConversationFilterView {
   DivElement _tagsContainer;
   DivElement _tagsMenu;
   DivElement _tagsMenuContainer;
+  SpanElement _allOrAny;
+
+  FilterType _filterType;
 
   ConversationFilterView() {
     filterElement = new DivElement()
@@ -651,16 +654,16 @@ class ConversationFilterView {
     _label = new SpanElement();
     descriptionText.append(_label);
 
-    var allOrAny = new SpanElement()
+    _allOrAny = new SpanElement()
       ..classes.add('conversation-filter__include__toggle')
       ..classes.add('conversation-filter__include__toggle--all');
-    allOrAny.onClick.listen((_) {
-      bool any = allOrAny.classes.toggle('conversation-filter__include__toggle--any');
-      allOrAny.classes.toggle('conversation-filter__include__toggle--all', !any);
-      allOrAny.dataset['all-or-any'] = any ? 'any' : 'all';
-      // TODO(mariana): propagate this change to the controller.
+    _allOrAny.onClick.listen((_) {
+      bool any = _allOrAny.classes.toggle('conversation-filter__include__toggle--any');
+      _allOrAny.classes.toggle('conversation-filter__include__toggle--all', !any);
+      _allOrAny.dataset['all-or-any'] = any ? 'any' : 'all';
+      command(UIAction.filterOperationChanged, new FilterOperationData(any ? FilterOperation.any : FilterOperation.all, _filterType));
     });
-    descriptionText.append(allOrAny);
+    descriptionText.append(_allOrAny);
 
     _tagsMenu = new DivElement()
       ..classes.add('tags-menu');
@@ -688,6 +691,23 @@ class ConversationFilterView {
     _tagsContainer.children.removeWhere((Element d) => d.dataset["id"] == tagId);
   }
 
+  set operation (FilterOperation operation) {
+    switch (operation) {
+      case FilterOperation.any:
+        _allOrAny
+          ..classes.toggle('conversation-filter__include__toggle--any', true)
+          ..classes.toggle('conversation-filter__include__toggle--all', false)
+          ..dataset['all-or-any'] = 'any';
+        break;
+      case FilterOperation.all:
+        _allOrAny
+          ..classes.toggle('conversation-filter__include__toggle--any', false)
+          ..classes.toggle('conversation-filter__include__toggle--all', true)
+          ..dataset['all-or-any'] = 'all';
+        break;
+    }
+  }
+
   void clearSelectedTags() {
     int tagsNo = _tagsContainer.children.length;
     for (int i = 0; i < tagsNo; i++) {
@@ -706,12 +726,14 @@ class ConversationFilterView {
 }
 
 class ConversationIncludeFilterView extends ConversationFilterView {
+  final FilterType _filterType = FilterType.include;
   ConversationIncludeFilterView() {
     _label.text = 'Show';
   }
 }
 
 class ConversationExcludeFilterView extends ConversationFilterView {
+  final FilterType _filterType = FilterType.exclude;
   ConversationExcludeFilterView() {
     _label.text = 'Hide';
   }
@@ -1198,7 +1220,7 @@ class UrlView {
   List<String> readPageUrlFilterTags(FilterType type) {
     var uri = Uri.parse(window.location.href);
     var queryKey = '${type.value}$queryFilterKey';
-    if (uri.queryParameters.containsKey(queryFilterKey)) {
+    if (uri.queryParameters.containsKey(queryKey)) {
       List<String> filterTags = uri.queryParameters[queryKey].split(' ');
       filterTags.removeWhere((tag) => tag == "");
       return filterTags;
@@ -1253,7 +1275,11 @@ class UrlView {
     var uri = Uri.parse(window.location.href);
     var queryKey = '${type.value}$queryFilterAfterDateKey';
     Map<String, String> queryParameters = new Map.from(uri.queryParameters);
-    queryParameters[queryKey] = _afterDateFilterFormat.format(afterDate);
+    if (afterDate == null) {
+      queryParameters.remove(queryKey);
+    } else {
+      queryParameters[queryKey] = _afterDateFilterFormat.format(afterDate);
+    }
     uri = uri.replace(queryParameters: queryParameters);
     window.history.pushState('', '', uri.toString());
   }
