@@ -437,7 +437,8 @@ abstract class TagView {
 
     _tagText = new SpanElement()
       ..classes.add('tag__name')
-      ..text = text;
+      ..text = text
+      ..title = text;
     tag.append(_tagText);
 
     _removeButton = new SpanElement()
