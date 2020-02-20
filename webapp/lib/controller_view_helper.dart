@@ -102,19 +102,33 @@ void _populateTagPanelView(List<model.Tag> tags, TagReceiver tagReceiver) {
   }
 }
 
-void _populateFilterTagsMenu(List<model.Tag> tags) {
-  view.conversationIncludeFilter.clearMenuTags();
+void _populateFilterTagsMenu(List<model.Tag> tags, FilterType filterType) {
+  view.ConversationFilterView conversationFilterView = filterType == FilterType.include ? view.conversationIncludeFilter : view.conversationExcludeFilter;
+  conversationFilterView.clearMenuTags();
   for (var tag in tags) {
-    view.conversationIncludeFilter.addMenuTag(new view.FilterMenuTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
+    conversationFilterView.addMenuTag(new view.FilterMenuTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type), filterType));
   }
-  view.conversationIncludeFilter.addMenuTag(view.AfterDateFilterMenuTagView());
+  conversationFilterView.addMenuTag(view.AfterDateFilterMenuTagView(filterType));
 }
 
-void _populateSelectedFilterTags(List<model.Tag> tags) {
+void _populateSelectedFilterTags(ConversationFilter conversationFilter) {
   view.conversationIncludeFilter.clearSelectedTags();
-  for (var tag in tags) {
-    view.conversationIncludeFilter.addFilterTag(new view.FilterTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
+  for (var tag in conversationFilter.includeTags) {
+    view.conversationIncludeFilter.addFilterTag(new view.FilterTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type), FilterType.include));
   }
+  if (conversationFilter.includeAfterDateFilter != null) {
+    view.conversationIncludeFilter.addFilterTag(new view.AfterDateFilterTagView(conversationFilter.includeAfterDateFilter, FilterType.include));
+  }
+  view.conversationIncludeFilter.operation = conversationFilter.includeLogic;
+
+  view.conversationExcludeFilter.clearSelectedTags();
+  for (var tag in conversationFilter.excludeTags) {
+    view.conversationExcludeFilter.addFilterTag(new view.FilterTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type), FilterType.exclude));
+  }
+  if (conversationFilter.excludeAfterDateFilter != null) {
+    view.conversationExcludeFilter.addFilterTag(new view.AfterDateFilterTagView(conversationFilter.excludeAfterDateFilter, FilterType.exclude));
+  }
+  view.conversationExcludeFilter.operation = conversationFilter.excludeLogic;
 }
 
 view.TagStyle tagTypeToStyle(model.TagType tagType) {
