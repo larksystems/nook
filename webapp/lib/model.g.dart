@@ -256,13 +256,15 @@ class SuggestedReply {
 typedef void SuggestedReplyCollectionListener(List<SuggestedReply> changes);
 
 class Tag {
-  String tagId;
+  String docId;
   String text;
   TagType type;
   String shortcut;
 
+  String get tagId => docId;
+
   static Tag fromSnapshot(DocSnapshot doc, [Tag modelObj]) =>
-      fromData(doc.data, modelObj)..tagId = doc.id;
+      fromData(doc.data, modelObj)..docId = doc.id;
 
   static Tag fromData(data, [Tag modelObj]) {
     if (data == null) return null;
@@ -340,12 +342,14 @@ TagType Function(String text) TagType_fromStringOverride;
 class SystemMessage {
   static const collectionName = 'systemMessages';
 
-  String msgId;
+  String docId;
   String text;
   bool expired;
 
+  String get msgId => docId;
+
   static SystemMessage fromSnapshot(DocSnapshot doc, [SystemMessage modelObj]) =>
-      fromData(doc.data, modelObj)..msgId = doc.id;
+      fromData(doc.data, modelObj)..docId = doc.id;
 
   static SystemMessage fromData(data, [SystemMessage modelObj]) {
     if (data == null) return null;
