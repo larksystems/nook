@@ -173,6 +173,11 @@ class ConversationFilter {
   bool contains(model.Tag tag) {
     return includeTags.contains(tag) || excludeTags.contains(tag);
   }
+
+  bool get isEmpty => includeTags.isEmpty
+                   && excludeTags.isEmpty
+                   && includeAfterDateFilter == null
+                   && excludeAfterDateFilter == null;
 }
 
 List<model.SystemMessage> systemMessages;
@@ -779,12 +784,7 @@ void setMessageTag(model.Tag tag, model.Message message, model.Conversation conv
 }
 
 Set<model.Conversation> filterConversationsByTags(Set<model.Conversation> conversations, ConversationFilter conversationFilter) {
-  if (conversationFilter.includeTags.isEmpty &&
-      conversationFilter.excludeTags.isEmpty &&
-      conversationFilter.includeAfterDateFilter == null &&
-      conversationFilter.excludeAfterDateFilter == null) {
-    return conversations;
-  }
+  if (conversationFilter.isEmpty) return conversations;
 
   var filteredConversations = emptyConversationsSet;
   var includeFilterTagIds = conversationFilter.includeTags.map<String>((tag) => tag.tagId).toSet();
