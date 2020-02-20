@@ -178,6 +178,40 @@ class ConversationFilter {
                    && excludeTags.isEmpty
                    && includeAfterDateFilter == null
                    && excludeAfterDateFilter == null;
+
+  Set<String> get includeFilterTagIds => includeTags.map<String>((tag) => tag.tagId).toSet();
+  Set<String> get excludeFilterTagIds => excludeTags.map<String>((tag) => tag.tagId).toSet();
+
+  bool test(model.Conversation conversation) {
+    // Filter by the last (most recent) message
+    // TODO consider an option to filter by the first message
+    if (includeAfterDateFilter != null && conversation.messages.last.datetime.isBefore(includeAfterDateFilter)) return false;
+    if (excludeAfterDateFilter != null && conversation.messages.last.datetime.isAfter(excludeAfterDateFilter)) return false;
+
+    if (includeTags.isNotEmpty) {
+      switch (includeLogic) {
+        case FilterOperation.all:
+          if (!conversation.tagIds.toSet().containsAll(includeFilterTagIds)) return false;
+          break;
+        case FilterOperation.any:
+          if (!conversation.tagIds.toSet().intersection(includeFilterTagIds).isNotEmpty) return false;
+          break;
+      }
+    }
+
+    if (excludeTags.isNotEmpty) {
+      switch (excludeLogic) {
+        case FilterOperation.all:
+          if (conversation.tagIds.toSet().containsAll(excludeFilterTagIds)) return false;
+          break;
+        case FilterOperation.any:
+          if (conversation.tagIds.toSet().intersection(excludeFilterTagIds).isNotEmpty) return false;
+          break;
+      }
+    }
+
+    return true;
+  }
 }
 
 List<model.SystemMessage> systemMessages;
@@ -787,38 +821,7 @@ Set<model.Conversation> filterConversationsByTags(Set<model.Conversation> conver
   if (conversationFilter.isEmpty) return conversations;
 
   var filteredConversations = emptyConversationsSet;
-  var includeFilterTagIds = conversationFilter.includeTags.map<String>((tag) => tag.tagId).toSet();
-  var excludeFilterTagIds = conversationFilter.excludeTags.map<String>((tag) => tag.tagId).toSet();
-  conversations.forEach((conversation) {
-    // Filter by the last (most recent) message
-    // TODO consider an option to filter by the first message
-    if (conversationFilter.includeAfterDateFilter != null && conversation.messages.last.datetime.isBefore(conversationFilter.includeAfterDateFilter)) return;
-    if (conversationFilter.excludeAfterDateFilter != null && conversation.messages.last.datetime.isAfter(conversationFilter.excludeAfterDateFilter)) return;
-
-    if (conversationFilter.includeTags.isNotEmpty) {
-      switch (conversationFilter.includeLogic) {
-        case FilterOperation.all:
-          if (!conversation.tagIds.toSet().containsAll(includeFilterTagIds)) return;
-          break;
-        case FilterOperation.any:
-          if (!conversation.tagIds.toSet().intersection(includeFilterTagIds).isNotEmpty) return;
-          break;
-      }
-    }
-
-    if (conversationFilter.excludeTags.isNotEmpty) {
-      switch (conversationFilter.excludeLogic) {
-        case FilterOperation.all:
-          if (conversation.tagIds.toSet().containsAll(excludeFilterTagIds)) return;
-          break;
-        case FilterOperation.any:
-          if (conversation.tagIds.toSet().intersection(excludeFilterTagIds).isNotEmpty) return;
-          break;
-      }
-    }
-
-    filteredConversations.add(conversation);
-  });
+  filteredConversations.addAll(conversations.where((conversation) => conversationFilter.test(conversation)));
   return filteredConversations;
 }
 
