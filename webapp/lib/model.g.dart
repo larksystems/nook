@@ -44,11 +44,20 @@ class Conversation {
     };
   }
 
-  DocBatchUpdate updateTagIds(DocStorage docStorage, String documentPath, Set<String> newValue, [DocBatchUpdate batch]) {
-    tagIds = newValue;
-    batch ??= docStorage.batch();
-    batch.update(documentPath, data: {'tags': newValue?.toList()});
-    return batch;
+  Future<bool> setTagIds(DocPubSubUpdate pubSubClient, Set<String> newValue) {
+    return setAllTagIds(pubSubClient, [this], newValue);
+  }
+
+  static Future<bool> setAllTagIds(DocPubSubUpdate pubSubClient, List<Conversation> docs, Set<String> newValue) async {
+    final docIds = <String>[];
+    for (var doc in docs) {
+      if (doc.tagIds != newValue) {
+        doc.tagIds = newValue;
+        docIds.add(doc.docId);
+      }
+    }
+    if (docIds.isEmpty) return true;
+    return pubSubClient.publishDocChange(collectionName, docIds, {"tags": newValue?.toList()});
   }
 
   DocBatchUpdate updateMessages(DocStorage docStorage, String documentPath, List<Message> newValue, [DocBatchUpdate batch]) {

@@ -312,8 +312,7 @@ void command(UIAction action, Data data) {
     case UIAction.removeConversationTag:
       ConversationTagData conversationTagData = data;
       model.Tag tag = conversationTags.singleWhere((tag) => tag.tagId == conversationTagData.tagId);
-      activeConversation.tagIds.remove(tag.tagId);
-      platform.updateConversationTags(activeConversation);
+      platform.removeConversationTag(activeConversation, tag.tagId);
       view.conversationPanelView.removeTag(tag.tagId);
       if (filterTags.contains(tag)) {
         // Select the next conversation in the list
@@ -662,8 +661,7 @@ void sendMultiReply(model.SuggestedReply reply, List<model.Conversation> convers
 
 void setConversationTag(model.Tag tag, model.Conversation conversation) {
   if (!conversation.tagIds.contains(tag.tagId)) {
-    conversation.tagIds.add(tag.tagId);
-    platform.updateConversationTags(conversation);
+    platform.addConversationTag(conversation, tag.tagId);
     view.conversationPanelView.addTags(new view.ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
   }
 }
@@ -671,8 +669,7 @@ void setConversationTag(model.Tag tag, model.Conversation conversation) {
 void setMultiConversationTag(model.Tag tag, List<model.Conversation> conversations) {
   conversations.forEach((conversation) {
     if (!conversation.tagIds.contains(tag.tagId)) {
-      conversation.tagIds.add(tag.tagId);
-      platform.updateConversationTags(conversation);
+      platform.addConversationTag(conversation, tag.tagId);
       if (conversation == activeConversation) {
         view.conversationPanelView.addTags(new view.ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
       }
