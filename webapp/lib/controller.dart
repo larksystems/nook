@@ -699,7 +699,7 @@ Set<model.Conversation> filterConversationsByTags(Set<model.Conversation> conver
     // Filter by the last (most recent) conversation
     // TODO consider an option to filter by the first conversation
     if (afterDateFilter != null && conversation.messages.last.datetime.isBefore(afterDateFilter)) return;
-    if (!conversation.tagIds.toSet().containsAll(filterTagIds)) return;
+    if (!conversation.tagIds.containsAll(filterTagIds)) return;
     filteredConversations.add(conversation);
   });
   return filteredConversations;

@@ -72,7 +72,7 @@ class Conversation extends g.Conversation {
 }
 typedef ConversationCollectionListener(List<Conversation> changes);
 
-UnmodifiableListView<g.Tag> tagIdsToTags(List<String> tagIds, Iterable<g.Tag> allTags) {
+UnmodifiableListView<g.Tag> tagIdsToTags(Iterable<String> tagIds, Iterable<g.Tag> allTags) {
   var tags = <g.Tag>[];
   for (var id in tagIds) {
     var tag = allTags.firstWhere((tag) => tag.tagId == id, orElse: () {

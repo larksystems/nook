@@ -12,7 +12,7 @@ class Conversation {
 
   String docId;
   Map<String, String> demographicsInfo;
-  List<String> tagIds;
+  Set<String> tagIds;
   List<Message> messages;
   String notes;
   bool unread;
@@ -24,7 +24,7 @@ class Conversation {
     if (data == null) return null;
     return (modelObj ?? Conversation())
       ..demographicsInfo = Map_fromData<String>(data['demographicsInfo'], String_fromData)
-      ..tagIds = List_fromData<String>(data['tags'], String_fromData)
+      ..tagIds = Set_fromData<String>(data['tags'], String_fromData)
       ..messages = List_fromData<Message>(data['messages'], Message.fromData)
       ..notes = String_fromData(data['notes'])
       ..unread = bool_fromData(data['unread']) ?? true;
@@ -37,17 +37,17 @@ class Conversation {
   Map<String, dynamic> toData() {
     return {
       if (demographicsInfo != null) 'demographicsInfo': demographicsInfo,
-      if (tagIds != null) 'tags': tagIds,
+      if (tagIds != null) 'tags': tagIds.toList(),
       if (messages != null) 'messages': messages.map((elem) => elem?.toData()).toList(),
       if (notes != null) 'notes': notes,
       if (unread != null) 'unread': unread,
     };
   }
 
-  DocBatchUpdate updateTagIds(DocStorage docStorage, String documentPath, List<String> newValue, [DocBatchUpdate batch]) {
+  DocBatchUpdate updateTagIds(DocStorage docStorage, String documentPath, Set<String> newValue, [DocBatchUpdate batch]) {
     tagIds = newValue;
     batch ??= docStorage.batch();
-    batch.update(documentPath, data: {'tags': newValue});
+    batch.update(documentPath, data: {'tags': newValue?.toList()});
     return batch;
   }
 
@@ -408,6 +408,9 @@ List<T> List_fromData<T>(dynamic data, T createModel(data)) =>
 
 Map<String, T> Map_fromData<T>(dynamic data, T createModel(data)) =>
     (data as Map)?.map<String, T>((key, value) => MapEntry(key.toString(), createModel(value)));
+
+Set<T> Set_fromData<T>(dynamic data, T createModel(data)) =>
+    (data as List)?.map<T>((elem) => createModel(elem))?.toSet();
 
 StreamSubscription<List<DocSnapshot>> listenForUpdates<T>(
     DocStorage docStorage,
