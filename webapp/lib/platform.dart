@@ -14,7 +14,6 @@ Logger log = new Logger('platform.dart');
 
 const _SEND_TO_MULTI_IDS_ACTION = "send_to_multi_ids";
 
-firestore.Firestore _firestoreInstance;
 DocStorage _docStorage;
 PubSubClient _pubsubInstance;
 
@@ -41,8 +40,7 @@ init() async {
     if (photoURL == null) {
       photoURL =  '/assets/user_image_placeholder.png';
     }
-    _firestoreInstance = firebase.firestore();
-    _docStorage = FirebaseDocStorage(_firestoreInstance);
+    _docStorage = FirebaseDocStorage(firebase.firestore());
     _pubsubInstance = new PubSubClient(platform_constants.publishUrl, user);
     controller.command(controller.UIAction.userSignedIn, new controller.UserData(user.displayName, user.email, photoURL));
   });
