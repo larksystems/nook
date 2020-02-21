@@ -130,7 +130,7 @@ Future updateUnread(List<Conversation> conversations, bool newValue) async {
       : "${conversations.length} conversations"
   }");
   if (conversations.isEmpty) return null;
-  return Conversation.setAllUnread(_pubsubInstance, conversations, newValue);
+  return Conversation.setUnread_forAll(_pubsubInstance, conversations, newValue);
 }
 
 Future addConversationTag(Conversation conversation, String tagId) {

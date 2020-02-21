@@ -45,10 +45,10 @@ class Conversation {
   }
 
   Future<bool> setTagIds(DocPubSubUpdate pubSubClient, Set<String> newValue) {
-    return setAllTagIds(pubSubClient, [this], newValue);
+    return setTagIds_forAll(pubSubClient, [this], newValue);
   }
 
-  static Future<bool> setAllTagIds(DocPubSubUpdate pubSubClient, List<Conversation> docs, Set<String> newValue) async {
+  static Future<bool> setTagIds_forAll(DocPubSubUpdate pubSubClient, List<Conversation> docs, Set<String> newValue) async {
     final docIds = <String>[];
     for (var doc in docs) {
       if (doc.tagIds != newValue) {
@@ -68,10 +68,10 @@ class Conversation {
   }
 
   Future<bool> setNotes(DocPubSubUpdate pubSubClient, String newValue) {
-    return setAllNotes(pubSubClient, [this], newValue);
+    return setNotes_forAll(pubSubClient, [this], newValue);
   }
 
-  static Future<bool> setAllNotes(DocPubSubUpdate pubSubClient, List<Conversation> docs, String newValue) async {
+  static Future<bool> setNotes_forAll(DocPubSubUpdate pubSubClient, List<Conversation> docs, String newValue) async {
     final docIds = <String>[];
     for (var doc in docs) {
       if (doc.notes != newValue) {
@@ -84,10 +84,10 @@ class Conversation {
   }
 
   Future<bool> setUnread(DocPubSubUpdate pubSubClient, bool newValue) {
-    return setAllUnread(pubSubClient, [this], newValue);
+    return setUnread_forAll(pubSubClient, [this], newValue);
   }
 
-  static Future<bool> setAllUnread(DocPubSubUpdate pubSubClient, List<Conversation> docs, bool newValue) async {
+  static Future<bool> setUnread_forAll(DocPubSubUpdate pubSubClient, List<Conversation> docs, bool newValue) async {
     final docIds = <String>[];
     for (var doc in docs) {
       if (doc.unread != newValue) {
@@ -247,10 +247,10 @@ class SuggestedReply {
   }
 
   Future<bool> setTranslation(DocPubSubUpdate pubSubClient, String newValue) {
-    return setAllTranslation(pubSubClient, [this], newValue);
+    return setTranslation_forAll(pubSubClient, [this], newValue);
   }
 
-  static Future<bool> setAllTranslation(DocPubSubUpdate pubSubClient, List<SuggestedReply> docs, String newValue) async {
+  static Future<bool> setTranslation_forAll(DocPubSubUpdate pubSubClient, List<SuggestedReply> docs, String newValue) async {
     final docIds = <String>[];
     for (var doc in docs) {
       if (doc.translation != newValue) {
