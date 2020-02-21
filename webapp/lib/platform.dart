@@ -133,7 +133,18 @@ Future updateUnread(List<Conversation> conversations, bool newValue) async {
   return Conversation.setAllUnread(_pubsubInstance, conversations, newValue);
 }
 
-Future updateConversationTags(Conversation conversation) {
-  log.verbose("Updating conversation tags for ${conversation.deidentifiedPhoneNumber.value}");
-  return conversation.updateTagIds(_docStorage, conversation.documentPath, conversation.tagIds).commit();
+Future addConversationTag(Conversation conversation, String tagId) {
+  log.verbose("Adding conversation tag $tagId to ${conversation.deidentifiedPhoneNumber.value}");
+  if (!conversation.tagIds.contains(tagId)) {
+    Set<String> newTagIds = Set.from(conversation.tagIds)..add(tagId);
+    return conversation.setTagIds(_pubsubInstance, newTagIds);
+  }
+}
+
+Future removeConversationTag(Conversation conversation, String tagId) {
+  log.verbose("Removing conversation tag $tagId from ${conversation.deidentifiedPhoneNumber.value}");
+  if (conversation.tagIds.contains(tagId)) {
+    Set<String> newTagIds = Set.from(conversation.tagIds)..remove(tagId);
+    return conversation.setTagIds(_pubsubInstance, newTagIds);
+  }
 }

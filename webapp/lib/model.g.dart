@@ -12,7 +12,7 @@ class Conversation {
 
   String docId;
   Map<String, String> demographicsInfo;
-  List<String> tagIds;
+  Set<String> tagIds;
   List<Message> messages;
   String notes;
   bool unread;
@@ -24,7 +24,7 @@ class Conversation {
     if (data == null) return null;
     return (modelObj ?? Conversation())
       ..demographicsInfo = Map_fromData<String>(data['demographicsInfo'], String_fromData)
-      ..tagIds = List_fromData<String>(data['tags'], String_fromData)
+      ..tagIds = Set_fromData<String>(data['tags'], String_fromData)
       ..messages = List_fromData<Message>(data['messages'], Message.fromData)
       ..notes = String_fromData(data['notes'])
       ..unread = bool_fromData(data['unread']) ?? true;
@@ -37,18 +37,27 @@ class Conversation {
   Map<String, dynamic> toData() {
     return {
       if (demographicsInfo != null) 'demographicsInfo': demographicsInfo,
-      if (tagIds != null) 'tags': tagIds,
+      if (tagIds != null) 'tags': tagIds.toList(),
       if (messages != null) 'messages': messages.map((elem) => elem?.toData()).toList(),
       if (notes != null) 'notes': notes,
       if (unread != null) 'unread': unread,
     };
   }
 
-  DocBatchUpdate updateTagIds(DocStorage docStorage, String documentPath, List<String> newValue, [DocBatchUpdate batch]) {
-    tagIds = newValue;
-    batch ??= docStorage.batch();
-    batch.update(documentPath, data: {'tags': newValue});
-    return batch;
+  Future<bool> setTagIds(DocPubSubUpdate pubSubClient, Set<String> newValue) {
+    return setAllTagIds(pubSubClient, [this], newValue);
+  }
+
+  static Future<bool> setAllTagIds(DocPubSubUpdate pubSubClient, List<Conversation> docs, Set<String> newValue) async {
+    final docIds = <String>[];
+    for (var doc in docs) {
+      if (doc.tagIds != newValue) {
+        doc.tagIds = newValue;
+        docIds.add(doc.docId);
+      }
+    }
+    if (docIds.isEmpty) return true;
+    return pubSubClient.publishDocChange(collectionName, docIds, {"tags": newValue?.toList()});
   }
 
   DocBatchUpdate updateMessages(DocStorage docStorage, String documentPath, List<Message> newValue, [DocBatchUpdate batch]) {
@@ -256,13 +265,15 @@ class SuggestedReply {
 typedef void SuggestedReplyCollectionListener(List<SuggestedReply> changes);
 
 class Tag {
-  String tagId;
+  String docId;
   String text;
   TagType type;
   String shortcut;
 
+  String get tagId => docId;
+
   static Tag fromSnapshot(DocSnapshot doc, [Tag modelObj]) =>
-      fromData(doc.data, modelObj)..tagId = doc.id;
+      fromData(doc.data, modelObj)..docId = doc.id;
 
   static Tag fromData(data, [Tag modelObj]) {
     if (data == null) return null;
@@ -340,12 +351,14 @@ TagType Function(String text) TagType_fromStringOverride;
 class SystemMessage {
   static const collectionName = 'systemMessages';
 
-  String msgId;
+  String docId;
   String text;
   bool expired;
 
+  String get msgId => docId;
+
   static SystemMessage fromSnapshot(DocSnapshot doc, [SystemMessage modelObj]) =>
-      fromData(doc.data, modelObj)..msgId = doc.id;
+      fromData(doc.data, modelObj)..docId = doc.id;
 
   static SystemMessage fromData(data, [SystemMessage modelObj]) {
     if (data == null) return null;
@@ -408,6 +421,9 @@ List<T> List_fromData<T>(dynamic data, T createModel(data)) =>
 
 Map<String, T> Map_fromData<T>(dynamic data, T createModel(data)) =>
     (data as Map)?.map<String, T>((key, value) => MapEntry(key.toString(), createModel(value)));
+
+Set<T> Set_fromData<T>(dynamic data, T createModel(data)) =>
+    (data as List)?.map<T>((elem) => createModel(elem))?.toSet();
 
 StreamSubscription<List<DocSnapshot>> listenForUpdates<T>(
     DocStorage docStorage,
