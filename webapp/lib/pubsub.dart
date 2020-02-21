@@ -42,7 +42,7 @@ class PubSubClient extends DocPubSubUpdate {
 
   @override
   Future<bool> publishDocAdd(String collectionName, List<String> docIds,
-      Map<String, String> additions) {
+      Map<String, List<dynamic>> additions) {
     return publish(platform_constants.smsTopic, {
       "action": "update_firebase",
       "collection": collectionName,
@@ -64,7 +64,7 @@ class PubSubClient extends DocPubSubUpdate {
 
   @override
   Future<bool> publishDocRemove(String collectionName, List<String> docIds,
-      Map<String, String> removals) {
+      Map<String, List<dynamic>> removals) {
     return publish(platform_constants.smsTopic, {
       "action": "update_firebase",
       "collection": collectionName,
