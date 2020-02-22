@@ -44,11 +44,11 @@ class Conversation {
     };
   }
 
-  Future<bool> addTagId(DocPubSubUpdate pubSubClient, String newValue) {
-    return addTagId_forAll(pubSubClient, [this], newValue);
+  Future<bool> addToTagIds(DocPubSubUpdate pubSubClient, String newValue) {
+    return addToTagIds_forAll(pubSubClient, [this], newValue);
   }
 
-  static Future<bool> addTagId_forAll(DocPubSubUpdate pubSubClient, List<Conversation> docs, String newValue) async {
+  static Future<bool> addToTagIds_forAll(DocPubSubUpdate pubSubClient, List<Conversation> docs, String newValue) async {
     final docIds = <String>[];
     for (var doc in docs) {
       if (!doc.tagIds.contains(newValue)) {
@@ -76,20 +76,20 @@ class Conversation {
     return pubSubClient.publishDocChange(collectionName, docIds, {"tags": newValue?.toList()});
   }
 
-  Future<bool> removeTagId(DocPubSubUpdate pubSubClient, String newValue) {
-    return removeTagId_forAll(pubSubClient, [this], newValue);
+  Future<bool> removeFromTagIds(DocPubSubUpdate pubSubClient, String newValue) {
+    return removeFromTagIds_forAll(pubSubClient, [this], newValue);
   }
 
-  static Future<bool> removeTagId_forAll(DocPubSubUpdate pubSubClient, List<Conversation> docs, String newValue) async {
+  static Future<bool> removeFromTagIds_forAll(DocPubSubUpdate pubSubClient, List<Conversation> docs, String oldValue) async {
     final docIds = <String>[];
     for (var doc in docs) {
-      if (doc.tagIds.contains(newValue)) {
-        doc.tagIds.remove(newValue);
+      if (doc.tagIds.contains(oldValue)) {
+        doc.tagIds.remove(oldValue);
         docIds.add(doc.docId);
       }
     }
     if (docIds.isEmpty) return true;
-    return pubSubClient.publishDocRemove(collectionName, docIds, {"tags": [newValue]});
+    return pubSubClient.publishDocRemove(collectionName, docIds, {"tags": [oldValue]});
   }
 
   DocBatchUpdate updateMessages(DocStorage docStorage, String documentPath, List<Message> newValue, [DocBatchUpdate batch]) {

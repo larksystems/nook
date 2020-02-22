@@ -67,7 +67,7 @@ class Conversation extends g.Conversation {
   };
 
   static Future addTagId_forAll(g.DocPubSubUpdate pubSubClient, List<Conversation> docs, String newValue) {
-    return g.Conversation.addTagId_forAll(pubSubClient, docs, newValue);
+    return g.Conversation.addToTagIds_forAll(pubSubClient, docs, newValue);
   }
 
   static Future<bool> setUnread_forAll(g.DocPubSubUpdate pubSubClient, List<Conversation> docs, bool newValue) {
