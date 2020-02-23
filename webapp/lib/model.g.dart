@@ -44,20 +44,52 @@ class Conversation {
     };
   }
 
-  Future<bool> setTagIds(DocPubSubUpdate pubSubClient, Set<String> newValue) {
-    return setAllTagIds(pubSubClient, [this], newValue);
+  Future<bool> addToTagId(DocPubSubUpdate pubSubClient, String valueToAdd) {
+    return addToTagId_forAll(pubSubClient, [this], valueToAdd);
   }
 
-  static Future<bool> setAllTagIds(DocPubSubUpdate pubSubClient, List<Conversation> docs, Set<String> newValue) async {
-    final docIds = <String>[];
+  static Future<bool> addToTagId_forAll(DocPubSubUpdate pubSubClient, List<Conversation> docs, String valueToAdd) async {
+    final docIdsToPublish = <String>[];
+    for (var doc in docs) {
+      if (!doc.tagIds.contains(valueToAdd)) {
+        doc.tagIds.add(valueToAdd);
+        docIdsToPublish.add(doc.docId);
+      }
+    }
+    if (docIdsToPublish.isEmpty) return true;
+    return pubSubClient.publishDocAdd(collectionName, docIdsToPublish, {"tags": [valueToAdd]});
+  }
+
+  Future<bool> setTagIds(DocPubSubUpdate pubSubClient, Set<String> newValue) {
+    return setTagIds_forAll(pubSubClient, [this], newValue);
+  }
+
+  static Future<bool> setTagIds_forAll(DocPubSubUpdate pubSubClient, List<Conversation> docs, Set<String> newValue) async {
+    final docIdsToPublish = <String>[];
     for (var doc in docs) {
       if (doc.tagIds != newValue) {
         doc.tagIds = newValue;
-        docIds.add(doc.docId);
+        docIdsToPublish.add(doc.docId);
       }
     }
-    if (docIds.isEmpty) return true;
-    return pubSubClient.publishDocChange(collectionName, docIds, {"tags": newValue?.toList()});
+    if (docIdsToPublish.isEmpty) return true;
+    return pubSubClient.publishDocChange(collectionName, docIdsToPublish, {"tags": newValue?.toList()});
+  }
+
+  Future<bool> removeFromTagId(DocPubSubUpdate pubSubClient, String valueToRemove) {
+    return removeFromTagId_forAll(pubSubClient, [this], valueToRemove);
+  }
+
+  static Future<bool> removeFromTagId_forAll(DocPubSubUpdate pubSubClient, List<Conversation> docs, String valueToRemove) async {
+    final docIdsToPublish = <String>[];
+    for (var doc in docs) {
+      if (doc.tagIds.contains(valueToRemove)) {
+        doc.tagIds.remove(valueToRemove);
+        docIdsToPublish.add(doc.docId);
+      }
+    }
+    if (docIdsToPublish.isEmpty) return true;
+    return pubSubClient.publishDocRemove(collectionName, docIdsToPublish, {"tags": [valueToRemove]});
   }
 
   DocBatchUpdate updateMessages(DocStorage docStorage, String documentPath, List<Message> newValue, [DocBatchUpdate batch]) {
@@ -68,35 +100,35 @@ class Conversation {
   }
 
   Future<bool> setNotes(DocPubSubUpdate pubSubClient, String newValue) {
-    return setAllNotes(pubSubClient, [this], newValue);
+    return setNotes_forAll(pubSubClient, [this], newValue);
   }
 
-  static Future<bool> setAllNotes(DocPubSubUpdate pubSubClient, List<Conversation> docs, String newValue) async {
-    final docIds = <String>[];
+  static Future<bool> setNotes_forAll(DocPubSubUpdate pubSubClient, List<Conversation> docs, String newValue) async {
+    final docIdsToPublish = <String>[];
     for (var doc in docs) {
       if (doc.notes != newValue) {
         doc.notes = newValue;
-        docIds.add(doc.docId);
+        docIdsToPublish.add(doc.docId);
       }
     }
-    if (docIds.isEmpty) return true;
-    return pubSubClient.publishDocChange(collectionName, docIds, {"notes": newValue});
+    if (docIdsToPublish.isEmpty) return true;
+    return pubSubClient.publishDocChange(collectionName, docIdsToPublish, {"notes": newValue});
   }
 
   Future<bool> setUnread(DocPubSubUpdate pubSubClient, bool newValue) {
-    return setAllUnread(pubSubClient, [this], newValue);
+    return setUnread_forAll(pubSubClient, [this], newValue);
   }
 
-  static Future<bool> setAllUnread(DocPubSubUpdate pubSubClient, List<Conversation> docs, bool newValue) async {
-    final docIds = <String>[];
+  static Future<bool> setUnread_forAll(DocPubSubUpdate pubSubClient, List<Conversation> docs, bool newValue) async {
+    final docIdsToPublish = <String>[];
     for (var doc in docs) {
       if (doc.unread != newValue) {
         doc.unread = newValue;
-        docIds.add(doc.docId);
+        docIdsToPublish.add(doc.docId);
       }
     }
-    if (docIds.isEmpty) return true;
-    return pubSubClient.publishDocChange(collectionName, docIds, {"unread": newValue});
+    if (docIdsToPublish.isEmpty) return true;
+    return pubSubClient.publishDocChange(collectionName, docIdsToPublish, {"unread": newValue});
   }
 }
 typedef void ConversationCollectionListener(List<Conversation> changes);
@@ -247,19 +279,19 @@ class SuggestedReply {
   }
 
   Future<bool> setTranslation(DocPubSubUpdate pubSubClient, String newValue) {
-    return setAllTranslation(pubSubClient, [this], newValue);
+    return setTranslation_forAll(pubSubClient, [this], newValue);
   }
 
-  static Future<bool> setAllTranslation(DocPubSubUpdate pubSubClient, List<SuggestedReply> docs, String newValue) async {
-    final docIds = <String>[];
+  static Future<bool> setTranslation_forAll(DocPubSubUpdate pubSubClient, List<SuggestedReply> docs, String newValue) async {
+    final docIdsToPublish = <String>[];
     for (var doc in docs) {
       if (doc.translation != newValue) {
         doc.translation = newValue;
-        docIds.add(doc.docId);
+        docIdsToPublish.add(doc.docId);
       }
     }
-    if (docIds.isEmpty) return true;
-    return pubSubClient.publishDocChange(collectionName, docIds, {"translation": newValue});
+    if (docIdsToPublish.isEmpty) return true;
+    return pubSubClient.publishDocChange(collectionName, docIdsToPublish, {"translation": newValue});
   }
 }
 typedef void SuggestedReplyCollectionListener(List<SuggestedReply> changes);
@@ -483,7 +515,15 @@ abstract class DocBatchUpdate {
 
 /// A pub/sub based mechanism for updating documents
 abstract class DocPubSubUpdate {
+  /// Publish the given document list/set additions,
+  /// where [additions] is a mapping of field name to new values to be added to the list/set
+  Future<bool> publishDocAdd(String collectionName, List<String> docIds, Map<String, List<dynamic>> additions);
+
   /// Publish the given document changes,
   /// where [changes] is a mapping of field name to new value
   Future<bool> publishDocChange(String collectionName, List<String> docIds, Map<String, dynamic> changes);
+
+  /// Publish the given document list/set removals,
+  /// where [removals] is a mapping of field name to old values to be removed from the list/set
+  Future<bool> publishDocRemove(String collectionName, List<String> docIds, Map<String, List<dynamic>> removals);
 }

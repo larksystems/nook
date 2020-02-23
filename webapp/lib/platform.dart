@@ -1,7 +1,6 @@
 import "dart:async";
 
 import 'package:firebase/firebase.dart' as firebase;
-import 'package:firebase/firestore.dart' as firestore;
 
 import 'controller.dart' as controller;
 import 'logger.dart';
@@ -130,21 +129,20 @@ Future updateUnread(List<Conversation> conversations, bool newValue) async {
       : "${conversations.length} conversations"
   }");
   if (conversations.isEmpty) return null;
-  return Conversation.setAllUnread(_pubsubInstance, conversations, newValue);
+  return Conversation.setUnread_forAll(_pubsubInstance, conversations, newValue);
 }
 
 Future addConversationTag(Conversation conversation, String tagId) {
-  log.verbose("Adding conversation tag $tagId to ${conversation.deidentifiedPhoneNumber.value}");
-  if (!conversation.tagIds.contains(tagId)) {
-    Set<String> newTagIds = Set.from(conversation.tagIds)..add(tagId);
-    return conversation.setTagIds(_pubsubInstance, newTagIds);
-  }
+  log.verbose("Adding tag $tagId to ${conversation.deidentifiedPhoneNumber.value}");
+  return conversation.addToTagId(_pubsubInstance, tagId);
+}
+
+Future addConversationTag_forAll(List<Conversation> conversations, String tagId) {
+  log.verbose("Adding tag $tagId to ${conversations.length} conversations");
+  return Conversation.addTagId_forAll(_pubsubInstance, conversations, tagId);
 }
 
 Future removeConversationTag(Conversation conversation, String tagId) {
-  log.verbose("Removing conversation tag $tagId from ${conversation.deidentifiedPhoneNumber.value}");
-  if (conversation.tagIds.contains(tagId)) {
-    Set<String> newTagIds = Set.from(conversation.tagIds)..remove(tagId);
-    return conversation.setTagIds(_pubsubInstance, newTagIds);
-  }
+  log.verbose("Removing tag $tagId from ${conversation.deidentifiedPhoneNumber.value}");
+  return conversation.removeFromTagId(_pubsubInstance, tagId);
 }
