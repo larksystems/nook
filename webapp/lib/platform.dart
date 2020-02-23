@@ -134,7 +134,7 @@ Future updateUnread(List<Conversation> conversations, bool newValue) async {
 
 Future addConversationTag(Conversation conversation, String tagId) {
   log.verbose("Adding tag $tagId to ${conversation.deidentifiedPhoneNumber.value}");
-  return conversation.addToTagIds(_pubsubInstance, tagId);
+  return conversation.addToTagId(_pubsubInstance, tagId);
 }
 
 Future addConversationTag_forAll(List<Conversation> conversations, String tagId) {
@@ -144,5 +144,5 @@ Future addConversationTag_forAll(List<Conversation> conversations, String tagId)
 
 Future removeConversationTag(Conversation conversation, String tagId) {
   log.verbose("Removing tag $tagId from ${conversation.deidentifiedPhoneNumber.value}");
-  return conversation.removeFromTagIds(_pubsubInstance, tagId);
+  return conversation.removeFromTagId(_pubsubInstance, tagId);
 }

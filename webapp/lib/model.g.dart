@@ -44,20 +44,20 @@ class Conversation {
     };
   }
 
-  Future<bool> addToTagIds(DocPubSubUpdate pubSubClient, String newValue) {
-    return addToTagIds_forAll(pubSubClient, [this], newValue);
+  Future<bool> addToTagId(DocPubSubUpdate pubSubClient, String valueToAdd) {
+    return addToTagId_forAll(pubSubClient, [this], valueToAdd);
   }
 
-  static Future<bool> addToTagIds_forAll(DocPubSubUpdate pubSubClient, List<Conversation> docs, String newValue) async {
-    final docIds = <String>[];
+  static Future<bool> addToTagId_forAll(DocPubSubUpdate pubSubClient, List<Conversation> docs, String valueToAdd) async {
+    final docIdsToPublish = <String>[];
     for (var doc in docs) {
-      if (!doc.tagIds.contains(newValue)) {
-        doc.tagIds.add(newValue);
-        docIds.add(doc.docId);
+      if (!doc.tagIds.contains(valueToAdd)) {
+        doc.tagIds.add(valueToAdd);
+        docIdsToPublish.add(doc.docId);
       }
     }
-    if (docIds.isEmpty) return true;
-    return pubSubClient.publishDocAdd(collectionName, docIds, {"tags": [newValue]});
+    if (docIdsToPublish.isEmpty) return true;
+    return pubSubClient.publishDocAdd(collectionName, docIdsToPublish, {"tags": [valueToAdd]});
   }
 
   Future<bool> setTagIds(DocPubSubUpdate pubSubClient, Set<String> newValue) {
@@ -65,31 +65,31 @@ class Conversation {
   }
 
   static Future<bool> setTagIds_forAll(DocPubSubUpdate pubSubClient, List<Conversation> docs, Set<String> newValue) async {
-    final docIds = <String>[];
+    final docIdsToPublish = <String>[];
     for (var doc in docs) {
       if (doc.tagIds != newValue) {
         doc.tagIds = newValue;
-        docIds.add(doc.docId);
+        docIdsToPublish.add(doc.docId);
       }
     }
-    if (docIds.isEmpty) return true;
-    return pubSubClient.publishDocChange(collectionName, docIds, {"tags": newValue?.toList()});
+    if (docIdsToPublish.isEmpty) return true;
+    return pubSubClient.publishDocChange(collectionName, docIdsToPublish, {"tags": newValue?.toList()});
   }
 
-  Future<bool> removeFromTagIds(DocPubSubUpdate pubSubClient, String newValue) {
-    return removeFromTagIds_forAll(pubSubClient, [this], newValue);
+  Future<bool> removeFromTagId(DocPubSubUpdate pubSubClient, String valueToRemove) {
+    return removeFromTagId_forAll(pubSubClient, [this], valueToRemove);
   }
 
-  static Future<bool> removeFromTagIds_forAll(DocPubSubUpdate pubSubClient, List<Conversation> docs, String oldValue) async {
-    final docIds = <String>[];
+  static Future<bool> removeFromTagId_forAll(DocPubSubUpdate pubSubClient, List<Conversation> docs, String valueToRemove) async {
+    final docIdsToPublish = <String>[];
     for (var doc in docs) {
-      if (doc.tagIds.contains(oldValue)) {
-        doc.tagIds.remove(oldValue);
-        docIds.add(doc.docId);
+      if (doc.tagIds.contains(valueToRemove)) {
+        doc.tagIds.remove(valueToRemove);
+        docIdsToPublish.add(doc.docId);
       }
     }
-    if (docIds.isEmpty) return true;
-    return pubSubClient.publishDocRemove(collectionName, docIds, {"tags": [oldValue]});
+    if (docIdsToPublish.isEmpty) return true;
+    return pubSubClient.publishDocRemove(collectionName, docIdsToPublish, {"tags": [valueToRemove]});
   }
 
   DocBatchUpdate updateMessages(DocStorage docStorage, String documentPath, List<Message> newValue, [DocBatchUpdate batch]) {
@@ -104,15 +104,15 @@ class Conversation {
   }
 
   static Future<bool> setNotes_forAll(DocPubSubUpdate pubSubClient, List<Conversation> docs, String newValue) async {
-    final docIds = <String>[];
+    final docIdsToPublish = <String>[];
     for (var doc in docs) {
       if (doc.notes != newValue) {
         doc.notes = newValue;
-        docIds.add(doc.docId);
+        docIdsToPublish.add(doc.docId);
       }
     }
-    if (docIds.isEmpty) return true;
-    return pubSubClient.publishDocChange(collectionName, docIds, {"notes": newValue});
+    if (docIdsToPublish.isEmpty) return true;
+    return pubSubClient.publishDocChange(collectionName, docIdsToPublish, {"notes": newValue});
   }
 
   Future<bool> setUnread(DocPubSubUpdate pubSubClient, bool newValue) {
@@ -120,15 +120,15 @@ class Conversation {
   }
 
   static Future<bool> setUnread_forAll(DocPubSubUpdate pubSubClient, List<Conversation> docs, bool newValue) async {
-    final docIds = <String>[];
+    final docIdsToPublish = <String>[];
     for (var doc in docs) {
       if (doc.unread != newValue) {
         doc.unread = newValue;
-        docIds.add(doc.docId);
+        docIdsToPublish.add(doc.docId);
       }
     }
-    if (docIds.isEmpty) return true;
-    return pubSubClient.publishDocChange(collectionName, docIds, {"unread": newValue});
+    if (docIdsToPublish.isEmpty) return true;
+    return pubSubClient.publishDocChange(collectionName, docIdsToPublish, {"unread": newValue});
   }
 }
 typedef void ConversationCollectionListener(List<Conversation> changes);
@@ -283,15 +283,15 @@ class SuggestedReply {
   }
 
   static Future<bool> setTranslation_forAll(DocPubSubUpdate pubSubClient, List<SuggestedReply> docs, String newValue) async {
-    final docIds = <String>[];
+    final docIdsToPublish = <String>[];
     for (var doc in docs) {
       if (doc.translation != newValue) {
         doc.translation = newValue;
-        docIds.add(doc.docId);
+        docIdsToPublish.add(doc.docId);
       }
     }
-    if (docIds.isEmpty) return true;
-    return pubSubClient.publishDocChange(collectionName, docIds, {"translation": newValue});
+    if (docIdsToPublish.isEmpty) return true;
+    return pubSubClient.publishDocChange(collectionName, docIdsToPublish, {"translation": newValue});
   }
 }
 typedef void SuggestedReplyCollectionListener(List<SuggestedReply> changes);
