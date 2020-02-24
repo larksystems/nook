@@ -163,17 +163,17 @@ void init() async {
   await platform.init();
 }
 
-void populateUI() {
+void initUI() {
   systemMessages = [];
   conversations = emptyConversationsSet;
-  filteredConversations = conversations;
+  filteredConversations = emptyConversationsSet;
   suggestedReplies = [];
   conversationTags = [];
   messageTags = [];
   selectedConversations = [];
   multiSelectMode = false;
+  activeConversation = null;
 
-  activeConversation = updateViewForConversations(filteredConversations);
   platform.listenForConversationTags(
     (tags) {
       var updatedIds = tags.map((t) => t.tagId).toSet();
@@ -227,6 +227,7 @@ void populateUI() {
       _populateSelectedFilterTags(filterTags);
 
       activeConversation = updateViewForConversations(filteredConversations);
+      if (activeConversation == null) return;
       command(UIAction.markConversationRead, ConversationData(activeConversation.deidentifiedPhoneNumber.value));
     });
 
@@ -446,7 +447,7 @@ void command(UIAction action, Data data) {
         ..userEmail = userData.email;
       view.authHeaderView.signIn(userData.displayName, userData.photoUrl);
       view.initSignedInView();
-      populateUI();
+      initUI();
       break;
     case UIAction.signInButtonClicked:
       platform.signIn();
