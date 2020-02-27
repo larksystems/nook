@@ -142,7 +142,7 @@ class SystemMessagesData extends Data {
 
 List<model.SystemMessage> systemMessages;
 
-UIActionObject actionObjectState;
+UIActionObject actionObjectState = UIActionObject.conversation;
 
 Set<model.Conversation> conversations;
 Set<model.Conversation> filteredConversations;
