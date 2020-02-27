@@ -11,6 +11,7 @@ import 'lazy_list_view_model.dart';
 
 Logger log = new Logger('view.dart');
 
+MenuView menuView;
 ConversationListPanelView conversationListPanelView;
 ConversationFilter get conversationFilter => conversationListPanelView.conversationFilter;
 ConversationPanelView conversationPanelView;
@@ -18,11 +19,13 @@ ReplyPanelView replyPanelView;
 TagPanelView tagPanelView;
 AuthHeaderView authHeaderView;
 AuthMainView authMainView;
+DivElement outboxPanelView = new DivElement()..text = 'Outbox feature not implemented yet';
 UrlView urlView;
 SnackbarView snackbarView;
 BannerView bannerView;
 
 void init() {
+  menuView = new MenuView();
   conversationListPanelView = new ConversationListPanelView();
   conversationPanelView = new ConversationPanelView();
   replyPanelView = new ReplyPanelView();
@@ -34,12 +37,27 @@ void init() {
   bannerView = new BannerView();
 
   querySelector('header').insertAdjacentElement('beforeBegin', bannerView.bannerElement);
-  querySelector('header').append(authHeaderView.authElement);
+  querySelector('header')
+    ..append(menuView.menuElement)
+    ..append(authHeaderView.authElement);
 
   document.onKeyDown.listen((event) => command(UIAction.keyPressed, new KeyPressData(event.key)));
 }
 
-void initSignedInView() {
+void showSignedInView(UIView view) {
+  menuView.selectButton(view);
+  switch (view) {
+    case UIView.conversations:
+      showConversationsView();
+      break;
+    case UIView.outbox:
+      showOutboxView();
+      break;
+  }
+  showNormalStatus('signed in');
+}
+
+void showConversationsView() {
   clearMain();
 
   querySelector('main')
@@ -48,13 +66,20 @@ void initSignedInView() {
     ..append(replyPanelView.replyPanel)
     ..append(tagPanelView.tagPanel)
     ..append(snackbarView.snackbarElement);
-  showNormalStatus('signed in');
+  menuView.showViewButtons();
 }
 
-void initSignedOutView() {
+void showOutboxView() {
+  clearMain();
+  querySelector('main')
+    ..append(outboxPanelView);
+}
+
+void showSignedOutView() {
   clearMain();
 
   querySelector('main').append(authMainView.authElement);
+  menuView.hideViewButtons();
   showNormalStatus('signed out');
 }
 
@@ -65,6 +90,7 @@ void clearMain() {
   tagPanelView.tagPanel.remove();
   authMainView.authElement.remove();
   snackbarView.snackbarElement.remove();
+  outboxPanelView.remove();
 }
 
 bool sendingMultiMessagesUserConfirmation(int noMessages) {
@@ -101,6 +127,60 @@ void makeEditable(Element element, {void onChange(), void onEnter()}) {
         onEnter();
       }
     });
+}
+
+const APPLICATION_TITLE_TEXT = 'Nook';
+const CONVERSATION_VIEW_TEXT = 'Conversation view';
+const MESSAGES_OUTBOX_VIEW_TEXT = 'Outbox view';
+
+class MenuView {
+  DivElement menuElement;
+  DivElement _uiTitle;
+  DivElement _buttonContainer;
+  DivElement _conversationViewButton;
+  DivElement _outboxViewButton;
+
+  MenuView() {
+    menuElement = new DivElement()
+      ..classes.add('menu');
+
+    _uiTitle = new DivElement()
+      ..text = APPLICATION_TITLE_TEXT
+      ..classes.add('title');
+    menuElement.append(_uiTitle);
+
+    _conversationViewButton = new DivElement()
+      ..classes.add('menu__button')
+      ..classes.add('menu__button--selected')
+      ..text = CONVERSATION_VIEW_TEXT
+      ..onClick.listen((_) => command(UIAction.switchView, new SwitchViewData(UIView.conversations)));
+
+    _outboxViewButton = new DivElement()
+      ..classes.add('menu__button')
+      ..text = MESSAGES_OUTBOX_VIEW_TEXT
+      ..onClick.listen((_) => command(UIAction.switchView, new SwitchViewData(UIView.outbox)));
+
+    _buttonContainer = new DivElement()
+      ..classes.add('menu__buttons')
+      ..append(_conversationViewButton)
+      ..append(_outboxViewButton);
+    menuElement.append(_buttonContainer);
+  }
+
+  void hideViewButtons() => _buttonContainer.remove();
+  void showViewButtons() => menuElement.append(_buttonContainer);
+
+  void selectButton(UIView view) {
+    switch (view) {
+      case UIView.conversations:
+        _conversationViewButton.classes.toggle('menu__button--selected', true);
+        _outboxViewButton.classes.toggle('menu__button--selected', false);
+        break;
+      case UIView.outbox:
+        _conversationViewButton.classes.toggle('menu__button--selected', false);
+        _outboxViewButton.classes.toggle('menu__button--selected', true);
+    }
+  }
 }
 
 const REPLY_PANEL_TITLE = 'Suggested responses';

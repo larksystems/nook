@@ -23,7 +23,7 @@ header {
     display: flex;
     align-items: stretch;
     flex-direction: row;
-    justify-content: flex-end;
+    justify-content: space-between;
 }
 
 main {
@@ -280,6 +280,51 @@ main {
     color: #555;
     font-size: 12px;
     background: #fafafa;
+}
+
+.menu {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin: 0 6px;
+}
+
+.title {
+    font-weight: 900;
+    font-size: 18px;
+    line-height: 27px;
+    color: #666;
+    padding: 0 16px 0 8px;
+}
+
+.menu__buttons {
+    display: flex;
+    align-items: center;
+}
+
+.menu__button {
+    padding: 3px 12px 12px;
+    margin-top: 11px;
+    cursor: pointer;
+    border: 1px solid white;
+    border-bottom: none;
+    border-top-width: 3px;
+}
+
+.menu__button.menu__button--selected {
+    border-color: #ddd;
+}
+
+.menu__button:hover {
+    background-color: #f9f9f9;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 11px;
+}
+
+.menu__button:active {
+    background-color: #eee;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 11px;
 }
 
 .auth {
