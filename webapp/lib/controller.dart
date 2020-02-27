@@ -194,7 +194,6 @@ void initUI() {
       conversationTags.removeWhere((tag) => updatedIds.contains(tag.tagId));
       conversationTags.addAll(tags);
       _populateFilterTagsMenu(conversationTags);
-      print(actionObjectState);
       if (actionObjectState == UIActionObject.conversation) {
         _populateTagPanelView(conversationTags, TagReceiver.Conversation);
       }
