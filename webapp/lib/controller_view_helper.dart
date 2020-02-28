@@ -31,7 +31,7 @@ void _populateConversationPanelView(model.Conversation conversation) {
   view.conversationPanelView.clear();
   view.conversationPanelView
     ..deidentifiedPhoneNumber = conversation.docId
-    ..deidentifiedPhoneNumberShort = conversation.deidentifiedPhoneNumber.shortValue
+    ..deidentifiedPhoneNumberShort = conversation.shortDeidentifiedPhoneNumber
     ..demographicsInfo = conversation.demographicsInfo.values.join(', ');
   for (var tag in model.tagIdsToTags(conversation.tagIds, conversationTags)) {
     view.conversationPanelView.addTags(new view.ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));

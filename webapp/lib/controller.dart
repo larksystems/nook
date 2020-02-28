@@ -243,7 +243,7 @@ void initUI() {
 }
 
 SplayTreeSet<model.Conversation> get emptyConversationsSet =>
-    SplayTreeSet(model.Conversation.mostRecentInboundFirst);
+    SplayTreeSet(model.ConversationUtil.mostRecentInboundFirst);
 
 /// Return the element after [current],
 /// or the first element if [current] is the last or not in the list.
