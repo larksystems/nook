@@ -128,20 +128,20 @@ Future<void> updateUnread(List<Conversation> conversations, bool newValue) {
       ? conversations[0].deidentifiedPhoneNumber.value
       : "${conversations.length} conversations"
   }");
-  return Conversation.setUnread_forAll(_pubsubInstance, conversations, newValue);
+  return Conversation.setUnreadForAll(_pubsubInstance, conversations, newValue);
 }
 
 Future<void> addConversationTag(Conversation conversation, String tagId) {
   log.verbose("Adding tag $tagId to ${conversation.deidentifiedPhoneNumber.value}");
-  return conversation.addToTagId(_pubsubInstance, tagId);
+  return conversation.addTagId(_pubsubInstance, tagId);
 }
 
 Future<void> addConversationTag_forAll(List<Conversation> conversations, String tagId) {
   log.verbose("Adding tag $tagId to ${conversations.length} conversations");
-  return Conversation.addTagId_forAll(_pubsubInstance, conversations, tagId);
+  return Conversation.addTagIdToAll(_pubsubInstance, conversations, tagId);
 }
 
 Future<void> removeConversationTag(Conversation conversation, String tagId) {
   log.verbose("Removing tag $tagId from ${conversation.deidentifiedPhoneNumber.value}");
-  return conversation.removeFromTagId(_pubsubInstance, tagId);
+  return conversation.removeTagId(_pubsubInstance, tagId);
 }
