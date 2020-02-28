@@ -217,8 +217,8 @@ void initUI() {
 
   platform.listenForConversations(
     (updatedConversations) {
-      var updatedIds = updatedConversations.map((t) => t.deidentifiedPhoneNumber.value).toSet();
-      conversations.removeWhere((conversation) => updatedIds.contains(conversation.deidentifiedPhoneNumber.value));
+      var updatedIds = updatedConversations.map((t) => t.docId).toSet();
+      conversations.removeWhere((conversation) => updatedIds.contains(conversation.docId));
       conversations.addAll(updatedConversations);
 
       // Get any filter tags from the url
@@ -230,7 +230,7 @@ void initUI() {
 
       activeConversation = updateViewForConversations(filteredConversations);
       if (activeConversation == null) return;
-      command(UIAction.markConversationRead, ConversationData(activeConversation.deidentifiedPhoneNumber.value));
+      command(UIAction.markConversationRead, ConversationData(activeConversation.docId));
     });
 
   platform.listenForSystemMessages(
@@ -392,28 +392,28 @@ void command(UIAction action, Data data) {
         for (var conversation in selectedConversations) {
           if (!conversation.unread) {
             markedConversations.add(conversation);
-            view.conversationListPanelView.markConversationUnread(conversation.deidentifiedPhoneNumber.value);
+            view.conversationListPanelView.markConversationUnread(conversation.docId);
           }
         }
         platform.updateUnread(markedConversations, true).catchError(showAndLogError);
       } else {
-        view.conversationListPanelView.markConversationUnread(activeConversation.deidentifiedPhoneNumber.value);
+        view.conversationListPanelView.markConversationUnread(activeConversation.docId);
         platform.updateUnread([activeConversation], true).catchError(showAndLogError);
       }
       break;
     case UIAction.showConversation:
       ConversationData conversationData = data;
-      activeConversation = filteredConversations.singleWhere((conversation) => conversation.deidentifiedPhoneNumber.value == conversationData.deidentifiedPhoneNumber);
+      activeConversation = filteredConversations.singleWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
       updateViewForConversation(activeConversation);
       break;
     case UIAction.selectConversation:
       ConversationData conversationData = data;
-      model.Conversation conversation = filteredConversations.singleWhere((conversation) => conversation.deidentifiedPhoneNumber.value == conversationData.deidentifiedPhoneNumber);
+      model.Conversation conversation = filteredConversations.singleWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
       selectedConversations.add(conversation);
       break;
     case UIAction.deselectConversation:
       ConversationData conversationData = data;
-      model.Conversation conversation = filteredConversations.singleWhere((conversation) => conversation.deidentifiedPhoneNumber.value == conversationData.deidentifiedPhoneNumber);
+      model.Conversation conversation = filteredConversations.singleWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
       selectedConversations.remove(conversation);
       break;
     case UIAction.updateTranslation:
@@ -548,7 +548,7 @@ void updateFilteredConversationList() {
   if (multiSelectMode) {
     view.conversationListPanelView.showCheckboxes();
     selectedConversations = selectedConversations.toSet().intersection(filteredConversations.toSet()).toList();
-    selectedConversations.forEach((conversation) => view.conversationListPanelView.checkConversation(conversation.deidentifiedPhoneNumber.value));
+    selectedConversations.forEach((conversation) => view.conversationListPanelView.checkConversation(conversation.docId));
   }
 }
 
@@ -568,17 +568,17 @@ model.Conversation updateViewForConversations(Set<model.Conversation> conversati
 
   if (activeConversation == null) {
     model.Conversation conversationToSelect = conversations.first;
-    view.conversationListPanelView.selectConversation(conversationToSelect.deidentifiedPhoneNumber.value);
+    view.conversationListPanelView.selectConversation(conversationToSelect.docId);
     _populateConversationPanelView(conversationToSelect);
     view.replyPanelView.noteText = conversationToSelect.notes;
     actionObjectState = UIActionObject.conversation;
     return conversationToSelect;
   }
 
-  var matches = conversations.where((conversation) => conversation.deidentifiedPhoneNumber.value == activeConversation.deidentifiedPhoneNumber.value).toList();
+  var matches = conversations.where((conversation) => conversation.docId == activeConversation.docId).toList();
   if (matches.length == 0) {
     model.Conversation conversationToSelect = conversations.first;
-    view.conversationListPanelView.selectConversation(conversationToSelect.deidentifiedPhoneNumber.value);
+    view.conversationListPanelView.selectConversation(conversationToSelect.docId);
     _populateConversationPanelView(conversationToSelect);
     view.replyPanelView.noteText = conversationToSelect.notes;
     actionObjectState = UIActionObject.conversation;
@@ -586,16 +586,16 @@ model.Conversation updateViewForConversations(Set<model.Conversation> conversati
   }
 
   if (matches.length > 1) {
-    log.warning('Two conversations seem to have the same deidentified phone number: activeConversation.deidentifiedPhoneNumber.value');
+    log.warning('Two conversations seem to have the same deidentified phone number: ${activeConversation.docId}');
   }
-  view.conversationListPanelView.selectConversation(activeConversation.deidentifiedPhoneNumber.value);
+  view.conversationListPanelView.selectConversation(activeConversation.docId);
   return activeConversation;
 }
 
 void updateViewForConversation(model.Conversation conversation) {
   if (conversation == null) return;
   // Select the conversation in the list
-  view.conversationListPanelView.selectConversation(conversation.deidentifiedPhoneNumber.value);
+  view.conversationListPanelView.selectConversation(conversation.docId);
   // Replace the previous conversation in the conversation panel
   _populateConversationPanelView(conversation);
   view.replyPanelView.noteText = conversation.notes;
@@ -623,13 +623,13 @@ void sendReply(model.SuggestedReply reply, model.Conversation conversation) {
     new view.MessageView(
       newMessage.text,
       newMessage.datetime,
-      conversation.deidentifiedPhoneNumber.value,
+      conversation.docId,
       conversation.messages.indexOf(newMessage),
       translation: newMessage.translation,
       incoming: false)
   );
   platform
-    .sendMessage(conversation.deidentifiedPhoneNumber.value, reply.text)
+    .sendMessage(conversation.docId, reply.text)
     .then((success) {
       log.verbose('controller.sendMessage reponse status $success');
     });
@@ -648,13 +648,13 @@ void sendMultiReply(model.SuggestedReply reply, List<model.Conversation> convers
       new view.MessageView(
         newMessage.text,
         newMessage.datetime,
-        activeConversation.deidentifiedPhoneNumber.value,
+        activeConversation.docId,
         activeConversation.messages.indexOf(newMessage),
         translation: newMessage.translation,
         incoming: false)
     );
   }
-  List<String> ids = conversations.map((conversation) => conversation.deidentifiedPhoneNumber.value).toList();
+  List<String> ids = conversations.map((conversation) => conversation.docId).toList();
   platform
     .sendMultiMessage(ids, newMessage.text)
     .then((success) {

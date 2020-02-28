@@ -1024,7 +1024,7 @@ class MarkUnreadActionView {
   }
 
   void markConversationsUnread([_]) {
-    command(UIAction.markConversationUnread, ConversationData(activeConversation.deidentifiedPhoneNumber.value));
+    command(UIAction.markConversationUnread, ConversationData(activeConversation.docId));
   }
 
   void multiSelectMode(bool enabled) {
