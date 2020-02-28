@@ -4,11 +4,10 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
 
-import 'package:nook/pubsub.dart';
-
 import 'logger.dart';
 import 'model.dart' as model;
 import 'platform.dart' as platform;
+import 'pubsub.dart' show PubSubException;
 import 'view.dart' as view;
 
 part 'controller_platform_helper.dart';
