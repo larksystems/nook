@@ -436,13 +436,15 @@ void command(UIAction action, Data data) {
         );
       }
       break;
-    case UIAction.updateNote:
-      var conversation = activeConversation;
-      SaveTextAction.textChange(
-        "${conversation.docId}.notes",
-        (data as NoteData).noteText,
-        (newText) => platform.updateNotes(conversation, newText),
-      );
+    case UIAction.updateNote: {
+        // inside block to ensure conversation is a local/captured var
+        var conversation = activeConversation;
+        SaveTextAction.textChange(
+          "${conversation.docId}.notes",
+          (data as NoteData).noteText,
+          (newText) => platform.updateNotes(conversation, newText),
+        );
+      }
       break;
     case UIAction.userSignedOut:
       signedInUser = null;
