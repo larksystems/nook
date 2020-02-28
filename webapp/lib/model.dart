@@ -66,12 +66,12 @@ class Conversation extends g.Conversation {
     return result != 0 ? result : c2.hashCode.compareTo(c1.hashCode);
   };
 
-  static Future addTagId_forAll(g.DocPubSubUpdate pubSubClient, List<Conversation> docs, String newValue) {
-    return g.Conversation.addToTagId_forAll(pubSubClient, docs, newValue);
+  static Future<void> addTagIdToAll(g.DocPubSubUpdate pubSubClient, List<Conversation> docs, String newValue) {
+    return g.Conversation.addTagIdToAll(pubSubClient, docs, newValue);
   }
 
-  static Future<bool> setUnread_forAll(g.DocPubSubUpdate pubSubClient, List<Conversation> docs, bool newValue) {
-    return g.Conversation.setUnread_forAll(pubSubClient, docs, newValue);
+  static Future<void> setUnreadForAll(g.DocPubSubUpdate pubSubClient, List<Conversation> docs, bool newValue) {
+    return g.Conversation.setUnreadForAll(pubSubClient, docs, newValue);
   }
 }
 typedef ConversationCollectionListener(List<Conversation> changes);

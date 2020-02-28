@@ -44,52 +44,64 @@ class Conversation {
     };
   }
 
-  Future<bool> addToTagId(DocPubSubUpdate pubSubClient, String valueToAdd) {
-    return addToTagId_forAll(pubSubClient, [this], valueToAdd);
+  /// Add [tagId] to tagIds in this Conversation.
+  /// Callers should catch and handle IOException.
+  Future<void> addTagId(DocPubSubUpdate pubSubClient, String tagId) {
+    return addTagIdToAll(pubSubClient, [this], tagId);
   }
 
-  static Future<bool> addToTagId_forAll(DocPubSubUpdate pubSubClient, List<Conversation> docs, String valueToAdd) async {
+  /// Add [tagId] to tagIds in each Conversation.
+  /// Callers should catch and handle IOException.
+  static Future<void> addTagIdToAll(DocPubSubUpdate pubSubClient, List<Conversation> docs, String tagId) async {
     final docIdsToPublish = <String>[];
     for (var doc in docs) {
-      if (!doc.tagIds.contains(valueToAdd)) {
-        doc.tagIds.add(valueToAdd);
+      if (!doc.tagIds.contains(tagId)) {
+        doc.tagIds.add(tagId);
         docIdsToPublish.add(doc.docId);
       }
     }
-    if (docIdsToPublish.isEmpty) return true;
-    return pubSubClient.publishDocAdd(collectionName, docIdsToPublish, {"tags": [valueToAdd]});
+    if (docIdsToPublish.isEmpty) return;
+    return pubSubClient.publishDocAdd(collectionName, docIdsToPublish, {"tags": [tagId]});
   }
 
-  Future<bool> setTagIds(DocPubSubUpdate pubSubClient, Set<String> newValue) {
-    return setTagIds_forAll(pubSubClient, [this], newValue);
+  /// Set tagIds in this Conversation.
+  /// Callers should catch and handle IOException.
+  Future<void> setTagIds(DocPubSubUpdate pubSubClient, Set<String> tagIds) {
+    return setTagIdsForAll(pubSubClient, [this], tagIds);
   }
 
-  static Future<bool> setTagIds_forAll(DocPubSubUpdate pubSubClient, List<Conversation> docs, Set<String> newValue) async {
+  /// Set tagIds in each Conversation.
+  /// Callers should catch and handle IOException.
+  static Future<void> setTagIdsForAll(DocPubSubUpdate pubSubClient, List<Conversation> docs, Set<String> tagIds) async {
     final docIdsToPublish = <String>[];
     for (var doc in docs) {
-      if (doc.tagIds != newValue) {
-        doc.tagIds = newValue;
+      if (doc.tagIds != tagIds) {
+        doc.tagIds = tagIds;
         docIdsToPublish.add(doc.docId);
       }
     }
-    if (docIdsToPublish.isEmpty) return true;
-    return pubSubClient.publishDocChange(collectionName, docIdsToPublish, {"tags": newValue?.toList()});
+    if (docIdsToPublish.isEmpty) return;
+    return pubSubClient.publishDocChange(collectionName, docIdsToPublish, {"tags": tagIds?.toList()});
   }
 
-  Future<bool> removeFromTagId(DocPubSubUpdate pubSubClient, String valueToRemove) {
-    return removeFromTagId_forAll(pubSubClient, [this], valueToRemove);
+  /// Remove [tagId] from tagIds in this Conversation.
+  /// Callers should catch and handle IOException.
+  Future<void> removeTagId(DocPubSubUpdate pubSubClient, String tagId) {
+    return removeTagIdFromAll(pubSubClient, [this], tagId);
   }
 
-  static Future<bool> removeFromTagId_forAll(DocPubSubUpdate pubSubClient, List<Conversation> docs, String valueToRemove) async {
+  /// Remove [tagId] from tagIds in each Conversation.
+  /// Callers should catch and handle IOException.
+  static Future<void> removeTagIdFromAll(DocPubSubUpdate pubSubClient, List<Conversation> docs, String tagId) async {
     final docIdsToPublish = <String>[];
     for (var doc in docs) {
-      if (doc.tagIds.contains(valueToRemove)) {
-        doc.tagIds.remove(valueToRemove);
+      if (doc.tagIds.contains(tagId)) {
+        doc.tagIds.remove(tagId);
         docIdsToPublish.add(doc.docId);
       }
     }
-    if (docIdsToPublish.isEmpty) return true;
-    return pubSubClient.publishDocRemove(collectionName, docIdsToPublish, {"tags": [valueToRemove]});
+    if (docIdsToPublish.isEmpty) return;
+    return pubSubClient.publishDocRemove(collectionName, docIdsToPublish, {"tags": [tagId]});
   }
 
   DocBatchUpdate updateMessages(DocStorage docStorage, String documentPath, List<Message> newValue, [DocBatchUpdate batch]) {
@@ -99,36 +111,44 @@ class Conversation {
     return batch;
   }
 
-  Future<bool> setNotes(DocPubSubUpdate pubSubClient, String newValue) {
-    return setNotes_forAll(pubSubClient, [this], newValue);
+  /// Set notes in this Conversation.
+  /// Callers should catch and handle IOException.
+  Future<void> setNotes(DocPubSubUpdate pubSubClient, String notes) {
+    return setNotesForAll(pubSubClient, [this], notes);
   }
 
-  static Future<bool> setNotes_forAll(DocPubSubUpdate pubSubClient, List<Conversation> docs, String newValue) async {
+  /// Set notes in each Conversation.
+  /// Callers should catch and handle IOException.
+  static Future<void> setNotesForAll(DocPubSubUpdate pubSubClient, List<Conversation> docs, String notes) async {
     final docIdsToPublish = <String>[];
     for (var doc in docs) {
-      if (doc.notes != newValue) {
-        doc.notes = newValue;
+      if (doc.notes != notes) {
+        doc.notes = notes;
         docIdsToPublish.add(doc.docId);
       }
     }
-    if (docIdsToPublish.isEmpty) return true;
-    return pubSubClient.publishDocChange(collectionName, docIdsToPublish, {"notes": newValue});
+    if (docIdsToPublish.isEmpty) return;
+    return pubSubClient.publishDocChange(collectionName, docIdsToPublish, {"notes": notes});
   }
 
-  Future<bool> setUnread(DocPubSubUpdate pubSubClient, bool newValue) {
-    return setUnread_forAll(pubSubClient, [this], newValue);
+  /// Set unread in this Conversation.
+  /// Callers should catch and handle IOException.
+  Future<void> setUnread(DocPubSubUpdate pubSubClient, bool unread) {
+    return setUnreadForAll(pubSubClient, [this], unread);
   }
 
-  static Future<bool> setUnread_forAll(DocPubSubUpdate pubSubClient, List<Conversation> docs, bool newValue) async {
+  /// Set unread in each Conversation.
+  /// Callers should catch and handle IOException.
+  static Future<void> setUnreadForAll(DocPubSubUpdate pubSubClient, List<Conversation> docs, bool unread) async {
     final docIdsToPublish = <String>[];
     for (var doc in docs) {
-      if (doc.unread != newValue) {
-        doc.unread = newValue;
+      if (doc.unread != unread) {
+        doc.unread = unread;
         docIdsToPublish.add(doc.docId);
       }
     }
-    if (docIdsToPublish.isEmpty) return true;
-    return pubSubClient.publishDocChange(collectionName, docIdsToPublish, {"unread": newValue});
+    if (docIdsToPublish.isEmpty) return;
+    return pubSubClient.publishDocChange(collectionName, docIdsToPublish, {"unread": unread});
   }
 }
 typedef void ConversationCollectionListener(List<Conversation> changes);
@@ -278,20 +298,24 @@ class SuggestedReply {
     };
   }
 
-  Future<bool> setTranslation(DocPubSubUpdate pubSubClient, String newValue) {
-    return setTranslation_forAll(pubSubClient, [this], newValue);
+  /// Set translation in this SuggestedReply.
+  /// Callers should catch and handle IOException.
+  Future<void> setTranslation(DocPubSubUpdate pubSubClient, String translation) {
+    return setTranslationForAll(pubSubClient, [this], translation);
   }
 
-  static Future<bool> setTranslation_forAll(DocPubSubUpdate pubSubClient, List<SuggestedReply> docs, String newValue) async {
+  /// Set translation in each SuggestedReply.
+  /// Callers should catch and handle IOException.
+  static Future<void> setTranslationForAll(DocPubSubUpdate pubSubClient, List<SuggestedReply> docs, String translation) async {
     final docIdsToPublish = <String>[];
     for (var doc in docs) {
-      if (doc.translation != newValue) {
-        doc.translation = newValue;
+      if (doc.translation != translation) {
+        doc.translation = translation;
         docIdsToPublish.add(doc.docId);
       }
     }
-    if (docIdsToPublish.isEmpty) return true;
-    return pubSubClient.publishDocChange(collectionName, docIdsToPublish, {"translation": newValue});
+    if (docIdsToPublish.isEmpty) return;
+    return pubSubClient.publishDocChange(collectionName, docIdsToPublish, {"translation": translation});
   }
 }
 typedef void SuggestedReplyCollectionListener(List<SuggestedReply> changes);
@@ -516,14 +540,17 @@ abstract class DocBatchUpdate {
 /// A pub/sub based mechanism for updating documents
 abstract class DocPubSubUpdate {
   /// Publish the given document list/set additions,
-  /// where [additions] is a mapping of field name to new values to be added to the list/set
-  Future<bool> publishDocAdd(String collectionName, List<String> docIds, Map<String, List<dynamic>> additions);
+  /// where [additions] is a mapping of field name to new values to be added to the list/set.
+  /// Callers should catch and handle IOException.
+  Future<void> publishDocAdd(String collectionName, List<String> docIds, Map<String, List<dynamic>> additions);
 
   /// Publish the given document changes,
-  /// where [changes] is a mapping of field name to new value
-  Future<bool> publishDocChange(String collectionName, List<String> docIds, Map<String, dynamic> changes);
+  /// where [changes] is a mapping of field name to new value.
+  /// Callers should catch and handle IOException.
+  Future<void> publishDocChange(String collectionName, List<String> docIds, Map<String, dynamic> changes);
 
   /// Publish the given document list/set removals,
-  /// where [removals] is a mapping of field name to old values to be removed from the list/set
-  Future<bool> publishDocRemove(String collectionName, List<String> docIds, Map<String, List<dynamic>> removals);
+  /// where [removals] is a mapping of field name to old values to be removed from the list/set.
+  /// Callers should catch and handle IOException.
+  Future<void> publishDocRemove(String collectionName, List<String> docIds, Map<String, List<dynamic>> removals);
 }
