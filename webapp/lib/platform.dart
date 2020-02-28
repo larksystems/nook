@@ -107,7 +107,7 @@ void listenForMessageTags(TagCollectionListener listener) =>
 void listenForSuggestedReplies(SuggestedReplyCollectionListener listener) =>
     SuggestedReply.listen(_docStorage, listener);
 
-Future updateSuggestedReplyTranslation(SuggestedReply reply, String newText) {
+Future<void> updateSuggestedReplyTranslation(SuggestedReply reply, String newText) {
   log.verbose("Updating suggested reply translation ${reply.suggestedReplyId}, '$newText'");
   return reply.setTranslation(_pubsubInstance, newText);
 }
@@ -117,32 +117,31 @@ Future updateConversationMessages(Conversation conversation) {
   return conversation.updateMessages(_docStorage, conversation.documentPath, conversation.messages).commit();
 }
 
-Future updateNotes(Conversation conversation, String updatedText) {
+Future<void> updateNotes(Conversation conversation, String updatedText) {
   log.verbose("Updating conversation notes for ${conversation.deidentifiedPhoneNumber.value}");
   return conversation.setNotes(_pubsubInstance, updatedText);
 }
 
-Future updateUnread(List<Conversation> conversations, bool newValue) async {
+Future<void> updateUnread(List<Conversation> conversations, bool newValue) {
   log.verbose("Updating unread=$newValue for ${
     conversations.length == 1
       ? conversations[0].deidentifiedPhoneNumber.value
       : "${conversations.length} conversations"
   }");
-  if (conversations.isEmpty) return null;
   return Conversation.setUnread_forAll(_pubsubInstance, conversations, newValue);
 }
 
-Future addConversationTag(Conversation conversation, String tagId) {
+Future<void> addConversationTag(Conversation conversation, String tagId) {
   log.verbose("Adding tag $tagId to ${conversation.deidentifiedPhoneNumber.value}");
   return conversation.addToTagId(_pubsubInstance, tagId);
 }
 
-Future addConversationTag_forAll(List<Conversation> conversations, String tagId) {
+Future<void> addConversationTag_forAll(List<Conversation> conversations, String tagId) {
   log.verbose("Adding tag $tagId to ${conversations.length} conversations");
   return Conversation.addTagId_forAll(_pubsubInstance, conversations, tagId);
 }
 
-Future removeConversationTag(Conversation conversation, String tagId) {
+Future<void> removeConversationTag(Conversation conversation, String tagId) {
   log.verbose("Removing tag $tagId from ${conversation.deidentifiedPhoneNumber.value}");
   return conversation.removeFromTagId(_pubsubInstance, tagId);
 }

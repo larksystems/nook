@@ -2,6 +2,7 @@ library controller;
 
 import 'dart:async';
 import 'dart:collection';
+import 'dart:io';
 
 import 'logger.dart';
 import 'model.dart' as model;
@@ -313,7 +314,7 @@ void command(UIAction action, Data data) {
     case UIAction.removeConversationTag:
       ConversationTagData conversationTagData = data;
       model.Tag tag = conversationTags.singleWhere((tag) => tag.tagId == conversationTagData.tagId);
-      platform.removeConversationTag(activeConversation, tag.tagId);
+      platform.removeConversationTag(activeConversation, tag.tagId).catchError(showAndLogError);
       view.conversationPanelView.removeTag(tag.tagId);
       if (filterTags.contains(tag)) {
         // Select the next conversation in the list
@@ -382,7 +383,7 @@ void command(UIAction action, Data data) {
     case UIAction.markConversationRead:
       ConversationData conversationData = data;
       view.conversationListPanelView.markConversationRead(conversationData.deidentifiedPhoneNumber);
-      platform.updateUnread([activeConversation], false);
+      platform.updateUnread([activeConversation], false).catchError(showAndLogError);
       break;
     case UIAction.markConversationUnread:
       if (multiSelectMode) {
@@ -393,10 +394,10 @@ void command(UIAction action, Data data) {
             view.conversationListPanelView.markConversationUnread(conversation.deidentifiedPhoneNumber.value);
           }
         }
-        platform.updateUnread(markedConversations, true);
+        platform.updateUnread(markedConversations, true).catchError(showAndLogError);
       } else {
         view.conversationListPanelView.markConversationUnread(activeConversation.deidentifiedPhoneNumber.value);
-        platform.updateUnread([activeConversation], true);
+        platform.updateUnread([activeConversation], true).catchError(showAndLogError);
       }
       break;
     case UIAction.showConversation:
@@ -662,7 +663,7 @@ void sendMultiReply(model.SuggestedReply reply, List<model.Conversation> convers
 
 void setConversationTag(model.Tag tag, model.Conversation conversation) {
   if (!conversation.tagIds.contains(tag.tagId)) {
-    platform.addConversationTag(conversation, tag.tagId);
+    platform.addConversationTag(conversation, tag.tagId).catchError(showAndLogError);
     view.conversationPanelView.addTags(new view.ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
   }
 }
@@ -670,7 +671,7 @@ void setConversationTag(model.Tag tag, model.Conversation conversation) {
 void setMultiConversationTag(model.Tag tag, List<model.Conversation> conversations) {
   conversations.forEach((conversation) {
     if (!conversation.tagIds.contains(tag.tagId)) {
-      platform.addConversationTag(conversation, tag.tagId);
+      platform.addConversationTag(conversation, tag.tagId).catchError(showAndLogError);
       if (conversation == activeConversation) {
         view.conversationPanelView.addTags(new view.ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
       }
@@ -750,7 +751,7 @@ class SaveTextAction {
     }
     try {
       var newText = _newText;
-      await _saveText(newText);
+      await _saveText(newText).catchError(showAndLogError);
       view.showNormalStatus('saved');
       log.verbose('note saved: $_changeId');
     } catch (e, s) {
@@ -761,3 +762,16 @@ class SaveTextAction {
 }
 
 typedef Future<dynamic> SaveText(String newText);
+
+void showAndLogError(error, trace) {
+  log.error("$error${trace != null ? "\n$trace" : ""}");
+  String errMsg;
+  if (error is IOException) {
+    errMsg = "A network problem occurred: ${error.runtimeType}";
+  } else if (error is Exception) {
+    errMsg = "An internal error occurred: ${error.runtimeType}";
+  } else {
+    errMsg = "$error";
+  }
+  view.snackbarView.showSnackbar(errMsg, view.SnackbarNotificationType.error);
+}
