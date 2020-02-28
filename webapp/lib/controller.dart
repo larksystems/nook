@@ -425,15 +425,23 @@ void command(UIAction action, Data data) {
         );
       } else if (data is TranslationData) {
         TranslationData messageTranslation = data;
-        var message = activeConversation.messages[messageTranslation.messageIndex];
-        platform.setMessageTranslation(activeConversation, message, messageTranslation.translationText);
+        var conversation = activeConversation;
+        var message = conversation.messages[messageTranslation.messageIndex];
+        SaveTextAction.textChange(
+          "${conversation.docId}.message-${messageTranslation.messageIndex}.translation",
+          messageTranslation.translationText,
+          (newText) {
+            return platform.setMessageTranslation(conversation, message, newText);
+          },
+        );
       }
       break;
     case UIAction.updateNote:
+      var conversation = activeConversation;
       SaveTextAction.textChange(
-        "${activeConversation.docId}.notes",
+        "${conversation.docId}.notes",
         (data as NoteData).noteText,
-        (newText) => platform.updateNotes(activeConversation, newText),
+        (newText) => platform.updateNotes(conversation, newText),
       );
       break;
     case UIAction.userSignedOut:
@@ -681,7 +689,7 @@ void setMultiConversationTag(model.Tag tag, List<model.Conversation> conversatio
 
 void setMessageTag(model.Tag tag, model.Message message, model.Conversation conversation) {
   if (!message.tagIds.contains(tag.tagId)) {
-    platform.addMessageTag(activeConversation, message, tag.tagId);
+    platform.addMessageTag(activeConversation, message, tag.tagId).catchError(showAndLogError);
     view.conversationPanelView
       .messageViewAtIndex(conversation.messages.indexOf(message))
       .addTag(new view.MessageTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
