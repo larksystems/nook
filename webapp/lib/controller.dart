@@ -329,8 +329,7 @@ void command(UIAction action, Data data) {
     case UIAction.removeMessageTag:
       MessageTagData messageTagData = data;
       var message = activeConversation.messages[messageTagData.messageIndex];
-      message.tagIds.removeWhere((id) => id == messageTagData.tagId);
-      platform.updateConversationMessages(activeConversation);
+      platform.removeMessageTag(activeConversation, message, messageTagData.tagId).catchError(showAndLogError);
       view.conversationPanelView
         .messageViewAtIndex(messageTagData.messageIndex)
         .removeTag(messageTagData.tagId);
@@ -426,8 +425,8 @@ void command(UIAction action, Data data) {
         );
       } else if (data is TranslationData) {
         TranslationData messageTranslation = data;
-        activeConversation.messages[messageTranslation.messageIndex].translation = messageTranslation.translationText;
-        platform.updateConversationMessages(activeConversation);
+        var message = activeConversation.messages[messageTranslation.messageIndex];
+        platform.setMessageTranslation(activeConversation, message, messageTranslation.translationText);
       }
       break;
     case UIAction.updateNote:
@@ -682,8 +681,7 @@ void setMultiConversationTag(model.Tag tag, List<model.Conversation> conversatio
 
 void setMessageTag(model.Tag tag, model.Message message, model.Conversation conversation) {
   if (!message.tagIds.contains(tag.tagId)) {
-    message.tagIds.add(tag.tagId);
-    platform.updateConversationMessages(activeConversation);
+    platform.addMessageTag(activeConversation, message, tag.tagId);
     view.conversationPanelView
       .messageViewAtIndex(conversation.messages.indexOf(message))
       .addTag(new view.MessageTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));

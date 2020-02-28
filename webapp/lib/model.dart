@@ -44,7 +44,57 @@ extension ConversationUtil on g.Conversation {
   }
 }
 
-UnmodifiableListView<g.Tag> tagIdsToTags(Iterable<String> tagIds, Iterable<g.Tag> allTags) {
+extension MessageUtil on g.Message {
+  /// Add [tagId] to tagIds in this Message.
+  /// Callers should catch and handle IOException.
+  Future<void> addTagId(g.DocPubSubUpdate pubSubClient,
+      g.Conversation conversation, String tagId) async {
+    if (tagIds.contains(tagId)) return;
+    tagIds.add(tagId);
+    return pubSubClient.publishDocAdd(g.Conversation.collectionName, <String>[
+      conversation.docId
+    ], {
+      "messages/${_messageIndex(conversation)}/tags": [tagId]
+    });
+  }
+
+  /// Remove [tagId] from tagIds in this Message.
+  /// Callers should catch and handle IOException.
+  Future<void> removeTagId(g.DocPubSubUpdate pubSubClient,
+      g.Conversation conversation, String tagId) async {
+    if (!tagIds.contains(tagId)) return;
+    tagIds.remove(tagId);
+    return pubSubClient
+        .publishDocRemove(g.Conversation.collectionName, <String>[
+      conversation.docId
+    ], {
+      "messages/${_messageIndex(conversation)}/tags": [tagId]
+    });
+  }
+
+  Future<void> setTranslation(g.DocPubSubUpdate pubSubClient,
+      g.Conversation conversation, String newTranslation) async {
+    if (translation == newTranslation) return;
+    translation = newTranslation;
+    return pubSubClient.publishDocChange(
+        g.Conversation.collectionName, <String>[
+      conversation.docId
+    ], {
+      "messages/${_messageIndex(conversation)}/translation": newTranslation
+    });
+  }
+
+  /// Return the index of this message within the given conversations list of messages.
+  int _messageIndex(g.Conversation conversation) {
+    // TODO Consider switching to a message-id independent of conversation
+    var index = conversation.messages.indexOf(this);
+    if (index < 0) throw Exception("Cannot find message in conversation");
+    return index;
+  }
+}
+
+UnmodifiableListView<g.Tag> tagIdsToTags(
+    Iterable<String> tagIds, Iterable<g.Tag> allTags) {
   var tags = <g.Tag>[];
   for (var id in tagIds) {
     var tag = allTags.firstWhere((tag) => tag.tagId == id, orElse: () {

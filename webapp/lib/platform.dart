@@ -112,9 +112,19 @@ Future<void> updateSuggestedReplyTranslation(SuggestedReply reply, String newTex
   return reply.setTranslation(_pubsubInstance, newText);
 }
 
-Future updateConversationMessages(Conversation conversation) {
-  log.verbose("Updating conversation messages for ${conversation.docId}");
-  return conversation.updateMessages(_docStorage, conversation.documentPath, conversation.messages).commit();
+Future<void> addMessageTag(Conversation conversation, Message message, String tagId) {
+  log.verbose("Adding tag $tagId to message in conversation ${conversation.docId}");
+  return message.addTagId(_pubsubInstance, conversation, tagId);
+}
+
+Future<void> removeMessageTag(Conversation conversation, Message message, String tagId) {
+  log.verbose("Removing tag $tagId from message in conversation ${conversation.docId}");
+  return message.removeTagId(_pubsubInstance, conversation, tagId);
+}
+
+Future<void> setMessageTranslation(Conversation conversation, Message message, String translation) {
+  log.verbose("Set translation for message in conversation ${conversation.docId}");
+  return message.setTranslation(_pubsubInstance, conversation, translation);
 }
 
 Future<void> updateNotes(Conversation conversation, String updatedText) {
