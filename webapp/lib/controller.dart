@@ -4,6 +4,8 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
 
+import 'package:nook/pubsub.dart';
+
 import 'logger.dart';
 import 'model.dart' as model;
 import 'platform.dart' as platform;
@@ -766,7 +768,9 @@ typedef Future<dynamic> SaveText(String newText);
 void showAndLogError(error, trace) {
   log.error("$error${trace != null ? "\n$trace" : ""}");
   String errMsg;
-  if (error is IOException) {
+  if (error is PubSubException) {
+    errMsg = "A network problem occurred: ${error.message}";
+  } else if (error is IOException) {
     errMsg = "A network problem occurred: ${error.runtimeType}";
   } else if (error is Exception) {
     errMsg = "An internal error occurred: ${error.runtimeType}";
