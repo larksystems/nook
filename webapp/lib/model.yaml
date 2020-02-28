@@ -40,9 +40,9 @@ SuggestedReply:
 
 Tag:
   firebaseDocId: 'string tagId'
-  text: 'updatable string'
-  type: 'updatable TagType, TagType.Normal'
-  shortcut: 'updatable string'
+  text: 'string'
+  type: 'TagType, TagType.Normal'
+  shortcut: 'string'
 
 TagType:
   dartType: 'enum'

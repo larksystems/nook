@@ -349,27 +349,6 @@ class Tag {
       if (shortcut != null) 'shortcut': shortcut,
     };
   }
-
-  DocBatchUpdate updateText(DocStorage docStorage, String documentPath, String newValue, [DocBatchUpdate batch]) {
-    text = newValue;
-    batch ??= docStorage.batch();
-    batch.update(documentPath, data: {'text': newValue});
-    return batch;
-  }
-
-  DocBatchUpdate updateType(DocStorage docStorage, String documentPath, TagType newValue, [DocBatchUpdate batch]) {
-    type = newValue;
-    batch ??= docStorage.batch();
-    batch.update(documentPath, data: {'type': newValue?.toString()});
-    return batch;
-  }
-
-  DocBatchUpdate updateShortcut(DocStorage docStorage, String documentPath, String newValue, [DocBatchUpdate batch]) {
-    shortcut = newValue;
-    batch ??= docStorage.batch();
-    batch.update(documentPath, data: {'shortcut': newValue});
-    return batch;
-  }
 }
 typedef void TagCollectionListener(List<Tag> changes);
 
