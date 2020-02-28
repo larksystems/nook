@@ -46,6 +46,12 @@ enum UIAction {
   enableMultiSelectMode,
   disableMultiSelectMode,
   updateSystemMessages,
+  switchView,
+}
+
+enum UIView {
+  conversations,
+  outbox,
 }
 
 class Data {}
@@ -140,9 +146,15 @@ class SystemMessagesData extends Data {
   SystemMessagesData(this.messages);
 }
 
+class SwitchViewData extends Data {
+  UIView view;
+  SwitchViewData(this.view);
+}
+
 List<model.SystemMessage> systemMessages;
 
 UIActionObject actionObjectState;
+UIView viewState;
 
 Set<model.Conversation> conversations;
 Set<model.Conversation> filteredConversations;
@@ -159,6 +171,8 @@ model.User signedInUser;
 bool multiSelectMode;
 
 void init() async {
+  viewState = UIView.conversations;
+  actionObjectState = UIActionObject.conversation;
   view.init();
   await platform.init();
 }
@@ -180,7 +194,6 @@ void initUI() {
       conversationTags.removeWhere((tag) => updatedIds.contains(tag.tagId));
       conversationTags.addAll(tags);
       _populateFilterTagsMenu(conversationTags);
-
       if (actionObjectState == UIActionObject.conversation) {
         _populateTagPanelView(conversationTags, TagReceiver.Conversation);
       }
@@ -258,6 +271,25 @@ model.Conversation nextElement(Iterable<model.Conversation> conversations, model
 }
 
 void command(UIAction action, Data data) {
+  if (action == UIAction.switchView) {
+    SwitchViewData viewData = data;
+    if (viewState == viewData.view) return;
+    viewState = viewData.view;
+    view.showSignedInView(viewState);
+    return;
+  }
+
+  switch (viewState) {
+    case UIView.conversations:
+      conversationCommand(action, data);
+      break;
+    case UIView.outbox:
+      outboxCommand(action, data);
+      break;
+  }
+}
+
+void conversationCommand(UIAction action, Data data) {
   // For most actions, a conversation needs to be active.
   // Early exist if it's not one of the actions valid without an active conversation.
   if (activeConversation == null &&
@@ -438,7 +470,7 @@ void command(UIAction action, Data data) {
     case UIAction.userSignedOut:
       signedInUser = null;
       view.authHeaderView.signOut();
-      view.initSignedOutView();
+      view.showSignedOutView();
       break;
     case UIAction.userSignedIn:
       UserData userData = data;
@@ -446,7 +478,7 @@ void command(UIAction action, Data data) {
         ..userName = userData.displayName
         ..userEmail = userData.email;
       view.authHeaderView.signIn(userData.displayName, userData.photoUrl);
-      view.initSignedInView();
+      view.showSignedInView(viewState);
       initUI();
       break;
     case UIAction.signInButtonClicked:
@@ -538,6 +570,10 @@ void command(UIAction action, Data data) {
       break;
     default:
   }
+}
+
+void outboxCommand(UIAction action, Data data) {
+  print('outbox commands not implemented yet');
 }
 
 void updateFilteredConversationList() {
