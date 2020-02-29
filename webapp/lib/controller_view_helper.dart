@@ -19,7 +19,7 @@ void _populateConversationListPanelView(Set<model.Conversation> conversations) {
     for (var conversation in conversations) {
       view.conversationListPanelView.addConversation(
           new view.ConversationSummary(
-              conversation.deidentifiedPhoneNumber.value,
+              conversation.docId,
               conversation.messages.last.text,
               conversation.unread)
       );
@@ -30,8 +30,8 @@ void _populateConversationListPanelView(Set<model.Conversation> conversations) {
 void _populateConversationPanelView(model.Conversation conversation) {
   view.conversationPanelView.clear();
   view.conversationPanelView
-    ..deidentifiedPhoneNumber = conversation.deidentifiedPhoneNumber.value
-    ..deidentifiedPhoneNumberShort = conversation.deidentifiedPhoneNumber.shortValue
+    ..deidentifiedPhoneNumber = conversation.docId
+    ..deidentifiedPhoneNumberShort = conversation.shortDeidentifiedPhoneNumber
     ..demographicsInfo = conversation.demographicsInfo.values.join(', ');
   for (var tag in model.tagIdsToTags(conversation.tagIds, conversationTags)) {
     view.conversationPanelView.addTags(new view.ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
@@ -47,7 +47,7 @@ void _populateConversationPanelView(model.Conversation conversation) {
       new view.MessageView(
         message.text,
         message.datetime,
-        conversation.deidentifiedPhoneNumber.value,
+        conversation.docId,
         i,
         translation: message.translation,
         incoming: message.direction == model.MessageDirection.In,

@@ -112,27 +112,37 @@ Future<void> updateSuggestedReplyTranslation(SuggestedReply reply, String newTex
   return reply.setTranslation(_pubsubInstance, newText);
 }
 
-Future updateConversationMessages(Conversation conversation) {
-  log.verbose("Updating conversation messages for ${conversation.deidentifiedPhoneNumber.value}");
-  return conversation.updateMessages(_docStorage, conversation.documentPath, conversation.messages).commit();
+Future<void> addMessageTag(Conversation conversation, Message message, String tagId) {
+  log.verbose("Adding tag $tagId to message in conversation ${conversation.docId}");
+  return message.addTagId(_pubsubInstance, conversation, tagId);
+}
+
+Future<void> removeMessageTag(Conversation conversation, Message message, String tagId) {
+  log.verbose("Removing tag $tagId from message in conversation ${conversation.docId}");
+  return message.removeTagId(_pubsubInstance, conversation, tagId);
+}
+
+Future<void> setMessageTranslation(Conversation conversation, Message message, String translation) {
+  log.verbose("Set translation for message in conversation ${conversation.docId}");
+  return message.setTranslation(_pubsubInstance, conversation, translation);
 }
 
 Future<void> updateNotes(Conversation conversation, String updatedText) {
-  log.verbose("Updating conversation notes for ${conversation.deidentifiedPhoneNumber.value}");
+  log.verbose("Updating conversation notes for ${conversation.docId}");
   return conversation.setNotes(_pubsubInstance, updatedText);
 }
 
 Future<void> updateUnread(List<Conversation> conversations, bool newValue) {
   log.verbose("Updating unread=$newValue for ${
     conversations.length == 1
-      ? conversations[0].deidentifiedPhoneNumber.value
+      ? conversations[0].docId
       : "${conversations.length} conversations"
   }");
   return Conversation.setUnreadForAll(_pubsubInstance, conversations, newValue);
 }
 
 Future<void> addConversationTag(Conversation conversation, String tagId) {
-  log.verbose("Adding tag $tagId to ${conversation.deidentifiedPhoneNumber.value}");
+  log.verbose("Adding tag $tagId to ${conversation.docId}");
   return conversation.addTagId(_pubsubInstance, tagId);
 }
 
@@ -142,6 +152,6 @@ Future<void> addConversationTag_forAll(List<Conversation> conversations, String 
 }
 
 Future<void> removeConversationTag(Conversation conversation, String tagId) {
-  log.verbose("Removing tag $tagId from ${conversation.deidentifiedPhoneNumber.value}");
+  log.verbose("Removing tag $tagId from ${conversation.docId}");
   return conversation.removeTagId(_pubsubInstance, tagId);
 }
