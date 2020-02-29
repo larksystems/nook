@@ -329,8 +329,7 @@ void command(UIAction action, Data data) {
     case UIAction.removeMessageTag:
       MessageTagData messageTagData = data;
       var message = activeConversation.messages[messageTagData.messageIndex];
-      message.tagIds.removeWhere((id) => id == messageTagData.tagId);
-      platform.updateConversationMessages(activeConversation);
+      platform.removeMessageTag(activeConversation, message, messageTagData.tagId).catchError(showAndLogError);
       view.conversationPanelView
         .messageViewAtIndex(messageTagData.messageIndex)
         .removeTag(messageTagData.tagId);
@@ -426,16 +425,26 @@ void command(UIAction action, Data data) {
         );
       } else if (data is TranslationData) {
         TranslationData messageTranslation = data;
-        activeConversation.messages[messageTranslation.messageIndex].translation = messageTranslation.translationText;
-        platform.updateConversationMessages(activeConversation);
+        var conversation = activeConversation;
+        var message = conversation.messages[messageTranslation.messageIndex];
+        SaveTextAction.textChange(
+          "${conversation.docId}.message-${messageTranslation.messageIndex}.translation",
+          messageTranslation.translationText,
+          (newText) {
+            return platform.setMessageTranslation(conversation, message, newText);
+          },
+        );
       }
       break;
-    case UIAction.updateNote:
-      SaveTextAction.textChange(
-        "${activeConversation.docId}.notes",
-        (data as NoteData).noteText,
-        (newText) => platform.updateNotes(activeConversation, newText),
-      );
+    case UIAction.updateNote: {
+        // inside block to ensure conversation is a local/captured var
+        var conversation = activeConversation;
+        SaveTextAction.textChange(
+          "${conversation.docId}.notes",
+          (data as NoteData).noteText,
+          (newText) => platform.updateNotes(conversation, newText),
+        );
+      }
       break;
     case UIAction.userSignedOut:
       signedInUser = null;
@@ -682,8 +691,7 @@ void setMultiConversationTag(model.Tag tag, List<model.Conversation> conversatio
 
 void setMessageTag(model.Tag tag, model.Message message, model.Conversation conversation) {
   if (!message.tagIds.contains(tag.tagId)) {
-    message.tagIds.add(tag.tagId);
-    platform.updateConversationMessages(activeConversation);
+    platform.addMessageTag(activeConversation, message, tag.tagId).catchError(showAndLogError);
     view.conversationPanelView
       .messageViewAtIndex(conversation.messages.indexOf(message))
       .addTag(new view.MessageTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
