@@ -104,13 +104,6 @@ class Conversation {
     return pubSubClient.publishDocRemove(collectionName, docIdsToPublish, {"tags": [tagId]});
   }
 
-  DocBatchUpdate updateMessages(DocStorage docStorage, String documentPath, List<Message> newValue, [DocBatchUpdate batch]) {
-    messages = newValue;
-    batch ??= docStorage.batch();
-    batch.update(documentPath, data: {'messages': newValue?.map((elem) => elem?.toData())?.toList()});
-    return batch;
-  }
-
   /// Set notes in this Conversation.
   /// Callers should catch and handle IOException.
   Future<void> setNotes(DocPubSubUpdate pubSubClient, String notes) {
@@ -181,20 +174,6 @@ class Message {
       if (text != null) 'text': text,
       if (translation != null) 'translation': translation,
     };
-  }
-
-  DocBatchUpdate updateTagIds(DocStorage docStorage, String documentPath, List<String> newValue, [DocBatchUpdate batch]) {
-    tagIds = newValue;
-    batch ??= docStorage.batch();
-    batch.update(documentPath, data: {'tags': newValue});
-    return batch;
-  }
-
-  DocBatchUpdate updateTranslation(DocStorage docStorage, String documentPath, String newValue, [DocBatchUpdate batch]) {
-    translation = newValue;
-    batch ??= docStorage.batch();
-    batch.update(documentPath, data: {'translation': newValue});
-    return batch;
   }
 }
 typedef void MessageCollectionListener(List<Message> changes);
@@ -348,27 +327,6 @@ class Tag {
       if (type != null) 'type': type.toString(),
       if (shortcut != null) 'shortcut': shortcut,
     };
-  }
-
-  DocBatchUpdate updateText(DocStorage docStorage, String documentPath, String newValue, [DocBatchUpdate batch]) {
-    text = newValue;
-    batch ??= docStorage.batch();
-    batch.update(documentPath, data: {'text': newValue});
-    return batch;
-  }
-
-  DocBatchUpdate updateType(DocStorage docStorage, String documentPath, TagType newValue, [DocBatchUpdate batch]) {
-    type = newValue;
-    batch ??= docStorage.batch();
-    batch.update(documentPath, data: {'type': newValue?.toString()});
-    return batch;
-  }
-
-  DocBatchUpdate updateShortcut(DocStorage docStorage, String documentPath, String newValue, [DocBatchUpdate batch]) {
-    shortcut = newValue;
-    batch ??= docStorage.batch();
-    batch.update(documentPath, data: {'shortcut': newValue});
-    return batch;
   }
 }
 typedef void TagCollectionListener(List<Tag> changes);
