@@ -2,7 +2,6 @@ library controller;
 
 import 'dart:async';
 import 'dart:collection';
-import 'dart:io';
 
 import 'logger.dart';
 import 'model.dart' as model;
@@ -775,8 +774,6 @@ void showAndLogError(error, trace) {
   String errMsg;
   if (error is PubSubException) {
     errMsg = "A network problem occurred: ${error.message}";
-  } else if (error is IOException) {
-    errMsg = "A network problem occurred: ${error.runtimeType}";
   } else if (error is Exception) {
     errMsg = "An internal error occurred: ${error.runtimeType}";
   } else {
