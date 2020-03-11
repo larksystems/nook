@@ -1,0 +1,45 @@
+{
+  "conversationTags":
+  [
+    {
+      "text": "meta: ESCALATE",
+      "shortcut": "e",
+      "type": "important"
+    },
+    {
+      "text": "meta: question",
+      "shortcut": "q",
+      "type": "important"
+    },
+    {
+      "text": "meta: answer",
+      "shortcut": "a",
+      "type": "important"
+    },
+    {
+      "text": "knowledge",
+      "shortcut": "k",
+      "type": "normal"
+    },
+    {
+      "text": "attitude",
+      "shortcut": "m",
+      "type": "normal"
+    },
+    {
+      "text": "behaviour",
+      "shortcut": "o",
+      "type": "normal"
+    },
+    {
+      "text": "STOP",
+      "shortcut": "",
+      "type": "important"
+    },
+    {
+      "text": "STOP",
+      "shortcut": "",
+      "type": "important"
+    }
+  ]
+}
