@@ -1,6 +1,5 @@
 import "dart:async";
 import "dart:convert";
-import 'dart:io';
 
 import 'package:firebase/firebase.dart' as firebase;
 import 'package:http/browser_client.dart';
@@ -79,7 +78,7 @@ class PubSubClient extends DocPubSubUpdate {
   }
 }
 
-class PubSubException implements IOException {
+class PubSubException implements Exception {
   final String message;
 
   static fromResponse(Response response) =>
