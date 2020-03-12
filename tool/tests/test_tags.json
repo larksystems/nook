@@ -9,12 +9,12 @@
     {
       "text": "meta: question",
       "shortcut": "q",
-      "type": "important"
+      "type": "normal"
     },
     {
       "text": "meta: answer",
       "shortcut": "a",
-      "type": "important"
+      "type": "normal"
     },
     {
       "text": "knowledge",
@@ -30,11 +30,6 @@
       "text": "behaviour",
       "shortcut": "o",
       "type": "normal"
-    },
-    {
-      "text": "STOP",
-      "shortcut": "",
-      "type": "important"
     },
     {
       "text": "STOP",
