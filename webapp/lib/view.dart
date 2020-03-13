@@ -828,6 +828,7 @@ class TagPanelView {
   DivElement _tags;
   DivElement _tagList;
   DivElement _statusPanel;
+  InputElement _hideTagsCheckbox;
   Text _statusText;
 
   AddActionView _addTag;
@@ -838,8 +839,19 @@ class TagPanelView {
 
     var panelTitle = new DivElement()
       ..classes.add('panel-title')
-      ..text = TAG_PANEL_TITLE;
+      ..classes.add('panel-title--multiple-cols');
     tagPanel.append(panelTitle);
+
+    _hideTagsCheckbox = new InputElement(type: 'checkbox');
+    _hideTagsCheckbox.onChange.listen((_) => showAgeTags(!_hideTagsCheckbox.checked));
+
+    panelTitle
+      ..append(
+        new DivElement()..text = TAG_PANEL_TITLE)
+      ..append(
+        new DivElement()
+          ..append(_hideTagsCheckbox)
+          ..append(new SpanElement()..text = 'Hide age tags'));
 
     _tags = new DivElement()
       ..classes.add('tags')
@@ -861,6 +873,9 @@ class TagPanelView {
 
   void addTag(ActionView action) {
     _tagList.append(action.action);
+    if (isAgeTag(action.action) && _hideTagsCheckbox.checked) {
+      action.action.classes.toggle('action--hide', true);
+    }
   }
 
   void clear() {
@@ -869,6 +884,27 @@ class TagPanelView {
       _tagList.firstChild.remove();
     }
     assert(_tagList.children.length == 0);
+  }
+
+  void showAgeTags(bool show) {
+    print('going through tags...');
+    print(show);
+    for(DivElement tag in _tagList.children) {
+      if (isAgeTag(tag) && !show) {
+        tag.classes.toggle('action--hide', true);
+      } else {
+        tag.classes.toggle('action--hide', false);
+      }
+    }
+  }
+
+  bool isAgeTag(DivElement tag) {
+    DivElement tagDescription = tag.querySelector('.action__description');
+    if (tagDescription == null) {
+      log.warning('Was expecting tag with id ${tag.dataset['id']} to have a description, skipping');
+      return false;
+    }
+    return int.tryParse(tag.querySelector('.action__description').text) != null;
   }
 }
 
