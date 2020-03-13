@@ -62,6 +62,7 @@ with open(INPUT_PATH, 'r') as f:
 
 if CONTENT_TYPE == "suggested_replies":
     # Make sure that the fields that the Firestore model expects exist
+    # TODO(mariana): Move to using a validator
     assert len(data_dict.keys()) == 1
     suggested_replies_collection = "suggestedReplies"
     suggested_replies = data_dict[suggested_replies_collection]
@@ -85,6 +86,7 @@ if CONTENT_TYPE == "suggested_replies":
 elif CONTENT_TYPE == "conversation_tags" or CONTENT_TYPE == "message_tags":
     content_type = CONTENT_TYPE.replace("_tags", "")
     # Make sure that the fields that the Firestore model expects exist
+    # TODO(mariana): Move to using a validator
     assert len(data_dict.keys()) == 1
     tags_collection = f"{content_type}Tags"
     tags = data_dict[tags_collection]
