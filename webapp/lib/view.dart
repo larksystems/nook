@@ -843,7 +843,7 @@ class TagPanelView {
     tagPanel.append(panelTitle);
 
     _hideTagsCheckbox = new InputElement(type: 'checkbox');
-    _hideTagsCheckbox.onChange.listen((_) => showAgeTags(!_hideTagsCheckbox.checked));
+    _hideTagsCheckbox.onChange.listen((_) => filterAllTags(!_hideTagsCheckbox.checked));
 
     panelTitle
       ..append(
@@ -886,15 +886,13 @@ class TagPanelView {
     assert(_tagList.children.length == 0);
   }
 
-  void showAgeTags(bool show) {
-    print('going through tags...');
-    print(show);
+  void filterAllTags(bool showAll) {
     for(DivElement tag in _tagList.children) {
-      if (isAgeTag(tag) && !show) {
+      if (!showAll && isAgeTag(tag)) {
         tag.classes.toggle('action--hide', true);
-      } else {
-        tag.classes.toggle('action--hide', false);
+        continue;
       }
+      tag.classes.toggle('action--hide', false);
     }
   }
 
