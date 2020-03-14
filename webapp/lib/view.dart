@@ -896,6 +896,7 @@ class TagPanelView {
     }
   }
 
+  // TODO(mariana): This is currently a workaround to a proper tagging management system
   bool isAgeTag(DivElement tag) {
     DivElement tagDescription = tag.querySelector('.action__description');
     if (tagDescription == null) {
