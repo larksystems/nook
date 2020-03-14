@@ -20,7 +20,7 @@ void _populateConversationListPanelView(Set<model.Conversation> conversations) {
       view.conversationListPanelView.addConversation(
           new view.ConversationSummary(
               conversation.docId,
-              conversation.messages.last.text,
+              conversation.messages.first.text,
               conversation.unread)
       );
     }
