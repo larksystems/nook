@@ -385,6 +385,7 @@ final DateFormat _hourFormat = new DateFormat('HH:mm');
 
 String _formatDateTime(DateTime dateTime) {
   DateTime now = DateTime.now();
+  return now.toIso8601String(); // HACK(mariana): Temporary fix to have a sortable timestamp for each message
   DateTime localDateTime = dateTime.toLocal();
 
   if (_dateFormat.format(now) == _dateFormat.format(localDateTime)) {
@@ -705,13 +706,24 @@ class ConversationSummary with LazyListViewItem {
     var summaryMessage = new DivElement()
       ..classes.add('summary-message')
       ..dataset['id'] = deidentifiedPhoneNumber
-      ..text = _text
       ..onClick.listen((_) => command(UIAction.showConversation, new ConversationData(deidentifiedPhoneNumber)));
     if (_selected) conversationSummary.classes.add('conversation-list__item--selected');
     if (_unread) conversationSummary.classes.add('conversation-list__item--unread');
+    summaryMessage
+      ..append(
+        new DivElement()
+          ..classes.add('summary-message__id')
+          ..text = _shortDeidentifiedPhoneNumber)
+      ..append(
+        new DivElement()
+          ..classes.add('summary-message__text')
+          ..text = _text);
     conversationSummary.append(summaryMessage);
     return conversationSummary;
   }
+
+  // HACK(mariana): This should get extracted from the model as it gets computed there for the single conversation view
+  String get _shortDeidentifiedPhoneNumber => deidentifiedPhoneNumber.split('uuid-')[1].split('-')[0];
 
   @override
   void disposeElement() {
@@ -828,6 +840,7 @@ class TagPanelView {
   DivElement _tags;
   DivElement _tagList;
   DivElement _statusPanel;
+  InputElement _hideTagsCheckbox;
   Text _statusText;
 
   AddActionView _addTag;
@@ -838,8 +851,19 @@ class TagPanelView {
 
     var panelTitle = new DivElement()
       ..classes.add('panel-title')
-      ..text = TAG_PANEL_TITLE;
+      ..classes.add('panel-title--multiple-cols');
     tagPanel.append(panelTitle);
+
+    _hideTagsCheckbox = new InputElement(type: 'checkbox');
+    _hideTagsCheckbox.onChange.listen((_) => filterAllTags(!_hideTagsCheckbox.checked));
+
+    panelTitle
+      ..append(
+        new DivElement()..text = TAG_PANEL_TITLE)
+      ..append(
+        new DivElement()
+          ..append(_hideTagsCheckbox)
+          ..append(new SpanElement()..text = 'Hide age tags'));
 
     _tags = new DivElement()
       ..classes.add('tags')
@@ -861,6 +885,9 @@ class TagPanelView {
 
   void addTag(ActionView action) {
     _tagList.append(action.action);
+    if (isAgeTag(action.action) && _hideTagsCheckbox.checked) {
+      action.action.classes.toggle('action--hide', true);
+    }
   }
 
   void clear() {
@@ -869,6 +896,26 @@ class TagPanelView {
       _tagList.firstChild.remove();
     }
     assert(_tagList.children.length == 0);
+  }
+
+  void filterAllTags(bool showAll) {
+    for(DivElement tag in _tagList.children) {
+      if (!showAll && isAgeTag(tag)) {
+        tag.classes.toggle('action--hide', true);
+        continue;
+      }
+      tag.classes.toggle('action--hide', false);
+    }
+  }
+
+  // TODO(mariana): This is currently a workaround to a proper tagging management system
+  bool isAgeTag(DivElement tag) {
+    DivElement tagDescription = tag.querySelector('.action__description');
+    if (tagDescription == null) {
+      log.warning('Was expecting tag with id ${tag.dataset['id']} to have a description, skipping');
+      return false;
+    }
+    return int.tryParse(tag.querySelector('.action__description').text) != null;
   }
 }
 
