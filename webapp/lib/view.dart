@@ -721,6 +721,7 @@ class ConversationSummary with LazyListViewItem {
     return conversationSummary;
   }
 
+  // HACK(mariana): This should get extracted from the model as it gets computed there for the single conversation view
   String get _shortDeidentifiedPhoneNumber => deidentifiedPhoneNumber.split('uuid-')[1].split('-')[0];
 
   @override
