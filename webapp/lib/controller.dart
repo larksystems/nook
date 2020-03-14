@@ -23,6 +23,7 @@ enum UIAction {
   updateTranslation,
   updateNote,
   sendMessage,
+  sendManualMessage,
   addTag,
   addFilterTag,
   removeConversationTag,
@@ -60,6 +61,11 @@ class MessageData extends Data {
 class ReplyData extends Data {
   int replyIndex;
   ReplyData(this.replyIndex);
+}
+
+class ManualReplyData extends Data {
+  String replyText;
+  ManualReplyData(this.replyText);
 }
 
 class TranslationData extends Data {
@@ -281,6 +287,16 @@ void command(UIAction action, Data data) {
         return;
       }
       sendMultiReply(selectedReply, selectedConversations);
+      break;
+    case UIAction.sendManualMessage:
+      ManualReplyData replyData = data;
+      model.SuggestedReply oneoffReply = new model.SuggestedReply();
+      oneoffReply.text = replyData.replyText;
+      if (!view.sendingManualMessageUserConfirmation(oneoffReply.text)) {
+        return;
+      }
+      sendReply(oneoffReply, activeConversation);
+      view.conversationPanelView.clearNewMessageBox();
       break;
     case UIAction.addTag:
       TagData tagData = data;

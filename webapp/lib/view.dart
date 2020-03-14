@@ -75,6 +75,10 @@ bool taggingMultiConversationsUserConfirmation(int noConversations) {
   return window.confirm('Are you sure you want to tag $noConversations conversation${noConversations == 1 ? "" : "s" }?');
 }
 
+bool sendingManualMessageUserConfirmation(String messageText) {
+  return window.confirm('Are you sure you want to send the following message?\n\n$messageText');
+}
+
 void showNormalStatus(String text) {
   tagPanelView._statusText.text = text;
   tagPanelView._statusPanel.classes.remove('status-line-warning');
@@ -118,6 +122,7 @@ class ConversationPanelView {
   DivElement _conversationIdCopy;
   DivElement _info;
   DivElement _tags;
+  TextAreaElement _newMessageTextArea;
   AfterDateFilterView _afterDateFilterView;
 
   List<MessageView> _messageViews = [];
@@ -156,6 +161,33 @@ class ConversationPanelView {
     _messages = new DivElement()
       ..classes.add('messages');
     conversationPanel.append(_messages);
+
+    var newMessageBox = new DivElement()
+      ..classes.add('new-message-box');
+    conversationPanel.append(newMessageBox);
+
+    _newMessageTextArea = new TextAreaElement()
+      ..classes.add('new-message-box__textarea');
+    makeEditable(_newMessageTextArea, onChange: () {
+      if (_newMessageTextArea.value.length >= SMS_MAX_LENGTH) {
+        _newMessageTextArea.classes.toggle('warning-background', true);
+        return;
+      }
+      _newMessageTextArea.classes.toggle('warning-background', false);
+    });
+    newMessageBox.append(_newMessageTextArea);
+
+    var buttonElement = new DivElement()
+      ..classes.add('new-message-box__send-button')
+      ..text = SEND_REPLY_BUTTON_TEXT
+      ..onClick.listen((_) {
+        if (_newMessageTextArea.value.length >= SMS_MAX_LENGTH) {
+          showWarningStatus('Message needs to be under $SMS_MAX_LENGTH characters.');
+          return;
+        }
+        command(UIAction.sendManualMessage, new ManualReplyData(_newMessageTextArea.value));
+      });
+    newMessageBox.append(buttonElement);
 
     _afterDateFilterView = AfterDateFilterView();
     conversationPanel.append(_afterDateFilterView.panel);
@@ -196,6 +228,7 @@ class ConversationPanelView {
     _conversationIdCopy.dataset['copy-value'] = '';
     _info.text = '';
     _messageViews = [];
+    clearNewMessageBox();
 
     int tagsNo = _tags.children.length;
     for (int i = 0; i < tagsNo; i++) {
@@ -206,6 +239,10 @@ class ConversationPanelView {
     for (int i = 0; i < messagesNo; i++) {
       _messages.firstChild.remove();
     }
+  }
+
+  void clearNewMessageBox() {
+    _newMessageTextArea.value = '';
   }
 
   void showAfterDateFilterPrompt(DateTime dateTime) {
