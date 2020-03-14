@@ -381,7 +381,7 @@ class MessageView {
 
 final DateFormat _dateFormat = new DateFormat('E d MMM y');
 final DateFormat _dateFormatNoYear = new DateFormat('E d MMM');
-final DateFormat _hourFormat = new DateFormat('H:m');
+final DateFormat _hourFormat = new DateFormat('HH:mm');
 
 String _formatDateTime(DateTime dateTime) {
   DateTime now = DateTime.now();
