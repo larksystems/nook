@@ -705,13 +705,23 @@ class ConversationSummary with LazyListViewItem {
     var summaryMessage = new DivElement()
       ..classes.add('summary-message')
       ..dataset['id'] = deidentifiedPhoneNumber
-      ..text = _text
       ..onClick.listen((_) => command(UIAction.showConversation, new ConversationData(deidentifiedPhoneNumber)));
     if (_selected) conversationSummary.classes.add('conversation-list__item--selected');
     if (_unread) conversationSummary.classes.add('conversation-list__item--unread');
+    summaryMessage
+      ..append(
+        new DivElement()
+          ..classes.add('summary-message__id')
+          ..text = _shortDeidentifiedPhoneNumber)
+      ..append(
+        new DivElement()
+          ..classes.add('summary-message__text')
+          ..text = _text);
     conversationSummary.append(summaryMessage);
     return conversationSummary;
   }
+
+  String get _shortDeidentifiedPhoneNumber => deidentifiedPhoneNumber.split('uuid-')[1].split('-')[0];
 
   @override
   void disposeElement() {
