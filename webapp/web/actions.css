@@ -31,7 +31,8 @@
   color: #666;
 }
 
-.action__button {
+.action__button,
+.new-message-box__send-button {
   flex: 0 0 auto;
   padding: 4px;
   border-radius: 4px;
@@ -41,7 +42,13 @@
   align-self: start;
 }
 
-.action:hover .action__button {
+.new-message-box__send-button {
+  height: 50px;
+  line-height: 40px;
+}
+
+.action:hover .action__button,
+.new-message-box__send-button {
   opacity: 1;
 }
 

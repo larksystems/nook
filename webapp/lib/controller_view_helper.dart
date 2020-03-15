@@ -5,6 +5,8 @@ const SEND_REPLY_BUTTON_TEXT = 'SEND';
 const TAG_CONVERSATION_BUTTON_TEXT = 'TAG';
 const TAG_MESSAGE_BUTTON_TEXT = 'TAG';
 
+const SMS_MAX_LENGTH = 160;
+
 enum TagReceiver {
   Conversation,
   Message
