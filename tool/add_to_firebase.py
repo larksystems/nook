@@ -79,6 +79,8 @@ if CONTENT_TYPE == "suggested_replies":
         reply_fields["shortcut"] = reply_data["shortcut"] if "shortcut" in reply_data.keys() else ""
         if "seq_no" in reply_data.keys():
             reply_fields["seq_no"] = reply_data["seq_no"]
+        if "category" in reply_data.keys():
+            reply_fields["category"] = reply_data["category"]
 
         suggested_replies_documents.append({reply_id : reply_fields})
 
