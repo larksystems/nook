@@ -227,10 +227,6 @@ void initUI() {
 
         // Update the replies by category map
         suggestedRepliesByCategory = _groupRepliesIntoCategories(suggestedReplies);
-        // Replace null key (if exists) with empty string
-        if (suggestedRepliesByCategory.containsKey(null)) {
-          suggestedRepliesByCategory[''] = suggestedRepliesByCategory.remove(null);
-        }
         // Empty sublist if there are no replies to show
         if (suggestedRepliesByCategory.isEmpty) {
           suggestedRepliesByCategory[''] = [];

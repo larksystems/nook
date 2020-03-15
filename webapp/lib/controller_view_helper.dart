@@ -135,10 +135,11 @@ view.TagStyle tagTypeToStyle(model.TagType tagType) {
 Map<String, List<model.SuggestedReply>> _groupRepliesIntoCategories(List<model.SuggestedReply> replies) {
   Map<String, List<model.SuggestedReply>> result = {};
   for (model.SuggestedReply reply in replies) {
-    if (!result.containsKey(reply.category)) {
-      result[reply.category] = [];
+    String category = reply.category ?? '';
+    if (!result.containsKey(category)) {
+      result[category] = [];
     }
-    result[reply.category].add(reply);
+    result[category].add(reply);
   }
   return result;
 }
