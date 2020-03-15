@@ -983,25 +983,57 @@ class ActionView {
 
 class ReplyActionView extends ActionView {
   ReplyActionView(String text, String translation, String shortcut, int replyIndex, String buttonText) : super(text, shortcut, '$replyIndex', buttonText) {
-    var descriptionElement = action.querySelector('.action__description')
-      ..text = '';
+    action.children.clear();
 
-    var actionText = new DivElement()
-      ..classes.add('action__text')
-      ..text = text;
-    descriptionElement.append(actionText);
+    var shortcutElement = new DivElement()
+      ..classes.add('action__shortcut')
+      ..text = shortcut;
+    action.append(shortcutElement);
 
-    var actionTranslation = new DivElement();
-    actionTranslation
-      ..classes.add('action__translation')
-      ..text = translation;
-    makeEditable(actionTranslation, onChange: () {
-      command(UIAction.updateTranslation, new ReplyTranslationData(actionTranslation.text, replyIndex));
-    });
-    descriptionElement.append(actionTranslation);
+    var textTranslationWrapper = new DivElement();
+    action.append(textTranslationWrapper);
 
-    var buttonElement = action.querySelector('.action__button');
-    buttonElement.onClick.listen((_) => command(UIAction.sendMessage, new ReplyData(replyIndex)));
+    { // Add text
+      var textWrapper = new DivElement()
+        ..style.display = 'flex';
+      textTranslationWrapper.append(textWrapper);
+
+      var descriptionElement = new DivElement()
+        ..classes.add('action__description');
+      textWrapper.append(descriptionElement);
+
+      var textElement = new DivElement()
+        ..classes.add('action__text')
+        ..text = text;
+      descriptionElement.append(textElement);
+
+      var buttonElement = new DivElement()
+        ..classes.add('action__button')
+        ..text = buttonText;
+      buttonElement.onClick.listen((_) => command(UIAction.sendMessage, new ReplyData(replyIndex)));
+      textWrapper.append(buttonElement);
+    }
+
+    { // Add translation
+      var translationWrapper = new DivElement()
+        ..style.display = 'flex';
+      textTranslationWrapper.append(translationWrapper);
+
+      var descriptionElement = new DivElement()
+        ..classes.add('action__description');
+      translationWrapper.append(descriptionElement);
+
+      var translationElement = new DivElement()
+        ..classes.add('action__translation')
+        ..text = translation;
+      descriptionElement.append(translationElement);
+
+      var buttonElement = new DivElement()
+        ..classes.add('action__button')
+        ..text = buttonText;
+      buttonElement.onClick.listen((_) => command(UIAction.sendMessage, new ReplyData(replyIndex, replyWithTranslation: true)));
+      translationWrapper.append(buttonElement);
+    }
   }
 }
 

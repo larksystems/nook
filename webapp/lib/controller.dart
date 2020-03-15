@@ -60,7 +60,8 @@ class MessageData extends Data {
 
 class ReplyData extends Data {
   int replyIndex;
-  ReplyData(this.replyIndex);
+  bool replyWithTranslation;
+  ReplyData(this.replyIndex, {this.replyWithTranslation: false});
 }
 
 class ManualReplyData extends Data {
@@ -279,6 +280,13 @@ void command(UIAction action, Data data) {
     case UIAction.sendMessage:
       ReplyData replyData = data;
       model.SuggestedReply selectedReply = suggestedReplies[replyData.replyIndex];
+      if (replyData.replyWithTranslation) {
+        model.SuggestedReply translationReply = new model.SuggestedReply();
+        translationReply
+          ..text = selectedReply.translation
+          ..translation = '';
+        selectedReply = translationReply;
+      }
       if (!multiSelectMode) {
         sendReply(selectedReply, activeConversation);
         return;
@@ -291,7 +299,9 @@ void command(UIAction action, Data data) {
     case UIAction.sendManualMessage:
       ManualReplyData replyData = data;
       model.SuggestedReply oneoffReply = new model.SuggestedReply();
-      oneoffReply.text = replyData.replyText;
+      oneoffReply
+        ..text = replyData.replyText
+        ..translation = '';
       if (!view.sendingManualMessageUserConfirmation(oneoffReply.text)) {
         return;
       }
