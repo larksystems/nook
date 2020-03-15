@@ -1010,7 +1010,7 @@ class ReplyActionView extends ActionView {
 
       var buttonElement = new DivElement()
         ..classes.add('action__button')
-        ..text = buttonText;
+        ..text = '$buttonText (En)'; // TODO(mariana): These project-specific preferences should be read from a project config file
       buttonElement.onClick.listen((_) => command(UIAction.sendMessage, new ReplyData(replyIndex)));
       textWrapper.append(buttonElement);
     }
@@ -1031,7 +1031,7 @@ class ReplyActionView extends ActionView {
 
       var buttonElement = new DivElement()
         ..classes.add('action__button')
-        ..text = buttonText;
+        ..text = '$buttonText (Swa)'; // TODO(mariana): These project-specific preferences should be read from a project config file
       buttonElement.onClick.listen((_) => command(UIAction.sendMessage, new ReplyData(replyIndex, replyWithTranslation: true)));
       translationWrapper.append(buttonElement);
     }
