@@ -60,6 +60,9 @@ void _populateConversationPanelView(model.Conversation conversation) {
 
 void _populateReplyPanelView(List<model.SuggestedReply> replies) {
   replies.sort((r1, r2) {
+    if (r1.seqNumber == null && r2.seqNumber == null) {
+      return r1.shortcut.compareTo(r2.shortcut);
+    }
     var seqNo1 = r1.seqNumber == null ? double.nan : r1.seqNumber;
     var seqNo2 = r2.seqNumber == null ? double.nan : r2.seqNumber;
     return seqNo1.compareTo(seqNo2);
