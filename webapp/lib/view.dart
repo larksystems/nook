@@ -990,7 +990,8 @@ class ReplyActionView extends ActionView {
       ..text = shortcut;
     action.append(shortcutElement);
 
-    var textTranslationWrapper = new DivElement();
+    var textTranslationWrapper = new DivElement()
+      ..style.flex = '1 1 auto';
     action.append(textTranslationWrapper);
 
     { // Add text
