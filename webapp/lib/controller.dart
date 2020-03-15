@@ -634,11 +634,7 @@ void sendReply(model.SuggestedReply reply, model.Conversation conversation) {
       translation: newMessage.translation,
       incoming: false)
   );
-  platform
-    .sendMessage(conversation.docId, reply.text)
-    .then((success) {
-      log.verbose('controller.sendMessage reponse status $success');
-    });
+  platform.sendMessage(conversation.docId, reply.text);
 }
 
 void sendMultiReply(model.SuggestedReply reply, List<model.Conversation> conversations) {
@@ -661,11 +657,7 @@ void sendMultiReply(model.SuggestedReply reply, List<model.Conversation> convers
     );
   }
   List<String> ids = conversations.map((conversation) => conversation.docId).toList();
-  platform
-    .sendMultiMessage(ids, newMessage.text)
-    .then((success) {
-      log.verbose('controller.sendMultiMessage reponse status $success');
-    });
+  platform.sendMultiMessage(ids, newMessage.text);
 }
 
 void setConversationTag(model.Tag tag, model.Conversation conversation) {
