@@ -48,6 +48,7 @@ enum UIAction {
   enableMultiSelectMode,
   disableMultiSelectMode,
   updateSystemMessages,
+  updateSuggestedRepliesCategory
 }
 
 class Data {}
@@ -143,6 +144,11 @@ class AddTagData extends Data {
   AddTagData(this.tagText);
 }
 
+class UpdateSuggestedRepliesCategoryData extends Data {
+  String category;
+  UpdateSuggestedRepliesCategoryData(this.category);
+}
+
 class SystemMessagesData extends Data {
   List<model.SystemMessage> messages;
   SystemMessagesData(this.messages);
@@ -155,6 +161,8 @@ UIActionObject actionObjectState = UIActionObject.conversation;
 Set<model.Conversation> conversations;
 Set<model.Conversation> filteredConversations;
 List<model.SuggestedReply> suggestedReplies;
+Map<String, List<model.SuggestedReply>> suggestedRepliesByCategory;
+String selectedSuggestedRepliesCategory;
 List<model.Tag> conversationTags;
 List<model.Tag> messageTags;
 List<model.Tag> filterTags;
@@ -181,6 +189,7 @@ void initUI() {
   selectedConversations = [];
   multiSelectMode = false;
   activeConversation = null;
+  selectedSuggestedRepliesCategory = '';
 
   platform.listenForConversationTags(
     (tags) {
@@ -216,7 +225,36 @@ void initUI() {
         suggestedReplies.removeWhere((suggestedReply) => updatedIds.contains(suggestedReply.suggestedReplyId));
         suggestedReplies.addAll(updatedReplies);
 
-        _populateReplyPanelView(suggestedReplies);
+        // Update the replies by category map
+        suggestedRepliesByCategory = _groupRepliesIntoCategories(suggestedReplies);
+        // Replace null key (if exists) with empty string
+        if (suggestedRepliesByCategory.containsKey(null)) {
+          suggestedRepliesByCategory[''] = suggestedRepliesByCategory.remove(null);
+        }
+        // Empty sublist if there are no replies to show
+        if (suggestedRepliesByCategory.isEmpty) {
+          suggestedRepliesByCategory[''] = [];
+        }
+        // Sort by sequence number
+        for (var replies in suggestedRepliesByCategory.values) {
+          replies.sort((r1, r2) {
+            var seqNo1 = r1.seqNumber == null ? double.nan : r1.seqNumber;
+            var seqNo2 = r2.seqNumber == null ? double.nan : r2.seqNumber;
+            return seqNo1.compareTo(seqNo2);
+          });
+        }
+        List<String> categories = suggestedRepliesByCategory.keys.toList();
+        categories.sort((c1, c2) => c1.compareTo(c2));
+        // Replace list of categories in the UI selector
+        view.replyPanelView.categories = categories;
+        // If the categories have changed under us and the selected one no longer exists,
+        // default to the first category, whichever it is
+        if (!categories.contains(selectedSuggestedRepliesCategory)) {
+          selectedSuggestedRepliesCategory = categories.first;
+        }
+        // Select the selected category in the UI and add the suggested replies for it
+        view.replyPanelView.selectedCategory = selectedSuggestedRepliesCategory;
+        _populateReplyPanelView(suggestedRepliesByCategory[selectedSuggestedRepliesCategory]);
       }
     );
   }
@@ -272,14 +310,15 @@ void command(UIAction action, Data data) {
       action != UIAction.addFilterTag && action != UIAction.removeFilterTag &&
       action != UIAction.promptAfterDateFilter && action != UIAction.updateAfterDateFilter &&
       action != UIAction.signInButtonClicked && action != UIAction.signOutButtonClicked &&
-      action != UIAction.userSignedIn && action != UIAction.userSignedOut) {
+      action != UIAction.userSignedIn && action != UIAction.userSignedOut &&
+      action != UIAction.updateSuggestedRepliesCategory) {
     return;
   }
 
   switch (action) {
     case UIAction.sendMessage:
       ReplyData replyData = data;
-      model.SuggestedReply selectedReply = suggestedReplies[replyData.replyIndex];
+      model.SuggestedReply selectedReply = suggestedRepliesByCategory[selectedSuggestedRepliesCategory][replyData.replyIndex];
       if (replyData.replyWithTranslation) {
         model.SuggestedReply translationReply = new model.SuggestedReply();
         translationReply
@@ -442,7 +481,7 @@ void command(UIAction action, Data data) {
       break;
     case UIAction.updateTranslation:
       if (data is ReplyTranslationData) {
-        var reply = suggestedReplies[data.replyIndex];
+        var reply = suggestedRepliesByCategory[selectedSuggestedRepliesCategory][data.replyIndex];
         SaveTextAction.textChange(
           "${reply.docId}.translation",
           data.translationText,
@@ -502,7 +541,7 @@ void command(UIAction action, Data data) {
         view.snackbarView.hideSnackbar();
       }
       // If the shortcut is for a reply, find it and send it
-      var selectedReply = suggestedReplies.where((reply) => reply.shortcut == keyPressData.key);
+      var selectedReply = suggestedRepliesByCategory[selectedSuggestedRepliesCategory].where((reply) => reply.shortcut == keyPressData.key);
       if (selectedReply.isNotEmpty) {
         assert (selectedReply.length == 1);
         if (!multiSelectMode) {
@@ -569,6 +608,11 @@ void command(UIAction action, Data data) {
       } else {
         view.bannerView.hideBanner();
       }
+      break;
+    case UIAction.updateSuggestedRepliesCategory:
+      UpdateSuggestedRepliesCategoryData updateCategoryData = data;
+      selectedSuggestedRepliesCategory = updateCategoryData.category;
+      _populateReplyPanelView(suggestedRepliesByCategory[selectedSuggestedRepliesCategory]);
       break;
     default:
   }

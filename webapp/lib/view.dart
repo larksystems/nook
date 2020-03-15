@@ -806,21 +806,30 @@ class ConversationSummary with LazyListViewItem {
 class ReplyPanelView {
   DivElement replyPanel;
   DivElement _panelTitle;
+  SelectElement _replyCategories;
   DivElement _replies;
   DivElement _replyList;
   DivElement _notes;
   TextAreaElement _notesTextArea;
 
   AddActionView _addReply;
+  List<ReplyActionView> _replyViews;
 
   ReplyPanelView() {
     replyPanel = new DivElement()
       ..classes.add('reply-panel');
 
-    _panelTitle = new DivElement()
+    var _panelTitle = new DivElement()
       ..classes.add('panel-title')
-      ..text = REPLY_PANEL_TITLE;
+      ..classes.add('panel-title--multiple-cols');
     replyPanel.append(_panelTitle);
+
+    _replyCategories = new SelectElement();
+    _replyCategories.onChange.listen((_) => command(UIAction.updateSuggestedRepliesCategory, new UpdateSuggestedRepliesCategoryData(_replyCategories.value)));
+
+    _panelTitle
+      ..append(new DivElement()..text = REPLY_PANEL_TITLE)
+      ..append(_replyCategories);
 
     _replies = new DivElement()
       ..classes.add('replies')
@@ -843,9 +852,31 @@ class ReplyPanelView {
       command(UIAction.updateNote, new NoteData(_notesTextArea.value));
     });
     _notes.append(_notesTextArea);
+    _replyViews = [];
   }
 
   set noteText(String text) => _notesTextArea.value = text;
+
+  set selectedCategory(String category) {
+    int index = _replyCategories.children.indexWhere((Element option) => (option as OptionElement).value == category);
+    if (index == -1) {
+      showWarningStatus("Couldn't find $category in list of suggested replies category, using first");
+      _replyCategories.selectedIndex = 0;
+      command(UIAction.updateSuggestedRepliesCategory, new UpdateSuggestedRepliesCategoryData(_replyCategories.value));
+      return;
+    }
+    _replyCategories.selectedIndex = index;
+  }
+
+  set categories(List<String> categories) {
+    _replyCategories.children.clear();
+    for (var category in categories) {
+      _replyCategories.append(
+        new OptionElement()
+          ..value = category
+          ..text = category);
+    }
+  }
 
   void addReply(ActionView action) {
     _replyList.append(action.action);
@@ -861,12 +892,15 @@ class ReplyPanelView {
 
   void disableReplies() {
     _replies.remove();
+    _panelTitle.children.clear();
     _panelTitle.text = 'Notes';
     _notes.classes.toggle('notes-box--fullscreen', true);
   }
 
   void enableReplies() {
-    _panelTitle.text = REPLY_PANEL_TITLE;
+    _panelTitle
+      ..append(new DivElement()..text = REPLY_PANEL_TITLE)
+      ..append(_replyCategories);
     replyPanel.insertBefore(_replies, _notes);
     _notes.classes.toggle('notes-box--fullscreen', false);
   }
