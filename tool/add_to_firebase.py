@@ -77,6 +77,8 @@ if CONTENT_TYPE == "suggested_replies":
         assert "translation" in reply_data.keys()
         reply_fields["translation"] = reply_data["translation"]
         reply_fields["shortcut"] = reply_data["shortcut"] if "shortcut" in reply_data.keys() else ""
+        if "seq_no" in reply_data.keys():
+            reply_fields["seq_no"] = reply_data["seq_no"]
 
         suggested_replies_documents.append({reply_id : reply_fields})
 

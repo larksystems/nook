@@ -251,6 +251,7 @@ class SuggestedReply {
   String text;
   String translation;
   String shortcut;
+  int seqNumber;
 
   String get suggestedReplyId => docId;
 
@@ -262,7 +263,8 @@ class SuggestedReply {
     return (modelObj ?? SuggestedReply())
       ..text = String_fromData(data['text'])
       ..translation = String_fromData(data['translation'])
-      ..shortcut = String_fromData(data['shortcut']);
+      ..shortcut = String_fromData(data['shortcut'])
+      ..seqNumber = int_fromData(data['seq_no']);
   }
 
   static void listen(DocStorage docStorage, SuggestedReplyCollectionListener listener,
@@ -274,6 +276,7 @@ class SuggestedReply {
       if (text != null) 'text': text,
       if (translation != null) 'translation': translation,
       if (shortcut != null) 'shortcut': shortcut,
+      if (seqNumber != null) 'seq_no': seqNumber
     };
   }
 
