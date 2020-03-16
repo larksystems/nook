@@ -926,7 +926,7 @@ class TagPanelView {
     tagPanel.append(panelTitle);
 
     _hideTagsCheckbox = new InputElement(type: 'checkbox');
-    _hideTagsCheckbox.onChange.listen((_) => filterAllTags(!_hideTagsCheckbox.checked));
+    _hideTagsCheckbox.onChange.listen((_) => command(UIAction.hideAgeTags, new ToggleData(_hideTagsCheckbox.checked)));
 
     panelTitle
       ..append(
@@ -956,9 +956,6 @@ class TagPanelView {
 
   void addTag(ActionView action) {
     _tagList.append(action.action);
-    if (isAgeTag(action.action) && _hideTagsCheckbox.checked) {
-      action.action.classes.toggle('action--hide', true);
-    }
   }
 
   void clear() {
@@ -967,26 +964,6 @@ class TagPanelView {
       _tagList.firstChild.remove();
     }
     assert(_tagList.children.length == 0);
-  }
-
-  void filterAllTags(bool showAll) {
-    for(DivElement tag in _tagList.children) {
-      if (!showAll && isAgeTag(tag)) {
-        tag.classes.toggle('action--hide', true);
-        continue;
-      }
-      tag.classes.toggle('action--hide', false);
-    }
-  }
-
-  // TODO(mariana): This is currently a workaround to a proper tagging management system
-  bool isAgeTag(DivElement tag) {
-    DivElement tagDescription = tag.querySelector('.action__description');
-    if (tagDescription == null) {
-      log.warning('Was expecting tag with id ${tag.dataset['id']} to have a description, skipping');
-      return false;
-    }
-    return int.tryParse(tag.querySelector('.action__description').text) != null;
   }
 }
 

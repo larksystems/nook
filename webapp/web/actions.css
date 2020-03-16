@@ -13,10 +13,6 @@
   display: flex;
 }
 
-.action.action--hide {
-  display: none;
-}
-
 .action:hover {
   background: #eee;
 }
