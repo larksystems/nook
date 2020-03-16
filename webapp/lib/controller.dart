@@ -622,23 +622,18 @@ void command(UIAction action, Data data) {
     case UIAction.hideAgeTags:
       ToggleData toggleData = data;
       hideAgeTags = toggleData.toggleValue;
+      var filteredConversationTags = _filterAgeTagsIfNeeded(conversationTags);
+      var filteredMessageTags = _filterAgeTagsIfNeeded(messageTags);
       switch (actionObjectState) {
         case UIActionObject.conversation:
-          var tags = _filterAgeTagsIfNeeded(conversationTags);
-          _populateTagPanelView(tags, TagReceiver.Conversation);
-          _populateFilterTagsMenu(tags);
+          _populateTagPanelView(filteredConversationTags, TagReceiver.Conversation);
           break;
         case UIActionObject.message:
-          var filteredMessageTags = _filterAgeTagsIfNeeded(messageTags);
           _populateTagPanelView(filteredMessageTags, TagReceiver.Message);
-
-          // The filter tags menu is only for conversations, but should also be updated
-          // to match whether we should hide age tags or not
-          var filteredConversationTags = _filterAgeTagsIfNeeded(conversationTags);
-          _populateFilterTagsMenu(filteredConversationTags);
           break;
-        default:
       }
+      // The filter tags menu always shows conversations tags, even when a message is selected
+      _populateFilterTagsMenu(filteredConversationTags);
       break;
     default:
   }
