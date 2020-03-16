@@ -48,7 +48,8 @@ enum UIAction {
   enableMultiSelectMode,
   disableMultiSelectMode,
   updateSystemMessages,
-  updateSuggestedRepliesCategory
+  updateSuggestedRepliesCategory,
+  hideAgeTags
 }
 
 class Data {}
@@ -154,6 +155,11 @@ class SystemMessagesData extends Data {
   SystemMessagesData(this.messages);
 }
 
+class ToggleData extends Data {
+  bool toggleValue;
+  ToggleData(this.toggleValue);
+}
+
 List<model.SystemMessage> systemMessages;
 
 UIActionObject actionObjectState = UIActionObject.conversation;
@@ -172,6 +178,7 @@ List<model.Conversation> selectedConversations;
 model.Message selectedMessage;
 model.User signedInUser;
 
+bool hideAgeTags;
 bool multiSelectMode;
 
 void init() async {
@@ -190,16 +197,18 @@ void initUI() {
   multiSelectMode = false;
   activeConversation = null;
   selectedSuggestedRepliesCategory = '';
+  hideAgeTags = false;
 
   platform.listenForConversationTags(
     (tags) {
       var updatedIds = tags.map((t) => t.tagId).toSet();
       conversationTags.removeWhere((tag) => updatedIds.contains(tag.tagId));
       conversationTags.addAll(tags);
-      _populateFilterTagsMenu(conversationTags);
+      var filteredTags = _filterAgeTagsIfNeeded(conversationTags);
+      _populateFilterTagsMenu(filteredTags);
 
       if (actionObjectState == UIActionObject.conversation) {
-        _populateTagPanelView(conversationTags, TagReceiver.Conversation);
+        _populateTagPanelView(filteredTags, TagReceiver.Conversation);
       }
     }
   );
@@ -211,7 +220,7 @@ void initUI() {
       messageTags.addAll(tags);
 
       if (actionObjectState == UIActionObject.message) {
-        _populateTagPanelView(messageTags, TagReceiver.Message);
+        _populateTagPanelView(_filterAgeTagsIfNeeded(messageTags), TagReceiver.Message);
       }
     }
   );
@@ -265,7 +274,7 @@ void initUI() {
       List<String> filterTagIds = view.urlView.pageUrlFilterTags;
       filterTags = filterTagIds.map((tagId) => conversationTags.singleWhere((tag) => tag.tagId == tagId)).toList();
       filteredConversations = filterConversationsByTags(conversations, filterTags, afterDateFilter);
-      _populateFilterTagsMenu(conversationTags);
+      _populateFilterTagsMenu(_filterAgeTagsIfNeeded(conversationTags));
       _populateSelectedFilterTags(filterTags);
 
       activeConversation = updateViewForConversations(filteredConversations);
@@ -307,7 +316,7 @@ void command(UIAction action, Data data) {
       action != UIAction.promptAfterDateFilter && action != UIAction.updateAfterDateFilter &&
       action != UIAction.signInButtonClicked && action != UIAction.signOutButtonClicked &&
       action != UIAction.userSignedIn && action != UIAction.userSignedOut &&
-      action != UIAction.updateSuggestedRepliesCategory) {
+      action != UIAction.updateSuggestedRepliesCategory && action != UIAction.hideAgeTags) {
     return;
   }
 
@@ -419,7 +428,7 @@ void command(UIAction action, Data data) {
       MessageData messageData = data;
       selectedMessage = activeConversation.messages[messageData.messageIndex];
       view.conversationPanelView.selectMessage(messageData.messageIndex);
-      _populateTagPanelView(messageTags, TagReceiver.Message);
+      _populateTagPanelView(_filterAgeTagsIfNeeded(messageTags), TagReceiver.Message);
       switch (actionObjectState) {
         case UIActionObject.conversation:
           actionObjectState = UIActionObject.message;
@@ -435,7 +444,7 @@ void command(UIAction action, Data data) {
         case UIActionObject.message:
           selectedMessage = null;
           view.conversationPanelView.deselectMessage();
-          _populateTagPanelView(conversationTags, TagReceiver.Conversation);
+          _populateTagPanelView(_filterAgeTagsIfNeeded(conversationTags), TagReceiver.Conversation);
           actionObjectState = UIActionObject.conversation;
           break;
       }
@@ -553,7 +562,7 @@ void command(UIAction action, Data data) {
       // If the shortcut is for a tag, find it and tag it to the conversation/message
       switch (actionObjectState) {
         case UIActionObject.conversation:
-          var selectedTag = conversationTags.where((tag) => tag.shortcut == keyPressData.key);
+          var selectedTag = _filterAgeTagsIfNeeded(conversationTags).where((tag) => tag.shortcut == keyPressData.key);
           if (selectedTag.isEmpty) break;
           assert (selectedTag.length == 1);
           setConversationTag(selectedTag.first, activeConversation);
@@ -567,7 +576,7 @@ void command(UIAction action, Data data) {
           setMultiConversationTag(selectedTag.first, selectedConversations);
           return;
         case UIActionObject.message:
-          var selectedTag = messageTags.where((tag) => tag.shortcut == keyPressData.key);
+          var selectedTag = _filterAgeTagsIfNeeded(messageTags).where((tag) => tag.shortcut == keyPressData.key);
           if (selectedTag.isEmpty) break;
           assert (selectedTag.length == 1);
           setMessageTag(selectedTag.first, selectedMessage, activeConversation);
@@ -609,6 +618,22 @@ void command(UIAction action, Data data) {
       UpdateSuggestedRepliesCategoryData updateCategoryData = data;
       selectedSuggestedRepliesCategory = updateCategoryData.category;
       _populateReplyPanelView(suggestedRepliesByCategory[selectedSuggestedRepliesCategory]);
+      break;
+    case UIAction.hideAgeTags:
+      ToggleData toggleData = data;
+      hideAgeTags = toggleData.toggleValue;
+      var filteredConversationTags = _filterAgeTagsIfNeeded(conversationTags);
+      var filteredMessageTags = _filterAgeTagsIfNeeded(messageTags);
+      switch (actionObjectState) {
+        case UIActionObject.conversation:
+          _populateTagPanelView(filteredConversationTags, TagReceiver.Conversation);
+          break;
+        case UIActionObject.message:
+          _populateTagPanelView(filteredMessageTags, TagReceiver.Message);
+          break;
+      }
+      // The filter tags menu always shows conversations tags, even when a message is selected
+      _populateFilterTagsMenu(filteredConversationTags);
       break;
     default:
   }
@@ -678,7 +703,7 @@ void updateViewForConversation(model.Conversation conversation) {
     case UIActionObject.message:
       selectedMessage = null;
       view.conversationPanelView.deselectMessage();
-      _populateTagPanelView(conversationTags, TagReceiver.Conversation);
+      _populateTagPanelView(_filterAgeTagsIfNeeded(conversationTags), TagReceiver.Conversation);
       break;
   }
 }
@@ -824,6 +849,15 @@ class SaveTextAction {
     }
   }
 }
+
+List<model.Tag> _filterAgeTagsIfNeeded(List<model.Tag> tagList) {
+  if (hideAgeTags == false)
+    return tagList;
+  return tagList.where((model.Tag tag) => !_isAgeTag(tag)).toList();
+}
+
+bool _isAgeTag(model.Tag tag) => int.tryParse(tag.text) != null;
+
 
 typedef Future<dynamic> SaveText(String newText);
 
