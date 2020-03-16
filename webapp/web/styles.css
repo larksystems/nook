@@ -85,8 +85,7 @@ main {
 
 .tags-menu__container {
     position: absolute;
-    max-width: 250px;
-    min-width: 150px;
+    width: 250px;
     height: auto;
     top: auto;
     bottom: 100%;
