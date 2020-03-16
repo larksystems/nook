@@ -1266,11 +1266,6 @@ class AuthMainView {
       ..classes.add('partner-logo--avf');
     logosContainer.append(avfLogo);
 
-    var unicefLogo = new ImageElement(src: 'assets/UNICEF-logo.svg')
-      ..classes.add('partner-logo')
-      ..classes.add('partner-logo--unicef');
-    logosContainer.append(unicefLogo);
-
     var shortDescription = new DivElement()
       ..classes.add('project-description')
       ..append(new ParagraphElement()..text = descriptionText1)
