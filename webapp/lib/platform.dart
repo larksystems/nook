@@ -63,13 +63,13 @@ bool isUserSignedIn() {
   return firebaseAuth.currentUser != null;
 }
 
-Future<bool> sendMessage(String id, String message) {
+Future<void> sendMessage(String id, String message) {
   log.verbose("Sending message $id : $message");
 
   return sendMultiMessage([id], message);
 }
 
-Future<bool> sendMultiMessage(List<String> ids, String message) {
+Future<void> sendMultiMessage(List<String> ids, String message) {
   log.verbose("Sending multi-message $ids : $message");
 
   //  {

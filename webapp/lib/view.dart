@@ -75,6 +75,10 @@ bool taggingMultiConversationsUserConfirmation(int noConversations) {
   return window.confirm('Are you sure you want to tag $noConversations conversation${noConversations == 1 ? "" : "s" }?');
 }
 
+bool sendingManualMessageUserConfirmation(String messageText) {
+  return window.confirm('Are you sure you want to send the following message?\n\n$messageText');
+}
+
 void showNormalStatus(String text) {
   tagPanelView._statusText.text = text;
   tagPanelView._statusPanel.classes.remove('status-line-warning');
@@ -118,6 +122,7 @@ class ConversationPanelView {
   DivElement _conversationIdCopy;
   DivElement _info;
   DivElement _tags;
+  TextAreaElement _newMessageTextArea;
   AfterDateFilterView _afterDateFilterView;
 
   List<MessageView> _messageViews = [];
@@ -156,6 +161,33 @@ class ConversationPanelView {
     _messages = new DivElement()
       ..classes.add('messages');
     conversationPanel.append(_messages);
+
+    var newMessageBox = new DivElement()
+      ..classes.add('new-message-box');
+    conversationPanel.append(newMessageBox);
+
+    _newMessageTextArea = new TextAreaElement()
+      ..classes.add('new-message-box__textarea');
+    makeEditable(_newMessageTextArea, onChange: () {
+      if (_newMessageTextArea.value.length >= SMS_MAX_LENGTH) {
+        _newMessageTextArea.classes.toggle('warning-background', true);
+        return;
+      }
+      _newMessageTextArea.classes.toggle('warning-background', false);
+    });
+    newMessageBox.append(_newMessageTextArea);
+
+    var buttonElement = new DivElement()
+      ..classes.add('new-message-box__send-button')
+      ..text = SEND_REPLY_BUTTON_TEXT
+      ..onClick.listen((_) {
+        if (_newMessageTextArea.value.length >= SMS_MAX_LENGTH) {
+          showWarningStatus('Message needs to be under $SMS_MAX_LENGTH characters.');
+          return;
+        }
+        command(UIAction.sendManualMessage, new ManualReplyData(_newMessageTextArea.value));
+      });
+    newMessageBox.append(buttonElement);
 
     _afterDateFilterView = AfterDateFilterView();
     conversationPanel.append(_afterDateFilterView.panel);
@@ -196,6 +228,7 @@ class ConversationPanelView {
     _conversationIdCopy.dataset['copy-value'] = '';
     _info.text = '';
     _messageViews = [];
+    clearNewMessageBox();
 
     int tagsNo = _tags.children.length;
     for (int i = 0; i < tagsNo; i++) {
@@ -206,6 +239,10 @@ class ConversationPanelView {
     for (int i = 0; i < messagesNo; i++) {
       _messages.firstChild.remove();
     }
+  }
+
+  void clearNewMessageBox() {
+    _newMessageTextArea.value = '';
   }
 
   void showAfterDateFilterPrompt(DateTime dateTime) {
@@ -385,6 +422,7 @@ final DateFormat _hourFormat = new DateFormat('HH:mm');
 
 String _formatDateTime(DateTime dateTime) {
   DateTime now = DateTime.now();
+  return dateTime.toIso8601String(); // HACK(mariana): Temporary fix to have a sortable timestamp for each message
   DateTime localDateTime = dateTime.toLocal();
 
   if (_dateFormat.format(now) == _dateFormat.format(localDateTime)) {
@@ -705,13 +743,24 @@ class ConversationSummary with LazyListViewItem {
     var summaryMessage = new DivElement()
       ..classes.add('summary-message')
       ..dataset['id'] = deidentifiedPhoneNumber
-      ..text = _text
       ..onClick.listen((_) => command(UIAction.showConversation, new ConversationData(deidentifiedPhoneNumber)));
     if (_selected) conversationSummary.classes.add('conversation-list__item--selected');
     if (_unread) conversationSummary.classes.add('conversation-list__item--unread');
+    summaryMessage
+      ..append(
+        new DivElement()
+          ..classes.add('summary-message__id')
+          ..text = _shortDeidentifiedPhoneNumber)
+      ..append(
+        new DivElement()
+          ..classes.add('summary-message__text')
+          ..text = _text);
     conversationSummary.append(summaryMessage);
     return conversationSummary;
   }
+
+  // HACK(mariana): This should get extracted from the model as it gets computed there for the single conversation view
+  String get _shortDeidentifiedPhoneNumber => deidentifiedPhoneNumber.split('uuid-')[1].split('-')[0];
 
   @override
   void disposeElement() {
@@ -828,6 +877,7 @@ class TagPanelView {
   DivElement _tags;
   DivElement _tagList;
   DivElement _statusPanel;
+  InputElement _hideTagsCheckbox;
   Text _statusText;
 
   AddActionView _addTag;
@@ -838,8 +888,19 @@ class TagPanelView {
 
     var panelTitle = new DivElement()
       ..classes.add('panel-title')
-      ..text = TAG_PANEL_TITLE;
+      ..classes.add('panel-title--multiple-cols');
     tagPanel.append(panelTitle);
+
+    _hideTagsCheckbox = new InputElement(type: 'checkbox');
+    _hideTagsCheckbox.onChange.listen((_) => filterAllTags(!_hideTagsCheckbox.checked));
+
+    panelTitle
+      ..append(
+        new DivElement()..text = TAG_PANEL_TITLE)
+      ..append(
+        new DivElement()
+          ..append(_hideTagsCheckbox)
+          ..append(new SpanElement()..text = 'Hide age tags'));
 
     _tags = new DivElement()
       ..classes.add('tags')
@@ -861,6 +922,9 @@ class TagPanelView {
 
   void addTag(ActionView action) {
     _tagList.append(action.action);
+    if (isAgeTag(action.action) && _hideTagsCheckbox.checked) {
+      action.action.classes.toggle('action--hide', true);
+    }
   }
 
   void clear() {
@@ -869,6 +933,26 @@ class TagPanelView {
       _tagList.firstChild.remove();
     }
     assert(_tagList.children.length == 0);
+  }
+
+  void filterAllTags(bool showAll) {
+    for(DivElement tag in _tagList.children) {
+      if (!showAll && isAgeTag(tag)) {
+        tag.classes.toggle('action--hide', true);
+        continue;
+      }
+      tag.classes.toggle('action--hide', false);
+    }
+  }
+
+  // TODO(mariana): This is currently a workaround to a proper tagging management system
+  bool isAgeTag(DivElement tag) {
+    DivElement tagDescription = tag.querySelector('.action__description');
+    if (tagDescription == null) {
+      log.warning('Was expecting tag with id ${tag.dataset['id']} to have a description, skipping');
+      return false;
+    }
+    return int.tryParse(tag.querySelector('.action__description').text) != null;
   }
 }
 
@@ -899,25 +983,58 @@ class ActionView {
 
 class ReplyActionView extends ActionView {
   ReplyActionView(String text, String translation, String shortcut, int replyIndex, String buttonText) : super(text, shortcut, '$replyIndex', buttonText) {
-    var descriptionElement = action.querySelector('.action__description')
-      ..text = '';
+    action.children.clear();
 
-    var actionText = new DivElement()
-      ..classes.add('action__text')
-      ..text = text;
-    descriptionElement.append(actionText);
+    var shortcutElement = new DivElement()
+      ..classes.add('action__shortcut')
+      ..text = shortcut;
+    action.append(shortcutElement);
 
-    var actionTranslation = new DivElement();
-    actionTranslation
-      ..classes.add('action__translation')
-      ..text = translation;
-    makeEditable(actionTranslation, onChange: () {
-      command(UIAction.updateTranslation, new ReplyTranslationData(actionTranslation.text, replyIndex));
-    });
-    descriptionElement.append(actionTranslation);
+    var textTranslationWrapper = new DivElement()
+      ..style.flex = '1 1 auto';
+    action.append(textTranslationWrapper);
 
-    var buttonElement = action.querySelector('.action__button');
-    buttonElement.onClick.listen((_) => command(UIAction.sendMessage, new ReplyData(replyIndex)));
+    { // Add text
+      var textWrapper = new DivElement()
+        ..style.display = 'flex';
+      textTranslationWrapper.append(textWrapper);
+
+      var descriptionElement = new DivElement()
+        ..classes.add('action__description');
+      textWrapper.append(descriptionElement);
+
+      var textElement = new DivElement()
+        ..classes.add('action__text')
+        ..text = text;
+      descriptionElement.append(textElement);
+
+      var buttonElement = new DivElement()
+        ..classes.add('action__button')
+        ..text = '$buttonText (En)'; // TODO(mariana): These project-specific preferences should be read from a project config file
+      buttonElement.onClick.listen((_) => command(UIAction.sendMessage, new ReplyData(replyIndex)));
+      textWrapper.append(buttonElement);
+    }
+
+    { // Add translation
+      var translationWrapper = new DivElement()
+        ..style.display = 'flex';
+      textTranslationWrapper.append(translationWrapper);
+
+      var descriptionElement = new DivElement()
+        ..classes.add('action__description');
+      translationWrapper.append(descriptionElement);
+
+      var translationElement = new DivElement()
+        ..classes.add('action__translation')
+        ..text = translation;
+      descriptionElement.append(translationElement);
+
+      var buttonElement = new DivElement()
+        ..classes.add('action__button')
+        ..text = '$buttonText (Swa)'; // TODO(mariana): These project-specific preferences should be read from a project config file
+      buttonElement.onClick.listen((_) => command(UIAction.sendMessage, new ReplyData(replyIndex, replyWithTranslation: true)));
+      translationWrapper.append(buttonElement);
+    }
   }
 }
 

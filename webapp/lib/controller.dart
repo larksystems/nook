@@ -23,6 +23,7 @@ enum UIAction {
   updateTranslation,
   updateNote,
   sendMessage,
+  sendManualMessage,
   addTag,
   addFilterTag,
   removeConversationTag,
@@ -59,7 +60,13 @@ class MessageData extends Data {
 
 class ReplyData extends Data {
   int replyIndex;
-  ReplyData(this.replyIndex);
+  bool replyWithTranslation;
+  ReplyData(this.replyIndex, {this.replyWithTranslation: false});
+}
+
+class ManualReplyData extends Data {
+  String replyText;
+  ManualReplyData(this.replyText);
 }
 
 class TranslationData extends Data {
@@ -273,6 +280,13 @@ void command(UIAction action, Data data) {
     case UIAction.sendMessage:
       ReplyData replyData = data;
       model.SuggestedReply selectedReply = suggestedReplies[replyData.replyIndex];
+      if (replyData.replyWithTranslation) {
+        model.SuggestedReply translationReply = new model.SuggestedReply();
+        translationReply
+          ..text = selectedReply.translation
+          ..translation = '';
+        selectedReply = translationReply;
+      }
       if (!multiSelectMode) {
         sendReply(selectedReply, activeConversation);
         return;
@@ -281,6 +295,18 @@ void command(UIAction action, Data data) {
         return;
       }
       sendMultiReply(selectedReply, selectedConversations);
+      break;
+    case UIAction.sendManualMessage:
+      ManualReplyData replyData = data;
+      model.SuggestedReply oneoffReply = new model.SuggestedReply();
+      oneoffReply
+        ..text = replyData.replyText
+        ..translation = '';
+      if (!view.sendingManualMessageUserConfirmation(oneoffReply.text)) {
+        return;
+      }
+      sendReply(oneoffReply, activeConversation);
+      view.conversationPanelView.clearNewMessageBox();
       break;
     case UIAction.addTag:
       TagData tagData = data;
@@ -634,11 +660,7 @@ void sendReply(model.SuggestedReply reply, model.Conversation conversation) {
       translation: newMessage.translation,
       incoming: false)
   );
-  platform
-    .sendMessage(conversation.docId, reply.text)
-    .then((success) {
-      log.verbose('controller.sendMessage reponse status $success');
-    });
+  platform.sendMessage(conversation.docId, reply.text);
 }
 
 void sendMultiReply(model.SuggestedReply reply, List<model.Conversation> conversations) {
@@ -661,11 +683,7 @@ void sendMultiReply(model.SuggestedReply reply, List<model.Conversation> convers
     );
   }
   List<String> ids = conversations.map((conversation) => conversation.docId).toList();
-  platform
-    .sendMultiMessage(ids, newMessage.text)
-    .then((success) {
-      log.verbose('controller.sendMultiMessage reponse status $success');
-    });
+  platform.sendMultiMessage(ids, newMessage.text);
 }
 
 void setConversationTag(model.Tag tag, model.Conversation conversation) {
