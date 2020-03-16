@@ -96,6 +96,16 @@ main {
     margin: 16px;
 }
 
+.tags-menu__container::before {
+    content: '';
+    width: 150px;
+    height: 100%;
+    background: white;
+    opacity: 0;
+    position: absolute;
+    left: -150px;
+}
+
 .conversation-list-panel {
     border-right: 1px solid #ddd;
 }
