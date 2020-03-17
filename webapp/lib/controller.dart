@@ -270,6 +270,12 @@ void initUI() {
       conversations.removeWhere((conversation) => updatedIds.contains(conversation.docId));
       conversations.addAll(updatedConversations);
 
+      // Determine if the active conversation data needs to be replaced
+      String activeConversationId = activeConversation?.docId;
+      if (updatedIds.contains(activeConversationId)) {
+        activeConversation = conversations.firstWhere((c) => c.docId == activeConversationId);
+      }
+
       // Get any filter tags from the url
       List<String> filterTagIds = view.urlView.pageUrlFilterTags;
       filterTags = filterTagIds.map((tagId) => conversationTags.singleWhere((tag) => tag.tagId == tagId)).toList();
@@ -279,6 +285,11 @@ void initUI() {
 
       activeConversation = updateViewForConversations(filteredConversations);
       if (activeConversation == null) return;
+
+      // Update the active conversation view as needed
+      if (updatedIds.contains(activeConversation.docId)) {
+        updateViewForConversation(activeConversation);
+      }
       command(UIAction.markConversationRead, ConversationData(activeConversation.docId));
     });
 
