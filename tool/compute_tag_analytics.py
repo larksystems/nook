@@ -169,5 +169,5 @@ if __name__ == '__main__':
 
     daily_metrics_file = f"{OUTPUT_FOLDER}/nook-analysis-daily_metrics_{now}.json"
     with open(daily_metrics_file, mode="w", encoding='utf-8') as output_file:
-        json.dump(daily_metrics, output_file, indent=2)
+        json.dump(daily_metrics_json, output_file, indent=2)
         log.info(f"compute_daily_tag_distribution saved to {daily_metrics_file}")
