@@ -14,18 +14,13 @@ enum TagReceiver {
 
 // Functions to populate the views with model objects.
 
-void _populateConversationListPanelView(Set<model.Conversation> conversations) {
-  view.conversationListPanelView.clearConversationList();
+void _populateConversationListPanelView(Set<model.Conversation> conversations, bool updateList) {
   view.conversationListPanelView.hideLoadSpinner();
-  if (conversations.isNotEmpty) {
-    for (var conversation in conversations) {
-      view.conversationListPanelView.addConversation(
-          new view.ConversationSummary(
-              conversation.docId,
-              conversation.messages.first.text,
-              conversation.unread)
-      );
-    }
+  if (conversations.isEmpty || !updateList) {
+    view.conversationListPanelView.clearConversationList();
+  }
+  for (var conversation in conversations) {
+    view.conversationListPanelView.addOrUpdateConversation(conversation);
   }
 }
 
