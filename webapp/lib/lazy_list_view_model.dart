@@ -16,7 +16,7 @@ class LazyListViewModel {
   final DivElement _listView;
 
   /// The vertical scroll distance of the DOM elements in the [_listView] in pixels.
-  int _scrollLength = 0;
+  int _scrollLength = _scollPadMinHeight;
 
   /// The width of the [_listView] scrolling area in pixels
   /// or `null` if it has not been cached yet.
@@ -58,9 +58,10 @@ class LazyListViewModel {
     for (var item in _items) {
       item.disposeElement();
     }
+    _scrollPad.remove();
     assert(_listView.children.length == 0);
     _items.clear();
-    _scrollLength = 0;
+    _scrollLength = _scollPadMinHeight;
   }
 
   void selectItem(LazyListViewItem item) {
