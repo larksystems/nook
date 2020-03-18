@@ -1,4 +1,4 @@
-# A Python library to help process demogs
+# A small library to help process demogs
 
 def try_parse_age(age):
     try:
