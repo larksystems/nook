@@ -16,7 +16,7 @@ class LazyListViewModel {
   final DivElement _listView;
 
   /// The vertical scroll distance of the DOM elements in the [_listView] in pixels.
-  int _scrollLength = _scollPadMinHeight;
+  int _scrollLength = _scrollPadMinHeight;
 
   /// The width of the [_listView] scrolling area in pixels
   /// or `null` if it has not been cached yet.
@@ -26,7 +26,7 @@ class LazyListViewModel {
   /// so that scrolling approximates the list size
   /// without adding all of the individual DOM elements
   final _scrollPad = DivElement();
-  static const _scollPadMinHeight = 30;
+  static const _scrollPadMinHeight = 30;
 
   /// When the width of the scrolling area changes,
   /// a delayed [Future] is created to recalculate [_scrollLength].
@@ -61,7 +61,7 @@ class LazyListViewModel {
     _scrollPad.remove();
     assert(_listView.children.length == 0);
     _items.clear();
-    _scrollLength = _scollPadMinHeight;
+    _scrollLength = _scrollPadMinHeight;
   }
 
   void selectItem(LazyListViewItem item) {
@@ -90,7 +90,7 @@ class LazyListViewModel {
       // because the item heights and thus the scroll length depends upon the scroll area width.
       _scrollLengthRecalc ??= new Future.delayed(const Duration(seconds: 2), () {
         _scrollLength = _listView.children.fold(0, (len, element)
-            => element == _scrollPad ? _scollPadMinHeight : len + element.clientHeight);
+            => element == _scrollPad ? _scrollPadMinHeight : len + element.clientHeight);
         _scrollWidth = _listView.clientWidth;
         _scrollLengthRecalc = null;
       });
@@ -117,7 +117,7 @@ class LazyListViewModel {
       int numItemsInPad = _items.length - _listView.children.length;
       padHeight = aveItemHeight.floor() * numItemsInPad;
     } else {
-      padHeight = _scollPadMinHeight;
+      padHeight = _scrollPadMinHeight;
     }
     _scrollPad.style.height = "${padHeight}px";
     _listView.append(_scrollPad);
