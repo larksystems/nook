@@ -88,17 +88,23 @@ def compute_daily_tag_distribution(nook_conversations, ignore_stop=False):
                 date_metrics["response_themes"][tag_id_to_name[tag]] = True
             conversation_metrics[date] = date_metrics
 
-        # add conversation metrics to overall metrics
-        for date, date_metrics in conversation_metrics.items():
-            total_date_metrics = daily_metrics.get(date, empty_daily_metrics(response_themes))
-            for key1 in date_metrics.keys():
-                if (total_date_metrics[key1] is int):
-                    total_date_metrics[key1] += 1
+        # Add the computed conversation metrics to overall metrics
+        # - conversation_metrics only has fields corresponding to the tags that apply to it
+        #   so the presence of a metric name in the data structure indicates
+        #   that it should be counted against that metric
+        # - daily_metrics tracks the actual conversation counts for all metrics
+        for date in conversation_metrics.keys():
+            date_daily_metrics = daily_metrics.get(date, empty_daily_metrics(response_themes))
+            for metric in conversation_metrics[date].keys():
+                # Some metrics are top-level metrics, with a direct int value associated to them
+                if (date_daily_metrics[metric] is int):
+                    date_daily_metrics[metric] += 1
                     continue
-                total_value = total_date_metrics[key1]
-                for key2 in date_metrics[key1]:
-                    total_value[key2] += 1
-            daily_metrics[date] = total_date_metrics
+                # Other metrics are groupings of other sub-metrics, such as gender -> male, female, unknown
+                date_daily_metrics_group = date_daily_metrics[metric]
+                for sub_metric in conversation_metrics[date][metric]:
+                    date_daily_metrics_group[sub_metric] += 1
+            daily_metrics[date] = date_daily_metrics
 
     time_end = time.perf_counter_ns()
 
