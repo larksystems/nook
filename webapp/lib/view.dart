@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:html';
 
 import 'package:intl/intl.dart';
+import 'package:nook/model.dart';
 
 import 'dom_utils.dart';
 import 'logger.dart';
@@ -603,10 +604,23 @@ class ConversationListPanelView {
     conversationListPanel.append(conversationFilter.conversationFilter);
   }
 
-  void addConversation(ConversationSummary conversationSummary, [int position]) {
-    _conversationList.addItem(conversationSummary, position);
-    _phoneToConversations[conversationSummary.deidentifiedPhoneNumber] = conversationSummary;
-    _conversationPanelTitle.text = '${_phoneToConversations.length} conversations';
+  void addOrUpdateConversation(Conversation conversation) {
+    ConversationSummary summary = _phoneToConversations[conversation.docId];
+    if (summary != null) {
+      if (conversation.unread) {
+        summary._markUnread();
+      } else {
+        summary._markRead();
+      }
+    } else {
+      summary = new ConversationSummary(
+              conversation.docId,
+              conversation.messages.first.text,
+              conversation.unread);
+      _conversationList.addItem(summary, null);
+      _phoneToConversations[summary.deidentifiedPhoneNumber] = summary;
+      _conversationPanelTitle.text = '${_phoneToConversations.length} conversations';
+    }
   }
 
   void selectConversation(String deidentifiedPhoneNumber) {

@@ -283,7 +283,7 @@ void initUI() {
       _populateFilterTagsMenu(_filterAgeTagsIfNeeded(conversationTags));
       _populateSelectedFilterTags(filterTags);
 
-      activeConversation = updateViewForConversations(filteredConversations);
+      activeConversation = updateViewForConversations(filteredConversations, updateList: true);
       if (activeConversation == null) return;
 
       // Update the active conversation view as needed
@@ -660,11 +660,12 @@ void updateFilteredConversationList() {
   }
 }
 
-/// Shows the list of [conversations] and selects the first conversation.
+/// Shows the list of [conversations] and selects the first conversation
+/// where [updateList] is `true` if this list can be updated in place.
 /// Returns the first conversation in the list, or null if list is empty.
-model.Conversation updateViewForConversations(Set<model.Conversation> conversations) {
+model.Conversation updateViewForConversations(Set<model.Conversation> conversations, {bool updateList = false}) {
   // Update conversationListPanelView
-  _populateConversationListPanelView(conversations);
+  _populateConversationListPanelView(conversations, updateList);
 
   // Update conversationPanelView
   if (conversations.isEmpty) {
