@@ -8,9 +8,10 @@
 
 .action {
   margin: 4px;
-  padding: 8px;
+  padding: 4px 0 4px 0px;
   border-radius: 6px;
   display: flex;
+  position: relative;
 }
 
 .action:hover {
@@ -38,6 +39,13 @@
   align-self: start;
 }
 
+.action__button--float {
+  background: white;
+  box-shadow: 0 0 5px 4px #eee;
+  position: absolute;
+  right: 0;
+}
+
 .new-message-box__send-button {
   height: 50px;
   line-height: 40px;
@@ -59,7 +67,6 @@
 .action__shortcut {
   flex: 0;
   align-self: start;
-  margin-right: 16px;
   padding: 0px 6px;
 }
 
