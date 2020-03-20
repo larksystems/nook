@@ -14,6 +14,7 @@ log = Logger(__name__)
 CONVERSATIONS_COLLECTION_KEY = 'nook_conversations'
 CONVERSATION_TAGS_COLLECTION_KEY = 'conversationTags'
 DAILY_TAG_METRICS_COLLECTION_KEY = 'daily_tag_metrics'
+NEEDS_REPLY_METRICS_COLLECTION_KEY = 'needs_reply_metrics'
 
 NEEDS_REPLY_TAG = "Needs Reply"
 
@@ -231,7 +232,7 @@ if __name__ == '__main__':
     needs_reply_metrics = compute_needs_reply(nook_conversations)
     # prepare for writing to a json file that can be uploaded to firebase
     needs_reply_metrics["__id"] = "latest_needs_reply_metrics"
-    needs_reply_metrics["__reference_path"] = f"{DAILY_TAG_METRICS_COLLECTION_KEY}/{day}"
+    needs_reply_metrics["__reference_path"] = f"{NEEDS_REPLY_METRICS_COLLECTION_KEY}/{day}"
     needs_reply_metrics["__subcollections"] = []
     needs_reply_metrics_json = {'latest_needs_reply_metrics' : needs_reply_metrics}
 
