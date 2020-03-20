@@ -232,9 +232,9 @@ if __name__ == '__main__':
     needs_reply_metrics = compute_needs_reply(nook_conversations)
     # prepare for writing to a json file that can be uploaded to firebase
     needs_reply_metrics["__id"] = "latest_needs_reply_metrics"
-    needs_reply_metrics["__reference_path"] = f"{NEEDS_REPLY_METRICS_COLLECTION_KEY}/{day}"
+    needs_reply_metrics["__reference_path"] = f"{NEEDS_REPLY_METRICS_COLLECTION_KEY}/latest_needs_reply_metrics"
     needs_reply_metrics["__subcollections"] = []
-    needs_reply_metrics_json = {'latest_needs_reply_metrics' : needs_reply_metrics}
+    needs_reply_metrics_json = {NEEDS_REPLY_METRICS_COLLECTION_KEY : [needs_reply_metrics]}
 
     needs_reply_metrics_file = f"{OUTPUT_FOLDER}/nook-analysis-needs_reply_metrics_{now}.json"
     with open(needs_reply_metrics_file, mode="w", encoding='utf-8') as output_file:
