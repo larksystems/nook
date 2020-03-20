@@ -109,7 +109,7 @@ void makeEditable(Element element, {void onChange(), void onEnter()}) {
 }
 
 const REPLY_PANEL_TITLE = 'Suggested responses';
-const TAG_PANEL_TITLE = 'Available tags';
+const TAG_PANEL_TITLE = 'Tags';
 const ADD_REPLY_INFO = 'Add new suggested response';
 const ADD_TAG_INFO = 'Add new tag';
 const MARK_UNREAD_INFO = 'Mark unread';
@@ -948,7 +948,7 @@ class TagPanelView {
       ..append(
         new DivElement()
           ..append(_hideTagsCheckbox)
-          ..append(new SpanElement()..text = 'Hide age tags'));
+          ..append(new SpanElement()..text = 'Hide demog tags'));
 
     _tags = new DivElement()
       ..classes.add('tags')
@@ -1035,6 +1035,7 @@ class ReplyActionView extends ActionView {
 
       var buttonElement = new DivElement()
         ..classes.add('action__button')
+        ..classes.add('action__button--float')
         ..text = '$buttonText (En)'; // TODO(mariana): These project-specific preferences should be read from a project config file
       buttonElement.onClick.listen((_) => command(UIAction.sendMessage, new ReplyData(replyIndex)));
       textWrapper.append(buttonElement);
