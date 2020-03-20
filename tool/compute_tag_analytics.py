@@ -17,6 +17,7 @@ DAILY_TAG_METRICS_COLLECTION_KEY = 'daily_tag_metrics'
 NEEDS_REPLY_METRICS_COLLECTION_KEY = 'needs_reply_metrics'
 
 NEEDS_REPLY_TAG = "Needs Reply"
+ESCALATE_TAG = "escalate"
 
 coda_tags = {}
 
@@ -125,6 +126,8 @@ def compute_needs_reply(nook_conversations):
     needs_reply_count = 0
     needs_reply_dates = []
     needs_reply_tag_id = tag_to_tag_id(NEEDS_REPLY_TAG)
+    needs_reply_and_escalate_count = 0
+    escalate_tag_id = tag_to_tag_id(ESCALATE_TAG)
 
     def get_last_incoming_message(messages):
         for message in messages[::-1]:
@@ -144,6 +147,9 @@ def compute_needs_reply(nook_conversations):
         # Get the date of the last incoming message
         needs_reply_dates.append(get_last_incoming_message(conversation["messages"]))
 
+        # Count if this conversation is also tagged as escalate
+        if escalate_tag_id in conversation_tags:
+            needs_reply_and_escalate_count += 1
 
     earliest_date = datetime.now(timezone.utc)
     for date in needs_reply_dates:
@@ -154,6 +160,7 @@ def compute_needs_reply(nook_conversations):
     needs_reply_metrics = {
         "datetime": datetime.now().isoformat(),
         "needs_reply_count": needs_reply_count,
+        "needs_reply_and_escalate_count": needs_reply_and_escalate_count,
         "needs_reply_dates": needs_reply_dates,
         "earliest_needs_reply_date": earliest_date.isoformat(),
     }
