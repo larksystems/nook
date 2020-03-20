@@ -14,6 +14,7 @@ log = Logger(__name__)
 CONVERSATIONS_COLLECTION_KEY = 'nook_conversations'
 CONVERSATION_TAGS_COLLECTION_KEY = 'conversationTags'
 DAILY_TAG_METRICS_COLLECTION_KEY = 'daily_tag_metrics'
+TOTAL_COUNTS_METRICS_COLLECTION_KEY = 'total_counts_metrics'
 
 coda_tags = {}
 
@@ -113,6 +114,59 @@ def compute_daily_tag_distribution(nook_conversations, ignore_stop=False):
 
     return daily_metrics
 
+def compute_total_counts(nook_conversations, ignore_stop=False):
+    log.info (f"compute_total_counts: processing {len(nook_conversations)} conversations...")
+
+    time_start = time.perf_counter_ns()
+
+    age_ids = tag_ids(coda_tags["age"])
+    gender_ids = tag_ids(coda_tags["gender"])
+    location_ids = tag_ids(coda_tags.get("county", []))
+    location_ids.extend(tag_ids(coda_tags.get("constituency", [])))
+
+    conversations_count = 0
+    incoming_messages_count = 0
+    incoming_non_demogs_messages_count = 0
+    outgoing_messages_count = 0
+    messages_count = 0
+
+    for conversation in nook_conversations:
+        conversation_tags = conversation["tags"]
+
+        if not ignore_stop and tag_to_tag_id("STOP") in conversation_tags:
+            continue
+
+        conversations_count += 1
+
+        # process each message
+        messages = conversation["messages"]
+        for message in messages:
+            messages_count += 1
+            if message["direction"] == "MessageDirection.out":
+                outgoing_messages_count += 1
+                continue
+            incoming_messages_count += 1
+
+            # message is a demogs message if it's been tagged with an age, gender or location tag
+            if (len(set(age_ids).intersection(message["tags"])) != 0 or
+                len(set(gender_ids).intersection(message["tags"])) != 0 or
+                len(set(location_ids).intersection(message["tags"])) != 0):
+                incoming_non_demogs_messages_count += 1
+
+    time_end = time.perf_counter_ns()
+
+    ms_elapsed = (time_end - time_start) / (1000 * 1000)
+    log.info (f"compute_total_counts: processed {len(nook_conversations)} conversations in {ms_elapsed} ms")
+
+    total_counts = {
+        "conversations_count" : conversations_count,
+        "messages_count": messages_count,
+        "incoming_messages_count": incoming_messages_count,
+        "incoming_non_demogs_messages_count": incoming_non_demogs_messages_count,
+        "outgoing_messages_count": outgoing_messages_count
+    }
+
+    return total_counts
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -177,3 +231,16 @@ if __name__ == '__main__':
     with open(daily_metrics_file, mode="w", encoding='utf-8') as output_file:
         json.dump(daily_metrics_json, output_file, indent=2)
         log.info(f"compute_daily_tag_distribution saved to {daily_metrics_file}")
+
+
+    total_counts = compute_total_counts(nook_conversations, IGNORE_STOP)
+    # prepare for writing to a json file that can be uploaded to firebase
+    total_counts["__id"] = TOTAL_COUNTS_METRICS_COLLECTION_KEY
+    total_counts["__reference_path"] = f"{TOTAL_COUNTS_METRICS_COLLECTION_KEY}/{TOTAL_COUNTS_METRICS_COLLECTION_KEY}"
+    total_counts["__subcollections"] = []
+    total_counts_json = {TOTAL_COUNTS_METRICS_COLLECTION_KEY : [total_counts]}
+
+    total_counts_file = f"{OUTPUT_FOLDER}/nook-analysis-total_counts_{now}.json"
+    with open(total_counts_file, mode="w", encoding='utf-8') as output_file:
+        json.dump(total_counts_json, output_file, indent=2)
+        log.info(f"compute_total_counts saved to {total_counts_file}")
