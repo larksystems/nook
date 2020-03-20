@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-CoreDataModules = {git = "https://www.github.com/AfricasVoices/CoreDataModules", editable = true}
+CoreDataModules = {git = "https://www.github.com/AfricasVoices/CoreDataModules",editable = true}
 pytz = "*"
 python-dateutil = ">=2.8.0"  # Need this minimum so that isoparse handles T24:00:00 correctly.
 google-cloud-storage = "*"
@@ -14,7 +14,7 @@ google-cloud = "*"
 firebase_admin = "*"
 grpcio = "*"
 google-cloud-translate = "*"
-
+psutil = "*"
 
 [dev-packages]
 
