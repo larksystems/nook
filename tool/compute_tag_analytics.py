@@ -37,6 +37,7 @@ def empty_daily_metrics(response_themes):
         "response_themes": dict.fromkeys(response_themes, 0)
     }
 
+
 def compute_daily_tag_distribution(nook_conversations, ignore_stop=False):
     log.info (f"compute_daily_tag_distribution: processing {len(nook_conversations)} conversations...")
 
@@ -293,6 +294,7 @@ if __name__ == '__main__':
         json.dump(daily_metrics_json, output_file, indent=2)
         log.info(f"compute_daily_tag_distribution saved to {daily_metrics_file}")
 
+
     total_counts = compute_total_counts(nook_conversations, IGNORE_STOP)
     # prepare for writing to a json file that can be uploaded to firebase
     total_counts["__id"] = TOTAL_COUNTS_METRICS_COLLECTION_KEY
@@ -304,6 +306,7 @@ if __name__ == '__main__':
     with open(total_counts_file, mode="w", encoding='utf-8') as output_file:
         json.dump(total_counts_json, output_file, indent=2)
         log.info(f"compute_total_counts saved to {total_counts_file}")
+
 
     needs_reply_metrics = compute_needs_reply(nook_conversations)
     # prepare for writing to a json file that can be uploaded to firebase
