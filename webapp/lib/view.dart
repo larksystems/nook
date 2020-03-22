@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:html';
 
 import 'package:intl/intl.dart';
+import 'package:nook/model.dart';
 
 import 'dom_utils.dart';
 import 'logger.dart';
@@ -108,7 +109,7 @@ void makeEditable(Element element, {void onChange(), void onEnter()}) {
 }
 
 const REPLY_PANEL_TITLE = 'Suggested responses';
-const TAG_PANEL_TITLE = 'Available tags';
+const TAG_PANEL_TITLE = 'Tags';
 const ADD_REPLY_INFO = 'Add new suggested response';
 const ADD_TAG_INFO = 'Add new tag';
 const MARK_UNREAD_INFO = 'Mark unread';
@@ -603,10 +604,23 @@ class ConversationListPanelView {
     conversationListPanel.append(conversationFilter.conversationFilter);
   }
 
-  void addConversation(ConversationSummary conversationSummary, [int position]) {
-    _conversationList.addItem(conversationSummary, position);
-    _phoneToConversations[conversationSummary.deidentifiedPhoneNumber] = conversationSummary;
-    _conversationPanelTitle.text = '${_phoneToConversations.length} conversations';
+  void addOrUpdateConversation(Conversation conversation) {
+    ConversationSummary summary = _phoneToConversations[conversation.docId];
+    if (summary != null) {
+      if (conversation.unread) {
+        summary._markUnread();
+      } else {
+        summary._markRead();
+      }
+    } else {
+      summary = new ConversationSummary(
+              conversation.docId,
+              conversation.messages.first.text,
+              conversation.unread);
+      _conversationList.addItem(summary, null);
+      _phoneToConversations[summary.deidentifiedPhoneNumber] = summary;
+      _conversationPanelTitle.text = '${_phoneToConversations.length} conversations';
+    }
   }
 
   void selectConversation(String deidentifiedPhoneNumber) {
@@ -934,7 +948,7 @@ class TagPanelView {
       ..append(
         new DivElement()
           ..append(_hideTagsCheckbox)
-          ..append(new SpanElement()..text = 'Hide age tags'));
+          ..append(new SpanElement()..text = 'Hide demog tags'));
 
     _tags = new DivElement()
       ..classes.add('tags')
@@ -1021,6 +1035,7 @@ class ReplyActionView extends ActionView {
 
       var buttonElement = new DivElement()
         ..classes.add('action__button')
+        ..classes.add('action__button--float')
         ..text = '$buttonText (En)'; // TODO(mariana): These project-specific preferences should be read from a project config file
       buttonElement.onClick.listen((_) => command(UIAction.sendMessage, new ReplyData(replyIndex)));
       textWrapper.append(buttonElement);
@@ -1042,6 +1057,7 @@ class ReplyActionView extends ActionView {
 
       var buttonElement = new DivElement()
         ..classes.add('action__button')
+        ..classes.add('action__button--float')
         ..text = '$buttonText (Swa)'; // TODO(mariana): These project-specific preferences should be read from a project config file
       buttonElement.onClick.listen((_) => command(UIAction.sendMessage, new ReplyData(replyIndex, replyWithTranslation: true)));
       translationWrapper.append(buttonElement);
