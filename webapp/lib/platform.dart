@@ -92,10 +92,7 @@ void listenForSystemMessages(SystemMessageCollectionListener listener) =>
     SystemMessage.listen(_docStorage, listener);
 
 void listenForConversations(ConversationCollectionListener listener) {
-  listenForUpdates<Conversation>(_docStorage, listener, "/${Conversation.collectionName}", (DocSnapshot conversation) {
-    log.verbose("_firestoreConversationToModelConversation: ${conversation.id}");
-    return Conversation.fromSnapshot(conversation);
-  });
+  Conversation.listen(_docStorage, listener, collectionRoot: "/${Conversation.collectionName}");
 }
 
 void listenForConversationTags(TagCollectionListener listener) =>

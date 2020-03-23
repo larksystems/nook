@@ -266,6 +266,11 @@ void initUI() {
 
   platform.listenForConversations(
     (updatedConversations) {
+      if (updatedConversations.length != 1) {
+        log.verbose("loading/updating ${updatedConversations.length} conversations");
+      } else {
+        log.verbose("loading/updating conversation ${updatedConversations[0].docId}");
+      }
       var updatedIds = updatedConversations.map((t) => t.docId).toSet();
       conversations.removeWhere((conversation) => updatedIds.contains(conversation.docId));
       conversations.addAll(updatedConversations);
