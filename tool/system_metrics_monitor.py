@@ -8,8 +8,8 @@ from firebase_admin import credentials
 from firebase_admin import firestore
 from core_data_modules.logging import Logger
 
-COLLECTION = 'pipeline_metrics'
-DEFAULT_INTERVAL = 3
+COLLECTION = 'pipeline_system_metrics' #name of the firebase collections to store metrics
+DEFAULT_INTERVAL = 3 # wait interval between each set of metric readings in seconds
 
 log = Logger(__name__)
 
@@ -23,12 +23,12 @@ def initialize_firebase(CRYPTO_TOKEN_PATH):
     log.info("Firebase client ready")
 
 
-def get_metrics(interval):
+def get_and_publish_system_metrics(interval):
     while True:
         metrics = {}
 
         # record datetime
-        metrics['datetime'] = dt.datetime.now().isoformat() + 'Z'
+        metrics['datetime'] = dt.datetime.now(dt.timezone.utc).isoformat()
 
         # current cpu utlization
         cpu_utilization = psutil.cpu_percent(interval=0.1)
@@ -37,7 +37,13 @@ def get_metrics(interval):
         # cpu load over the last 1, 5 and 15 minutes in percentage
         cpu_load = [round((value / psutil.cpu_count() * 100), 2)
                     for value in psutil.getloadavg()]
-        metrics['cpu_load_interval_percent'] = cpu_load
+        metrics['cpu_load_interval_percent'] = dict(
+            {
+                '1min': cpu_load[0],
+                '5min': cpu_load[1],
+                '15min': cpu_load[2]
+            }
+        )
 
         # memory usage
         memory_usage = psutil.virtual_memory()
@@ -65,11 +71,10 @@ def publish_metrics_to_firestore(metrics):
     log.info("Successfully published metrics to firebase {} collection".format(COLLECTION))
 
 
-def run_metric_monitor(interval=DEFAULT_INTERVAL):
+def run_system_metric_monitor(interval=DEFAULT_INTERVAL):
     initialize_firebase(sys.argv[1])
-    runner = threading.Thread(
-        target=get_metrics, args=(interval,))
+    runner = threading.Thread(target=get_and_publish_system_metrics, args=(interval,))
     runner.start()
 
 
-run_metric_monitor()
+run_system_metric_monitor()
