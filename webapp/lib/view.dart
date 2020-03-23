@@ -12,6 +12,7 @@ import 'lazy_list_view_model.dart';
 
 Logger log = new Logger('view.dart');
 
+ConversationListSelectHeader conversationListSelectView;
 ConversationListPanelView conversationListPanelView;
 ConversationFilter get conversationFilter => conversationListPanelView.conversationFilter;
 ConversationPanelView conversationPanelView;
@@ -24,6 +25,7 @@ SnackbarView snackbarView;
 BannerView bannerView;
 
 void init() {
+  conversationListSelectView = new ConversationListSelectHeader();
   conversationListPanelView = new ConversationListPanelView();
   conversationPanelView = new ConversationPanelView();
   replyPanelView = new ReplyPanelView();
@@ -34,13 +36,16 @@ void init() {
   snackbarView = new SnackbarView();
   bannerView = new BannerView();
 
-  querySelector('header').insertAdjacentElement('beforeBegin', bannerView.bannerElement);
-  querySelector('header').append(authHeaderView.authElement);
+  querySelector('header')
+      ..insertAdjacentElement('beforeBegin', bannerView.bannerElement)
+      ..append(conversationListSelectView.panel)
+      ..append(authHeaderView.authElement);
 
   document.onKeyDown.listen((event) => command(UIAction.keyPressed, new KeyPressData(event.key)));
 }
 
 void initSignedInView() {
+  conversationListSelectView.panel.style.visibility = 'visible';
   clearMain();
 
   querySelector('main')
@@ -53,6 +58,7 @@ void initSignedInView() {
 }
 
 void initSignedOutView() {
+  conversationListSelectView.panel.style.visibility = 'hidden';
   clearMain();
 
   querySelector('main').append(authMainView.authElement);
@@ -549,6 +555,27 @@ class AfterDateFilterTagView extends FilterTagView {
   @override
   void handleClicked(String tagId) {
     command(UIAction.updateAfterDateFilter, new AfterDateFilterData(tagId, null));
+  }
+}
+
+// A drop down to select which conversation list to display
+class ConversationListSelectHeader {
+  DivElement panel;
+
+  ConversationListSelectHeader() {
+    panel = new DivElement()
+      ..classes.add('conversation-list-select-header');
+
+    panel.append(
+      new SpanElement()
+        ..classes.add('conversation-list-select-label')
+        ..text = 'Conversation List:');
+
+    panel.append(
+      new SelectElement()
+        ..classes.add('conversation-list-select')
+        // TODO dynamically populate this from firebase "tables/conversation-lists"
+        ..add(OptionElement(data: 'nook_conversations'), null));
   }
 }
 
