@@ -197,7 +197,7 @@ void initUI() {
   multiSelectMode = false;
   activeConversation = null;
   selectedSuggestedRepliesCategory = '';
-  hideDemogsTags = false;
+  hideDemogsTags = true;
 
   platform.listenForConversationTags(
     (tags) {

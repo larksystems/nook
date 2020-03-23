@@ -939,8 +939,9 @@ class TagPanelView {
       ..classes.add('panel-title--multiple-cols');
     tagPanel.append(panelTitle);
 
-    _hideTagsCheckbox = new InputElement(type: 'checkbox');
-    _hideTagsCheckbox.onChange.listen((_) => command(UIAction.hideAgeTags, new ToggleData(_hideTagsCheckbox.checked)));
+    _hideTagsCheckbox = new InputElement(type: 'checkbox')
+      ..checked = true
+      ..onChange.listen((_) => command(UIAction.hideAgeTags, new ToggleData(_hideTagsCheckbox.checked)));
 
     panelTitle
       ..append(
