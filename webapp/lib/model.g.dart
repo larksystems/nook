@@ -7,6 +7,33 @@ import 'logger.dart';
 
 Logger log = Logger('model.g.dart');
 
+class ConversationListShard {
+  static const collectionName = 'nook_conversation_shards';
+
+  String docId;
+  String name;
+
+  static ConversationListShard fromSnapshot(DocSnapshot doc, [ConversationListShard modelObj]) =>
+      fromData(doc.data, modelObj)..docId = doc.id;
+
+  static ConversationListShard fromData(data, [ConversationListShard modelObj]) {
+    if (data == null) return null;
+    return (modelObj ?? ConversationListShard())
+      ..name = String_fromData(data['name']);
+  }
+
+  static void listen(DocStorage docStorage, ConversationListShardCollectionListener listener,
+          {String collectionRoot = '/$collectionName'}) =>
+      listenForUpdates<ConversationListShard>(docStorage, listener, collectionRoot, ConversationListShard.fromSnapshot);
+
+  Map<String, dynamic> toData() {
+    return {
+      if (name != null) 'name': name,
+    };
+  }
+}
+typedef void ConversationListShardCollectionListener(List<ConversationListShard> changes);
+
 class Conversation {
   static const collectionName = 'nook_conversations';
 

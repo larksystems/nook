@@ -1,3 +1,7 @@
+ConversationListShard:
+  firebaseCollectionName: 'nook_conversation_shards'
+  name: 'string'
+
 Conversation:
   firebaseCollectionName: 'nook_conversations'
   demographicsInfo: 'map string'
@@ -37,6 +41,8 @@ SuggestedReply:
   text: 'string'
   translation: 'publishable string'
   shortcut: 'string'
+  seq_no: 'int seqNumber'
+  category: 'string'
 
 Tag:
   firebaseDocId: 'string tagId'
