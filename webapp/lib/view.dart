@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:html';
 
 import 'package:intl/intl.dart';
+import 'package:nook/model.dart';
 
 import 'dom_utils.dart';
 import 'logger.dart';
@@ -11,6 +12,7 @@ import 'lazy_list_view_model.dart';
 
 Logger log = new Logger('view.dart');
 
+ConversationListSelectHeader conversationListSelectView;
 ConversationListPanelView conversationListPanelView;
 ConversationIncludeFilterView get conversationIncludeFilter => conversationListPanelView.conversationIncludeFilter;
 ConversationExcludeFilterView get conversationExcludeFilter => conversationListPanelView.conversationExcludeFilter;
@@ -24,6 +26,7 @@ SnackbarView snackbarView;
 BannerView bannerView;
 
 void init() {
+  conversationListSelectView = new ConversationListSelectHeader();
   conversationListPanelView = new ConversationListPanelView();
   conversationPanelView = new ConversationPanelView();
   replyPanelView = new ReplyPanelView();
@@ -34,13 +37,16 @@ void init() {
   snackbarView = new SnackbarView();
   bannerView = new BannerView();
 
-  querySelector('header').insertAdjacentElement('beforeBegin', bannerView.bannerElement);
-  querySelector('header').append(authHeaderView.authElement);
+  querySelector('header')
+      ..insertAdjacentElement('beforeBegin', bannerView.bannerElement)
+      ..append(conversationListSelectView.panel)
+      ..append(authHeaderView.authElement);
 
   document.onKeyDown.listen((event) => command(UIAction.keyPressed, new KeyPressData(event.key)));
 }
 
 void initSignedInView() {
+  conversationListSelectView.panel.style.visibility = 'visible';
   clearMain();
 
   querySelector('main')
@@ -53,6 +59,7 @@ void initSignedInView() {
 }
 
 void initSignedOutView() {
+  conversationListSelectView.panel.style.visibility = 'hidden';
   clearMain();
 
   querySelector('main').append(authMainView.authElement);
@@ -74,6 +81,10 @@ bool sendingMultiMessagesUserConfirmation(int noMessages) {
 
 bool taggingMultiConversationsUserConfirmation(int noConversations) {
   return window.confirm('Are you sure you want to tag $noConversations conversation${noConversations == 1 ? "" : "s" }?');
+}
+
+bool sendingManualMessageUserConfirmation(String messageText) {
+  return window.confirm('Are you sure you want to send the following message?\n\n$messageText');
 }
 
 void showNormalStatus(String text) {
@@ -105,7 +116,7 @@ void makeEditable(Element element, {void onChange(), void onEnter()}) {
 }
 
 const REPLY_PANEL_TITLE = 'Suggested responses';
-const TAG_PANEL_TITLE = 'Available tags';
+const TAG_PANEL_TITLE = 'Tags';
 const ADD_REPLY_INFO = 'Add new suggested response';
 const ADD_TAG_INFO = 'Add new tag';
 const MARK_UNREAD_INFO = 'Mark unread';
@@ -119,6 +130,7 @@ class ConversationPanelView {
   DivElement _conversationIdCopy;
   DivElement _info;
   DivElement _tags;
+  TextAreaElement _newMessageTextArea;
   AfterDateFilterView _afterDateFilterView;
 
   List<MessageView> _messageViews = [];
@@ -157,6 +169,33 @@ class ConversationPanelView {
     _messages = new DivElement()
       ..classes.add('messages');
     conversationPanel.append(_messages);
+
+    var newMessageBox = new DivElement()
+      ..classes.add('new-message-box');
+    conversationPanel.append(newMessageBox);
+
+    _newMessageTextArea = new TextAreaElement()
+      ..classes.add('new-message-box__textarea');
+    makeEditable(_newMessageTextArea, onChange: () {
+      if (_newMessageTextArea.value.length >= SMS_MAX_LENGTH) {
+        _newMessageTextArea.classes.toggle('warning-background', true);
+        return;
+      }
+      _newMessageTextArea.classes.toggle('warning-background', false);
+    });
+    newMessageBox.append(_newMessageTextArea);
+
+    var buttonElement = new DivElement()
+      ..classes.add('new-message-box__send-button')
+      ..text = SEND_REPLY_BUTTON_TEXT
+      ..onClick.listen((_) {
+        if (_newMessageTextArea.value.length >= SMS_MAX_LENGTH) {
+          showWarningStatus('Message needs to be under $SMS_MAX_LENGTH characters.');
+          return;
+        }
+        command(UIAction.sendManualMessage, new ManualReplyData(_newMessageTextArea.value));
+      });
+    newMessageBox.append(buttonElement);
 
     _afterDateFilterView = AfterDateFilterView();
     conversationPanel.append(_afterDateFilterView.panel);
@@ -197,6 +236,7 @@ class ConversationPanelView {
     _conversationIdCopy.dataset['copy-value'] = '';
     _info.text = '';
     _messageViews = [];
+    clearNewMessageBox();
 
     int tagsNo = _tags.children.length;
     for (int i = 0; i < tagsNo; i++) {
@@ -207,6 +247,10 @@ class ConversationPanelView {
     for (int i = 0; i < messagesNo; i++) {
       _messages.firstChild.remove();
     }
+  }
+
+  void clearNewMessageBox() {
+    _newMessageTextArea.value = '';
   }
 
   void showAfterDateFilterPrompt(DateTime dateTime, FilterType parentFilter) {
@@ -385,10 +429,11 @@ class MessageView {
 
 final DateFormat _dateFormat = new DateFormat('E d MMM y');
 final DateFormat _dateFormatNoYear = new DateFormat('E d MMM');
-final DateFormat _hourFormat = new DateFormat('H:m');
+final DateFormat _hourFormat = new DateFormat('HH:mm');
 
 String _formatDateTime(DateTime dateTime) {
   DateTime now = DateTime.now();
+  return dateTime.toIso8601String(); // HACK(mariana): Temporary fix to have a sortable timestamp for each message
   DateTime localDateTime = dateTime.toLocal();
 
   if (_dateFormat.format(now) == _dateFormat.format(localDateTime)) {
@@ -441,7 +486,8 @@ abstract class TagView {
 
     _tagText = new SpanElement()
       ..classes.add('tag__name')
-      ..text = text;
+      ..text = text
+      ..title = text;
     tag.append(_tagText);
 
     _removeButton = new SpanElement()
@@ -518,6 +564,27 @@ class AfterDateFilterTagView extends FilterTagView {
   }
 }
 
+// A drop down to select which conversation list to display
+class ConversationListSelectHeader {
+  DivElement panel;
+
+  ConversationListSelectHeader() {
+    panel = new DivElement()
+      ..classes.add('conversation-list-select-header');
+
+    panel.append(
+      new SpanElement()
+        ..classes.add('conversation-list-select-label')
+        ..text = 'Conversation List:');
+
+    panel.append(
+      new SelectElement()
+        ..classes.add('conversation-list-select')
+        // TODO dynamically populate this from firebase "tables/conversation-lists"
+        ..add(OptionElement(data: 'nook_conversations'), null));
+  }
+}
+
 class ConversationListPanelView {
   DivElement conversationListPanel;
   DivElement _conversationPanelTitle;
@@ -578,10 +645,23 @@ class ConversationListPanelView {
     conversationFilterContainer.append(conversationExcludeFilter.filterElement);
   }
 
-  void addConversation(ConversationSummary conversationSummary, [int position]) {
-    _conversationList.addItem(conversationSummary, position);
-    _phoneToConversations[conversationSummary.deidentifiedPhoneNumber] = conversationSummary;
-    _conversationPanelTitle.text = '${_phoneToConversations.length} conversations';
+  void addOrUpdateConversation(Conversation conversation) {
+    ConversationSummary summary = _phoneToConversations[conversation.docId];
+    if (summary != null) {
+      if (conversation.unread) {
+        summary._markUnread();
+      } else {
+        summary._markRead();
+      }
+    } else {
+      summary = new ConversationSummary(
+              conversation.docId,
+              conversation.messages.first.text,
+              conversation.unread);
+      _conversationList.addItem(summary, null);
+      _phoneToConversations[summary.deidentifiedPhoneNumber] = summary;
+      _conversationPanelTitle.text = '${_phoneToConversations.length} conversations';
+    }
   }
 
   void selectConversation(String deidentifiedPhoneNumber) {
@@ -766,13 +846,24 @@ class ConversationSummary with LazyListViewItem {
     var summaryMessage = new DivElement()
       ..classes.add('summary-message')
       ..dataset['id'] = deidentifiedPhoneNumber
-      ..text = _text
       ..onClick.listen((_) => command(UIAction.showConversation, new ConversationData(deidentifiedPhoneNumber)));
     if (_selected) conversationSummary.classes.add('conversation-list__item--selected');
     if (_unread) conversationSummary.classes.add('conversation-list__item--unread');
+    summaryMessage
+      ..append(
+        new DivElement()
+          ..classes.add('summary-message__id')
+          ..text = _shortDeidentifiedPhoneNumber)
+      ..append(
+        new DivElement()
+          ..classes.add('summary-message__text')
+          ..text = _text);
     conversationSummary.append(summaryMessage);
     return conversationSummary;
   }
+
+  // HACK(mariana): This should get extracted from the model as it gets computed there for the single conversation view
+  String get _shortDeidentifiedPhoneNumber => deidentifiedPhoneNumber.split('uuid-')[1].split('-')[0];
 
   @override
   void disposeElement() {
@@ -818,21 +909,30 @@ class ConversationSummary with LazyListViewItem {
 class ReplyPanelView {
   DivElement replyPanel;
   DivElement _panelTitle;
+  SelectElement _replyCategories;
   DivElement _replies;
   DivElement _replyList;
   DivElement _notes;
   TextAreaElement _notesTextArea;
 
   AddActionView _addReply;
+  List<ReplyActionView> _replyViews;
 
   ReplyPanelView() {
     replyPanel = new DivElement()
       ..classes.add('reply-panel');
 
-    _panelTitle = new DivElement()
+    var _panelTitle = new DivElement()
       ..classes.add('panel-title')
-      ..text = REPLY_PANEL_TITLE;
+      ..classes.add('panel-title--multiple-cols');
     replyPanel.append(_panelTitle);
+
+    _replyCategories = new SelectElement();
+    _replyCategories.onChange.listen((_) => command(UIAction.updateSuggestedRepliesCategory, new UpdateSuggestedRepliesCategoryData(_replyCategories.value)));
+
+    _panelTitle
+      ..append(new DivElement()..text = REPLY_PANEL_TITLE)
+      ..append(_replyCategories);
 
     _replies = new DivElement()
       ..classes.add('replies')
@@ -855,9 +955,31 @@ class ReplyPanelView {
       command(UIAction.updateNote, new NoteData(_notesTextArea.value));
     });
     _notes.append(_notesTextArea);
+    _replyViews = [];
   }
 
   set noteText(String text) => _notesTextArea.value = text;
+
+  set selectedCategory(String category) {
+    int index = _replyCategories.children.indexWhere((Element option) => (option as OptionElement).value == category);
+    if (index == -1) {
+      showWarningStatus("Couldn't find $category in list of suggested replies category, using first");
+      _replyCategories.selectedIndex = 0;
+      command(UIAction.updateSuggestedRepliesCategory, new UpdateSuggestedRepliesCategoryData(_replyCategories.value));
+      return;
+    }
+    _replyCategories.selectedIndex = index;
+  }
+
+  set categories(List<String> categories) {
+    _replyCategories.children.clear();
+    for (var category in categories) {
+      _replyCategories.append(
+        new OptionElement()
+          ..value = category
+          ..text = category);
+    }
+  }
 
   void addReply(ActionView action) {
     _replyList.append(action.action);
@@ -873,12 +995,15 @@ class ReplyPanelView {
 
   void disableReplies() {
     _replies.remove();
+    _panelTitle.children.clear();
     _panelTitle.text = 'Notes';
     _notes.classes.toggle('notes-box--fullscreen', true);
   }
 
   void enableReplies() {
-    _panelTitle.text = REPLY_PANEL_TITLE;
+    _panelTitle
+      ..append(new DivElement()..text = REPLY_PANEL_TITLE)
+      ..append(_replyCategories);
     replyPanel.insertBefore(_replies, _notes);
     _notes.classes.toggle('notes-box--fullscreen', false);
   }
@@ -889,6 +1014,7 @@ class TagPanelView {
   DivElement _tags;
   DivElement _tagList;
   DivElement _statusPanel;
+  InputElement _hideTagsCheckbox;
   Text _statusText;
 
   AddActionView _addTag;
@@ -899,8 +1025,20 @@ class TagPanelView {
 
     var panelTitle = new DivElement()
       ..classes.add('panel-title')
-      ..text = TAG_PANEL_TITLE;
+      ..classes.add('panel-title--multiple-cols');
     tagPanel.append(panelTitle);
+
+    _hideTagsCheckbox = new InputElement(type: 'checkbox')
+      ..checked = true
+      ..onChange.listen((_) => command(UIAction.hideAgeTags, new ToggleData(_hideTagsCheckbox.checked)));
+
+    panelTitle
+      ..append(
+        new DivElement()..text = TAG_PANEL_TITLE)
+      ..append(
+        new DivElement()
+          ..append(_hideTagsCheckbox)
+          ..append(new SpanElement()..text = 'Hide demog tags'));
 
     _tags = new DivElement()
       ..classes.add('tags')
@@ -960,25 +1098,60 @@ class ActionView {
 
 class ReplyActionView extends ActionView {
   ReplyActionView(String text, String translation, String shortcut, int replyIndex, String buttonText) : super(text, shortcut, '$replyIndex', buttonText) {
-    var descriptionElement = action.querySelector('.action__description')
-      ..text = '';
+    action.children.clear();
 
-    var actionText = new DivElement()
-      ..classes.add('action__text')
-      ..text = text;
-    descriptionElement.append(actionText);
+    var shortcutElement = new DivElement()
+      ..classes.add('action__shortcut')
+      ..text = shortcut;
+    action.append(shortcutElement);
 
-    var actionTranslation = new DivElement();
-    actionTranslation
-      ..classes.add('action__translation')
-      ..text = translation;
-    makeEditable(actionTranslation, onChange: () {
-      command(UIAction.updateTranslation, new ReplyTranslationData(actionTranslation.text, replyIndex));
-    });
-    descriptionElement.append(actionTranslation);
+    var textTranslationWrapper = new DivElement()
+      ..style.flex = '1 1 auto';
+    action.append(textTranslationWrapper);
 
-    var buttonElement = action.querySelector('.action__button');
-    buttonElement.onClick.listen((_) => command(UIAction.sendMessage, new ReplyData(replyIndex)));
+    { // Add text
+      var textWrapper = new DivElement()
+        ..style.display = 'flex';
+      textTranslationWrapper.append(textWrapper);
+
+      var descriptionElement = new DivElement()
+        ..classes.add('action__description');
+      textWrapper.append(descriptionElement);
+
+      var textElement = new DivElement()
+        ..classes.add('action__text')
+        ..text = text;
+      descriptionElement.append(textElement);
+
+      var buttonElement = new DivElement()
+        ..classes.add('action__button')
+        ..classes.add('action__button--float')
+        ..text = '$buttonText (En)'; // TODO(mariana): These project-specific preferences should be read from a project config file
+      buttonElement.onClick.listen((_) => command(UIAction.sendMessage, new ReplyData(replyIndex)));
+      textWrapper.append(buttonElement);
+    }
+
+    { // Add translation
+      var translationWrapper = new DivElement()
+        ..style.display = 'flex';
+      textTranslationWrapper.append(translationWrapper);
+
+      var descriptionElement = new DivElement()
+        ..classes.add('action__description');
+      translationWrapper.append(descriptionElement);
+
+      var translationElement = new DivElement()
+        ..classes.add('action__translation')
+        ..text = translation;
+      descriptionElement.append(translationElement);
+
+      var buttonElement = new DivElement()
+        ..classes.add('action__button')
+        ..classes.add('action__button--float')
+        ..text = '$buttonText (Swa)'; // TODO(mariana): These project-specific preferences should be read from a project config file
+      buttonElement.onClick.listen((_) => command(UIAction.sendMessage, new ReplyData(replyIndex, replyWithTranslation: true)));
+      translationWrapper.append(buttonElement);
+    }
   }
 }
 
@@ -1085,7 +1258,7 @@ class MarkUnreadActionView {
   }
 
   void markConversationsUnread([_]) {
-    command(UIAction.markConversationUnread, ConversationData(activeConversation.deidentifiedPhoneNumber.value));
+    command(UIAction.markConversationUnread, ConversationData(activeConversation.docId));
   }
 
   void multiSelectMode(bool enabled) {
@@ -1175,11 +1348,6 @@ class AuthMainView {
       ..classes.add('partner-logo')
       ..classes.add('partner-logo--avf');
     logosContainer.append(avfLogo);
-
-    var unicefLogo = new ImageElement(src: 'assets/UNICEF-logo.svg')
-      ..classes.add('partner-logo')
-      ..classes.add('partner-logo--unicef');
-    logosContainer.append(unicefLogo);
 
     var shortDescription = new DivElement()
       ..classes.add('project-description')

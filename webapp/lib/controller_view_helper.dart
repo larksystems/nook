@@ -5,6 +5,8 @@ const SEND_REPLY_BUTTON_TEXT = 'SEND';
 const TAG_CONVERSATION_BUTTON_TEXT = 'TAG';
 const TAG_MESSAGE_BUTTON_TEXT = 'TAG';
 
+const SMS_MAX_LENGTH = 160;
+
 enum TagReceiver {
   Conversation,
   Message
@@ -12,26 +14,21 @@ enum TagReceiver {
 
 // Functions to populate the views with model objects.
 
-void _populateConversationListPanelView(Set<model.Conversation> conversations) {
-  view.conversationListPanelView.clearConversationList();
-  if (conversations.isNotEmpty) {
-    view.conversationListPanelView.hideLoadSpinner();
-    for (var conversation in conversations) {
-      view.conversationListPanelView.addConversation(
-          new view.ConversationSummary(
-              conversation.deidentifiedPhoneNumber.value,
-              conversation.messages.first.text,
-              conversation.unread)
-      );
-    }
+void _populateConversationListPanelView(Set<model.Conversation> conversations, bool updateList) {
+  view.conversationListPanelView.hideLoadSpinner();
+  if (conversations.isEmpty || !updateList) {
+    view.conversationListPanelView.clearConversationList();
+  }
+  for (var conversation in conversations) {
+    view.conversationListPanelView.addOrUpdateConversation(conversation);
   }
 }
 
 void _populateConversationPanelView(model.Conversation conversation) {
   view.conversationPanelView.clear();
   view.conversationPanelView
-    ..deidentifiedPhoneNumber = conversation.deidentifiedPhoneNumber.value
-    ..deidentifiedPhoneNumberShort = conversation.deidentifiedPhoneNumber.shortValue
+    ..deidentifiedPhoneNumber = conversation.docId
+    ..deidentifiedPhoneNumberShort = conversation.shortDeidentifiedPhoneNumber
     ..demographicsInfo = conversation.demographicsInfo.values.join(', ');
   for (var tag in model.tagIdsToTags(conversation.tagIds, conversationTags)) {
     view.conversationPanelView.addTags(new view.ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
@@ -47,7 +44,7 @@ void _populateConversationPanelView(model.Conversation conversation) {
       new view.MessageView(
         message.text,
         message.datetime,
-        conversation.deidentifiedPhoneNumber.value,
+        conversation.docId,
         i,
         translation: message.translation,
         incoming: message.direction == model.MessageDirection.In,
@@ -57,7 +54,14 @@ void _populateConversationPanelView(model.Conversation conversation) {
 }
 
 void _populateReplyPanelView(List<model.SuggestedReply> replies) {
-  replies.sort((r1, r2) => r1.shortcut.compareTo(r2.shortcut));
+  replies.sort((r1, r2) {
+    if (r1.seqNumber == null && r2.seqNumber == null) {
+      return r1.shortcut.compareTo(r2.shortcut);
+    }
+    var seqNo1 = r1.seqNumber == null ? double.nan : r1.seqNumber;
+    var seqNo2 = r2.seqNumber == null ? double.nan : r2.seqNumber;
+    return seqNo1.compareTo(seqNo2);
+  });
   view.replyPanelView.clear();
   String buttonText = SEND_REPLY_BUTTON_TEXT;
   for (var reply in replies) {
@@ -138,4 +142,16 @@ view.TagStyle tagTypeToStyle(model.TagType tagType) {
     default:
       return view.TagStyle.None;
   }
+}
+
+Map<String, List<model.SuggestedReply>> _groupRepliesIntoCategories(List<model.SuggestedReply> replies) {
+  Map<String, List<model.SuggestedReply>> result = {};
+  for (model.SuggestedReply reply in replies) {
+    String category = reply.category ?? '';
+    if (!result.containsKey(category)) {
+      result[category] = [];
+    }
+    result[category].add(reply);
+  }
+  return result;
 }

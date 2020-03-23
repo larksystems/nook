@@ -3,6 +3,7 @@ import "dart:convert";
 
 import 'package:firebase/firebase.dart' as firebase;
 import 'package:http/browser_client.dart';
+import 'package:http/http.dart';
 
 import 'logger.dart';
 import 'model.dart' show DocPubSubUpdate;
@@ -18,7 +19,9 @@ class PubSubClient extends DocPubSubUpdate {
 
   PubSubClient(this.publishUrl, this.user);
 
-  Future<bool> publish(String topic, Map payload) async {
+  /// Publish the specified exception.
+  /// Callers should catch and handle IOException.
+  Future<void> publish(String topic, Map payload) async {
     log.verbose("publish $topic $payload");
 
     // The user JWT auth token used to authorize the pub/sub operation
@@ -37,11 +40,23 @@ class PubSubClient extends DocPubSubUpdate {
     var response = await client.post(publishUrl, body: body);
 
     log.verbose("publish response ${response.statusCode}, ${response.body}");
-    return response.statusCode == 200;
+    if (response.statusCode != 200)
+      throw PubSubException.fromResponse(response);
   }
 
   @override
-  Future<bool> publishDocChange(String collectionName, List<String> docIds,
+  Future<void> publishDocAdd(String collectionName, List<String> docIds,
+      Map<String, List<dynamic>> additions) {
+    return publish(platform_constants.smsTopic, {
+      "action": "update_firebase",
+      "collection": collectionName,
+      "ids": docIds,
+      "additions": additions,
+    });
+  }
+
+  @override
+  Future<void> publishDocChange(String collectionName, List<String> docIds,
       Map<String, dynamic> changes) {
     return publish(platform_constants.smsTopic, {
       "action": "update_firebase",
@@ -50,4 +65,27 @@ class PubSubClient extends DocPubSubUpdate {
       "changes": changes,
     });
   }
+
+  @override
+  Future<void> publishDocRemove(String collectionName, List<String> docIds,
+      Map<String, List<dynamic>> removals) {
+    return publish(platform_constants.smsTopic, {
+      "action": "update_firebase",
+      "collection": collectionName,
+      "ids": docIds,
+      "removals": removals,
+    });
+  }
+}
+
+class PubSubException implements Exception {
+  final String message;
+
+  static fromResponse(Response response) =>
+      PubSubException('[${response.statusCode}] ${response.reasonPhrase}');
+
+  PubSubException(this.message);
+
+  @override
+  String toString() => 'PubSubException: $message';
 }

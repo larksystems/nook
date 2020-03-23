@@ -1,0 +1,29 @@
+{
+  "testMessages": [
+    {
+      "text": "This is a simple single line message.",
+      "translation": "Huu ni ujumbe rahisi wa laini moja.",
+      "shortcut": "s"
+    },
+    {
+      "text": "This is a longer message with a comma, a full stop and a few random characters. --&",
+      "translation": "Hii ni ujumbe mrefu na comma, kusimamishwa kamili na herufi chache za nasibu. --&",
+      "shortcut": ""
+    },
+    {
+      "text": "This is a message on multiple lines.\n- Line 1\n- Line 2\n- Line 3\nThey should appear on separate lines",
+      "translation": "Huu ni ujumbe kwenye mistari mingi.\n- Mstari wa 1\n- Mstari wa 2\n- Mstari wa 3\nWanapaswa kuonekana kwenye mistari tofauti",
+      "shortcut": "m"
+    },
+    {
+      "text": "This message has an emoji - \ud83e\udd94. Can you see it?",
+      "translation": "Ujumbe huu una emoji - \ud83e\udd94. Je! Unaweza kuiona?",
+      "shortcut": "?"
+    },
+    {
+      "text": "This message has an <html> tag. This should be displayed as plain text.",
+      "translation": "Ujumbe huu una tepe ya <html>. Hii inapaswa kuonyeshwa kama maandishi wazi.",
+      "shortcut": ""
+    }
+  ]
+}

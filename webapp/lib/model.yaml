@@ -1,8 +1,8 @@
 Conversation:
   firebaseCollectionName: 'nook_conversations'
   demographicsInfo: 'map string'
-  tags: 'updatable array string tagIds'
-  messages: 'updatable array Message'
+  tags: 'publishable set string tagIds'
+  messages: 'array Message'
   notes: 'publishable string'
   unread: 'publishable bool, true'
 
@@ -11,9 +11,9 @@ Message:
   direction: 'MessageDirection, MessageDirection.Out'
   datetime: 'datetime'
   status: MessageStatus
-  tags: 'updatable array string tagIds'
+  tags: 'array string tagIds'
   text: 'string'
-  translation: 'updatable string'
+  translation: 'string'
 
 MessageDirection:
   dartType: 'enum'
@@ -40,9 +40,9 @@ SuggestedReply:
 
 Tag:
   firebaseDocId: 'string tagId'
-  text: 'updatable string'
-  type: 'updatable TagType, TagType.Normal'
-  shortcut: 'updatable string'
+  text: 'string'
+  type: 'TagType, TagType.Normal'
+  shortcut: 'string'
 
 TagType:
   dartType: 'enum'

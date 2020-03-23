@@ -24,6 +24,9 @@
   margin: 1px 0;
   border-radius: 2px;
   border: 1px dashed #ddd;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
 }
 
 .tag__remove {

@@ -6,7 +6,7 @@ from firebase_admin import credentials
 from firebase_admin import firestore
 from core_data_modules.logging import Logger
 import time
-
+import argparse
 import json
 import sys
 
@@ -16,7 +16,7 @@ firebase_client = None
 
 def init(CRYPTO_TOKEN_PATH):
     global firebase_client
-    log.info("Setting up Firebase client")    
+    log.info("Setting up Firebase client")
     firebase_cred = credentials.Certificate(CRYPTO_TOKEN_PATH)
     firebase_admin.initialize_app(firebase_cred)
     firebase_client = firestore.client()
@@ -46,19 +46,33 @@ def push_document_to_firestore(collection_root, data):
     firebase_client.document(ref_path).set(data)
 
 
-if (len(sys.argv) != 3):
-    print ("Usage python json_to_firebase.py crypto_token input_path")
-    exit(1)
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("crypto_token_file",
+                        help="path to Firebase crypto token file")
+    parser.add_argument("input_path",
+                        help="path to the input backup file.")
 
-CRYPTO_TOKEN_PATH = sys.argv[1]
-INPUT_PATH = sys.argv[2]
-init(CRYPTO_TOKEN_PATH)
+    def _usage_and_exit(error_message):
+        print(error_message)
+        print()
+        parser.print_help()
+        exit(1)
 
-with open(INPUT_PATH, 'r') as f:
-    data_dict = json.load(f)
+    if len(sys.argv) != 3:
+        _usage_and_exit("Wrong number of arguments")
+    args = parser.parse_args(sys.argv[1:])
 
-for collection_root in data_dict.keys():
-    documents = data_dict[collection_root]
-    push_collection_to_firestore(collection_root, documents)
+    CRYPTO_TOKEN_PATH = args.crypto_token_file
+    INPUT_PATH = args.input_path
 
-log.info(f"Import done")
+    init(CRYPTO_TOKEN_PATH)
+
+    with open(INPUT_PATH, 'r') as f:
+        data_dict = json.load(f)
+
+    for collection_root in data_dict.keys():
+        documents = data_dict[collection_root]
+        push_collection_to_firestore(collection_root, documents)
+
+    log.info(f"Import done")

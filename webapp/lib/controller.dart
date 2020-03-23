@@ -6,6 +6,7 @@ import 'dart:collection';
 import 'logger.dart';
 import 'model.dart' as model;
 import 'platform.dart' as platform;
+import 'pubsub.dart' show PubSubException;
 import 'view.dart' as view;
 
 part 'controller_platform_helper.dart';
@@ -22,6 +23,7 @@ enum UIAction {
   updateTranslation,
   updateNote,
   sendMessage,
+  sendManualMessage,
   addTag,
   addFilterTag,
   removeConversationTag,
@@ -47,6 +49,8 @@ enum UIAction {
   enableMultiSelectMode,
   disableMultiSelectMode,
   updateSystemMessages,
+  updateSuggestedRepliesCategory,
+  hideAgeTags
 }
 
 class Data {}
@@ -59,7 +63,13 @@ class MessageData extends Data {
 
 class ReplyData extends Data {
   int replyIndex;
-  ReplyData(this.replyIndex);
+  bool replyWithTranslation;
+  ReplyData(this.replyIndex, {this.replyWithTranslation: false});
+}
+
+class ManualReplyData extends Data {
+  String replyText;
+  ManualReplyData(this.replyText);
 }
 
 class TranslationData extends Data {
@@ -144,9 +154,19 @@ class AddTagData extends Data {
   AddTagData(this.tagText);
 }
 
+class UpdateSuggestedRepliesCategoryData extends Data {
+  String category;
+  UpdateSuggestedRepliesCategoryData(this.category);
+}
+
 class SystemMessagesData extends Data {
   List<model.SystemMessage> messages;
   SystemMessagesData(this.messages);
+}
+
+class ToggleData extends Data {
+  bool toggleValue;
+  ToggleData(this.toggleValue);
 }
 
 enum FilterType {
@@ -216,11 +236,13 @@ class ConversationFilter {
 
 List<model.SystemMessage> systemMessages;
 
-UIActionObject actionObjectState;
+UIActionObject actionObjectState = UIActionObject.conversation;
 
 Set<model.Conversation> conversations;
 Set<model.Conversation> filteredConversations;
 List<model.SuggestedReply> suggestedReplies;
+Map<String, List<model.SuggestedReply>> suggestedRepliesByCategory;
+String selectedSuggestedRepliesCategory;
 List<model.Tag> conversationTags;
 List<model.Tag> messageTags;
 ConversationFilter conversationFilter;
@@ -229,6 +251,7 @@ List<model.Conversation> selectedConversations;
 model.Message selectedMessage;
 model.User signedInUser;
 
+bool hideDemogsTags;
 bool multiSelectMode;
 
 void init() async {
@@ -236,27 +259,30 @@ void init() async {
   await platform.init();
 }
 
-void populateUI() {
+void initUI() {
   systemMessages = [];
   conversations = emptyConversationsSet;
-  filteredConversations = conversations;
+  filteredConversations = emptyConversationsSet;
   suggestedReplies = [];
   conversationTags = [];
   messageTags = [];
   selectedConversations = [];
   multiSelectMode = false;
+  activeConversation = null;
+  selectedSuggestedRepliesCategory = '';
+  hideDemogsTags = true;
 
-  activeConversation = updateViewForConversations(filteredConversations);
   platform.listenForConversationTags(
     (tags) {
       var updatedIds = tags.map((t) => t.tagId).toSet();
       conversationTags.removeWhere((tag) => updatedIds.contains(tag.tagId));
       conversationTags.addAll(tags);
+      var filteredTags = _filterDemogsTagsIfNeeded(conversationTags);
       _populateFilterTagsMenu(conversationTags, FilterType.include);
       _populateFilterTagsMenu(conversationTags, FilterType.exclude);
 
       if (actionObjectState == UIActionObject.conversation) {
-        _populateTagPanelView(conversationTags, TagReceiver.Conversation);
+        _populateTagPanelView(filteredTags, TagReceiver.Conversation);
       }
     }
   );
@@ -268,7 +294,7 @@ void populateUI() {
       messageTags.addAll(tags);
 
       if (actionObjectState == UIActionObject.message) {
-        _populateTagPanelView(messageTags, TagReceiver.Message);
+        _populateTagPanelView(_filterDemogsTagsIfNeeded(messageTags), TagReceiver.Message);
       }
     }
   );
@@ -282,25 +308,63 @@ void populateUI() {
         suggestedReplies.removeWhere((suggestedReply) => updatedIds.contains(suggestedReply.suggestedReplyId));
         suggestedReplies.addAll(updatedReplies);
 
-        _populateReplyPanelView(suggestedReplies);
+        // Update the replies by category map
+        suggestedRepliesByCategory = _groupRepliesIntoCategories(suggestedReplies);
+        // Empty sublist if there are no replies to show
+        if (suggestedRepliesByCategory.isEmpty) {
+          suggestedRepliesByCategory[''] = [];
+        }
+        // Sort by sequence number
+        for (var replies in suggestedRepliesByCategory.values) {
+          replies.sort((r1, r2) {
+            var seqNo1 = r1.seqNumber == null ? double.nan : r1.seqNumber;
+            var seqNo2 = r2.seqNumber == null ? double.nan : r2.seqNumber;
+            return seqNo1.compareTo(seqNo2);
+          });
+        }
+        List<String> categories = suggestedRepliesByCategory.keys.toList();
+        categories.sort((c1, c2) => c1.compareTo(c2));
+        // Replace list of categories in the UI selector
+        view.replyPanelView.categories = categories;
+        // If the categories have changed under us and the selected one no longer exists,
+        // default to the first category, whichever it is
+        if (!categories.contains(selectedSuggestedRepliesCategory)) {
+          selectedSuggestedRepliesCategory = categories.first;
+        }
+        // Select the selected category in the UI and add the suggested replies for it
+        view.replyPanelView.selectedCategory = selectedSuggestedRepliesCategory;
+        _populateReplyPanelView(suggestedRepliesByCategory[selectedSuggestedRepliesCategory]);
       }
     );
   }
 
   platform.listenForConversations(
     (updatedConversations) {
-      var updatedIds = updatedConversations.map((t) => t.deidentifiedPhoneNumber.value).toSet();
-      conversations.removeWhere((conversation) => updatedIds.contains(conversation.deidentifiedPhoneNumber.value));
+      var updatedIds = updatedConversations.map((t) => t.docId).toSet();
+      conversations.removeWhere((conversation) => updatedIds.contains(conversation.docId));
       conversations.addAll(updatedConversations);
 
+      // Determine if the active conversation data needs to be replaced
+      String activeConversationId = activeConversation?.docId;
+      if (updatedIds.contains(activeConversationId)) {
+        activeConversation = conversations.firstWhere((c) => c.docId == activeConversationId);
+      }
+
+      // Get any filter tags from the url
       conversationFilter = createConversationFilterFromUrl();
       filteredConversations = filterConversationsByTags(conversations, conversationFilter);
       _populateFilterTagsMenu(conversationTags, FilterType.include);
       _populateFilterTagsMenu(conversationTags, FilterType.exclude);
       _populateSelectedFilterTags(conversationFilter);
 
-      activeConversation = updateViewForConversations(filteredConversations);
-      command(UIAction.markConversationRead, ConversationData(activeConversation.deidentifiedPhoneNumber.value));
+      activeConversation = updateViewForConversations(filteredConversations, updateList: true);
+      if (activeConversation == null) return;
+
+      // Update the active conversation view as needed
+      if (updatedIds.contains(activeConversation.docId)) {
+        updateViewForConversation(activeConversation);
+      }
+      command(UIAction.markConversationRead, ConversationData(activeConversation.docId));
     });
 
   platform.listenForSystemMessages(
@@ -336,7 +400,7 @@ ConversationFilter createConversationFilterFromUrl() {
 }
 
 SplayTreeSet<model.Conversation> get emptyConversationsSet =>
-    SplayTreeSet(model.Conversation.mostRecentInboundFirst);
+    SplayTreeSet(model.ConversationUtil.mostRecentInboundFirst);
 
 /// Return the element after [current],
 /// or the first element if [current] is the last or not in the list.
@@ -360,14 +424,22 @@ void command(UIAction action, Data data) {
       action != UIAction.promptAfterDateFilter && action != UIAction.updateAfterDateFilter &&
       action != UIAction.filterOperationChanged &&
       action != UIAction.signInButtonClicked && action != UIAction.signOutButtonClicked &&
-      action != UIAction.userSignedIn && action != UIAction.userSignedOut) {
+      action != UIAction.userSignedIn && action != UIAction.userSignedOut &&
+      action != UIAction.updateSuggestedRepliesCategory && action != UIAction.hideAgeTags) {
     return;
   }
 
   switch (action) {
     case UIAction.sendMessage:
       ReplyData replyData = data;
-      model.SuggestedReply selectedReply = suggestedReplies[replyData.replyIndex];
+      model.SuggestedReply selectedReply = suggestedRepliesByCategory[selectedSuggestedRepliesCategory][replyData.replyIndex];
+      if (replyData.replyWithTranslation) {
+        model.SuggestedReply translationReply = new model.SuggestedReply();
+        translationReply
+          ..text = selectedReply.translation
+          ..translation = '';
+        selectedReply = translationReply;
+      }
       if (!multiSelectMode) {
         sendReply(selectedReply, activeConversation);
         return;
@@ -376,6 +448,18 @@ void command(UIAction action, Data data) {
         return;
       }
       sendMultiReply(selectedReply, selectedConversations);
+      break;
+    case UIAction.sendManualMessage:
+      ManualReplyData replyData = data;
+      model.SuggestedReply oneoffReply = new model.SuggestedReply();
+      oneoffReply
+        ..text = replyData.replyText
+        ..translation = '';
+      if (!view.sendingManualMessageUserConfirmation(oneoffReply.text)) {
+        return;
+      }
+      sendReply(oneoffReply, activeConversation);
+      view.conversationPanelView.clearNewMessageBox();
       break;
     case UIAction.addTag:
       TagData tagData = data;
@@ -411,8 +495,7 @@ void command(UIAction action, Data data) {
     case UIAction.removeConversationTag:
       ConversationTagData conversationTagData = data;
       model.Tag tag = conversationTags.singleWhere((tag) => tag.tagId == conversationTagData.tagId);
-      activeConversation.tagIds.remove(tag.tagId);
-      platform.updateConversationTags(activeConversation);
+      platform.removeConversationTag(activeConversation, tag.tagId).catchError(showAndLogError);
       view.conversationPanelView.removeTag(tag.tagId);
       if (conversationFilter.contains(tag)) {
         // Select the next conversation in the list
@@ -426,8 +509,7 @@ void command(UIAction action, Data data) {
     case UIAction.removeMessageTag:
       MessageTagData messageTagData = data;
       var message = activeConversation.messages[messageTagData.messageIndex];
-      message.tagIds.removeWhere((id) => id == messageTagData.tagId);
-      platform.updateConversationMessages(activeConversation);
+      platform.removeMessageTag(activeConversation, message, messageTagData.tagId).catchError(showAndLogError);
       view.conversationPanelView
         .messageViewAtIndex(messageTagData.messageIndex)
         .removeTag(messageTagData.tagId);
@@ -486,7 +568,7 @@ void command(UIAction action, Data data) {
       MessageData messageData = data;
       selectedMessage = activeConversation.messages[messageData.messageIndex];
       view.conversationPanelView.selectMessage(messageData.messageIndex);
-      _populateTagPanelView(messageTags, TagReceiver.Message);
+      _populateTagPanelView(_filterDemogsTagsIfNeeded(messageTags), TagReceiver.Message);
       switch (actionObjectState) {
         case UIActionObject.conversation:
           actionObjectState = UIActionObject.message;
@@ -502,7 +584,7 @@ void command(UIAction action, Data data) {
         case UIActionObject.message:
           selectedMessage = null;
           view.conversationPanelView.deselectMessage();
-          _populateTagPanelView(conversationTags, TagReceiver.Conversation);
+          _populateTagPanelView(_filterDemogsTagsIfNeeded(conversationTags), TagReceiver.Conversation);
           actionObjectState = UIActionObject.conversation;
           break;
       }
@@ -510,7 +592,7 @@ void command(UIAction action, Data data) {
     case UIAction.markConversationRead:
       ConversationData conversationData = data;
       view.conversationListPanelView.markConversationRead(conversationData.deidentifiedPhoneNumber);
-      platform.updateUnread([activeConversation], false);
+      platform.updateUnread([activeConversation], false).catchError(showAndLogError);
       break;
     case UIAction.markConversationUnread:
       if (multiSelectMode) {
@@ -518,33 +600,33 @@ void command(UIAction action, Data data) {
         for (var conversation in selectedConversations) {
           if (!conversation.unread) {
             markedConversations.add(conversation);
-            view.conversationListPanelView.markConversationUnread(conversation.deidentifiedPhoneNumber.value);
+            view.conversationListPanelView.markConversationUnread(conversation.docId);
           }
         }
-        platform.updateUnread(markedConversations, true);
+        platform.updateUnread(markedConversations, true).catchError(showAndLogError);
       } else {
-        view.conversationListPanelView.markConversationUnread(activeConversation.deidentifiedPhoneNumber.value);
-        platform.updateUnread([activeConversation], true);
+        view.conversationListPanelView.markConversationUnread(activeConversation.docId);
+        platform.updateUnread([activeConversation], true).catchError(showAndLogError);
       }
       break;
     case UIAction.showConversation:
       ConversationData conversationData = data;
-      activeConversation = filteredConversations.singleWhere((conversation) => conversation.deidentifiedPhoneNumber.value == conversationData.deidentifiedPhoneNumber);
+      activeConversation = filteredConversations.singleWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
       updateViewForConversation(activeConversation);
       break;
     case UIAction.selectConversation:
       ConversationData conversationData = data;
-      model.Conversation conversation = filteredConversations.singleWhere((conversation) => conversation.deidentifiedPhoneNumber.value == conversationData.deidentifiedPhoneNumber);
+      model.Conversation conversation = filteredConversations.singleWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
       selectedConversations.add(conversation);
       break;
     case UIAction.deselectConversation:
       ConversationData conversationData = data;
-      model.Conversation conversation = filteredConversations.singleWhere((conversation) => conversation.deidentifiedPhoneNumber.value == conversationData.deidentifiedPhoneNumber);
+      model.Conversation conversation = filteredConversations.singleWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
       selectedConversations.remove(conversation);
       break;
     case UIAction.updateTranslation:
       if (data is ReplyTranslationData) {
-        var reply = suggestedReplies[data.replyIndex];
+        var reply = suggestedRepliesByCategory[selectedSuggestedRepliesCategory][data.replyIndex];
         SaveTextAction.textChange(
           "${reply.docId}.translation",
           data.translationText,
@@ -552,15 +634,23 @@ void command(UIAction action, Data data) {
         );
       } else if (data is TranslationData) {
         TranslationData messageTranslation = data;
-        activeConversation.messages[messageTranslation.messageIndex].translation = messageTranslation.translationText;
-        platform.updateConversationMessages(activeConversation);
+        var conversation = activeConversation;
+        var message = conversation.messages[messageTranslation.messageIndex];
+        SaveTextAction.textChange(
+          "${conversation.docId}.message-${messageTranslation.messageIndex}.translation",
+          messageTranslation.translationText,
+          (newText) {
+            return platform.setMessageTranslation(conversation, message, newText);
+          },
+        );
       }
       break;
     case UIAction.updateNote:
+      var conversation = activeConversation;
       SaveTextAction.textChange(
-        "${activeConversation.docId}.notes",
+        "${conversation.docId}.notes",
         (data as NoteData).noteText,
-        (newText) => platform.updateNotes(activeConversation, newText),
+        (newText) => platform.updateNotes(conversation, newText),
       );
       break;
     case UIAction.userSignedOut:
@@ -575,7 +665,7 @@ void command(UIAction action, Data data) {
         ..userEmail = userData.email;
       view.authHeaderView.signIn(userData.displayName, userData.photoUrl);
       view.initSignedInView();
-      populateUI();
+      initUI();
       break;
     case UIAction.signInButtonClicked:
       platform.signIn();
@@ -596,7 +686,7 @@ void command(UIAction action, Data data) {
         view.snackbarView.hideSnackbar();
       }
       // If the shortcut is for a reply, find it and send it
-      var selectedReply = suggestedReplies.where((reply) => reply.shortcut == keyPressData.key);
+      var selectedReply = suggestedRepliesByCategory[selectedSuggestedRepliesCategory].where((reply) => reply.shortcut == keyPressData.key);
       if (selectedReply.isNotEmpty) {
         assert (selectedReply.length == 1);
         if (!multiSelectMode) {
@@ -612,7 +702,7 @@ void command(UIAction action, Data data) {
       // If the shortcut is for a tag, find it and tag it to the conversation/message
       switch (actionObjectState) {
         case UIActionObject.conversation:
-          var selectedTag = conversationTags.where((tag) => tag.shortcut == keyPressData.key);
+          var selectedTag = _filterDemogsTagsIfNeeded(conversationTags).where((tag) => tag.shortcut == keyPressData.key);
           if (selectedTag.isEmpty) break;
           assert (selectedTag.length == 1);
           setConversationTag(selectedTag.first, activeConversation);
@@ -626,7 +716,7 @@ void command(UIAction action, Data data) {
           setMultiConversationTag(selectedTag.first, selectedConversations);
           return;
         case UIActionObject.message:
-          var selectedTag = messageTags.where((tag) => tag.shortcut == keyPressData.key);
+          var selectedTag = _filterDemogsTagsIfNeeded(messageTags).where((tag) => tag.shortcut == keyPressData.key);
           if (selectedTag.isEmpty) break;
           assert (selectedTag.length == 1);
           setMessageTag(selectedTag.first, selectedMessage, activeConversation);
@@ -664,6 +754,29 @@ void command(UIAction action, Data data) {
         view.bannerView.hideBanner();
       }
       break;
+    case UIAction.updateSuggestedRepliesCategory:
+      UpdateSuggestedRepliesCategoryData updateCategoryData = data;
+      selectedSuggestedRepliesCategory = updateCategoryData.category;
+      _populateReplyPanelView(suggestedRepliesByCategory[selectedSuggestedRepliesCategory]);
+      break;
+    case UIAction.hideAgeTags:
+      ToggleData toggleData = data;
+      hideDemogsTags = toggleData.toggleValue;
+      var filteredConversationTags = _filterDemogsTagsIfNeeded(conversationTags);
+      var filteredMessageTags = _filterDemogsTagsIfNeeded(messageTags);
+      switch (actionObjectState) {
+        case UIActionObject.conversation:
+          _populateTagPanelView(filteredConversationTags, TagReceiver.Conversation);
+          break;
+        case UIActionObject.message:
+          _populateTagPanelView(filteredMessageTags, TagReceiver.Message);
+          break;
+      }
+      // The filter tags menu always shows conversations tags, even when a message is selected
+      _populateFilterTagsMenu(filteredConversationTags, FilterType.include);
+      _populateFilterTagsMenu(filteredConversationTags, FilterType.exclude);
+      break;
+    default:
   }
 }
 
@@ -673,15 +786,16 @@ void updateFilteredConversationList() {
   if (multiSelectMode) {
     view.conversationListPanelView.showCheckboxes();
     selectedConversations = selectedConversations.toSet().intersection(filteredConversations.toSet()).toList();
-    selectedConversations.forEach((conversation) => view.conversationListPanelView.checkConversation(conversation.deidentifiedPhoneNumber.value));
+    selectedConversations.forEach((conversation) => view.conversationListPanelView.checkConversation(conversation.docId));
   }
 }
 
-/// Shows the list of [conversations] and selects the first conversation.
+/// Shows the list of [conversations] and selects the first conversation
+/// where [updateList] is `true` if this list can be updated in place.
 /// Returns the first conversation in the list, or null if list is empty.
-model.Conversation updateViewForConversations(Set<model.Conversation> conversations) {
+model.Conversation updateViewForConversations(Set<model.Conversation> conversations, {bool updateList = false}) {
   // Update conversationListPanelView
-  _populateConversationListPanelView(conversations);
+  _populateConversationListPanelView(conversations, updateList);
 
   // Update conversationPanelView
   if (conversations.isEmpty) {
@@ -693,17 +807,17 @@ model.Conversation updateViewForConversations(Set<model.Conversation> conversati
 
   if (activeConversation == null) {
     model.Conversation conversationToSelect = conversations.first;
-    view.conversationListPanelView.selectConversation(conversationToSelect.deidentifiedPhoneNumber.value);
+    view.conversationListPanelView.selectConversation(conversationToSelect.docId);
     _populateConversationPanelView(conversationToSelect);
     view.replyPanelView.noteText = conversationToSelect.notes;
     actionObjectState = UIActionObject.conversation;
     return conversationToSelect;
   }
 
-  var matches = conversations.where((conversation) => conversation.deidentifiedPhoneNumber.value == activeConversation.deidentifiedPhoneNumber.value).toList();
+  var matches = conversations.where((conversation) => conversation.docId == activeConversation.docId).toList();
   if (matches.length == 0) {
     model.Conversation conversationToSelect = conversations.first;
-    view.conversationListPanelView.selectConversation(conversationToSelect.deidentifiedPhoneNumber.value);
+    view.conversationListPanelView.selectConversation(conversationToSelect.docId);
     _populateConversationPanelView(conversationToSelect);
     view.replyPanelView.noteText = conversationToSelect.notes;
     actionObjectState = UIActionObject.conversation;
@@ -711,16 +825,16 @@ model.Conversation updateViewForConversations(Set<model.Conversation> conversati
   }
 
   if (matches.length > 1) {
-    log.warning('Two conversations seem to have the same deidentified phone number: activeConversation.deidentifiedPhoneNumber.value');
+    log.warning('Two conversations seem to have the same deidentified phone number: ${activeConversation.docId}');
   }
-  view.conversationListPanelView.selectConversation(activeConversation.deidentifiedPhoneNumber.value);
+  view.conversationListPanelView.selectConversation(activeConversation.docId);
   return activeConversation;
 }
 
 void updateViewForConversation(model.Conversation conversation) {
   if (conversation == null) return;
   // Select the conversation in the list
-  view.conversationListPanelView.selectConversation(conversation.deidentifiedPhoneNumber.value);
+  view.conversationListPanelView.selectConversation(conversation.docId);
   // Replace the previous conversation in the conversation panel
   _populateConversationPanelView(conversation);
   view.replyPanelView.noteText = conversation.notes;
@@ -731,7 +845,7 @@ void updateViewForConversation(model.Conversation conversation) {
     case UIActionObject.message:
       selectedMessage = null;
       view.conversationPanelView.deselectMessage();
-      _populateTagPanelView(conversationTags, TagReceiver.Conversation);
+      _populateTagPanelView(_filterDemogsTagsIfNeeded(conversationTags), TagReceiver.Conversation);
       break;
   }
 }
@@ -748,16 +862,12 @@ void sendReply(model.SuggestedReply reply, model.Conversation conversation) {
     new view.MessageView(
       newMessage.text,
       newMessage.datetime,
-      conversation.deidentifiedPhoneNumber.value,
+      conversation.docId,
       conversation.messages.indexOf(newMessage),
       translation: newMessage.translation,
       incoming: false)
   );
-  platform
-    .sendMessage(conversation.deidentifiedPhoneNumber.value, reply.text)
-    .then((success) {
-      log.verbose('controller.sendMessage reponse status $success');
-    });
+  platform.sendMessage(conversation.docId, reply.text);
 }
 
 void sendMultiReply(model.SuggestedReply reply, List<model.Conversation> conversations) {
@@ -773,24 +883,19 @@ void sendMultiReply(model.SuggestedReply reply, List<model.Conversation> convers
       new view.MessageView(
         newMessage.text,
         newMessage.datetime,
-        activeConversation.deidentifiedPhoneNumber.value,
+        activeConversation.docId,
         activeConversation.messages.indexOf(newMessage),
         translation: newMessage.translation,
         incoming: false)
     );
   }
-  List<String> ids = conversations.map((conversation) => conversation.deidentifiedPhoneNumber.value).toList();
-  platform
-    .sendMultiMessage(ids, newMessage.text)
-    .then((success) {
-      log.verbose('controller.sendMultiMessage reponse status $success');
-    });
+  List<String> ids = conversations.map((conversation) => conversation.docId).toList();
+  platform.sendMultiMessage(ids, newMessage.text);
 }
 
 void setConversationTag(model.Tag tag, model.Conversation conversation) {
   if (!conversation.tagIds.contains(tag.tagId)) {
-    conversation.tagIds.add(tag.tagId);
-    platform.updateConversationTags(conversation);
+    platform.addConversationTag(conversation, tag.tagId).catchError(showAndLogError);
     view.conversationPanelView.addTags(new view.ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
   }
 }
@@ -798,8 +903,7 @@ void setConversationTag(model.Tag tag, model.Conversation conversation) {
 void setMultiConversationTag(model.Tag tag, List<model.Conversation> conversations) {
   conversations.forEach((conversation) {
     if (!conversation.tagIds.contains(tag.tagId)) {
-      conversation.tagIds.add(tag.tagId);
-      platform.updateConversationTags(conversation);
+      platform.addConversationTag(conversation, tag.tagId).catchError(showAndLogError);
       if (conversation == activeConversation) {
         view.conversationPanelView.addTags(new view.ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
       }
@@ -809,8 +913,7 @@ void setMultiConversationTag(model.Tag tag, List<model.Conversation> conversatio
 
 void setMessageTag(model.Tag tag, model.Message message, model.Conversation conversation) {
   if (!message.tagIds.contains(tag.tagId)) {
-    message.tagIds.add(tag.tagId);
-    platform.updateConversationMessages(activeConversation);
+    platform.addMessageTag(activeConversation, message, tag.tagId).catchError(showAndLogError);
     view.conversationPanelView
       .messageViewAtIndex(conversation.messages.indexOf(message))
       .addTag(new view.MessageTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
@@ -872,7 +975,7 @@ class SaveTextAction {
     }
     try {
       var newText = _newText;
-      await _saveText(newText);
+      await _saveText(newText).catchError(showAndLogError);
       view.showNormalStatus('saved');
       log.verbose('note saved: $_changeId');
     } catch (e, s) {
@@ -882,4 +985,41 @@ class SaveTextAction {
   }
 }
 
+List<model.Tag> _filterDemogsTagsIfNeeded(List<model.Tag> tagList) {
+  if (hideDemogsTags == false)
+    return tagList;
+  return tagList.where((model.Tag tag) => !_isDemogTag(tag)).toList();
+}
+
+bool _isDemogTag(model.Tag tag) {
+  if (int.tryParse(tag.text) != null) {
+    return true;
+  }
+
+  const TAG_LIST = [
+    "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62", "63", "64", "65", "66", "67", "68", "69", "70", "71", "72", "73", "74", "75", "76", "77", "78", "79", "80", "81", "82", "83", "84", "85", "86", "87", "88", "89", "90", "91", "92", "93", "94", "95", "96", "97", "98", "99",
+    "ainabkoi", "ainamoi", "aldai", "alego_usonga", "awendo", "bahati", "balambala", "banissa", "baringo_central", "baringo_north", "baringo_south", "belgut", "bobasi", "bomachoge_borabu", "bomachoge_chache", "bomet_central", "bomet_east", "bonchari", "bondo", "borabu", "budalangi", "bumula", "bura", "bureti", "butere", "butula", "buuri", "central_imenti", "changamwe", "chepalungu", "cherangany", "chesumei", "dadaab", "dagoretti_north", "dagoretti_south", "eldama_ravine", "eldas", "embakasi_central", "embakasi_east", "embakasi_north", "embakasi_south", "embakasi_west", "emgwen", "emuhaya", "emurua_dikirr", "endebess", "fafi", "funyula", "galole", "ganze", "garissa_township", "garsen", "gatanga", "gatundu_north", "gatundu_south", "gem", "gichugu", "gilgil", "githunguri", "hamisi", "homa_bay_town", "igambang_ombe", "igembe_central", "igembe_north", "igembe_south", "ijara", "ikolomani", "isiolo_north", "isiolo_south", "jomvu", "juja", "kabete", "kabondo_kasipul", "kabuchai", "kacheliba", "kaimbaa", "kaiti", "kajiado_central", "kajiado_east", "kajiado_north", "kajiado_south", "kajiado_west", "kaloleni", "kamukunji", "kandara", "kanduyi", "kangema", "kangundo", "kapenguria", "kapseret", "karachuonyo", "kasarani", "kasipul", "kathiani", "keiyo_north", "keiyo_south", "kesses", "khwisero", "kiambu", "kibra", "kibwezi_east", "kibwezi_west", "kieni", "kigumo", "kiharu", "kikuyu", "kilgoris", "kilifi_north", "kilifi_south", "kilome", "kimilili", "kiminini", "kinango", "kinangop", "kipipiri", "kipkelion_east", "kipkelion_west", "kirinyaga_central", "kisauni", "kisumu_central", "kisumu_east", "kisumu_west", "kitui_central", "kitui_east", "kitui_rural", "kitui_south", "kitui_west", "kitutu_chache_north", "kitutu_chache_south", "kitutu_masaba", "konoin", "kuresoi_north", "kuresoi_south", "kuria_east", "kuria_west", "kwanza", "lafey", "lagdera", "laikipia_east", "laikipia_north", "laikipia_west", "laisamis", "lamu_east", "lamu_west", "lang'ata", "lari", "likoni", "likuyani", "limuru", "loima", "luanda", "lugari", "lunga_lunga", "lurambi", "maara", "machakos_town", "magarini", "makadara", "makueni", "malava", "malindi", "mandera_east", "mandera_north", "mandera_south", "mandera_west", "manyatta", "maragwa", "marakwet_east", "marakwet_west", "masinga", "matayos", "mathare", "mathioya", "mathira", "matuga", "matungu", "matungulu", "mavoko", "mbeere_north", "mbeere_south", "mbita", "mbooni", "mogotio", "moiben", "molo", "mosop", "moyale", "msambweni", "mt_elgon", "muhoroni", "mukurweini", "mumias_east", "mumias_west", "mvita", "mwala", "mwatate", "mwea", "mwingi_central", "mwingi_north", "mwingi_west", "naivasha", "nakuru_town_east", "nakuru_town_west", "nambale", "nandi_hills", "narok_east", "narok_north", "narok_south", "narok_west", "navakholo", "ndaragwa", "ndhiwa", "ndia", "njoro", "north_horr", "north_imenti", "north_mugirango", "nyakach", "nyali", "nyando", "nyaribari_chache", "nyaribari_masaba", "nyatike", "nyeri_town", "ol_jorok", "ol_kalou", "othaya", "pokot_south", "rabai", "rangwe", "rarieda", "rongai", "rongo", "roysambu", "ruaraka", "ruiru", "runyenjes", "sabatia", "saboti", "saku", "samburu_east", "samburu_north", "samburu_west", "seme", "shinyalu", "sigor", "sigowet_soin", "sirisia", "sotik", "south_imenti", "south_mugirango", "soy", "starehe", "suba", "subukia", "suna_east", "suna_west", "tarbaj", "taveta ", "teso_north", "teso_south", "tetu", "tharaka", "thika_town", "tiaty", "tigania_east", "tigania_west", "tinderet", "tongaren", "turbo", "turkana_central", "turkana_east", "turkana_north", "turkana_south", "turkana_west", "ugenya", "ugunja", "uriri", "vihiga", "voi", "wajir-south", "wajir_east", "wajir_north", "wajir_west", "webuye_east", "webuye_west", "west_mugirango", "westlands", "wundanyi", "yatta",
+    "baringo", "bomet", "bungoma", "busia", "elgeyo_marakwet", "embu", "garissa", "homa_bay", "isiolo", "kajiado", "kakamega", "kericho", "kiambu", "kilifi", "kirinyaga", "kisii", "kisumu", "kitui", "kwale", "laikipia", "lamu", "machakos", "makueni", "mandera", "marsabit", "meru", "migori", "mombasa", "muranga", "nairobi", "nakuru", "nandi", "narok", "nyamira", "nyandarua", "nyeri", "samburu", "siaya", "taita_taveta", "tana_river", "tharaka_nithi", "trans_nzoia", "turkana", "uasin_gishu", "vihiga", "wajir", "west_pokot",
+    "female", "male"
+  ];
+  if (TAG_LIST.contains(tag.text))
+    return true;
+
+  return false;
+}
+
+
 typedef Future<dynamic> SaveText(String newText);
+
+void showAndLogError(error, trace) {
+  log.error("$error${trace != null ? "\n$trace" : ""}");
+  String errMsg;
+  if (error is PubSubException) {
+    errMsg = "A network problem occurred: ${error.message}";
+  } else if (error is Exception) {
+    errMsg = "An internal error occurred: ${error.runtimeType}";
+  } else {
+    errMsg = "$error";
+  }
+  view.snackbarView.showSnackbar(errMsg, view.SnackbarNotificationType.error);
+}
