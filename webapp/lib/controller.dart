@@ -277,12 +277,12 @@ void initUI() {
       var updatedIds = tags.map((t) => t.tagId).toSet();
       conversationTags.removeWhere((tag) => updatedIds.contains(tag.tagId));
       conversationTags.addAll(tags);
-      var filteredTags = _filterDemogsTagsIfNeeded(conversationTags);
-      _populateFilterTagsMenu(conversationTags, FilterType.include);
-      _populateFilterTagsMenu(conversationTags, FilterType.exclude);
+      var filteredTagsByDemogs = _filterDemogsTagsIfNeeded(conversationTags);
+      _populateFilterTagsMenu(filteredTagsByDemogs, FilterType.include);
+      _populateFilterTagsMenu(filteredTagsByDemogs, FilterType.exclude);
 
       if (actionObjectState == UIActionObject.conversation) {
-        _populateTagPanelView(filteredTags, TagReceiver.Conversation);
+        _populateTagPanelView(filteredTagsByDemogs, TagReceiver.Conversation);
       }
     }
   );
@@ -353,8 +353,9 @@ void initUI() {
       // Get any filter tags from the url
       conversationFilter = createConversationFilterFromUrl();
       filteredConversations = filterConversationsByTags(conversations, conversationFilter);
-      _populateFilterTagsMenu(conversationTags, FilterType.include);
-      _populateFilterTagsMenu(conversationTags, FilterType.exclude);
+      var filteredTagsByDemogs = _filterDemogsTagsIfNeeded(conversationTags);
+      _populateFilterTagsMenu(filteredTagsByDemogs, FilterType.include);
+      _populateFilterTagsMenu(filteredTagsByDemogs, FilterType.exclude);
       _populateSelectedFilterTags(conversationFilter);
 
       activeConversation = updateViewForConversations(filteredConversations, updateList: true);
