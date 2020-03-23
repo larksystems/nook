@@ -1,7 +1,20 @@
 import time
 import threading
 import psutil
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import firestore
+from core_data_modules.logging import Logger
 
+log = Logger(__name__)
+
+def initialize_firebase(CRYPTO_TOKEN_PATH):
+    global firebase_client
+    log.info("Setting up Firebase client")
+    firebase_cred = credentials.Certificate(CRYPTO_TOKEN_PATH)
+    firebase_admin.initialize_app(firebase_cred)
+    firebase_client = firestore.client()
+    log.info("Firbase client ready")
 
 def get_metrics(interval):
     while True:
@@ -39,7 +52,7 @@ def get_metrics(interval):
         time.sleep(interval)
 
 
-def publish_metrics_to_firebase(metrics):
+def publish_metrics_to_firestore(metrics):
     print(metrics)
 
 def run_metric_monitor():
