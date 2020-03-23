@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:html';
 
 import 'package:intl/intl.dart';
+import 'package:nook/model.dart';
 
 import 'dom_utils.dart';
 import 'logger.dart';
@@ -108,7 +109,7 @@ void makeEditable(Element element, {void onChange(), void onEnter()}) {
 }
 
 const REPLY_PANEL_TITLE = 'Suggested responses';
-const TAG_PANEL_TITLE = 'Available tags';
+const TAG_PANEL_TITLE = 'Tags';
 const ADD_REPLY_INFO = 'Add new suggested response';
 const ADD_TAG_INFO = 'Add new tag';
 const MARK_UNREAD_INFO = 'Mark unread';
@@ -603,10 +604,23 @@ class ConversationListPanelView {
     conversationListPanel.append(conversationFilter.conversationFilter);
   }
 
-  void addConversation(ConversationSummary conversationSummary, [int position]) {
-    _conversationList.addItem(conversationSummary, position);
-    _phoneToConversations[conversationSummary.deidentifiedPhoneNumber] = conversationSummary;
-    _conversationPanelTitle.text = '${_phoneToConversations.length} conversations';
+  void addOrUpdateConversation(Conversation conversation) {
+    ConversationSummary summary = _phoneToConversations[conversation.docId];
+    if (summary != null) {
+      if (conversation.unread) {
+        summary._markUnread();
+      } else {
+        summary._markRead();
+      }
+    } else {
+      summary = new ConversationSummary(
+              conversation.docId,
+              conversation.messages.first.text,
+              conversation.unread);
+      _conversationList.addItem(summary, null);
+      _phoneToConversations[summary.deidentifiedPhoneNumber] = summary;
+      _conversationPanelTitle.text = '${_phoneToConversations.length} conversations';
+    }
   }
 
   void selectConversation(String deidentifiedPhoneNumber) {
@@ -806,21 +820,30 @@ class ConversationSummary with LazyListViewItem {
 class ReplyPanelView {
   DivElement replyPanel;
   DivElement _panelTitle;
+  SelectElement _replyCategories;
   DivElement _replies;
   DivElement _replyList;
   DivElement _notes;
   TextAreaElement _notesTextArea;
 
   AddActionView _addReply;
+  List<ReplyActionView> _replyViews;
 
   ReplyPanelView() {
     replyPanel = new DivElement()
       ..classes.add('reply-panel');
 
-    _panelTitle = new DivElement()
+    var _panelTitle = new DivElement()
       ..classes.add('panel-title')
-      ..text = REPLY_PANEL_TITLE;
+      ..classes.add('panel-title--multiple-cols');
     replyPanel.append(_panelTitle);
+
+    _replyCategories = new SelectElement();
+    _replyCategories.onChange.listen((_) => command(UIAction.updateSuggestedRepliesCategory, new UpdateSuggestedRepliesCategoryData(_replyCategories.value)));
+
+    _panelTitle
+      ..append(new DivElement()..text = REPLY_PANEL_TITLE)
+      ..append(_replyCategories);
 
     _replies = new DivElement()
       ..classes.add('replies')
@@ -843,9 +866,31 @@ class ReplyPanelView {
       command(UIAction.updateNote, new NoteData(_notesTextArea.value));
     });
     _notes.append(_notesTextArea);
+    _replyViews = [];
   }
 
   set noteText(String text) => _notesTextArea.value = text;
+
+  set selectedCategory(String category) {
+    int index = _replyCategories.children.indexWhere((Element option) => (option as OptionElement).value == category);
+    if (index == -1) {
+      showWarningStatus("Couldn't find $category in list of suggested replies category, using first");
+      _replyCategories.selectedIndex = 0;
+      command(UIAction.updateSuggestedRepliesCategory, new UpdateSuggestedRepliesCategoryData(_replyCategories.value));
+      return;
+    }
+    _replyCategories.selectedIndex = index;
+  }
+
+  set categories(List<String> categories) {
+    _replyCategories.children.clear();
+    for (var category in categories) {
+      _replyCategories.append(
+        new OptionElement()
+          ..value = category
+          ..text = category);
+    }
+  }
 
   void addReply(ActionView action) {
     _replyList.append(action.action);
@@ -861,12 +906,15 @@ class ReplyPanelView {
 
   void disableReplies() {
     _replies.remove();
+    _panelTitle.children.clear();
     _panelTitle.text = 'Notes';
     _notes.classes.toggle('notes-box--fullscreen', true);
   }
 
   void enableReplies() {
-    _panelTitle.text = REPLY_PANEL_TITLE;
+    _panelTitle
+      ..append(new DivElement()..text = REPLY_PANEL_TITLE)
+      ..append(_replyCategories);
     replyPanel.insertBefore(_replies, _notes);
     _notes.classes.toggle('notes-box--fullscreen', false);
   }
@@ -892,7 +940,7 @@ class TagPanelView {
     tagPanel.append(panelTitle);
 
     _hideTagsCheckbox = new InputElement(type: 'checkbox');
-    _hideTagsCheckbox.onChange.listen((_) => filterAllTags(!_hideTagsCheckbox.checked));
+    _hideTagsCheckbox.onChange.listen((_) => command(UIAction.hideAgeTags, new ToggleData(_hideTagsCheckbox.checked)));
 
     panelTitle
       ..append(
@@ -900,7 +948,7 @@ class TagPanelView {
       ..append(
         new DivElement()
           ..append(_hideTagsCheckbox)
-          ..append(new SpanElement()..text = 'Hide age tags'));
+          ..append(new SpanElement()..text = 'Hide demog tags'));
 
     _tags = new DivElement()
       ..classes.add('tags')
@@ -922,9 +970,6 @@ class TagPanelView {
 
   void addTag(ActionView action) {
     _tagList.append(action.action);
-    if (isAgeTag(action.action) && _hideTagsCheckbox.checked) {
-      action.action.classes.toggle('action--hide', true);
-    }
   }
 
   void clear() {
@@ -933,26 +978,6 @@ class TagPanelView {
       _tagList.firstChild.remove();
     }
     assert(_tagList.children.length == 0);
-  }
-
-  void filterAllTags(bool showAll) {
-    for(DivElement tag in _tagList.children) {
-      if (!showAll && isAgeTag(tag)) {
-        tag.classes.toggle('action--hide', true);
-        continue;
-      }
-      tag.classes.toggle('action--hide', false);
-    }
-  }
-
-  // TODO(mariana): This is currently a workaround to a proper tagging management system
-  bool isAgeTag(DivElement tag) {
-    DivElement tagDescription = tag.querySelector('.action__description');
-    if (tagDescription == null) {
-      log.warning('Was expecting tag with id ${tag.dataset['id']} to have a description, skipping');
-      return false;
-    }
-    return int.tryParse(tag.querySelector('.action__description').text) != null;
   }
 }
 
@@ -1010,6 +1035,7 @@ class ReplyActionView extends ActionView {
 
       var buttonElement = new DivElement()
         ..classes.add('action__button')
+        ..classes.add('action__button--float')
         ..text = '$buttonText (En)'; // TODO(mariana): These project-specific preferences should be read from a project config file
       buttonElement.onClick.listen((_) => command(UIAction.sendMessage, new ReplyData(replyIndex)));
       textWrapper.append(buttonElement);
@@ -1031,6 +1057,7 @@ class ReplyActionView extends ActionView {
 
       var buttonElement = new DivElement()
         ..classes.add('action__button')
+        ..classes.add('action__button--float')
         ..text = '$buttonText (Swa)'; // TODO(mariana): These project-specific preferences should be read from a project config file
       buttonElement.onClick.listen((_) => command(UIAction.sendMessage, new ReplyData(replyIndex, replyWithTranslation: true)));
       translationWrapper.append(buttonElement);
@@ -1231,11 +1258,6 @@ class AuthMainView {
       ..classes.add('partner-logo')
       ..classes.add('partner-logo--avf');
     logosContainer.append(avfLogo);
-
-    var unicefLogo = new ImageElement(src: 'assets/UNICEF-logo.svg')
-      ..classes.add('partner-logo')
-      ..classes.add('partner-logo--unicef');
-    logosContainer.append(unicefLogo);
 
     var shortDescription = new DivElement()
       ..classes.add('project-description')

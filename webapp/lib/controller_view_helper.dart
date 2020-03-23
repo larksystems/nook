@@ -14,18 +14,13 @@ enum TagReceiver {
 
 // Functions to populate the views with model objects.
 
-void _populateConversationListPanelView(Set<model.Conversation> conversations) {
-  view.conversationListPanelView.clearConversationList();
+void _populateConversationListPanelView(Set<model.Conversation> conversations, bool updateList) {
   view.conversationListPanelView.hideLoadSpinner();
-  if (conversations.isNotEmpty) {
-    for (var conversation in conversations) {
-      view.conversationListPanelView.addConversation(
-          new view.ConversationSummary(
-              conversation.docId,
-              conversation.messages.first.text,
-              conversation.unread)
-      );
-    }
+  if (conversations.isEmpty || !updateList) {
+    view.conversationListPanelView.clearConversationList();
+  }
+  for (var conversation in conversations) {
+    view.conversationListPanelView.addOrUpdateConversation(conversation);
   }
 }
 
@@ -60,6 +55,9 @@ void _populateConversationPanelView(model.Conversation conversation) {
 
 void _populateReplyPanelView(List<model.SuggestedReply> replies) {
   replies.sort((r1, r2) {
+    if (r1.seqNumber == null && r2.seqNumber == null) {
+      return r1.shortcut.compareTo(r2.shortcut);
+    }
     var seqNo1 = r1.seqNumber == null ? double.nan : r1.seqNumber;
     var seqNo2 = r2.seqNumber == null ? double.nan : r2.seqNumber;
     return seqNo1.compareTo(seqNo2);
@@ -130,4 +128,16 @@ view.TagStyle tagTypeToStyle(model.TagType tagType) {
     default:
       return view.TagStyle.None;
   }
+}
+
+Map<String, List<model.SuggestedReply>> _groupRepliesIntoCategories(List<model.SuggestedReply> replies) {
+  Map<String, List<model.SuggestedReply>> result = {};
+  for (model.SuggestedReply reply in replies) {
+    String category = reply.category ?? '';
+    if (!result.containsKey(category)) {
+      result[category] = [];
+    }
+    result[category].add(reply);
+  }
+  return result;
 }
