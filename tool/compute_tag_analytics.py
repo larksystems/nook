@@ -5,7 +5,7 @@ import sys
 import time
 
 from core_data_modules.logging import Logger
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 import demogs_helper as demogs
 
@@ -175,18 +175,20 @@ def compute_total_counts(nook_conversations, ignore_stop=False):
     return total_counts
 
 
-def compute_needs_reply(nook_conversations):
+def compute_needs_reply_metrics(nook_conversations):
     log.info (f"compute_needs_reply: processing {len(nook_conversations)} conversations...")
 
     time_start = time.perf_counter_ns()
 
     needs_reply_count = 0
+    needs_reply_more_than_24h = 0
+    needs_reply_and_escalate_more_than_24h = 0
     needs_reply_dates = []
     needs_reply_tag_id = tag_to_tag_id(NEEDS_REPLY_TAG)
     needs_reply_and_escalate_count = 0
     escalate_tag_id = tag_to_tag_id(ESCALATE_TAG)
 
-    def get_last_incoming_message(messages):
+    def get_last_incoming_message_dt(messages):
         for message in messages[::-1]:
             if message["direction"] == "MessageDirection.out":
                 continue
@@ -202,23 +204,41 @@ def compute_needs_reply(nook_conversations):
         needs_reply_count += 1
 
         # Get the date of the last incoming message
-        needs_reply_dates.append(get_last_incoming_message(conversation["messages"]))
+        date_of_last_incoming_message = get_last_incoming_message_dt(conversation["messages"])
+        delay = datetime.now(timezone.utc) - datetime.fromisoformat(date_of_last_incoming_message)
+
+        if delay > timedelta(days=1):
+            needs_reply_more_than_24h += 1
+            if escalate_tag_id in conversation_tags:
+                needs_reply_and_escalate_more_than_24h += 1
+
+        needs_reply_dates.append(date_of_last_incoming_message)
 
         # Count if this conversation is also tagged as escalate
         if escalate_tag_id in conversation_tags:
             needs_reply_and_escalate_count += 1
 
     earliest_date = datetime.now(timezone.utc)
+    needs_reply_messages_by_date = {}
+
     for date in needs_reply_dates:
         iso_date = datetime.fromisoformat(date)
         if iso_date < earliest_date:
             earliest_date = iso_date
-
+        
+        day_date = date.split("T")[0]
+        if day_date not in needs_reply_messages_by_date.keys():
+            needs_reply_messages_by_date[day_date] = 0
+        
+        needs_reply_messages_by_date[day_date] += 1
+    
     needs_reply_metrics = {
         "datetime": datetime.now().isoformat(),
         "needs_reply_count": needs_reply_count,
+        "needs_reply_more_than_24h": needs_reply_more_than_24h,
         "needs_reply_and_escalate_count": needs_reply_and_escalate_count,
-        "needs_reply_dates": needs_reply_dates,
+        "needs_reply_and_escalate_more_than_24h": needs_reply_and_escalate_more_than_24h,
+        "needs_reply_messages_by_date": needs_reply_messages_by_date,
         "earliest_needs_reply_date": earliest_date.isoformat(),
     }
 
@@ -289,7 +309,7 @@ if __name__ == '__main__':
         daily_metrics_list.append(day_metrics)
     daily_metrics_json = {DAILY_TAG_METRICS_COLLECTION_KEY : daily_metrics_list}
 
-    daily_metrics_file = f"{OUTPUT_FOLDER}/nook-analysis-daily_metrics_{now}.json"
+    daily_metrics_file = f"{OUTPUT_FOLDER}/nook-analysis-daily_metrics.json"
     with open(daily_metrics_file, mode="w", encoding='utf-8') as output_file:
         json.dump(daily_metrics_json, output_file, indent=2)
         log.info(f"compute_daily_tag_distribution saved to {daily_metrics_file}")
@@ -302,20 +322,25 @@ if __name__ == '__main__':
     total_counts["__subcollections"] = []
     total_counts_json = {TOTAL_COUNTS_METRICS_COLLECTION_KEY : [total_counts]}
 
-    total_counts_file = f"{OUTPUT_FOLDER}/nook-analysis-total_counts_{now}.json"
+    total_counts_file = f"{OUTPUT_FOLDER}/nook-analysis-total_counts.json"
     with open(total_counts_file, mode="w", encoding='utf-8') as output_file:
         json.dump(total_counts_json, output_file, indent=2)
         log.info(f"compute_total_counts saved to {total_counts_file}")
 
 
-    needs_reply_metrics = compute_needs_reply(nook_conversations)
+    needs_reply_metrics = compute_needs_reply_metrics(nook_conversations)
     # prepare for writing to a json file that can be uploaded to firebase
-    needs_reply_metrics["__id"] = "latest_needs_reply_metrics"
-    needs_reply_metrics["__reference_path"] = f"{NEEDS_REPLY_METRICS_COLLECTION_KEY}/latest_needs_reply_metrics"
-    needs_reply_metrics["__subcollections"] = []
-    needs_reply_metrics_json = {NEEDS_REPLY_METRICS_COLLECTION_KEY : [needs_reply_metrics]}
 
-    needs_reply_metrics_file = f"{OUTPUT_FOLDER}/nook-analysis-needs_reply_metrics_{now}.json"
+    isotime = needs_reply_metrics["datetime"]
+    needs_reply_metrics["__id"] = isotime
+    needs_reply_metrics["__reference_path"] = f"{NEEDS_REPLY_METRICS_COLLECTION_KEY}/{isotime}"
+    needs_reply_metrics["__subcollections"] = []
+
+    needs_reply_metrics_json = {
+        NEEDS_REPLY_METRICS_COLLECTION_KEY : [needs_reply_metrics]
+    }
+
+    needs_reply_metrics_file = f"{OUTPUT_FOLDER}/nook-analysis-needs_reply_metrics.json"
     with open(needs_reply_metrics_file, mode="w", encoding='utf-8') as output_file:
         json.dump(needs_reply_metrics_json, output_file, indent=2)
         log.info(f"compute_needs_reply saved to {needs_reply_metrics_file}")
