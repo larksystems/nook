@@ -91,6 +91,10 @@ Future<void> sendMultiMessage(List<String> ids, String message) {
 void listenForSystemMessages(SystemMessageCollectionListener listener) =>
     SystemMessage.listen(_docStorage, listener);
 
+void listenForConversationListShards(ConversationListShardCollectionListener listener) {
+  ConversationListShard.listen(_docStorage, listener);
+}
+
 void listenForConversations(ConversationCollectionListener listener) {
   Conversation.listen(_docStorage, listener, collectionRoot: "/${Conversation.collectionName}");
 }

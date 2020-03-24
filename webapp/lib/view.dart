@@ -562,6 +562,8 @@ class AfterDateFilterTagView extends FilterTagView {
 // A drop down to select which conversation list to display
 class ConversationListSelectHeader {
   DivElement panel;
+  SelectElement _selectElement;
+  List<ConversationListShard> _shards;
 
   ConversationListSelectHeader() {
     panel = new DivElement()
@@ -575,10 +577,32 @@ class ConversationListSelectHeader {
         ..text = 'Conversation List:');
 
     panel.append(
-      new SelectElement()
+      _selectElement = new SelectElement()
         ..classes.add('conversation-list-select')
-        // TODO dynamically populate this from firebase "tables/conversation-lists"
-        ..add(OptionElement(data: 'nook_conversations'), null));
+        ..add(OptionElement(data: '... loading conversation lists ...'), null)
+        ..onChange.listen(shardSelected));
+  }
+
+  void updateConversationLists(List<ConversationListShard> shards) {
+    // TODO Consider displaying summary information about each shard... e.g. # of unread conversations
+    if (_shards == null) {
+      _selectElement.options.first.remove();
+      _shards = [];
+      if (shards.isEmpty) {
+        _shards.add(ConversationListShard()..name = 'nook_conversations');
+      } else {
+        _shards.addAll(shards);
+      }
+      _selectElement.add(OptionElement(data: 'Select the conversations to be displayed', value: null), null);
+      for (var shard in _shards) {
+        _selectElement.add(OptionElement(data: shard.displayName, value: shard.conversationListRoot), null);
+      }
+    } else {
+      // TODO If summary information is displayed, then update it here
+    }
+  }
+
+  void shardSelected(Event event) {
   }
 }
 

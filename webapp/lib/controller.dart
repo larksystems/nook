@@ -264,6 +264,10 @@ void initUI() {
     );
   }
 
+  platform.listenForConversationListShards((List<model.ConversationListShard> shards) {
+    view.conversationListSelectView.updateConversationLists(shards);
+  });
+
   platform.listenForConversations(
     (updatedConversations) {
       if (updatedConversations.length != 1) {
