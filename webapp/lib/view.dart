@@ -657,6 +657,7 @@ class ConversationListPanelView {
     conversationListPanel.append(_loadSpinner);
 
     _selectConversationListMessage = new DivElement()
+      ..classes.add('select-conversation-list-message')
       ..append(SpanElement()..text = "Select a conversation list above")
       ..hidden = true;
     conversationListPanel.append(_selectConversationListMessage);
