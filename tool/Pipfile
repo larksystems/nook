@@ -14,7 +14,7 @@ google-cloud = "*"
 firebase_admin = "*"
 grpcio = "*"
 google-cloud-translate = "*"
-
+psutil = "*"
 
 [dev-packages]
 
