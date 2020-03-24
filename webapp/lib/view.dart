@@ -634,7 +634,7 @@ class ConversationListPanelView {
   void updateConversationList(Set<Conversation> conversations) {
     _phoneToConversations.removeWhere((String uuid, ConversationSummary summary) {
       if (conversations.any((c) => c.docId == uuid)) return false;
-      summary.elementOrNull?.remove();
+      _conversationList.removeItem(summary);
       return true;
     });
     for (var conversation in conversations) {
