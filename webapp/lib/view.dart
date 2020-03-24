@@ -594,12 +594,14 @@ class ConversationListSelectHeader {
       for (var shard in _shards) {
         _selectElement.add(OptionElement(data: shard.displayName, value: shard.conversationListRoot), null);
       }
+      conversationListSelectView.panel.style.visibility = 'visible';
     } else {
       // TODO If summary information is displayed, then update it here
     }
   }
 
-  void shardSelected(Event event) {
+  void shardSelected([Event event]) {
+    command(UIAction.selectConversationList, ConversationListData(_selectElement.value));
   }
 }
 

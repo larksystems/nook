@@ -32,6 +32,7 @@ enum UIAction {
   promptAfterDateFilter,
   updateAfterDateFilter,
   showConversation,
+  selectConversationList,
   selectConversation,
   deselectConversation,
   markConversationRead,
@@ -105,6 +106,11 @@ class AfterDateFilterData extends Data {
   String tagId;
   DateTime afterDateFilter;
   AfterDateFilterData(this.tagId, [this.afterDateFilter]);
+}
+
+class ConversationListData extends Data {
+  String conversationListRoot;
+  ConversationListData(this.conversationListRoot);
 }
 
 class ConversationData extends Data {
@@ -268,6 +274,16 @@ void initUI() {
     view.conversationListSelectView.updateConversationLists(shards);
   });
 
+  platform.listenForSystemMessages(
+    (updatedMessages) {
+      var updatedIds = updatedMessages.map((m) => m.msgId).toSet();
+      systemMessages.removeWhere((m) => updatedIds.contains(m.msgId));
+      systemMessages.addAll(updatedMessages.where((m) => !m.expired));
+      command(UIAction.updateSystemMessages, SystemMessagesData(systemMessages));
+    });
+}
+
+void conversationListSelected(String conversationListRoot) {
   platform.listenForConversations(
     (updatedConversations) {
       if (updatedConversations.length != 1) {
@@ -300,15 +316,8 @@ void initUI() {
         updateViewForConversation(activeConversation);
       }
       command(UIAction.markConversationRead, ConversationData(activeConversation.docId));
-    });
-
-  platform.listenForSystemMessages(
-    (updatedMessages) {
-      var updatedIds = updatedMessages.map((m) => m.msgId).toSet();
-      systemMessages.removeWhere((m) => updatedIds.contains(m.msgId));
-      systemMessages.addAll(updatedMessages.where((m) => !m.expired));
-      command(UIAction.updateSystemMessages, SystemMessagesData(systemMessages));
-    });
+    },
+    conversationListRoot);
 }
 
 SplayTreeSet<model.Conversation> get emptyConversationsSet =>
@@ -332,6 +341,7 @@ void command(UIAction action, Data data) {
   // For most actions, a conversation needs to be active.
   // Early exist if it's not one of the actions valid without an active conversation.
   if (activeConversation == null &&
+      action != UIAction.selectConversationList &&
       action != UIAction.addFilterTag && action != UIAction.removeFilterTag &&
       action != UIAction.promptAfterDateFilter && action != UIAction.updateAfterDateFilter &&
       action != UIAction.signInButtonClicked && action != UIAction.signOutButtonClicked &&
@@ -493,6 +503,10 @@ void command(UIAction action, Data data) {
       ConversationData conversationData = data;
       activeConversation = filteredConversations.singleWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
       updateViewForConversation(activeConversation);
+      break;
+    case UIAction.selectConversationList:
+      ConversationListData conversationListData = data;
+      conversationListSelected(conversationListData.conversationListRoot);
       break;
     case UIAction.selectConversation:
       ConversationData conversationData = data;
