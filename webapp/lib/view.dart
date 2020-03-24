@@ -590,17 +590,21 @@ class ConversationListSelectHeader {
       } else {
         _shards.addAll(shards);
       }
-      _selectElement.add(OptionElement(
-          data: 'Select the conversations to be displayed',
-          value: ConversationListData.NONE
-      ), null);
+      if (_shards.length > 1) {
+        _selectElement.add(OptionElement(
+            data: 'Select the conversations to be displayed',
+            value: ConversationListData.NONE
+        ), null);
+      }
       for (var shard in _shards) {
         _selectElement.add(OptionElement(
             data: shard.displayName,
             value: shard.conversationListRoot
         ), null);
       }
-      conversationListSelectView.panel.style.visibility = 'visible';
+      if (_shards.length > 1) {
+        conversationListSelectView.panel.style.visibility = 'visible';
+      }
       shardSelected();
     } else {
       // TODO If summary information is displayed, then update it here
