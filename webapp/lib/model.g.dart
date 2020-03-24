@@ -22,7 +22,7 @@ class ConversationListShard {
       ..name = String_fromData(data['name']);
   }
 
-  static void listen(DocStorage docStorage, ConversationListShardCollectionListener listener,
+  static StreamSubscription listen(DocStorage docStorage, ConversationListShardCollectionListener listener,
           {String collectionRoot = '/$collectionName'}) =>
       listenForUpdates<ConversationListShard>(docStorage, listener, collectionRoot, ConversationListShard.fromSnapshot);
 
@@ -57,7 +57,7 @@ class Conversation {
       ..unread = bool_fromData(data['unread']) ?? true;
   }
 
-  static void listen(DocStorage docStorage, ConversationCollectionListener listener,
+  static StreamSubscription listen(DocStorage docStorage, ConversationCollectionListener listener,
           {String collectionRoot = '/$collectionName'}) =>
       listenForUpdates<Conversation>(docStorage, listener, collectionRoot, Conversation.fromSnapshot);
 
@@ -296,7 +296,7 @@ class SuggestedReply {
       ..category = String_fromData(data['category']);
   }
 
-  static void listen(DocStorage docStorage, SuggestedReplyCollectionListener listener,
+  static StreamSubscription listen(DocStorage docStorage, SuggestedReplyCollectionListener listener,
           {String collectionRoot = '/$collectionName'}) =>
       listenForUpdates<SuggestedReply>(docStorage, listener, collectionRoot, SuggestedReply.fromSnapshot);
 
@@ -414,7 +414,7 @@ class SystemMessage {
       ..expired = bool_fromData(data['expired']) ?? false;
   }
 
-  static void listen(DocStorage docStorage, SystemMessageCollectionListener listener,
+  static StreamSubscription listen(DocStorage docStorage, SystemMessageCollectionListener listener,
           {String collectionRoot = '/$collectionName'}) =>
       listenForUpdates<SystemMessage>(docStorage, listener, collectionRoot, SystemMessage.fromSnapshot);
 

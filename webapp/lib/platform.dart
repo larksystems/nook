@@ -95,8 +95,8 @@ void listenForConversationListShards(ConversationListShardCollectionListener lis
   ConversationListShard.listen(_docStorage, listener);
 }
 
-void listenForConversations(ConversationCollectionListener listener, String conversationListRoot) {
-  Conversation.listen(_docStorage, listener, collectionRoot: conversationListRoot);
+StreamSubscription listenForConversations(ConversationCollectionListener listener, String conversationListRoot) {
+  return Conversation.listen(_docStorage, listener, collectionRoot: conversationListRoot);
 }
 
 void listenForConversationTags(TagCollectionListener listener) =>
