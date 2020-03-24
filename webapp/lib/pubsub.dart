@@ -24,7 +24,8 @@ class PubSubClient extends DocPubSubUpdate {
   Future<void> publish(String topic, Map payload) async {
     log.verbose("publish $topic $payload");
 
-    payload["_authenticatedUser"] = this.user.email;
+    payload["_authenticatedUserEmail"] = this.user.email;
+    payload["_authenticatedUserDisplayName"] = this.user.displayName;
 
     // The user JWT auth token used to authorize the pub/sub operation
     // is only valid for 1 hour. Don't cache it so that the firebase
