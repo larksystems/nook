@@ -45,8 +45,6 @@ void init() {
 }
 
 void initSignedInView() {
-  // TODO(mariana): Set visibility to hidden for now whilst the table selector isn't functional
-  conversationListSelectView.panel.style.visibility = 'hidden';
   clearMain();
 
   querySelector('main')
@@ -568,7 +566,6 @@ class ConversationListSelectHeader {
   ConversationListSelectHeader() {
     panel = new DivElement()
       ..classes.add('conversation-list-select-header')
-      // TODO(mariana): Set visibility to hidden for now whilst the table selector isn't functional
       ..style.visibility = 'hidden';
 
     panel.append(
