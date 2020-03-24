@@ -57,8 +57,11 @@ def get_and_publish_system_metrics(interval):
         )
 
         # disk usage
-        disk_usage = psutil.disk_usage('/')
-        metrics['disk_usage'] = dict(disk_usage._asdict())
+        metrics['disk_usage'] = []
+        for partition in psutil.disk_partitions():
+            disk_usage = dict(psutil.disk_usage(partition[0])._asdict())
+            disk_usage['disk'] = partition[0]
+            metrics['disk_usage'].append(disk_usage)
 
         log.info("Recorded metrics: {}".format(metrics))
 
