@@ -19,9 +19,7 @@ void _populateConversationListPanelView(Set<model.Conversation> conversations, b
   if (conversations.isEmpty || !updateList) {
     view.conversationListPanelView.clearConversationList();
   }
-  for (var conversation in conversations) {
-    view.conversationListPanelView.addOrUpdateConversation(conversation);
-  }
+  view.conversationListPanelView.updateConversationList(conversations);
 }
 
 void _populateConversationPanelView(model.Conversation conversation) {
