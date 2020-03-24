@@ -631,6 +631,17 @@ class ConversationListPanelView {
     conversationListPanel.append(conversationFilter.conversationFilter);
   }
 
+  void updateConversationList(Set<Conversation> conversations) {
+    _phoneToConversations.removeWhere((String uuid, ConversationSummary summary) {
+      if (conversations.any((c) => c.docId == uuid)) return false;
+      _conversationList.removeItem(summary);
+      return true;
+    });
+    for (var conversation in conversations) {
+      addOrUpdateConversation(conversation);
+    }
+  }
+
   void addOrUpdateConversation(Conversation conversation) {
     ConversationSummary summary = _phoneToConversations[conversation.docId];
     if (summary != null) {

@@ -78,6 +78,13 @@ class LazyListViewModel {
     _updateScrollPad();
   }
 
+  void removeItem(LazyListViewItem item) {
+    _items.remove(item);
+    item.disposeElement();
+    _scrollPad.remove();
+    _updateScrollPad();
+  }
+
   /// Update the [LazyListViewItem] elements cached/displayed in the DOM
   /// based on the scroll position "scrollTop",
   /// the length of the cached/displayed DOM elements "scrollLength",
