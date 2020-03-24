@@ -590,11 +590,18 @@ class ConversationListSelectHeader {
       } else {
         _shards.addAll(shards);
       }
-      _selectElement.add(OptionElement(data: 'Select the conversations to be displayed', value: null), null);
+      _selectElement.add(OptionElement(
+          data: 'Select the conversations to be displayed',
+          value: ConversationListData.NONE
+      ), null);
       for (var shard in _shards) {
-        _selectElement.add(OptionElement(data: shard.displayName, value: shard.conversationListRoot), null);
+        _selectElement.add(OptionElement(
+            data: shard.displayName,
+            value: shard.conversationListRoot
+        ), null);
       }
       conversationListSelectView.panel.style.visibility = 'visible';
+      shardSelected();
     } else {
       // TODO If summary information is displayed, then update it here
     }
@@ -612,6 +619,7 @@ class ConversationListPanelView {
   LazyListViewModel _conversationList;
   CheckboxInputElement _selectAllCheckbox;
   DivElement _loadSpinner;
+  DivElement _selectConversationListMessage;
 
   ConversationFilter conversationFilter;
 
@@ -647,6 +655,11 @@ class ConversationListPanelView {
     _loadSpinner = new DivElement()
       ..classes.add('load-spinner');
     conversationListPanel.append(_loadSpinner);
+
+    _selectConversationListMessage = new DivElement()
+      ..append(SpanElement()..text = "Select a conversation list above")
+      ..hidden = true;
+    conversationListPanel.append(_selectConversationListMessage);
 
     var conversationListElement = new DivElement()
       ..classes.add('conversation-list');
@@ -733,7 +746,17 @@ class ConversationListPanelView {
   }
 
   void showLoadSpinner() {
+    hideSelectConversationListMessage();
     _loadSpinner.hidden = false;
+  }
+
+  void hideSelectConversationListMessage() {
+    _selectConversationListMessage.hidden = true;
+  }
+
+  void showSelectConversationListMessage() {
+    hideLoadSpinner();
+    _selectConversationListMessage.hidden = false;
   }
 }
 

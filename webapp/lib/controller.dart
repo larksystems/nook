@@ -109,6 +109,7 @@ class AfterDateFilterData extends Data {
 }
 
 class ConversationListData extends Data {
+  static const NONE = 'none';
   String conversationListRoot;
   ConversationListData(this.conversationListRoot);
 }
@@ -286,6 +287,8 @@ void initUI() {
 
 void conversationListSelected(String conversationListRoot) {
   conversationListSubscription?.cancel();
+  conversationListSubscription = null;
+  if (conversationListRoot == ConversationListData.NONE) return;
   conversationListSubscription = platform.listenForConversations(
     (updatedConversations) {
       if (updatedConversations.length != 1) {
@@ -508,6 +511,12 @@ void command(UIAction action, Data data) {
       break;
     case UIAction.selectConversationList:
       ConversationListData conversationListData = data;
+      view.conversationListPanelView.clearConversationList();
+      if (conversationListData.conversationListRoot == ConversationListData.NONE) {
+        view.conversationListPanelView.showSelectConversationListMessage();
+      } else {
+        view.conversationListPanelView.showLoadSpinner();
+      }
       conversationListSelected(conversationListData.conversationListRoot);
       break;
     case UIAction.selectConversation:
