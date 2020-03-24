@@ -170,6 +170,7 @@ List<model.SystemMessage> systemMessages;
 
 UIActionObject actionObjectState = UIActionObject.conversation;
 
+StreamSubscription conversationListSubscription;
 Set<model.Conversation> conversations;
 Set<model.Conversation> filteredConversations;
 List<model.SuggestedReply> suggestedReplies;
@@ -284,7 +285,8 @@ void initUI() {
 }
 
 void conversationListSelected(String conversationListRoot) {
-  platform.listenForConversations(
+  conversationListSubscription?.cancel();
+  conversationListSubscription = platform.listenForConversations(
     (updatedConversations) {
       if (updatedConversations.length != 1) {
         log.verbose("loading/updating ${updatedConversations.length} conversations");
