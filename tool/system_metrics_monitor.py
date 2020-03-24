@@ -9,7 +9,7 @@ from firebase_admin import firestore
 from core_data_modules.logging import Logger
 
 COLLECTION = 'pipeline_system_metrics' #name of the firebase collections to store metrics
-DEFAULT_INTERVAL = 3 # wait interval between each set of metric readings in seconds
+DEFAULT_INTERVAL = 60 # wait interval between each set of metric readings in seconds
 
 log = Logger(__name__)
 
