@@ -42,6 +42,33 @@ init() async {
     _docStorage = FirebaseDocStorage(firebase.firestore());
     _pubsubInstance = new PubSubClient(platform_constants.publishUrl, user);
     controller.command(controller.UIAction.userSignedIn, new controller.UserData(user.displayName, user.email, photoURL));
+
+    // Get user features
+    firebase.firestore().collection('users').get().then((querySnapshot) {
+      var documents = querySnapshot.docs;
+      var userFeatures = documents.where((docSnapshot) => docSnapshot.id == user.email);
+      if (userFeatures.isNotEmpty) {
+        controller.KEYBOARD_SHORTCUTS_ENABLED = userFeatures.first.data()["keyboard_shortcuts_enabled"];
+        log.verbose('user feature set: keyboard_shortcuts_enabled = ${controller.KEYBOARD_SHORTCUTS_ENABLED}');
+        controller.SEND_CUSTOM_MESSAGES_ENABLED = userFeatures.first.data()["send_custom_messages_enabled"];
+        log.verbose('user feature set: send_custom_messages_enabled = ${controller.SEND_CUSTOM_MESSAGES_ENABLED}');
+        controller.SEND_MULTI_MESSAGE_ENABLED = userFeatures.first.data()["send_multi_message_enabled"];
+        log.verbose('user feature set: send_multi_message_enabled = ${controller.SEND_MULTI_MESSAGE_ENABLED}');
+        controller.TAG_PANEL_VISIBILITY = userFeatures.first.data()["tag_panel_visibility"];
+        log.verbose('user feature set: tag_panel_visibility = ${controller.TAG_PANEL_VISIBILITY}');
+        return;
+      }
+      var defaultFeatures = documents.where((docSnapshot) => docSnapshot.id == "default");
+      if (defaultFeatures.isEmpty) return;
+      controller.KEYBOARD_SHORTCUTS_ENABLED = defaultFeatures.first.data()["keyboard_shortcuts_enabled"];
+        log.verbose('user feature set: keyboard_shortcuts_enabled = ${controller.KEYBOARD_SHORTCUTS_ENABLED}');
+        controller.SEND_CUSTOM_MESSAGES_ENABLED = defaultFeatures.first.data()["send_custom_messages_enabled"];
+        log.verbose('user feature set: send_custom_messages_enabled = ${controller.SEND_CUSTOM_MESSAGES_ENABLED}');
+        controller.SEND_MULTI_MESSAGE_ENABLED = defaultFeatures.first.data()["send_multi_message_enabled"];
+        log.verbose('user feature set: send_multi_message_enabled = ${controller.SEND_MULTI_MESSAGE_ENABLED}');
+        controller.TAG_PANEL_VISIBILITY = defaultFeatures.first.data()["tag_panel_visibility"];
+        log.verbose('user feature set: tag_panel_visibility = ${controller.TAG_PANEL_VISIBILITY}');
+    });
   });
 }
 
