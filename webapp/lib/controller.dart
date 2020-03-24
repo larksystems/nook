@@ -512,6 +512,8 @@ void command(UIAction action, Data data) {
     case UIAction.selectConversationList:
       ConversationListData conversationListData = data;
       view.conversationListPanelView.clearConversationList();
+      view.conversationPanelView.clear();
+      activeConversation = null;
       if (conversationListData.conversationListRoot == ConversationListData.NONE) {
         view.conversationListPanelView.showSelectConversationListMessage();
       } else {
