@@ -14,6 +14,31 @@ part 'controller_view_helper.dart';
 
 Logger log = new Logger('controller.dart');
 
+bool _keyboardShortcutsEnabled = false;
+bool get KEYBOARD_SHORTCUTS_ENABLED => _keyboardShortcutsEnabled;
+void set KEYBOARD_SHORTCUTS_ENABLED (bool value) {
+  _keyboardShortcutsEnabled = value;
+  view.replyPanelView.showShortcuts(value);
+  view.tagPanelView.showShortcuts(value);
+}
+
+bool _sendCustomMessagesEnabled = false;
+bool get SEND_CUSTOM_MESSAGES_ENABLED => _sendCustomMessagesEnabled;
+void set SEND_CUSTOM_MESSAGES_ENABLED (bool value) {
+  _sendCustomMessagesEnabled = value;
+  view.conversationPanelView.showCustomMessageBox(value);
+}
+
+bool _sendMultiMessageEnabled = false;
+bool get SEND_MULTI_MESSAGE_ENABLED => _sendMultiMessageEnabled;
+void set SEND_MULTI_MESSAGE_ENABLED (bool value) {
+  _sendMultiMessageEnabled = value;
+  view.conversationListPanelView.showConversationSelectCheckboxes(value);
+}
+
+// TODO(mariana): This needs implementing
+bool TAG_PANEL_VISIBILITY = true;
+
 enum UIActionObject {
   conversation,
   message,
@@ -545,6 +570,9 @@ void command(UIAction action, Data data) {
       platform.signOut();
       break;
     case UIAction.keyPressed:
+      // Keyboard shortcuts not enabled, skip processing the action.
+      if (!KEYBOARD_SHORTCUTS_ENABLED) return;
+
       KeyPressData keyPressData = data;
       if (keyPressData.key == 'Enter') {
         // Select the next conversation in the list

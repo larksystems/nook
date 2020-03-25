@@ -376,3 +376,7 @@ img.partner-logo--unicef {
     margin: 16px 0;
     text-align: center;
 }
+
+.hidden {
+    display: none;
+}
