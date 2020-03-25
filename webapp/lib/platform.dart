@@ -46,30 +46,31 @@ init() async {
     // Get user features
     firebase.firestore().collection('users').get().then((querySnapshot) {
       var documents = querySnapshot.docs;
+      // Always try to use the defaults from Firebase first as not all feature flags may be set at user level
+      var defaultFeatures = documents.where((docSnapshot) => docSnapshot.id == "default");
+      if (defaultFeatures.isNotEmpty) {
+        setUserCustomizationFlags(defaultFeatures.first.data());
+      }
+      // Replace any defaults with per user customization, if exists for the current user
       var userFeatures = documents.where((docSnapshot) => docSnapshot.id == user.email);
       if (userFeatures.isNotEmpty) {
-        controller.KEYBOARD_SHORTCUTS_ENABLED = userFeatures.first.data()["keyboard_shortcuts_enabled"];
-        log.verbose('user feature set: keyboard_shortcuts_enabled = ${controller.KEYBOARD_SHORTCUTS_ENABLED}');
-        controller.SEND_CUSTOM_MESSAGES_ENABLED = userFeatures.first.data()["send_custom_messages_enabled"];
-        log.verbose('user feature set: send_custom_messages_enabled = ${controller.SEND_CUSTOM_MESSAGES_ENABLED}');
-        controller.SEND_MULTI_MESSAGE_ENABLED = userFeatures.first.data()["send_multi_message_enabled"];
-        log.verbose('user feature set: send_multi_message_enabled = ${controller.SEND_MULTI_MESSAGE_ENABLED}');
-        controller.TAG_PANEL_VISIBILITY = userFeatures.first.data()["tag_panel_visibility"];
-        log.verbose('user feature set: tag_panel_visibility = ${controller.TAG_PANEL_VISIBILITY}');
-        return;
+        setUserCustomizationFlags(userFeatures.first.data());
       }
-      var defaultFeatures = documents.where((docSnapshot) => docSnapshot.id == "default");
-      if (defaultFeatures.isEmpty) return;
-      controller.KEYBOARD_SHORTCUTS_ENABLED = defaultFeatures.first.data()["keyboard_shortcuts_enabled"];
-        log.verbose('user feature set: keyboard_shortcuts_enabled = ${controller.KEYBOARD_SHORTCUTS_ENABLED}');
-        controller.SEND_CUSTOM_MESSAGES_ENABLED = defaultFeatures.first.data()["send_custom_messages_enabled"];
-        log.verbose('user feature set: send_custom_messages_enabled = ${controller.SEND_CUSTOM_MESSAGES_ENABLED}');
-        controller.SEND_MULTI_MESSAGE_ENABLED = defaultFeatures.first.data()["send_multi_message_enabled"];
-        log.verbose('user feature set: send_multi_message_enabled = ${controller.SEND_MULTI_MESSAGE_ENABLED}');
-        controller.TAG_PANEL_VISIBILITY = defaultFeatures.first.data()["tag_panel_visibility"];
-        log.verbose('user feature set: tag_panel_visibility = ${controller.TAG_PANEL_VISIBILITY}');
     });
   });
+}
+
+/// Sets user customization flags from the data map
+/// If a flag is not set in the data map, it defaults to the existing values
+void setUserCustomizationFlags(Map<String, dynamic> data) {
+  controller.KEYBOARD_SHORTCUTS_ENABLED = data["keyboard_shortcuts_enabled"] ?? controller.KEYBOARD_SHORTCUTS_ENABLED;
+  log.verbose('user feature set: keyboard_shortcuts_enabled = ${controller.KEYBOARD_SHORTCUTS_ENABLED}');
+  controller.SEND_CUSTOM_MESSAGES_ENABLED = data["send_custom_messages_enabled"] ?? controller.SEND_CUSTOM_MESSAGES_ENABLED;
+  log.verbose('user feature set: send_custom_messages_enabled = ${controller.SEND_CUSTOM_MESSAGES_ENABLED}');
+  controller.SEND_MULTI_MESSAGE_ENABLED = data["send_multi_message_enabled"] ?? controller.SEND_MULTI_MESSAGE_ENABLED;
+  log.verbose('user feature set: send_multi_message_enabled = ${controller.SEND_MULTI_MESSAGE_ENABLED}');
+  controller.TAG_PANEL_VISIBILITY = data["tag_panel_visibility"] ?? controller.TAG_PANEL_VISIBILITY;
+  log.verbose('user feature set: tag_panel_visibility = ${controller.TAG_PANEL_VISIBILITY}');
 }
 
 firebase.Auth get firebaseAuth => firebase.auth();
