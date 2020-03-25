@@ -77,10 +77,10 @@ def publish_metrics_to_firestore(metrics):
 
 def run_system_metric_monitor(interval=DEFAULT_INTERVAL):
     parser = argparse.ArgumentParser(description='Retrieve system metrics i.e cpu utilization, memory & disk usage')
-    parser.add_argument('cert', metavar='cert', type=str, help='path to Firebase JSON certificate keyfile')
+    parser.add_argument("crypto_token_file", type=str, help="path to Firebase crypto token file")
     args = parser.parse_args()
 
-    initialize_firebase(args.cert)
+    initialize_firebase(args.crypto_token_file)
     runner = threading.Thread(target=get_and_publish_system_metrics, args=(interval,))
     runner.start()
 
