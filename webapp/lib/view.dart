@@ -171,7 +171,7 @@ class ConversationPanelView {
 
     _newMessageBox = new DivElement()
       ..classes.add('new-message-box');
-    if (!SEND_CUSTOM_MESSAGES_ENABLED) {
+    if (!currentConfig.sendCustomMessagesEnabled) {
       showCustomMessageBox(false);
     }
     conversationPanel.append(_newMessageBox);
@@ -651,7 +651,7 @@ class ConversationListPanelView {
       ..title = 'Select all conversations'
       ..checked = false
       ..onClick.listen((_) => _selectAllCheckbox.checked ? command(UIAction.enableMultiSelectMode, null) : command(UIAction.disableMultiSelectMode, null));
-    showConversationSelectCheckboxes(SEND_MULTI_MESSAGE_ENABLED);
+    showConversationSelectCheckboxes(currentConfig.sendMultiMessageEnabled);
     panelHeader.append(_selectAllCheckbox);
 
     _conversationPanelTitle = new DivElement()
@@ -861,7 +861,7 @@ class ConversationSummary with LazyListViewItem {
       ..style.visibility = 'hidden'
       ..onClick.listen((_) => _selectCheckbox.checked ? command(UIAction.selectConversation, new ConversationData(deidentifiedPhoneNumber))
                                                       : command(UIAction.deselectConversation, new ConversationData(deidentifiedPhoneNumber)));
-    showSelectCheckbox(SEND_MULTI_MESSAGE_ENABLED);
+    showSelectCheckbox(currentConfig.sendMultiMessageEnabled);
     conversationSummary.append(_selectCheckbox);
 
     var summaryMessage = new DivElement()
@@ -1126,7 +1126,7 @@ class ActionView {
     _shortcutElement = new DivElement()
       ..classes.add('action__shortcut')
       ..text = shortcut;
-    showShortcut(KEYBOARD_SHORTCUTS_ENABLED);
+    showShortcut(currentConfig.keyboardShortcutsEnabled);
     action.append(_shortcutElement);
 
     var textElement = new DivElement()
@@ -1152,7 +1152,7 @@ class ReplyActionView extends ActionView {
     _shortcutElement = new DivElement()
       ..classes.add('action__shortcut')
       ..text = shortcut;
-    showShortcut(KEYBOARD_SHORTCUTS_ENABLED);
+    showShortcut(currentConfig.keyboardShortcutsEnabled);
     action.append(_shortcutElement);
 
     var textTranslationWrapper = new DivElement()

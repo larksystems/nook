@@ -14,31 +14,6 @@ part 'controller_view_helper.dart';
 
 Logger log = new Logger('controller.dart');
 
-bool _keyboardShortcutsEnabled = false;
-bool get KEYBOARD_SHORTCUTS_ENABLED => _keyboardShortcutsEnabled;
-void set KEYBOARD_SHORTCUTS_ENABLED (bool value) {
-  _keyboardShortcutsEnabled = value;
-  view.replyPanelView.showShortcuts(value);
-  view.tagPanelView.showShortcuts(value);
-}
-
-bool _sendCustomMessagesEnabled = false;
-bool get SEND_CUSTOM_MESSAGES_ENABLED => _sendCustomMessagesEnabled;
-void set SEND_CUSTOM_MESSAGES_ENABLED (bool value) {
-  _sendCustomMessagesEnabled = value;
-  view.conversationPanelView.showCustomMessageBox(value);
-}
-
-bool _sendMultiMessageEnabled = false;
-bool get SEND_MULTI_MESSAGE_ENABLED => _sendMultiMessageEnabled;
-void set SEND_MULTI_MESSAGE_ENABLED (bool value) {
-  _sendMultiMessageEnabled = value;
-  view.conversationListPanelView.showConversationSelectCheckboxes(value);
-}
-
-// TODO(mariana): This needs implementing
-bool TAG_PANEL_VISIBILITY = true;
-
 enum UIActionObject {
   conversation,
   message,
@@ -211,10 +186,21 @@ List<model.Conversation> selectedConversations;
 model.Message selectedMessage;
 model.User signedInUser;
 
+model.UserConfiguration defaultUserConfig;
+model.UserConfiguration currentUserConfig;
+/// This represents the current configuration of the UI.
+/// It's computed by merging the [defaultUserConfig] and [currentUserConfig] (if set).
+model.UserConfiguration currentConfig;
+
 bool hideDemogsTags;
 bool multiSelectMode;
 
 void init() async {
+  currentConfig = new model.UserConfiguration()
+  ..keyboardShortcutsEnabled = false
+  ..sendCustomMessagesEnabled = false
+  ..sendMultiMessageEnabled = false
+  ..tagPanelVisibility = false;
   view.init();
   await platform.init();
 }
@@ -308,6 +294,32 @@ void initUI() {
       systemMessages.addAll(updatedMessages.where((m) => !m.expired));
       command(UIAction.updateSystemMessages, SystemMessagesData(systemMessages));
     });
+
+  platform.listenForUserConfigurations((userConfigurations) {
+    var defaultConfig = userConfigurations.singleWhere((c) => c.docId == 'default', orElse: () => null);
+    var userConfig = userConfigurations.singleWhere((c) => c.docId == signedInUser.userEmail, orElse: () => null);
+    if (defaultConfig == null && userConfig == null) {
+      return;
+    }
+    defaultUserConfig = defaultConfig ?? defaultUserConfig;
+    currentUserConfig = userConfig ?? currentUserConfig;
+    currentConfig = defaultUserConfig + currentUserConfig;
+    applyConfiguration(currentConfig);
+  });
+}
+
+
+/// Sets user customization flags from the data map
+/// If a flag is not set in the data map, it defaults to the existing values
+void applyConfiguration(model.UserConfiguration userConfiguration) {
+  view.replyPanelView.showShortcuts(userConfiguration.keyboardShortcutsEnabled ?? false);
+  view.tagPanelView.showShortcuts(userConfiguration.keyboardShortcutsEnabled ?? false);
+
+  view.conversationPanelView.showCustomMessageBox(userConfiguration.sendCustomMessagesEnabled ?? false);
+
+  view.conversationListPanelView.showConversationSelectCheckboxes(userConfiguration.sendMultiMessageEnabled ?? false);
+
+  // TODO(mariana): Implement hide/show for the tag panel
 }
 
 void conversationListSelected(String conversationListRoot) {
@@ -607,7 +619,7 @@ void command(UIAction action, Data data) {
       break;
     case UIAction.keyPressed:
       // Keyboard shortcuts not enabled, skip processing the action.
-      if (!KEYBOARD_SHORTCUTS_ENABLED) return;
+      if (!currentUserConfig.keyboardShortcutsEnabled) return;
 
       KeyPressData keyPressData = data;
       if (keyPressData.key == 'Enter') {
