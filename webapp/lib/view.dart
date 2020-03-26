@@ -772,6 +772,7 @@ class ConversationListPanelView {
   void showSelectConversationListMessage() {
     hideLoadSpinner();
     _selectConversationListMessage.hidden = false;
+  }
 
   void showConversationSelectCheckboxes(bool value) {
     _selectAllCheckbox.classes.toggle('hidden', !value);
