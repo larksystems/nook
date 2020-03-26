@@ -32,7 +32,7 @@ class ConversationListShard {
     };
   }
 }
-typedef void ConversationListShardCollectionListener(List<ConversationListShard> changes);
+typedef void ConversationListShardCollectionListener(List<ConversationListShard> changes, List<String> removedDocIds);
 
 class Conversation {
   static const collectionName = 'nook_conversations';
@@ -473,7 +473,7 @@ Set<T> Set_fromData<T>(dynamic data, T createModel(data)) =>
 
 StreamSubscription<List<DocSnapshot>> listenForUpdates<T>(
     DocStorage docStorage,
-    void listener(List<T> changes),
+    void listener(List<T> changes, List<String> removedDocIds),
     String collectionRoot,
     T createModel(DocSnapshot doc),
     ) {
@@ -481,12 +481,17 @@ StreamSubscription<List<DocSnapshot>> listenForUpdates<T>(
   log.verbose('Query root: $collectionRoot');
   return docStorage.onChange(collectionRoot).listen((List<DocSnapshot> snapshots) {
     List<T> changes = [];
+    List<String> removedDocIds = []
     log.verbose("Starting processing ${snapshots.length} changes.");
     for (var snapshot in snapshots) {
       log.verbose('Processing ${snapshot.id}');
-      changes.add(createModel(snapshot));
+      if (snapshot.removed) {
+        removedDocIds.add(snapshot.id);
+      } else {
+        changes.add(createModel(snapshot));
+      }
     }
-    listener(changes);
+    listener(changes, removedDocIds);
   });
 }
 
@@ -505,8 +510,9 @@ abstract class DocStorage {
 class DocSnapshot {
   final String id;
   final Map<String, dynamic> data;
+  final bool removed;
 
-  DocSnapshot(this.id, this.data);
+  DocSnapshot(this.id, this.data, this.removed);
 }
 
 /// A batch update, used to perform multiple writes as a single atomic unit.
