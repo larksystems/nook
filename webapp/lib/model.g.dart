@@ -261,7 +261,6 @@ class MessageStatus {
         if (value.name == valueName) return value;
       }
     }
-    log.warning('unknown MessageStatus $text');
     return defaultValue;
   }
 
