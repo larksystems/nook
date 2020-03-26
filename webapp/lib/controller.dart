@@ -196,11 +196,11 @@ bool hideDemogsTags;
 bool multiSelectMode;
 
 void init() async {
-  currentConfig = new model.UserConfiguration()
-  ..keyboardShortcutsEnabled = false
-  ..sendCustomMessagesEnabled = false
-  ..sendMultiMessageEnabled = false
-  ..tagPanelVisibility = false;
+  defaultUserConfig = currentUserConfig = currentConfig = new model.UserConfiguration()
+    ..keyboardShortcutsEnabled = false
+    ..sendCustomMessagesEnabled = false
+    ..sendMultiMessageEnabled = false
+    ..tagPanelVisibility = false;
   view.init();
   await platform.init();
 }
@@ -303,7 +303,7 @@ void initUI() {
     }
     defaultUserConfig = defaultConfig ?? defaultUserConfig;
     currentUserConfig = userConfig ?? currentUserConfig;
-    currentConfig = defaultUserConfig + currentUserConfig;
+    currentConfig = currentUserConfig.applyDefaults(defaultUserConfig);
     applyConfiguration(currentConfig);
   });
 }

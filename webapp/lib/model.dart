@@ -7,13 +7,13 @@ export 'model.g.dart' hide
   TagType_fromStringOverride;
 
 extension UserConfigurationUtil on g.UserConfiguration {
-  g.UserConfiguration operator +(g.UserConfiguration other) =>
+  g.UserConfiguration applyDefaults(g.UserConfiguration defaults) =>
     new g.UserConfiguration()
-      ..docId = other.docId
-      ..keyboardShortcutsEnabled = other.keyboardShortcutsEnabled ?? this.keyboardShortcutsEnabled
-      ..sendCustomMessagesEnabled = other.sendCustomMessagesEnabled ?? this.sendCustomMessagesEnabled
-      ..sendMultiMessageEnabled = other.sendMultiMessageEnabled ?? this.sendMultiMessageEnabled
-      ..tagPanelVisibility = other.tagPanelVisibility ?? this.tagPanelVisibility;
+      ..docId = null
+      ..keyboardShortcutsEnabled = this.keyboardShortcutsEnabled ?? defaults.keyboardShortcutsEnabled
+      ..sendCustomMessagesEnabled = this.sendCustomMessagesEnabled ?? defaults.sendCustomMessagesEnabled
+      ..sendMultiMessageEnabled = this.sendMultiMessageEnabled ?? defaults.sendMultiMessageEnabled
+      ..tagPanelVisibility = this.tagPanelVisibility ?? defaults.tagPanelVisibility;
 }
 
 extension ConversationListShardUtil on g.ConversationListShard {
