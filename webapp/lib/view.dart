@@ -128,6 +128,7 @@ class ConversationPanelView {
   DivElement _conversationIdCopy;
   DivElement _info;
   DivElement _tags;
+  DivElement _newMessageBox;
   TextAreaElement _newMessageTextArea;
   AfterDateFilterView _afterDateFilterView;
 
@@ -168,9 +169,12 @@ class ConversationPanelView {
       ..classes.add('messages');
     conversationPanel.append(_messages);
 
-    var newMessageBox = new DivElement()
+    _newMessageBox = new DivElement()
       ..classes.add('new-message-box');
-    conversationPanel.append(newMessageBox);
+    if (!SEND_CUSTOM_MESSAGES_ENABLED) {
+      showCustomMessageBox(false);
+    }
+    conversationPanel.append(_newMessageBox);
 
     _newMessageTextArea = new TextAreaElement()
       ..classes.add('new-message-box__textarea');
@@ -181,7 +185,7 @@ class ConversationPanelView {
       }
       _newMessageTextArea.classes.toggle('warning-background', false);
     });
-    newMessageBox.append(_newMessageTextArea);
+    _newMessageBox.append(_newMessageTextArea);
 
     var buttonElement = new DivElement()
       ..classes.add('new-message-box__send-button')
@@ -193,7 +197,7 @@ class ConversationPanelView {
         }
         command(UIAction.sendManualMessage, new ManualReplyData(_newMessageTextArea.value));
       });
-    newMessageBox.append(buttonElement);
+    _newMessageBox.append(buttonElement);
 
     _afterDateFilterView = AfterDateFilterView();
     conversationPanel.append(_afterDateFilterView.panel);
@@ -248,7 +252,11 @@ class ConversationPanelView {
   }
 
   void clearNewMessageBox() {
-    _newMessageTextArea.value = '';
+    _newMessageTextArea?.value = '';
+  }
+
+  void showCustomMessageBox(bool show) {
+    _newMessageBox.classes.toggle('hidden', !show);
   }
 
   void showAfterDateFilterPrompt(DateTime dateTime) {
@@ -643,6 +651,7 @@ class ConversationListPanelView {
       ..title = 'Select all conversations'
       ..checked = false
       ..onClick.listen((_) => _selectAllCheckbox.checked ? command(UIAction.enableMultiSelectMode, null) : command(UIAction.disableMultiSelectMode, null));
+    showConversationSelectCheckboxes(SEND_MULTI_MESSAGE_ENABLED);
     panelHeader.append(_selectAllCheckbox);
 
     _conversationPanelTitle = new DivElement()
@@ -755,6 +764,7 @@ class ConversationListPanelView {
     _loadSpinner.hidden = false;
   }
 
+
   void hideSelectConversationListMessage() {
     _selectConversationListMessage.hidden = true;
   }
@@ -762,6 +772,12 @@ class ConversationListPanelView {
   void showSelectConversationListMessage() {
     hideLoadSpinner();
     _selectConversationListMessage.hidden = false;
+
+  void showConversationSelectCheckboxes(bool value) {
+    _selectAllCheckbox.classes.toggle('hidden', !value);
+    for (var conversation in _phoneToConversations.values) {
+      conversation.showSelectCheckbox(value);
+    }
   }
 }
 
@@ -844,6 +860,7 @@ class ConversationSummary with LazyListViewItem {
       ..style.visibility = 'hidden'
       ..onClick.listen((_) => _selectCheckbox.checked ? command(UIAction.selectConversation, new ConversationData(deidentifiedPhoneNumber))
                                                       : command(UIAction.deselectConversation, new ConversationData(deidentifiedPhoneNumber)));
+    showSelectCheckbox(SEND_MULTI_MESSAGE_ENABLED);
     conversationSummary.append(_selectCheckbox);
 
     var summaryMessage = new DivElement()
@@ -906,6 +923,10 @@ class ConversationSummary with LazyListViewItem {
   }
   void _hideCheckbox() {
     if (_selectCheckbox != null) _selectCheckbox.style.visibility = 'hidden';
+  }
+
+  void showSelectCheckbox(bool value) {
+    _selectCheckbox.classes.toggle('hidden', !value);
   }
 }
 
@@ -985,6 +1006,7 @@ class ReplyPanelView {
   }
 
   void addReply(ActionView action) {
+    _replyViews.add(action);
     _replyList.append(action.action);
   }
 
@@ -993,7 +1015,14 @@ class ReplyPanelView {
     for (int i = 0; i < repliesNo; i++) {
       _replyList.firstChild.remove();
     }
+    _replyViews.clear();
     assert(_replyList.children.length == 0);
+  }
+
+  void showShortcuts(bool value) {
+    for (var view in _replyViews) {
+      view.showShortcut(value);
+    }
   }
 
   void disableReplies() {
@@ -1021,6 +1050,7 @@ class TagPanelView {
   Text _statusText;
 
   AddActionView _addTag;
+  List<TagActionView> _tagViews;
 
   TagPanelView() {
     tagPanel = new DivElement()
@@ -1059,9 +1089,12 @@ class TagPanelView {
     tagPanel.append(_statusPanel
       ..classes.add('status-line')
       ..append(_statusText));
+
+    _tagViews = [];
   }
 
   void addTag(ActionView action) {
+    _tagViews.add(action);
     _tagList.append(action.action);
   }
 
@@ -1072,20 +1105,28 @@ class TagPanelView {
     }
     assert(_tagList.children.length == 0);
   }
+
+  void showShortcuts(bool value) {
+    for (var view in _tagViews) {
+      view.showShortcut(value);
+    }
+  }
 }
 
 class ActionView {
   DivElement action;
+  DivElement _shortcutElement;
 
   ActionView(String text, String shortcut, String actionId, String buttonText) {
     action = new DivElement()
       ..classes.add('action')
       ..dataset['id'] = actionId;
 
-    var shortcutElement = new DivElement()
+    _shortcutElement = new DivElement()
       ..classes.add('action__shortcut')
       ..text = shortcut;
-    action.append(shortcutElement);
+    showShortcut(KEYBOARD_SHORTCUTS_ENABLED);
+    action.append(_shortcutElement);
 
     var textElement = new DivElement()
       ..classes.add('action__description')
@@ -1097,16 +1138,21 @@ class ActionView {
       ..text = buttonText;
     action.append(buttonElement);
   }
+
+  void showShortcut(bool value) {
+    _shortcutElement.classes.toggle('hidden', !value);
+  }
 }
 
 class ReplyActionView extends ActionView {
   ReplyActionView(String text, String translation, String shortcut, int replyIndex, String buttonText) : super(text, shortcut, '$replyIndex', buttonText) {
     action.children.clear();
 
-    var shortcutElement = new DivElement()
+    _shortcutElement = new DivElement()
       ..classes.add('action__shortcut')
       ..text = shortcut;
-    action.append(shortcutElement);
+    showShortcut(KEYBOARD_SHORTCUTS_ENABLED);
+    action.append(_shortcutElement);
 
     var textTranslationWrapper = new DivElement()
       ..style.flex = '1 1 auto';
