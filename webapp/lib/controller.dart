@@ -57,6 +57,7 @@ enum UIAction {
   promptAfterDateFilter,
   updateAfterDateFilter,
   showConversation,
+  selectConversationList,
   selectConversation,
   deselectConversation,
   markConversationRead,
@@ -132,6 +133,12 @@ class AfterDateFilterData extends Data {
   AfterDateFilterData(this.tagId, [this.afterDateFilter]);
 }
 
+class ConversationListData extends Data {
+  static const NONE = 'none';
+  String conversationListRoot;
+  ConversationListData(this.conversationListRoot);
+}
+
 class ConversationData extends Data {
   String deidentifiedPhoneNumber;
   ConversationData(this.deidentifiedPhoneNumber);
@@ -189,6 +196,7 @@ List<model.SystemMessage> systemMessages;
 
 UIActionObject actionObjectState = UIActionObject.conversation;
 
+StreamSubscription conversationListSubscription;
 Set<model.Conversation> conversations;
 Set<model.Conversation> filteredConversations;
 List<model.SuggestedReply> suggestedReplies;
@@ -289,8 +297,30 @@ void initUI() {
     );
   }
 
-  platform.listenForConversations(
+  platform.listenForConversationListShards((List<model.ConversationListShard> shards) {
+    view.conversationListSelectView.updateConversationLists(shards);
+  });
+
+  platform.listenForSystemMessages(
+    (updatedMessages) {
+      var updatedIds = updatedMessages.map((m) => m.msgId).toSet();
+      systemMessages.removeWhere((m) => updatedIds.contains(m.msgId));
+      systemMessages.addAll(updatedMessages.where((m) => !m.expired));
+      command(UIAction.updateSystemMessages, SystemMessagesData(systemMessages));
+    });
+}
+
+void conversationListSelected(String conversationListRoot) {
+  conversationListSubscription?.cancel();
+  conversationListSubscription = null;
+  if (conversationListRoot == ConversationListData.NONE) return;
+  conversationListSubscription = platform.listenForConversations(
     (updatedConversations) {
+      if (updatedConversations.length != 1) {
+        log.verbose("loading/updating ${updatedConversations.length} conversations");
+      } else {
+        log.verbose("loading/updating conversation ${updatedConversations[0].docId}");
+      }
       var updatedIds = updatedConversations.map((t) => t.docId).toSet();
       conversations.removeWhere((conversation) => updatedIds.contains(conversation.docId));
       conversations.addAll(updatedConversations);
@@ -316,15 +346,8 @@ void initUI() {
         updateViewForConversation(activeConversation);
       }
       command(UIAction.markConversationRead, ConversationData(activeConversation.docId));
-    });
-
-  platform.listenForSystemMessages(
-    (updatedMessages) {
-      var updatedIds = updatedMessages.map((m) => m.msgId).toSet();
-      systemMessages.removeWhere((m) => updatedIds.contains(m.msgId));
-      systemMessages.addAll(updatedMessages.where((m) => !m.expired));
-      command(UIAction.updateSystemMessages, SystemMessagesData(systemMessages));
-    });
+    },
+    conversationListRoot);
 }
 
 SplayTreeSet<model.Conversation> get emptyConversationsSet =>
@@ -348,6 +371,7 @@ void command(UIAction action, Data data) {
   // For most actions, a conversation needs to be active.
   // Early exist if it's not one of the actions valid without an active conversation.
   if (activeConversation == null &&
+      action != UIAction.selectConversationList &&
       action != UIAction.addFilterTag && action != UIAction.removeFilterTag &&
       action != UIAction.promptAfterDateFilter && action != UIAction.updateAfterDateFilter &&
       action != UIAction.signInButtonClicked && action != UIAction.signOutButtonClicked &&
@@ -509,6 +533,18 @@ void command(UIAction action, Data data) {
       ConversationData conversationData = data;
       activeConversation = filteredConversations.singleWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
       updateViewForConversation(activeConversation);
+      break;
+    case UIAction.selectConversationList:
+      ConversationListData conversationListData = data;
+      view.conversationListPanelView.clearConversationList();
+      view.conversationPanelView.clear();
+      activeConversation = null;
+      if (conversationListData.conversationListRoot == ConversationListData.NONE) {
+        view.conversationListPanelView.showSelectConversationListMessage();
+      } else {
+        view.conversationListPanelView.showLoadSpinner();
+      }
+      conversationListSelected(conversationListData.conversationListRoot);
       break;
     case UIAction.selectConversation:
       ConversationData conversationData = data;

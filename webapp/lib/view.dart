@@ -2,11 +2,11 @@ import 'dart:async';
 import 'dart:html';
 
 import 'package:intl/intl.dart';
-import 'package:nook/model.dart';
 
+import 'controller.dart';
 import 'dom_utils.dart';
 import 'logger.dart';
-import 'controller.dart';
+import 'model.dart';
 import 'lazy_list_view_model.dart';
 
 
@@ -45,8 +45,6 @@ void init() {
 }
 
 void initSignedInView() {
-  // TODO(mariana): Set visibility to hidden for now whilst the table selector isn't functional
-  conversationListSelectView.panel.style.visibility = 'hidden';
   clearMain();
 
   querySelector('main')
@@ -570,11 +568,12 @@ class AfterDateFilterTagView extends FilterTagView {
 // A drop down to select which conversation list to display
 class ConversationListSelectHeader {
   DivElement panel;
+  SelectElement _selectElement;
+  List<ConversationListShard> _shards;
 
   ConversationListSelectHeader() {
     panel = new DivElement()
       ..classes.add('conversation-list-select-header')
-      // TODO(mariana): Set visibility to hidden for now whilst the table selector isn't functional
       ..style.visibility = 'hidden';
 
     panel.append(
@@ -583,10 +582,45 @@ class ConversationListSelectHeader {
         ..text = 'Conversation List:');
 
     panel.append(
-      new SelectElement()
+      _selectElement = new SelectElement()
         ..classes.add('conversation-list-select')
-        // TODO dynamically populate this from firebase "tables/conversation-lists"
-        ..add(OptionElement(data: 'nook_conversations'), null));
+        ..add(OptionElement(data: '... loading conversation lists ...'), null)
+        ..onChange.listen(shardSelected));
+  }
+
+  void updateConversationLists(List<ConversationListShard> shards) {
+    // TODO Consider displaying summary information about each shard... e.g. # of unread conversations
+    if (_shards == null) {
+      _selectElement.options.first.remove();
+      _shards = [];
+      if (shards.isEmpty) {
+        _shards.add(ConversationListShard()..name = 'nook_conversations');
+      } else {
+        _shards.addAll(shards);
+      }
+      if (_shards.length > 1) {
+        _selectElement.add(OptionElement(
+            data: 'Select the conversations to be displayed',
+            value: ConversationListData.NONE
+        ), null);
+      }
+      for (var shard in _shards) {
+        _selectElement.add(OptionElement(
+            data: shard.displayName,
+            value: shard.conversationListRoot
+        ), null);
+      }
+      if (_shards.length > 1) {
+        conversationListSelectView.panel.style.visibility = 'visible';
+      }
+      shardSelected();
+    } else {
+      // TODO If summary information is displayed, then update it here
+    }
+  }
+
+  void shardSelected([Event event]) {
+    command(UIAction.selectConversationList, ConversationListData(_selectElement.value));
   }
 }
 
@@ -597,6 +631,7 @@ class ConversationListPanelView {
   LazyListViewModel _conversationList;
   CheckboxInputElement _selectAllCheckbox;
   DivElement _loadSpinner;
+  DivElement _selectConversationListMessage;
 
   ConversationFilter conversationFilter;
 
@@ -633,6 +668,12 @@ class ConversationListPanelView {
     _loadSpinner = new DivElement()
       ..classes.add('load-spinner');
     conversationListPanel.append(_loadSpinner);
+
+    _selectConversationListMessage = new DivElement()
+      ..classes.add('select-conversation-list-message')
+      ..append(SpanElement()..text = "Select a conversation list above")
+      ..hidden = true;
+    conversationListPanel.append(_selectConversationListMessage);
 
     var conversationListElement = new DivElement()
       ..classes.add('conversation-list');
@@ -719,8 +760,18 @@ class ConversationListPanelView {
   }
 
   void showLoadSpinner() {
+    hideSelectConversationListMessage();
     _loadSpinner.hidden = false;
   }
+
+
+  void hideSelectConversationListMessage() {
+    _selectConversationListMessage.hidden = true;
+  }
+
+  void showSelectConversationListMessage() {
+    hideLoadSpinner();
+    _selectConversationListMessage.hidden = false;
 
   void showConversationSelectCheckboxes(bool value) {
     _selectAllCheckbox.classes.toggle('hidden', !value);

@@ -6,9 +6,15 @@ export 'model.g.dart' hide
   MessageDirection_fromStringOverride,
   TagType_fromStringOverride;
 
-extension ConversationUtil on g.Conversation {
-  String get documentPath => "${g.Conversation.collectionName}/$docId";
+extension ConversationListShardUtil on g.ConversationListShard {
+  String get conversationListRoot => docId != null
+    ? "/${g.ConversationListShard.collectionName}/$docId/conversations"
+    : "/nook_conversations";
 
+  String get displayName => name ?? docId;
+}
+
+extension ConversationUtil on g.Conversation {
   String get shortDeidentifiedPhoneNumber => docId.split('uuid-')[1].split('-')[0];
 
   /// Return the most recent inbound message, or `null`

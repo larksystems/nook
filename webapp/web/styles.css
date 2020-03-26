@@ -150,6 +150,12 @@ main {
     padding: 12px;
 }
 
+.select-conversation-list-message {
+    margin: auto;
+    padding-top: 50px;
+    font-weight: bold;
+}
+
 .conversation-list__item {
     display: flex;
     border-bottom: 1px solid lightgray;

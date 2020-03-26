@@ -119,11 +119,12 @@ Future<void> sendMultiMessage(List<String> ids, String message) {
 void listenForSystemMessages(SystemMessageCollectionListener listener) =>
     SystemMessage.listen(_docStorage, listener);
 
-void listenForConversations(ConversationCollectionListener listener) {
-  listenForUpdates<Conversation>(_docStorage, listener, "/${Conversation.collectionName}", (DocSnapshot conversation) {
-    log.verbose("_firestoreConversationToModelConversation: ${conversation.id}");
-    return Conversation.fromSnapshot(conversation);
-  });
+void listenForConversationListShards(ConversationListShardCollectionListener listener) {
+  ConversationListShard.listen(_docStorage, listener);
+}
+
+StreamSubscription listenForConversations(ConversationCollectionListener listener, String conversationListRoot) {
+  return Conversation.listen(_docStorage, listener, collectionRoot: conversationListRoot);
 }
 
 void listenForConversationTags(TagCollectionListener listener) =>

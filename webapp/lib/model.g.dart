@@ -7,6 +7,33 @@ import 'logger.dart';
 
 Logger log = Logger('model.g.dart');
 
+class ConversationListShard {
+  static const collectionName = 'nook_conversation_shards';
+
+  String docId;
+  String name;
+
+  static ConversationListShard fromSnapshot(DocSnapshot doc, [ConversationListShard modelObj]) =>
+      fromData(doc.data, modelObj)..docId = doc.id;
+
+  static ConversationListShard fromData(data, [ConversationListShard modelObj]) {
+    if (data == null) return null;
+    return (modelObj ?? ConversationListShard())
+      ..name = String_fromData(data['name']);
+  }
+
+  static StreamSubscription listen(DocStorage docStorage, ConversationListShardCollectionListener listener,
+          {String collectionRoot = '/$collectionName'}) =>
+      listenForUpdates<ConversationListShard>(docStorage, listener, collectionRoot, ConversationListShard.fromSnapshot);
+
+  Map<String, dynamic> toData() {
+    return {
+      if (name != null) 'name': name,
+    };
+  }
+}
+typedef void ConversationListShardCollectionListener(List<ConversationListShard> changes);
+
 class Conversation {
   static const collectionName = 'nook_conversations';
 
@@ -30,7 +57,7 @@ class Conversation {
       ..unread = bool_fromData(data['unread']) ?? true;
   }
 
-  static void listen(DocStorage docStorage, ConversationCollectionListener listener,
+  static StreamSubscription listen(DocStorage docStorage, ConversationCollectionListener listener,
           {String collectionRoot = '/$collectionName'}) =>
       listenForUpdates<Conversation>(docStorage, listener, collectionRoot, Conversation.fromSnapshot);
 
@@ -269,7 +296,7 @@ class SuggestedReply {
       ..category = String_fromData(data['category']);
   }
 
-  static void listen(DocStorage docStorage, SuggestedReplyCollectionListener listener,
+  static StreamSubscription listen(DocStorage docStorage, SuggestedReplyCollectionListener listener,
           {String collectionRoot = '/$collectionName'}) =>
       listenForUpdates<SuggestedReply>(docStorage, listener, collectionRoot, SuggestedReply.fromSnapshot);
 
@@ -387,7 +414,7 @@ class SystemMessage {
       ..expired = bool_fromData(data['expired']) ?? false;
   }
 
-  static void listen(DocStorage docStorage, SystemMessageCollectionListener listener,
+  static StreamSubscription listen(DocStorage docStorage, SystemMessageCollectionListener listener,
           {String collectionRoot = '/$collectionName'}) =>
       listenForUpdates<SystemMessage>(docStorage, listener, collectionRoot, SystemMessage.fromSnapshot);
 
