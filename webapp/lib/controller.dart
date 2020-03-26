@@ -311,15 +311,15 @@ void initUI() {
 
 /// Sets user customization flags from the data map
 /// If a flag is not set in the data map, it defaults to the existing values
-void applyConfiguration(model.UserConfiguration userConfiguration) {
-  view.replyPanelView.showShortcuts(userConfiguration.keyboardShortcutsEnabled ?? false);
-  view.tagPanelView.showShortcuts(userConfiguration.keyboardShortcutsEnabled ?? false);
+void applyConfiguration(model.UserConfiguration config) {
+  view.replyPanelView.showShortcuts(config.keyboardShortcutsEnabled ?? false);
+  view.tagPanelView.showShortcuts(config.keyboardShortcutsEnabled ?? false);
 
-  view.conversationPanelView.showCustomMessageBox(userConfiguration.sendCustomMessagesEnabled ?? false);
+  view.conversationPanelView.showCustomMessageBox(config.sendCustomMessagesEnabled ?? false);
 
-  view.conversationListPanelView.showConversationSelectCheckboxes(userConfiguration.sendMultiMessageEnabled ?? false);
+  view.conversationListPanelView.showConversationSelectCheckboxes(config.sendMultiMessageEnabled ?? false);
 
-  // TODO(mariana): Implement hide/show for the tag panel
+  view.showTagPanel(config.tagPanelVisibility ?? false);
 }
 
 void conversationListSelected(String conversationListRoot) {
@@ -619,7 +619,7 @@ void command(UIAction action, Data data) {
       break;
     case UIAction.keyPressed:
       // Keyboard shortcuts not enabled, skip processing the action.
-      if (!currentUserConfig.keyboardShortcutsEnabled) return;
+      if (!currentConfig.keyboardShortcutsEnabled) return;
 
       KeyPressData keyPressData = data;
       if (keyPressData.key == 'Enter') {
@@ -646,7 +646,8 @@ void command(UIAction action, Data data) {
         sendMultiReply(selectedReply.first, selectedConversations);
         return;
       }
-      // If the shortcut is for a tag, find it and tag it to the conversation/message
+      // If the shortcut is for a tag and tag panel is enabled, find it and tag it to the conversation/message
+      if (!currentConfig.tagPanelVisibility) return;
       switch (actionObjectState) {
         case UIActionObject.conversation:
           var selectedTag = _filterDemogsTagsIfNeeded(conversationTags).where((tag) => tag.shortcut == keyPressData.key);

@@ -40,20 +40,6 @@ main {
     flex-direction: column;
 }
 
-.conversation-panel {
-    width: 40%;
-}
-
-.conversation-list-panel,
-.reply-panel {
-    width: 22.5%;
-}
-
-.tag-panel {
-    width: 15%;
-}
-
-
 .conversation-list {
     flex: 1 1 auto;
     overflow: scroll;

@@ -73,6 +73,21 @@ void clearMain() {
   snackbarView.snackbarElement.remove();
 }
 
+void showTagPanel(bool show) {
+  if (show) {
+    tagPanelView.tagPanel.classes.toggle('hidden', false);
+    conversationListPanelView.conversationListPanel.classes.add('w-20');
+    conversationPanelView.conversationPanel.classes.add('w-40');
+    replyPanelView.replyPanel.classes.add('w-25');
+    tagPanelView.tagPanel.classes.add('w-15');
+    return;
+  }
+  tagPanelView.tagPanel.classes.toggle('hidden', true);
+  conversationListPanelView.conversationListPanel.classes.add('w-25');
+  conversationPanelView.conversationPanel.classes.add('w-45');
+  replyPanelView.replyPanel.classes.add('w-30');
+}
+
 bool sendingMultiMessagesUserConfirmation(int noMessages) {
   return window.confirm('Are you sure you want to send $noMessages SMS message${noMessages == 1 ? "" : "s" }?');
 }
