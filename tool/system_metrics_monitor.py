@@ -2,6 +2,7 @@ import time
 import datetime as dt
 import threading
 import sys
+import argparse
 import psutil
 import firebase_admin
 from firebase_admin import credentials
@@ -75,7 +76,11 @@ def publish_metrics_to_firestore(metrics):
 
 
 def run_system_metric_monitor(interval=DEFAULT_INTERVAL):
-    initialize_firebase(sys.argv[1])
+    parser = argparse.ArgumentParser(description='Retrieve system metrics i.e cpu utilization, memory & disk usage')
+    parser.add_argument("crypto_token_file", type=str, help="path to Firebase crypto token file")
+    args = parser.parse_args()
+
+    initialize_firebase(args.crypto_token_file)
     runner = threading.Thread(target=get_and_publish_system_metrics, args=(interval,))
     runner.start()
 
