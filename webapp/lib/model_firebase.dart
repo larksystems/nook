@@ -29,7 +29,10 @@ class FirebaseDocStorage implements DocStorage {
         var event = <DocSnapshot>[];
         for (var change in querySnapshot.docChanges()) {
           var doc = change.doc;
-          event.add(DocSnapshot(doc.id, doc.data()));
+          DocChangeType changeType =
+            change.oldIndex == -1 ? DocChangeType.added :
+            change.newIndex == -1 ? DocChangeType.removed : DocChangeType.modified;
+          event.add(DocSnapshot(doc.id, doc.data(), changeType));
         }
         sink.add(event);
       },
