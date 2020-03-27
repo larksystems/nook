@@ -196,11 +196,8 @@ bool hideDemogsTags;
 bool multiSelectMode;
 
 void init() async {
-  defaultUserConfig = currentUserConfig = currentConfig = new model.UserConfiguration()
-    ..keyboardShortcutsEnabled = false
-    ..sendCustomMessagesEnabled = false
-    ..sendMultiMessageEnabled = false
-    ..tagPanelVisibility = false;
+  defaultUserConfig = currentConfig = baseUserConfiguration;
+  currentUserConfig = emptyUserConfiguration;
   view.init();
   await platform.init();
 }
@@ -320,19 +317,28 @@ void initUI() {
         ..addAll(added.where((m) => !m.expired))
         ..addAll(modified.where((m) => !m.expired));
       command(UIAction.updateSystemMessages, SystemMessagesData(systemMessages));
-    });
-
-  platform.listenForUserConfigurations((userConfigurations) {
-    var defaultConfig = userConfigurations.singleWhere((c) => c.docId == 'default', orElse: () => null);
-    var userConfig = userConfigurations.singleWhere((c) => c.docId == signedInUser.userEmail, orElse: () => null);
-    if (defaultConfig == null && userConfig == null) {
-      return;
     }
-    defaultUserConfig = defaultConfig ?? defaultUserConfig;
-    currentUserConfig = userConfig ?? currentUserConfig;
-    currentConfig = currentUserConfig.applyDefaults(defaultUserConfig);
-    applyConfiguration(currentConfig);
-  });
+  );
+
+  platform.listenForUserConfigurations(
+    (added, modified, removed) {
+      List<model.UserConfiguration> changedUserConfigurations = new List()
+        ..addAll(added)
+        ..addAll(modified);
+      var defaultConfig = changedUserConfigurations.singleWhere((c) => c.docId == 'default', orElse: () => null);
+      defaultConfig = removed.where((c) => c.docId == 'default').length > 0 ? baseUserConfiguration : defaultConfig;
+      var userConfig = changedUserConfigurations.singleWhere((c) => c.docId == signedInUser.userEmail, orElse: () => null);
+      userConfig = removed.where((c) => c.docId == signedInUser.userEmail).length > 0 ? emptyUserConfiguration : userConfig;
+      if (defaultConfig == null && userConfig == null) {
+        // Neither of the relevant configurations has been changed, nothing to do here
+        return;
+      }
+      defaultUserConfig = defaultConfig ?? defaultUserConfig;
+      currentUserConfig = userConfig ?? currentUserConfig;
+      currentConfig = currentUserConfig.applyDefaults(defaultUserConfig);
+      applyConfiguration(currentConfig);
+    }
+  );
 }
 
 
@@ -402,6 +408,14 @@ void conversationListSelected(String conversationListRoot) {
 
 SplayTreeSet<model.Conversation> get emptyConversationsSet =>
     SplayTreeSet(model.ConversationUtil.mostRecentInboundFirst);
+
+model.UserConfiguration get baseUserConfiguration => new model.UserConfiguration()
+    ..keyboardShortcutsEnabled = false
+    ..sendCustomMessagesEnabled = false
+    ..sendMultiMessageEnabled = false
+    ..tagPanelVisibility = false;
+
+model.UserConfiguration get emptyUserConfiguration => new model.UserConfiguration();
 
 /// Return the element after [current],
 /// or the first element if [current] is the last or not in the list.

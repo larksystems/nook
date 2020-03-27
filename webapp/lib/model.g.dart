@@ -472,7 +472,9 @@ class UserConfiguration {
     };
   }
 }
-typedef void UserConfigurationCollectionListener(List<UserConfiguration> changes);
+typedef void UserConfigurationCollectionListener(List<UserConfiguration> added,
+                                                 List<UserConfiguration> modified,
+                                                 List<UserConfiguration> removed);
 
 // ======================================================================
 // Core firebase/yaml utilities
