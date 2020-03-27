@@ -536,6 +536,9 @@ void command(UIAction action, Data data) {
       break;
     case UIAction.selectConversationList:
       ConversationListData conversationListData = data;
+      conversations = emptyConversationsSet;
+      filteredConversations = emptyConversationsSet;
+      activeConversation = null;
       view.conversationListPanelView.clearConversationList();
       view.conversationPanelView.clear();
       activeConversation = null;

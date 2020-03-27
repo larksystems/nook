@@ -615,7 +615,32 @@ class ConversationListSelectHeader {
       }
       shardSelected();
     } else {
-      // TODO If summary information is displayed, then update it here
+      bool shardingHasChanged = false;
+      for (var newShard in shards) {
+        shardingHasChanged = true;
+        int optionIndex = _shards.length > 1 ? 1 : 0;
+        for (int shardIndex = 0; shardIndex < _shards.length; ++shardIndex) {
+          if (_shards[shardIndex].docId == newShard.docId) {
+            shardingHasChanged = false;
+            var oldOption = _selectElement.options[optionIndex];
+            var isSelected = oldOption.selected;
+            oldOption.replaceWith(OptionElement(
+                data: newShard.displayName,
+                value: newShard.conversationListRoot,
+                selected: isSelected
+            ));
+            _shards[shardIndex] = newShard;
+            break;
+          }
+          ++optionIndex;
+        }
+        if (shardingHasChanged) {
+          break;
+        }
+      }
+      if (shardingHasChanged) {
+        // TODO Prevent all user changes until page is refreshed and display a system message indicating as much
+      }
     }
   }
 
