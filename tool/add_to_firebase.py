@@ -73,7 +73,13 @@ if CONTENT_TYPE == "suggested_replies":
         reply_fields = {}
         assert "text" in reply_data.keys()
         reply_fields["text"] = reply_data["text"]
-        reply_id = text_to_doc_id("reply", reply_fields["text"])
+        if "__id" in reply_data.keys():
+            reply_id = reply_data["__id"]
+            if reply_id == "":
+                log.info(f"Skipping: {reply_data}")
+                continue
+        else:
+            reply_id = text_to_doc_id("reply", reply_fields["text"])
         assert "translation" in reply_data.keys()
         reply_fields["translation"] = reply_data["translation"]
         reply_fields["shortcut"] = reply_data["shortcut"] if "shortcut" in reply_data.keys() else ""
@@ -101,7 +107,13 @@ elif CONTENT_TYPE == "conversation_tags" or CONTENT_TYPE == "message_tags":
         tag_fields = {}
         assert "text" in tag_data.keys()
         tag_fields["text"] = tag_data["text"]
-        tag_id = text_to_doc_id("tag", tag_fields["text"])
+        if "__id" in tag_data.keys():
+            tag_id = tag_data["__id"]
+            if tag_id == "":
+                log.info(f"Skipping: {tag_data}")
+                continue
+        else:
+            tag_id = text_to_doc_id("tag", tag_fields["text"])
         assert "shortcut" in tag_data.keys()
         tag_fields["shortcut"] = tag_data["shortcut"]
         assert "type" in tag_data.keys()

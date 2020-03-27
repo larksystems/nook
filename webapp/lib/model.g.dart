@@ -32,7 +32,9 @@ class ConversationListShard {
     };
   }
 }
-typedef void ConversationListShardCollectionListener(List<ConversationListShard> changes);
+typedef void ConversationListShardCollectionListener(List<ConversationListShard> added,
+                                                     List<ConversationListShard> modified,
+                                                     List<ConversationListShard> removed);
 
 class Conversation {
   static const collectionName = 'nook_conversations';
@@ -171,7 +173,9 @@ class Conversation {
     return pubSubClient.publishDocChange(collectionName, docIdsToPublish, {"unread": unread});
   }
 }
-typedef void ConversationCollectionListener(List<Conversation> changes);
+typedef void ConversationCollectionListener(List<Conversation> added,
+                                            List<Conversation> modified,
+                                            List<Conversation> removed);
 
 class Message {
   MessageDirection direction;
@@ -261,7 +265,6 @@ class MessageStatus {
         if (value.name == valueName) return value;
       }
     }
-    log.warning('unknown MessageStatus $text');
     return defaultValue;
   }
 
@@ -330,7 +333,9 @@ class SuggestedReply {
     return pubSubClient.publishDocChange(collectionName, docIdsToPublish, {"translation": translation});
   }
 }
-typedef void SuggestedReplyCollectionListener(List<SuggestedReply> changes);
+typedef void SuggestedReplyCollectionListener(List<SuggestedReply> added,
+                                              List<SuggestedReply> modified,
+                                              List<SuggestedReply> removed);
 
 class Tag {
   String docId;
@@ -362,7 +367,9 @@ class Tag {
     };
   }
 }
-typedef void TagCollectionListener(List<Tag> changes);
+typedef void TagCollectionListener(List<Tag> added,
+                                   List<Tag> modified,
+                                   List<Tag> removed);
 
 class TagType {
   static const Normal = TagType('normal');
@@ -425,7 +432,9 @@ class SystemMessage {
     };
   }
 }
-typedef void SystemMessageCollectionListener(List<SystemMessage> changes);
+typedef void SystemMessageCollectionListener(List<SystemMessage> added,
+                                             List<SystemMessage> modified,
+                                             List<SystemMessage> removed);
 
 class UserConfiguration {
   static const collectionName = 'users';
@@ -512,20 +521,32 @@ Set<T> Set_fromData<T>(dynamic data, T createModel(data)) =>
 
 StreamSubscription<List<DocSnapshot>> listenForUpdates<T>(
     DocStorage docStorage,
-    void listener(List<T> changes),
+    void listener(List<T> added, List<T> modified, List<T> removed),
     String collectionRoot,
     T createModel(DocSnapshot doc),
     ) {
   log.verbose('Loading from $collectionRoot');
   log.verbose('Query root: $collectionRoot');
   return docStorage.onChange(collectionRoot).listen((List<DocSnapshot> snapshots) {
-    List<T> changes = [];
+    List<T> added = [];
+    List<T> modified = [];
+    List<T> removed = [];
     log.verbose("Starting processing ${snapshots.length} changes.");
     for (var snapshot in snapshots) {
       log.verbose('Processing ${snapshot.id}');
-      changes.add(createModel(snapshot));
+      switch (snapshot.changeType) {
+        case DocChangeType.added:
+          added.add(createModel(snapshot));
+          break;
+        case DocChangeType.modified:
+          modified.add(createModel(snapshot));
+          break;
+        case DocChangeType.removed:
+          removed.add(createModel(snapshot));
+          break;
+      }
     }
-    listener(changes);
+    listener(added, modified, removed);
   });
 }
 
@@ -540,12 +561,19 @@ abstract class DocStorage {
   DocBatchUpdate batch();
 }
 
+enum DocChangeType {
+  added,
+  modified,
+  removed
+}
+
 /// A snapshot of a document's id and data at a particular moment in time.
 class DocSnapshot {
   final String id;
   final Map<String, dynamic> data;
+  final DocChangeType changeType;
 
-  DocSnapshot(this.id, this.data);
+  DocSnapshot(this.id, this.data, this.changeType);
 }
 
 /// A batch update, used to perform multiple writes as a single atomic unit.

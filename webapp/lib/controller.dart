@@ -219,10 +219,16 @@ void initUI() {
   hideDemogsTags = true;
 
   platform.listenForConversationTags(
-    (tags) {
-      var updatedIds = tags.map((t) => t.tagId).toSet();
+    (added, modified, removed) {
+      var updatedIds = new Set()
+        ..addAll(added.map((t) => t.tagId))
+        ..addAll(modified.map((t) => t.tagId))
+        ..addAll(removed.map((t) => t.tagId));
       conversationTags.removeWhere((tag) => updatedIds.contains(tag.tagId));
-      conversationTags.addAll(tags);
+      conversationTags
+        ..addAll(added)
+        ..addAll(modified);
+
       var filteredTags = _filterDemogsTagsIfNeeded(conversationTags);
       _populateFilterTagsMenu(filteredTags);
 
@@ -233,10 +239,15 @@ void initUI() {
   );
 
   platform.listenForMessageTags(
-    (tags) {
-      var updatedIds = tags.map((t) => t.tagId).toSet();
+    (added, modified, removed) {
+      var updatedIds = new Set()
+        ..addAll(added.map((t) => t.tagId))
+        ..addAll(modified.map((t) => t.tagId))
+        ..addAll(removed.map((t) => t.tagId));
       messageTags.removeWhere((tag) => updatedIds.contains(tag.tagId));
-      messageTags.addAll(tags);
+      messageTags
+        ..addAll(added)
+        ..addAll(modified);
 
       if (actionObjectState == UIActionObject.message) {
         _populateTagPanelView(_filterDemogsTagsIfNeeded(messageTags), TagReceiver.Message);
@@ -248,10 +259,15 @@ void initUI() {
     view.replyPanelView.disableReplies();
   } else {
     platform.listenForSuggestedReplies(
-      (updatedReplies) {
-        var updatedIds = updatedReplies.map((t) => t.suggestedReplyId).toSet();
+      (added, modified, removed) {
+        var updatedIds = new Set()
+          ..addAll(added.map((r) => r.suggestedReplyId))
+          ..addAll(modified.map((r) => r.suggestedReplyId))
+          ..addAll(removed.map((r) => r.suggestedReplyId));
         suggestedReplies.removeWhere((suggestedReply) => updatedIds.contains(suggestedReply.suggestedReplyId));
-        suggestedReplies.addAll(updatedReplies);
+        suggestedReplies
+          ..addAll(added)
+          ..addAll(modified);
 
         // Update the replies by category map
         suggestedRepliesByCategory = _groupRepliesIntoCategories(suggestedReplies);
@@ -283,15 +299,26 @@ void initUI() {
     );
   }
 
-  platform.listenForConversationListShards((List<model.ConversationListShard> shards) {
-    view.conversationListSelectView.updateConversationLists(shards);
-  });
+  platform.listenForConversationListShards(
+    (added, modified, removed) {
+      // TODO: handle removed shards as well
+      List<model.ConversationListShard> shards = new List()
+        ..addAll(added)
+        ..addAll(modified);
+      view.conversationListSelectView.updateConversationLists(shards);
+    }
+  );
 
   platform.listenForSystemMessages(
-    (updatedMessages) {
-      var updatedIds = updatedMessages.map((m) => m.msgId).toSet();
-      systemMessages.removeWhere((m) => updatedIds.contains(m.msgId));
-      systemMessages.addAll(updatedMessages.where((m) => !m.expired));
+    (added, modified, removed) {
+      var updatedIds = new Set()
+        ..addAll(added.map((m) => m.msgId))
+        ..addAll(modified.map((m) => m.msgId))
+        ..addAll(removed.map((m) => m.msgId));
+      systemMessages.removeWhere((systemMessage) => updatedIds.contains(systemMessage.msgId));
+      systemMessages
+        ..addAll(added.where((m) => !m.expired))
+        ..addAll(modified.where((m) => !m.expired));
       command(UIAction.updateSystemMessages, SystemMessagesData(systemMessages));
     });
 
@@ -327,15 +354,26 @@ void conversationListSelected(String conversationListRoot) {
   conversationListSubscription = null;
   if (conversationListRoot == ConversationListData.NONE) return;
   conversationListSubscription = platform.listenForConversations(
-    (updatedConversations) {
-      if (updatedConversations.length != 1) {
-        log.verbose("loading/updating ${updatedConversations.length} conversations");
-      } else {
-        log.verbose("loading/updating conversation ${updatedConversations[0].docId}");
+    (added, modified, removed) {
+      if (added.length > 0) {
+        log.verbose("adding ${added.length} conversation(s)");
       }
-      var updatedIds = updatedConversations.map((t) => t.docId).toSet();
+      if (modified.length > 0) {
+        log.verbose("modifying ${modified.length} conversation(s)");
+      }
+      if (removed.length > 0) {
+        log.verbose("removing ${removed.length} conversation(s)");
+      }
+      var updatedIds = new Set()
+        ..addAll(added.map((c) => c.docId))
+        ..addAll(modified.map((c) => c.docId))
+        ..addAll(removed.map((c) => c.docId));
       conversations.removeWhere((conversation) => updatedIds.contains(conversation.docId));
-      conversations.addAll(updatedConversations);
+      conversations
+        ..addAll(added)
+        ..addAll(modified);
+
+      // TODO even though they are unlikely to happen, we should also handle the removals in the UI for consistency
 
       // Determine if the active conversation data needs to be replaced
       String activeConversationId = activeConversation?.docId;
@@ -548,6 +586,9 @@ void command(UIAction action, Data data) {
       break;
     case UIAction.selectConversationList:
       ConversationListData conversationListData = data;
+      conversations = emptyConversationsSet;
+      filteredConversations = emptyConversationsSet;
+      activeConversation = null;
       view.conversationListPanelView.clearConversationList();
       view.conversationPanelView.clear();
       activeConversation = null;
