@@ -62,3 +62,11 @@ SystemMessage:
   firebaseDocId: 'string msgId'
   text: string
   expired: 'bool, false'
+
+UserConfiguration:
+  firebaseCollectionName: 'users'
+  firebaseDocId: 'string userId'
+  keyboard_shortcuts_enabled: 'bool keyboardShortcutsEnabled'
+  send_custom_messages_enabled: 'bool sendCustomMessagesEnabled'
+  send_multi_message_enabled: 'bool sendMultiMessageEnabled'
+  tag_panel_visibility: 'bool tagPanelVisibility'

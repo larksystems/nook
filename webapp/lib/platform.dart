@@ -42,35 +42,7 @@ init() async {
     _docStorage = FirebaseDocStorage(firebase.firestore());
     _pubsubInstance = new PubSubClient(platform_constants.publishUrl, user);
     controller.command(controller.UIAction.userSignedIn, new controller.UserData(user.displayName, user.email, photoURL));
-
-    // Get user features
-    firebase.firestore().collection('users').get().then((querySnapshot) {
-      var documents = querySnapshot.docs;
-      // Always try to use the defaults from Firebase first as not all feature flags may be set at user level
-      var defaultFeatures = documents.where((docSnapshot) => docSnapshot.id == "default");
-      if (defaultFeatures.isNotEmpty) {
-        setUserCustomizationFlags(defaultFeatures.first.data());
-      }
-      // Replace any defaults with per user customization, if exists for the current user
-      var userFeatures = documents.where((docSnapshot) => docSnapshot.id == user.email);
-      if (userFeatures.isNotEmpty) {
-        setUserCustomizationFlags(userFeatures.first.data());
-      }
-    });
   });
-}
-
-/// Sets user customization flags from the data map
-/// If a flag is not set in the data map, it defaults to the existing values
-void setUserCustomizationFlags(Map<String, dynamic> data) {
-  controller.KEYBOARD_SHORTCUTS_ENABLED = data["keyboard_shortcuts_enabled"] ?? controller.KEYBOARD_SHORTCUTS_ENABLED;
-  log.verbose('user feature set: keyboard_shortcuts_enabled = ${controller.KEYBOARD_SHORTCUTS_ENABLED}');
-  controller.SEND_CUSTOM_MESSAGES_ENABLED = data["send_custom_messages_enabled"] ?? controller.SEND_CUSTOM_MESSAGES_ENABLED;
-  log.verbose('user feature set: send_custom_messages_enabled = ${controller.SEND_CUSTOM_MESSAGES_ENABLED}');
-  controller.SEND_MULTI_MESSAGE_ENABLED = data["send_multi_message_enabled"] ?? controller.SEND_MULTI_MESSAGE_ENABLED;
-  log.verbose('user feature set: send_multi_message_enabled = ${controller.SEND_MULTI_MESSAGE_ENABLED}');
-  controller.TAG_PANEL_VISIBILITY = data["tag_panel_visibility"] ?? controller.TAG_PANEL_VISIBILITY;
-  log.verbose('user feature set: tag_panel_visibility = ${controller.TAG_PANEL_VISIBILITY}');
 }
 
 firebase.Auth get firebaseAuth => firebase.auth();
@@ -114,6 +86,10 @@ Future<void> sendMultiMessage(List<String> ids, String message) {
     };
 
   return _pubsubInstance.publish(platform_constants.smsTopic, payload);
+}
+
+void listenForUserConfigurations(UserConfigurationCollectionListener listener) {
+  UserConfiguration.listen(_docStorage, listener);
 }
 
 void listenForSystemMessages(SystemMessageCollectionListener listener) =>

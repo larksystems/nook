@@ -6,6 +6,16 @@ export 'model.g.dart' hide
   MessageDirection_fromStringOverride,
   TagType_fromStringOverride;
 
+extension UserConfigurationUtil on g.UserConfiguration {
+  g.UserConfiguration applyDefaults(g.UserConfiguration defaults) =>
+    new g.UserConfiguration()
+      ..docId = null
+      ..keyboardShortcutsEnabled = this.keyboardShortcutsEnabled ?? defaults.keyboardShortcutsEnabled
+      ..sendCustomMessagesEnabled = this.sendCustomMessagesEnabled ?? defaults.sendCustomMessagesEnabled
+      ..sendMultiMessageEnabled = this.sendMultiMessageEnabled ?? defaults.sendMultiMessageEnabled
+      ..tagPanelVisibility = this.tagPanelVisibility ?? defaults.tagPanelVisibility;
+}
+
 extension ConversationListShardUtil on g.ConversationListShard {
   String get conversationListRoot => docId != null
     ? "/${g.ConversationListShard.collectionName}/$docId/conversations"

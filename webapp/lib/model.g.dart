@@ -436,6 +436,46 @@ typedef void SystemMessageCollectionListener(List<SystemMessage> added,
                                              List<SystemMessage> modified,
                                              List<SystemMessage> removed);
 
+class UserConfiguration {
+  static const collectionName = 'users';
+
+  String docId;
+  bool keyboardShortcutsEnabled;
+  bool sendCustomMessagesEnabled;
+  bool sendMultiMessageEnabled;
+  bool tagPanelVisibility;
+
+  String get userId => docId;
+
+  static UserConfiguration fromSnapshot(DocSnapshot doc, [UserConfiguration modelObj]) =>
+      fromData(doc.data, modelObj)..docId = doc.id;
+
+  static UserConfiguration fromData(data, [UserConfiguration modelObj]) {
+    if (data == null) return null;
+    return (modelObj ?? UserConfiguration())
+      ..keyboardShortcutsEnabled = bool_fromData(data['keyboard_shortcuts_enabled'])
+      ..sendCustomMessagesEnabled = bool_fromData(data['send_custom_messages_enabled'])
+      ..sendMultiMessageEnabled = bool_fromData(data['send_multi_message_enabled'])
+      ..tagPanelVisibility = bool_fromData(data['tag_panel_visibility']);
+  }
+
+  static StreamSubscription listen(DocStorage docStorage, UserConfigurationCollectionListener listener,
+          {String collectionRoot = '/$collectionName'}) =>
+      listenForUpdates<UserConfiguration>(docStorage, listener, collectionRoot, UserConfiguration.fromSnapshot);
+
+  Map<String, dynamic> toData() {
+    return {
+      if (keyboardShortcutsEnabled != null) 'keyboard_shortcuts_enabled': keyboardShortcutsEnabled,
+      if (sendCustomMessagesEnabled != null) 'send_custom_messages_enabled': sendCustomMessagesEnabled,
+      if (sendMultiMessageEnabled != null) 'send_multi_message_enabled': sendMultiMessageEnabled,
+      if (tagPanelVisibility != null) 'tag_panel_visibility': tagPanelVisibility,
+    };
+  }
+}
+typedef void UserConfigurationCollectionListener(List<UserConfiguration> added,
+                                                 List<UserConfiguration> modified,
+                                                 List<UserConfiguration> removed);
+
 // ======================================================================
 // Core firebase/yaml utilities
 
