@@ -44,7 +44,7 @@ class LazyListViewModel {
       position = 0;
     }
     _items.insert(position, item);
-    if (position < _listView.children.length) {
+    if (position < _listView.children.length - 1) {
       // Insert the item's element into the cached/visible DOM elements
       Node refChild = _listView.children[position];
       _listView.insertBefore(item.element, refChild);
@@ -52,6 +52,11 @@ class LazyListViewModel {
     } else {
       _updateCachedElements();
     }
+  }
+
+  void appendItems(Iterable<LazyListViewItem> items) {
+    _items.addAll(items);
+    _updateCachedElements();
   }
 
   void clearItems() {
