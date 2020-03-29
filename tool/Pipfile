@@ -4,6 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+katikati-pylib = {git = "https://github.com/larksystems/Katikati-PyLib/", editable = true, ref = "ecb8731c870623d3e13a19c78b0e52620d5d62cb"}
 CoreDataModules = {git = "https://www.github.com/AfricasVoices/CoreDataModules", editable = true}
 pytz = "*"
 python-dateutil = ">=2.8.0"  # Need this minimum so that isoparse handles T24:00:00 correctly.
