@@ -71,12 +71,16 @@ if __name__ == '__main__':
 
     init(CRYPTO_TOKEN_PATH)
 
-    short_id = tool_utils.short_id()
-    log.audit(f"json_to_firebase: JobID {short_id}")
+
     with open(INPUT_PATH, 'r') as f:
         data_dict = json.load(f)
 
-    for collection_root in data_dict.keys():
+    collection_keys = list(data_dict.keys())
+
+    short_id = tool_utils.short_id()
+    log.audit(f"json_to_firebase: JobID ({short_id}), keys to download {json.dumps(collection_keys)}")
+
+    for collection_root in collection_keys:
         documents = data_dict[collection_root]
         push_collection_to_firestore(collection_root, documents)
 

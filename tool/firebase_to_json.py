@@ -103,7 +103,7 @@ if __name__ == '__main__':
     data = {}
 
     short_id = tool_utils.short_id()
-    log.audit(f"firebase_to_json: JobID {short_id}")
+    log.audit(f"firebase_to_json: JobID ({short_id}), keys to download {json.dumps(root_keys_to_export)}")
     for key in root_keys_to_export:
         data[key] = import_data_for_firestore_col_root(key)
 
