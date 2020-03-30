@@ -730,28 +730,43 @@ class ConversationListPanelView {
       _conversationList.removeItem(summary);
       return true;
     });
+    List<ConversationSummary> conversationsToAdd = [];
     for (var conversation in conversations) {
-      addOrUpdateConversation(conversation);
+      ConversationSummary summary = _phoneToConversations[conversation.docId];
+      if (summary != null) {
+        updateConversationSummary(summary, conversation);
+        continue;
+      }
+      summary = new ConversationSummary(
+          conversation.docId,
+          conversation.messages.first.text,
+          conversation.unread);
+      conversationsToAdd.add(summary);
     }
+    _conversationList.appendItems(conversationsToAdd);
+    for (var conversation in conversationsToAdd) {
+      _phoneToConversations[conversation.deidentifiedPhoneNumber] = conversation;
+    }
+    _conversationPanelTitle.text = '${_phoneToConversations.length} conversations';
   }
 
   void addOrUpdateConversation(Conversation conversation) {
     ConversationSummary summary = _phoneToConversations[conversation.docId];
     if (summary != null) {
-      if (conversation.unread) {
-        summary._markUnread();
-      } else {
-        summary._markRead();
-      }
-    } else {
-      summary = new ConversationSummary(
-              conversation.docId,
-              conversation.messages.first.text,
-              conversation.unread);
-      _conversationList.addItem(summary, null);
-      _phoneToConversations[summary.deidentifiedPhoneNumber] = summary;
-      _conversationPanelTitle.text = '${_phoneToConversations.length} conversations';
+      updateConversationSummary(summary, conversation);
+      return;
     }
+    summary = new ConversationSummary(
+        conversation.docId,
+        conversation.messages.first.text,
+        conversation.unread);
+    _conversationList.addItem(summary, null);
+    _phoneToConversations[summary.deidentifiedPhoneNumber] = summary;
+    _conversationPanelTitle.text = '${_phoneToConversations.length} conversations';
+  }
+
+  void updateConversationSummary(ConversationSummary summary, Conversation conversation) {
+    conversation.unread ? summary._markUnread() : summary._markRead();
   }
 
   void selectConversation(String deidentifiedPhoneNumber) {
