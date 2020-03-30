@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "3645d6d227f20c26bfac3538c961c9e8707c5517ad02e60a7cc37653bb5d06fc"
+            "sha256": "30bcca58856cbba819a7c910da7639a077177454771826cbcf426b3e152c18b6"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -84,10 +84,10 @@
         },
         "google-auth": {
             "hashes": [
-                "sha256:4fddaf62bcfc3b9cc1bb2062130937a25ebe781b8eb15beec217c160b8cabb68",
-                "sha256:ec172006e626bb90f6069e9358c373bc991a15da6cc55276986d9ecd29235b15"
+                "sha256:016924388770b7e66c7e9ade1c4c3144ee88812d79697fd6c0dad9abdfcda2fd",
+                "sha256:01d686448f57d3bc027726474faa1aa650ba333bedb392e06938b0add8ec8d3a"
             ],
-            "version": "==1.11.3"
+            "version": "==1.12.0"
         },
         "google-auth-httplib2": {
             "hashes": [
@@ -121,11 +121,11 @@
         },
         "google-cloud-pubsub": {
             "hashes": [
-                "sha256:274a7502a7b1ccfb94ad0a24be87a20683dd63152f8c23401a0a9424e8658af2",
-                "sha256:d462019f0139d33eaa0edbf72082ab4c60854d82016b66064d45db1dcfe06a02"
+                "sha256:1277632ef39535fe1955bc102857e00fd61893d1759c3da338b9b46920e350d7",
+                "sha256:d15f0aaffd6621c43ed3ca60b74938b5a2daa3f56c1ec1905491d2d4d1c2dc4e"
             ],
             "index": "pypi",
-            "version": "==1.3.1"
+            "version": "==1.4.2"
         },
         "google-cloud-storage": {
             "hashes": [
@@ -227,6 +227,11 @@
                 "sha256:a068a21ceac8a4d63dbfd964670474107f541babbd2250d61922f029858365fa"
             ],
             "version": "==2.9"
+        },
+        "katikati-pylib": {
+            "editable": true,
+            "git": "https://github.com/larksystems/Katikati-PyLib/",
+            "ref": "ecb8731c870623d3e13a19c78b0e52620d5d62cb"
         },
         "msgpack": {
             "hashes": [
