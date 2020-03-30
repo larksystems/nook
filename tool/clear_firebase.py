@@ -4,19 +4,22 @@
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
-from core_data_modules.logging import Logger
+from katikati_pylib.logging import logging
 from firebase_root_keys import root_keys
 import time
+import tool_utils
 
 import json
 import sys
 
-log = Logger(__name__)
+log = None
 
 firebase_client = None
 
 def init(CRYPTO_TOKEN_PATH):
     global firebase_client
+    global log
+    log = logging.Logger(__file__, CRYPTO_TOKEN_PATH)
     log.info("Setting up Firebase client")    
     firebase_cred = credentials.Certificate(CRYPTO_TOKEN_PATH)
     firebase_admin.initialize_app(firebase_cred)
@@ -72,17 +75,21 @@ def delete_data_for_firestore_col_root(collection_root):
 
     return lst
 
+if __name__ == '__main__':
+    if (len(sys.argv) != 2):
+        print ("Usage python clear_firebase.py crypto_token")
+        exit(1)
 
-if (len(sys.argv) != 2):
-    print ("Usage python clear_firebase.py crypto_token")
-    exit(1)
+    CRYPTO_TOKEN_PATH = sys.argv[1]
+    init(CRYPTO_TOKEN_PATH)
 
-CRYPTO_TOKEN_PATH = sys.argv[1]
-init(CRYPTO_TOKEN_PATH)
+    data = {}
 
-data = {}
+    short_id = tool_utils.short_id()
+    log.audit(f"clear_firebase: JobID ({short_id}), deleting {json.dumps(root_keys)}")
 
-for key in root_keys:
-    delete_data_for_firestore_col_root(key)
+    for key in root_keys:
+        delete_data_for_firestore_col_root(key)
 
-log.info(f"Clear done")
+    log.notify(f"clear_firebase completed: JobID {short_id}")
+    log.info(f"Clear done")
