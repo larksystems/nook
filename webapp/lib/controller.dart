@@ -335,8 +335,8 @@ void initUI() {
       }
       defaultUserConfig = defaultConfig ?? defaultUserConfig;
       currentUserConfig = userConfig ?? currentUserConfig;
-      currentConfig = currentUserConfig.applyDefaults(defaultUserConfig);
-      applyConfiguration(currentConfig);
+      var newConfig = currentUserConfig.applyDefaults(defaultUserConfig);
+      applyConfiguration(newConfig);
     }
   );
 }
@@ -344,15 +344,26 @@ void initUI() {
 
 /// Sets user customization flags from the data map
 /// If a flag is not set in the data map, it defaults to the existing values
-void applyConfiguration(model.UserConfiguration config) {
-  view.replyPanelView.showShortcuts(config.keyboardShortcutsEnabled ?? false);
-  view.tagPanelView.showShortcuts(config.keyboardShortcutsEnabled ?? false);
+void applyConfiguration(model.UserConfiguration newConfig) {
+  if (currentConfig.keyboardShortcutsEnabled != newConfig.keyboardShortcutsEnabled) {
+    view.replyPanelView.showShortcuts(newConfig.keyboardShortcutsEnabled ?? false);
+    view.tagPanelView.showShortcuts(newConfig.keyboardShortcutsEnabled ?? false);
+  }
 
-  view.conversationPanelView.showCustomMessageBox(config.sendCustomMessagesEnabled ?? false);
+  if (currentConfig.sendCustomMessagesEnabled != newConfig.sendCustomMessagesEnabled) {
+    view.conversationPanelView.showCustomMessageBox(newConfig.sendCustomMessagesEnabled ?? false);
+  }
 
-  view.conversationListPanelView.showConversationSelectCheckboxes(config.sendMultiMessageEnabled ?? false);
+  if (currentConfig.sendMultiMessageEnabled != newConfig.sendMultiMessageEnabled) {
+    view.conversationListPanelView.showConversationSelectCheckboxes(newConfig.sendMultiMessageEnabled ?? false);
+    command(UIAction.disableMultiSelectMode, null);
+  }
 
-  view.showTagPanel(config.tagPanelVisibility ?? false);
+  if (currentConfig.tagPanelVisibility != newConfig.tagPanelVisibility) {
+    view.showTagPanel(newConfig.tagPanelVisibility ?? false);
+  }
+
+  currentConfig = newConfig;
 }
 
 void conversationListSelected(String conversationListRoot) {
@@ -743,6 +754,7 @@ void command(UIAction action, Data data) {
       multiSelectMode = true;
       break;
     case UIAction.disableMultiSelectMode:
+      view.conversationListPanelView.uncheckSelectAllCheckbox();
       view.conversationListPanelView.uncheckAllConversations();
       view.conversationListPanelView.hideCheckboxes();
       selectedConversations.clear();

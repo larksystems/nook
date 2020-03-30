@@ -810,6 +810,8 @@ class ConversationListPanelView {
     _markUnread.multiSelectMode(false);
   }
 
+  void uncheckSelectAllCheckbox() => _selectAllCheckbox.checked = false;
+
   void hideLoadSpinner() {
     _loadSpinner.hidden = true;
   }
@@ -982,7 +984,7 @@ class ConversationSummary with LazyListViewItem {
   }
 
   void showSelectCheckbox(bool value) {
-    _selectCheckbox.classes.toggle('hidden', !value);
+    if (_selectCheckbox != null) _selectCheckbox.classes.toggle('hidden', !value);
   }
 }
 
