@@ -12,7 +12,7 @@ import demogs_helper as demogs
 log = Logger(__name__)
 
 CONVERSATIONS_COLLECTION_KEY = 'nook_conversations'
-CONVERSATIONS_SHARDS_COLLECTION_KEY = 'nook_conversation_shards'
+CONVERSATION_SHARDS_COLLECTION_KEY = 'nook_conversation_shards'
 CONVERSATION_TAGS_COLLECTION_KEY = 'conversationTags'
 DAILY_TAG_METRICS_COLLECTION_KEY = 'daily_tag_metrics'
 TOTAL_COUNTS_METRICS_COLLECTION_KEY = 'total_counts_metrics'
@@ -287,8 +287,8 @@ if __name__ == '__main__':
     conversation_tags = nook_export_data[CONVERSATION_TAGS_COLLECTION_KEY]
 
     # If the data is nook_conversations, use it, otherwise try to read from nook_conversation_shards
-    if CONVERSATIONS_SHARDS_COLLECTION_KEY in nook_export_data:
-        nook_conversation_shards = nook_export_data[CONVERSATIONS_SHARDS_COLLECTION_KEY]
+    if CONVERSATION_SHARDS_COLLECTION_KEY in nook_export_data:
+        nook_conversation_shards = nook_export_data[CONVERSATION_SHARDS_COLLECTION_KEY]
         nook_conversations = merge_shards(nook_conversation_shards)
     elif CONVERSATIONS_COLLECTION_KEY in nook_export_data:
         nook_conversations = nook_export_data[CONVERSATIONS_COLLECTION_KEY]
