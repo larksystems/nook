@@ -287,11 +287,11 @@ if __name__ == '__main__':
     conversation_tags = nook_export_data[CONVERSATION_TAGS_COLLECTION_KEY]
 
     # If the data is nook_conversations, use it, otherwise try to read from nook_conversation_shards
-    if CONVERSATIONS_COLLECTION_KEY in nook_export_data:
-        nook_conversations = nook_export_data[CONVERSATIONS_COLLECTION_KEY]
-    elif CONVERSATIONS_SHARDS_COLLECTION_KEY in nook_export_data:
+    if CONVERSATIONS_SHARDS_COLLECTION_KEY in nook_export_data:
         nook_conversation_shards = nook_export_data[CONVERSATIONS_SHARDS_COLLECTION_KEY]
         nook_conversations = merge_shards(nook_conversation_shards)
+    elif CONVERSATIONS_COLLECTION_KEY in nook_export_data:
+        nook_conversations = nook_export_data[CONVERSATIONS_COLLECTION_KEY]
     else:
         log.error('neither nook_conversations nor nook_conversation_shards exists in the firebase export, aborting analytics...')
         exit(1)
