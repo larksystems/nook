@@ -115,6 +115,8 @@ def compute_daily_tag_distribution(nook_conversations, ignore_stop=False):
                     date_daily_metrics_group[sub_metric] += 1
             daily_metrics[date] = date_daily_metrics
 
+    daily_metrics["project"] = KK_PROJECT
+
     time_end = time.perf_counter_ns()
 
     ms_elapsed = (time_end - time_start) / (1000 * 1000)
@@ -172,7 +174,8 @@ def compute_total_counts(nook_conversations, ignore_stop=False):
         "messages_count": messages_count,
         "incoming_messages_count": incoming_messages_count,
         "incoming_non_demogs_messages_count": incoming_non_demogs_messages_count,
-        "outgoing_messages_count": outgoing_messages_count
+        "outgoing_messages_count": outgoing_messages_count,
+        "project": KK_PROJECT,
     }
 
     return total_counts
@@ -243,6 +246,7 @@ def compute_needs_reply_metrics(nook_conversations):
         "needs_reply_and_escalate_more_than_24h": needs_reply_and_escalate_more_than_24h,
         "needs_reply_messages_by_date": needs_reply_messages_by_date,
         "earliest_needs_reply_date": earliest_date.isoformat(),
+        "project": KK_PROJECT,
     }
 
     time_end = time.perf_counter_ns()
@@ -262,12 +266,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("nook_export",
                         help="path to the Nook export to analyse")
-    parser.add_argument("kk_project",
-                        help="the name of the katikati project for this Nook export")
     parser.add_argument("output_folder",
                         help="path to output folder where the analytics should be exported")
     parser.add_argument("coda_tags",
                         help="path to a file with the coda tags used by the project")
+    parser.add_argument("kk_project",
+                        help="the name of the katikati project for this Nook export")
     parser.add_argument("--ignore_stop", action="store_true",
                         help="whether to ignore a stop response")
 
@@ -277,7 +281,7 @@ if __name__ == '__main__':
         parser.print_help()
         exit(1)
 
-    if len(sys.argv) < 4:
+    if len(sys.argv) < 5:
         _usage_and_exit("Wrong number of arguments")
     args = parser.parse_args(sys.argv[1:])
 
