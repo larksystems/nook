@@ -12,6 +12,7 @@ import demogs_helper as demogs
 log = Logger(__name__)
 
 CONVERSATIONS_COLLECTION_KEY = 'nook_conversations'
+CONVERSATION_SHARDS_COLLECTION_KEY = 'nook_conversation_shards'
 CONVERSATION_TAGS_COLLECTION_KEY = 'conversationTags'
 DAILY_TAG_METRICS_COLLECTION_KEY = 'daily_tag_metrics'
 TOTAL_COUNTS_METRICS_COLLECTION_KEY = 'total_counts_metrics'
@@ -225,13 +226,13 @@ def compute_needs_reply_metrics(nook_conversations):
         iso_date = datetime.fromisoformat(date)
         if iso_date < earliest_date:
             earliest_date = iso_date
-        
+
         day_date = date.split("T")[0]
         if day_date not in needs_reply_messages_by_date.keys():
             needs_reply_messages_by_date[day_date] = 0
-        
+
         needs_reply_messages_by_date[day_date] += 1
-    
+
     needs_reply_metrics = {
         "datetime": datetime.now().isoformat(),
         "needs_reply_count": needs_reply_count,
@@ -249,6 +250,11 @@ def compute_needs_reply_metrics(nook_conversations):
 
     return needs_reply_metrics
 
+def merge_shards(nook_conversation_shards):
+    nook_conversations = []
+    for shard in nook_conversation_shards:
+        nook_conversations.extend(shard["conversations"])
+    return nook_conversations
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -279,7 +285,16 @@ if __name__ == '__main__':
     with open(NOOK_EXPORT, mode="r") as nook_export_file:
         nook_export_data = json.load(nook_export_file)
     conversation_tags = nook_export_data[CONVERSATION_TAGS_COLLECTION_KEY]
-    nook_conversations = nook_export_data[CONVERSATIONS_COLLECTION_KEY]
+
+    # If nook_conversation_shards exists, read the data from there, otherwise try to read from nook_conversations
+    if CONVERSATION_SHARDS_COLLECTION_KEY in nook_export_data:
+        nook_conversation_shards = nook_export_data[CONVERSATION_SHARDS_COLLECTION_KEY]
+        nook_conversations = merge_shards(nook_conversation_shards)
+    elif CONVERSATIONS_COLLECTION_KEY in nook_export_data:
+        nook_conversations = nook_export_data[CONVERSATIONS_COLLECTION_KEY]
+    else:
+        log.error('neither nook_conversations nor nook_conversation_shards exists in the firebase export, aborting analytics...')
+        exit(1)
 
     with open(CODA_TAGS_FILE, mode="r") as coda_tags_file:
         coda_tags = json.load(coda_tags_file)
@@ -294,9 +309,6 @@ if __name__ == '__main__':
 
     for tag in all_tags:
         tag_id_to_name[tag_to_tag_id(tag)] = tag
-
-    now = datetime.utcnow().isoformat(timespec='minutes')
-    now = now.replace(":", "-")
 
     daily_metrics = compute_daily_tag_distribution(nook_conversations, IGNORE_STOP)
     # prepare for writing to a json file that can be uploaded to firebase
