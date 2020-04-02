@@ -21,6 +21,8 @@ NEEDS_REPLY_METRICS_COLLECTION_KEY = 'needs_reply_metrics'
 NEEDS_REPLY_TAG = "Needs Reply"
 ESCALATE_TAG = "escalate"
 
+KK_PROJECT = None
+
 coda_tags = {}
 
 tag_id_to_name = {}
@@ -260,6 +262,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("nook_export",
                         help="path to the Nook export to analyse")
+    parser.add_argument("kk_project",
+                        help="the name of the katikati project for this Nook export")
     parser.add_argument("output_folder",
                         help="path to output folder where the analytics should be exported")
     parser.add_argument("coda_tags",
@@ -281,6 +285,8 @@ if __name__ == '__main__':
     OUTPUT_FOLDER = args.output_folder
     CODA_TAGS_FILE = args.coda_tags
     IGNORE_STOP = args.ignore_stop
+    global KK_PROJECT
+    KK_PROJECT = args.kk_project
 
     with open(NOOK_EXPORT, mode="r") as nook_export_file:
         nook_export_data = json.load(nook_export_file)
