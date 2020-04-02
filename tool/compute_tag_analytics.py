@@ -286,7 +286,7 @@ if __name__ == '__main__':
         nook_export_data = json.load(nook_export_file)
     conversation_tags = nook_export_data[CONVERSATION_TAGS_COLLECTION_KEY]
 
-    # If the data is nook_conversations, use it, otherwise try to read from nook_conversation_shards
+    # If nook_conversation_shards exists, read the data from there, otherwise try to read from nook_conversations
     if CONVERSATION_SHARDS_COLLECTION_KEY in nook_export_data:
         nook_conversation_shards = nook_export_data[CONVERSATION_SHARDS_COLLECTION_KEY]
         nook_conversations = merge_shards(nook_conversation_shards)
