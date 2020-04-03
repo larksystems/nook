@@ -115,8 +115,6 @@ def compute_daily_tag_distribution(nook_conversations, ignore_stop=False):
                     date_daily_metrics_group[sub_metric] += 1
             daily_metrics[date] = date_daily_metrics
 
-    daily_metrics["project"] = KK_PROJECT
-
     time_end = time.perf_counter_ns()
 
     ms_elapsed = (time_end - time_start) / (1000 * 1000)
