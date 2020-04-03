@@ -289,7 +289,6 @@ if __name__ == '__main__':
     OUTPUT_FOLDER = args.output_folder
     CODA_TAGS_FILE = args.coda_tags
     IGNORE_STOP = args.ignore_stop
-    global KK_PROJECT
     KK_PROJECT = args.kk_project
 
     with open(NOOK_EXPORT, mode="r") as nook_export_file:
