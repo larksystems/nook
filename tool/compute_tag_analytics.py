@@ -209,14 +209,18 @@ def compute_needs_reply_metrics(nook_conversations):
 
         # Get the date of the last incoming message
         date_of_last_incoming_message = get_last_incoming_message_dt(conversation["messages"])
-        delay = datetime.now(timezone.utc) - datetime.fromisoformat(date_of_last_incoming_message)
+        datetime_of_last_incoming_message = datetime.fromisoformat(date_of_last_incoming_message)
+        # In case the message is timezone unaware, consider it as UTC
+        if (datetime_of_last_incoming_message.tzinfo == None):
+            datetime_of_last_incoming_message = datetime_of_last_incoming_message.replace(tzinfo=timezone.utc)
+        delay = datetime.now(timezone.utc) - datetime_of_last_incoming_message
 
         if delay > timedelta(days=1):
             needs_reply_more_than_24h += 1
             if escalate_tag_id in conversation_tags:
                 needs_reply_and_escalate_more_than_24h += 1
 
-        needs_reply_dates.append(date_of_last_incoming_message)
+        needs_reply_dates.append(datetime_of_last_incoming_message)
 
         # Count if this conversation is also tagged as escalate
         if escalate_tag_id in conversation_tags:
@@ -226,11 +230,10 @@ def compute_needs_reply_metrics(nook_conversations):
     needs_reply_messages_by_date = {}
 
     for date in needs_reply_dates:
-        iso_date = datetime.fromisoformat(date)
-        if iso_date < earliest_date:
-            earliest_date = iso_date
+        if date < earliest_date:
+            earliest_date = date
 
-        day_date = date.split("T")[0]
+        day_date = date.date().isoformat()
         if day_date not in needs_reply_messages_by_date.keys():
             needs_reply_messages_by_date[day_date] = 0
 
