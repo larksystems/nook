@@ -470,6 +470,14 @@ void command(UIAction action, Data data) {
       oneoffReply
         ..text = replyData.replyText
         ..translation = '';
+      if (multiSelectMode) {
+        if (!view.sendingManualMultiMessageUserConfirmation(oneoffReply.text, selectedConversations.length)) {
+          return;
+        }
+        sendMultiReply(oneoffReply, selectedConversations);
+        view.conversationPanelView.clearNewMessageBox();
+        return;
+      }
       if (!view.sendingManualMessageUserConfirmation(oneoffReply.text)) {
         return;
       }

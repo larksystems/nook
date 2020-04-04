@@ -100,6 +100,10 @@ bool sendingManualMessageUserConfirmation(String messageText) {
   return window.confirm('Are you sure you want to send the following message?\n\n$messageText');
 }
 
+bool sendingManualMultiMessageUserConfirmation(String messageText, int noMessages) {
+  return window.confirm('Are you sure you want to send the following message to $noMessages conversation${noMessages == 1 ? "" : "s" }?\n\n$messageText');
+}
+
 void showNormalStatus(String text) {
   tagPanelView._statusText.text = text;
   tagPanelView._statusPanel.classes.remove('status-line-warning');
