@@ -986,7 +986,7 @@ class ConversationSummary with LazyListViewItem {
   }
 
   void showSelectCheckbox(bool value) {
-    _selectCheckbox.classes.toggle('hidden', !value);
+    if (_selectCheckbox != null) _selectCheckbox.classes.toggle('hidden', !value);
   }
 }
 
