@@ -399,7 +399,10 @@ void conversationListSelected(String conversationListRoot) {
       activeConversation = updateViewForConversations(filteredConversations, updateList: true);
       if (currentConfig.sendMultiMessageEnabled) {
         view.conversationListPanelView.showCheckboxes();
-        selectedConversations = selectedConversations.toSet().intersection(filteredConversations.toSet()).toList();
+        Set selectedConversationsIds = selectedConversations.map((c) => c.docId).toSet();
+        Set filteredConversationsIds = filteredConversations.map((c) => c.docId).toSet();
+        Set updatedSelectedConversationsIds = selectedConversationsIds.intersection(filteredConversationsIds);
+        selectedConversations = filteredConversations.where((c) => updatedSelectedConversationsIds.contains(c.docId)).toList();
         selectedConversations.forEach((conversation) => view.conversationListPanelView.checkConversation(conversation.docId));
       }
       if (activeConversation == null) return;
