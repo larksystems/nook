@@ -370,6 +370,7 @@ void applyConfiguration(model.UserConfiguration newConfig) {
 }
 
 void conversationListSelected(String conversationListRoot) {
+  command(UIAction.deselectAllConversations, null);
   conversationListSubscription?.cancel();
   conversationListSubscription = null;
   if (conversationListRoot == ConversationListData.NONE) return;
@@ -459,7 +460,8 @@ void command(UIAction action, Data data) {
       action != UIAction.promptAfterDateFilter && action != UIAction.updateAfterDateFilter &&
       action != UIAction.signInButtonClicked && action != UIAction.signOutButtonClicked &&
       action != UIAction.userSignedIn && action != UIAction.userSignedOut &&
-      action != UIAction.updateSuggestedRepliesCategory && action != UIAction.hideAgeTags) {
+      action != UIAction.updateSuggestedRepliesCategory && action != UIAction.hideAgeTags &&
+      action != UIAction.selectAllConversations && action != UIAction.deselectAllConversations) {
     return;
   }
 
