@@ -359,7 +359,6 @@ void applyConfiguration(model.UserConfiguration newConfig) {
       view.conversationListPanelView.hideCheckboxes();
       command(UIAction.deselectAllConversations, null);
     }
-
   }
 
   if (currentConfig.tagPanelVisibility != newConfig.tagPanelVisibility) {
