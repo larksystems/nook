@@ -381,20 +381,16 @@ void conversationListSelected(String conversationListRoot) {
         ..addAll(added)
         ..addAll(modified);
 
-      // TODO even though they are unlikely to happen, we should also handle the removals in the UI for consistency
-
-      // Determine if the active conversation data needs to be replaced
-      String activeConversationId = activeConversation?.docId;
-      if (updatedIds.contains(activeConversationId)) {
-        activeConversation = conversations.firstWhere((c) => c.docId == activeConversationId);
-      }
-
       // Get any filter tags from the url
       List<String> filterTagIds = view.urlView.pageUrlFilterTags;
       filterTags = filterTagIds.map((tagId) => conversationTags.singleWhere((tag) => tag.tagId == tagId)).toList();
+      List<model.Conversation> previousFilteredConversations = new List.from(filteredConversations);
       filteredConversations = filterConversationsByTags(conversations, filterTags, afterDateFilter);
       _populateFilterTagsMenu(_filterDemogsTagsIfNeeded(conversationTags));
       _populateSelectedFilterTags(filterTags);
+
+      var previousActiveConversation = activeConversation;
+      activeConversation = currentElementInNewList(filteredConversations, previousFilteredConversations, activeConversation);
 
       activeConversation = updateViewForConversations(filteredConversations, updateList: true);
       if (currentConfig.sendMultiMessageEnabled) {
@@ -408,7 +404,7 @@ void conversationListSelected(String conversationListRoot) {
       if (activeConversation == null) return;
 
       // Update the active conversation view as needed
-      if (updatedIds.contains(activeConversation.docId)) {
+      if (previousActiveConversation?.docId != activeConversation.docId) {
         updateViewForConversation(activeConversation);
       }
       command(UIAction.markConversationRead, ConversationData(activeConversation.docId));
@@ -439,6 +435,29 @@ model.Conversation nextElement(Iterable<model.Conversation> conversations, model
   }
   // did not find [current] in the set... return first conversation
   return conversations.first;
+}
+
+/// Return the same element if [current] is in the [newList],
+/// or the element before [current] in the [newList] considering its position in the [oldList],
+/// or the first element if [current] is not in the [oldList].
+model.Conversation currentElementInNewList(Iterable<model.Conversation> newList, Iterable<model.Conversation> oldList, model.Conversation current) {
+  if (newList.isEmpty) return null;
+  if (newList.contains(current)) return current;
+  if (!oldList.contains(current)) return newList.first;
+  var reversedCurrentList = oldList.toList().reversed;
+  var iter = reversedCurrentList.iterator;
+  while (iter.moveNext()) {
+    if (iter.current == current) {
+      break;
+    }
+  }
+  while (iter.moveNext()) {
+    if (newList.contains(iter.current)) {
+      return iter.current;
+    }
+  }
+  // did not find [current] in [newList]... return first element
+  return newList.first;
 }
 
 void command(UIAction action, Data data) {
@@ -521,6 +540,7 @@ void command(UIAction action, Data data) {
       platform.removeConversationTag(activeConversation, tag.tagId).catchError(showAndLogError);
       view.conversationPanelView.removeTag(tag.tagId);
       if (filterTags.contains(tag)) {
+        // The currently active conversation no longer meets the filters
         // Select the next conversation in the list
         var nextConversation = nextElement(filteredConversations, activeConversation);
         filteredConversations.remove(activeConversation);
