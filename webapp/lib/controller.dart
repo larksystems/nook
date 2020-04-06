@@ -512,10 +512,18 @@ void command(UIAction action, Data data) {
       oneoffReply
         ..text = replyData.replyText
         ..translation = '';
-      if (!view.sendingManualMessageUserConfirmation(oneoffReply.text)) {
+      if (!currentConfig.sendMultiMessageEnabled || selectedConversations.isEmpty) {
+        if (!view.sendingManualMessageUserConfirmation(oneoffReply.text)) {
+          return;
+        }
+        sendReply(oneoffReply, activeConversation);
+        view.conversationPanelView.clearNewMessageBox();
         return;
       }
-      sendReply(oneoffReply, activeConversation);
+      if (!view.sendingManualMultiMessageUserConfirmation(oneoffReply.text, selectedConversations.length)) {
+        return;
+      }
+      sendMultiReply(oneoffReply, selectedConversations);
       view.conversationPanelView.clearNewMessageBox();
       break;
     case UIAction.addTag:
