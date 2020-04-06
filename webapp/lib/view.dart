@@ -902,7 +902,7 @@ class ConversationSummary with LazyListViewItem {
   bool _unread;
   bool _checked = false;
   bool _selected = false;
-  bool _checkboxVisible = false;
+  bool _checkboxHidden = true;
 
   ConversationSummary(this.deidentifiedPhoneNumber, this._text, this._unread);
 
@@ -914,7 +914,7 @@ class ConversationSummary with LazyListViewItem {
       ..classes.add('conversation-selector')
       ..title = 'Select conversation'
       ..checked = _checked
-      ..hidden = _checkboxVisible
+      ..hidden = _checkboxHidden
       ..onClick.listen((_) => _selectCheckbox.checked ? command(UIAction.selectConversation, new ConversationData(deidentifiedPhoneNumber))
                                                       : command(UIAction.deselectConversation, new ConversationData(deidentifiedPhoneNumber)));
     currentConfig.sendMultiMessageEnabled ? _showCheckbox() : _hideCheckbox();
@@ -976,11 +976,11 @@ class ConversationSummary with LazyListViewItem {
     if (_selectCheckbox != null) _selectCheckbox.checked = false;
   }
   void _showCheckbox() {
-    _checkboxVisible = true;
+    _checkboxHidden = false;
     if (_selectCheckbox != null) _selectCheckbox.hidden = false;
   }
   void _hideCheckbox() {
-    _checkboxVisible = false;
+    _checkboxHidden = true;
     if (_selectCheckbox != null) _selectCheckbox.hidden = true;
   }
 }
