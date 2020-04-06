@@ -46,7 +46,16 @@ def push_document_to_firestore(collection_root, data):
     del data["__id"]
     del data["__subcollections"]
 
-    firebase_client.document(ref_path).set(data)
+    field_data = {}
+    for field in data:
+        if field in sub_collections:
+            # it's not actually a field, it's a collection, process these later
+            continue
+        field_data[field] = data[field]
+    firebase_client.document(ref_path).set(field_data)
+
+    for sub_collection in sub_collections:
+        push_collection_to_firestore(f"{ref_path}/{sub_collection}", data[sub_collection])
 
 
 if __name__ == '__main__':
@@ -54,7 +63,7 @@ if __name__ == '__main__':
     parser.add_argument("crypto_token_file",
                         help="path to Firebase crypto token file")
     parser.add_argument("input_path",
-                        help="path to the input backup file.")  
+                        help="path to the input backup file.")
 
     def _usage_and_exit(error_message):
         print(error_message)
