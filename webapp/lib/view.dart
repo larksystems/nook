@@ -817,6 +817,8 @@ class ConversationListPanelView {
     _markUnread.multiSelectMode(false);
   }
 
+  void uncheckSelectAllCheckbox() => _selectAllCheckbox.checked = false;
+
   void hideLoadSpinner() {
     _loadSpinner.hidden = true;
   }

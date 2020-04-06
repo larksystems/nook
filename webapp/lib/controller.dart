@@ -333,8 +333,8 @@ void initUI() {
       }
       defaultUserConfig = defaultConfig ?? defaultUserConfig;
       currentUserConfig = userConfig ?? currentUserConfig;
-      currentConfig = currentUserConfig.applyDefaults(defaultUserConfig);
-      applyConfiguration(currentConfig);
+      var newConfig = currentUserConfig.applyDefaults(defaultUserConfig);
+      applyConfiguration(newConfig);
     }
   );
 }
@@ -342,22 +342,34 @@ void initUI() {
 
 /// Sets user customization flags from the data map
 /// If a flag is not set in the data map, it defaults to the existing values
-void applyConfiguration(model.UserConfiguration config) {
-  view.replyPanelView.showShortcuts(config.keyboardShortcutsEnabled ?? false);
-  view.tagPanelView.showShortcuts(config.keyboardShortcutsEnabled ?? false);
-
-  view.conversationPanelView.showCustomMessageBox(config.sendCustomMessagesEnabled ?? false);
-
-  if (config.sendMultiMessageEnabled) {
-    view.conversationListPanelView.showCheckboxes();
-  } else {
-    view.conversationListPanelView.hideCheckboxes();
+void applyConfiguration(model.UserConfiguration newConfig) {
+  if (currentConfig.keyboardShortcutsEnabled != newConfig.keyboardShortcutsEnabled) {
+    view.replyPanelView.showShortcuts(newConfig.keyboardShortcutsEnabled ?? false);
+    view.tagPanelView.showShortcuts(newConfig.keyboardShortcutsEnabled ?? false);
   }
 
-  view.showTagPanel(config.tagPanelVisibility ?? false);
+  if (currentConfig.sendCustomMessagesEnabled != newConfig.sendCustomMessagesEnabled) {
+    view.conversationPanelView.showCustomMessageBox(newConfig.sendCustomMessagesEnabled ?? false);
+  }
+
+  if (currentConfig.sendMultiMessageEnabled != newConfig.sendMultiMessageEnabled) {
+    if (newConfig.sendMultiMessageEnabled) {
+      view.conversationListPanelView.showCheckboxes();
+    } else {
+      view.conversationListPanelView.hideCheckboxes();
+      command(UIAction.deselectAllConversations, null);
+    }
+  }
+
+  if (currentConfig.tagPanelVisibility != newConfig.tagPanelVisibility) {
+    view.showTagPanel(newConfig.tagPanelVisibility ?? false);
+  }
+
+  currentConfig = newConfig;
 }
 
 void conversationListSelected(String conversationListRoot) {
+  command(UIAction.deselectAllConversations, null);
   conversationListSubscription?.cancel();
   conversationListSubscription = null;
   if (conversationListRoot == ConversationListData.NONE) return;
@@ -469,7 +481,8 @@ void command(UIAction action, Data data) {
       action != UIAction.promptAfterDateFilter && action != UIAction.updateAfterDateFilter &&
       action != UIAction.signInButtonClicked && action != UIAction.signOutButtonClicked &&
       action != UIAction.userSignedIn && action != UIAction.userSignedOut &&
-      action != UIAction.updateSuggestedRepliesCategory && action != UIAction.hideAgeTags) {
+      action != UIAction.updateSuggestedRepliesCategory && action != UIAction.hideAgeTags &&
+      action != UIAction.selectAllConversations && action != UIAction.deselectAllConversations) {
     return;
   }
 
@@ -772,6 +785,7 @@ void command(UIAction action, Data data) {
       selectedConversations.addAll(filteredConversations);
       break;
     case UIAction.deselectAllConversations:
+      view.conversationListPanelView.uncheckSelectAllCheckbox();
       view.conversationListPanelView.uncheckAllConversations();
       selectedConversations.clear();
       break;
