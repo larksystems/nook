@@ -18,5 +18,6 @@ doc/api/
 node_modules
 .DS_Store
 /public
+/public_metadata_nook_app.json
 /.firebase
 /webapp/web/assets/firebase_constants.json
