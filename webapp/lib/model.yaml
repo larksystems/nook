@@ -18,6 +18,7 @@ Message:
   tags: 'array string tagIds'
   text: 'string'
   translation: 'string'
+  id: 'string'
 
 MessageDirection:
   dartType: 'enum'

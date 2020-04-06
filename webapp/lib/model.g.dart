@@ -184,6 +184,7 @@ class Message {
   List<String> tagIds;
   String text;
   String translation;
+  String id;
 
   static Message fromData(data, [Message modelObj]) {
     if (data == null) return null;
@@ -193,7 +194,8 @@ class Message {
       ..status = MessageStatus.fromString(data['status'] as String)
       ..tagIds = List_fromData<String>(data['tags'], String_fromData)
       ..text = String_fromData(data['text'])
-      ..translation = String_fromData(data['translation']);
+      ..translation = String_fromData(data['translation'])
+      ..id = String_fromData(data['id']);
   }
 
   Map<String, dynamic> toData() {
@@ -204,6 +206,7 @@ class Message {
       if (tagIds != null) 'tags': tagIds,
       if (text != null) 'text': text,
       if (translation != null) 'translation': translation,
+      if (id != null) 'id': id,
     };
   }
 }

@@ -46,8 +46,8 @@ enum UIAction {
   keyPressed,
   addNewSuggestedReply,
   addNewTag,
-  enableMultiSelectMode,
-  disableMultiSelectMode,
+  selectAllConversations,
+  deselectAllConversations,
   updateSystemMessages,
   updateSuggestedRepliesCategory,
   hideAgeTags
@@ -193,7 +193,6 @@ model.UserConfiguration currentUserConfig;
 model.UserConfiguration currentConfig;
 
 bool hideDemogsTags;
-bool multiSelectMode;
 
 void init() async {
   defaultUserConfig = currentConfig = baseUserConfiguration;
@@ -210,7 +209,6 @@ void initUI() {
   conversationTags = [];
   messageTags = [];
   selectedConversations = [];
-  multiSelectMode = false;
   activeConversation = null;
   selectedSuggestedRepliesCategory = '';
   hideDemogsTags = true;
@@ -355,8 +353,13 @@ void applyConfiguration(model.UserConfiguration newConfig) {
   }
 
   if (currentConfig.sendMultiMessageEnabled != newConfig.sendMultiMessageEnabled) {
-    view.conversationListPanelView.showConversationSelectCheckboxes(newConfig.sendMultiMessageEnabled ?? false);
-    command(UIAction.disableMultiSelectMode, null);
+    if (newConfig.sendMultiMessageEnabled) {
+      view.conversationListPanelView.showCheckboxes();
+    } else {
+      view.conversationListPanelView.hideCheckboxes();
+      command(UIAction.deselectAllConversations, null);
+    }
+
   }
 
   if (currentConfig.tagPanelVisibility != newConfig.tagPanelVisibility) {
@@ -406,6 +409,11 @@ void conversationListSelected(String conversationListRoot) {
       _populateSelectedFilterTags(filterTags);
 
       activeConversation = updateViewForConversations(filteredConversations, updateList: true);
+      if (currentConfig.sendMultiMessageEnabled) {
+        view.conversationListPanelView.showCheckboxes();
+        selectedConversations = selectedConversations.toSet().intersection(filteredConversations.toSet()).toList();
+        selectedConversations.forEach((conversation) => view.conversationListPanelView.checkConversation(conversation.docId));
+      }
       if (activeConversation == null) return;
 
       // Update the active conversation view as needed
@@ -466,7 +474,7 @@ void command(UIAction action, Data data) {
           ..translation = '';
         selectedReply = translationReply;
       }
-      if (!multiSelectMode) {
+      if (!currentConfig.sendMultiMessageEnabled || selectedConversations.isEmpty) {
         sendReply(selectedReply, activeConversation);
         return;
       }
@@ -492,7 +500,7 @@ void command(UIAction action, Data data) {
       switch (actionObjectState) {
         case UIActionObject.conversation:
           model.Tag tag = conversationTags.singleWhere((tag) => tag.tagId == tagData.tagId);
-          if (!multiSelectMode) {
+          if (!currentConfig.sendMultiMessageEnabled || selectedConversations.isEmpty) {
             setConversationTag(tag, activeConversation);
             return;
           }
@@ -590,19 +598,19 @@ void command(UIAction action, Data data) {
       platform.updateUnread([activeConversation], false).catchError(showAndLogError);
       break;
     case UIAction.markConversationUnread:
-      if (multiSelectMode) {
-        var markedConversations = <model.Conversation>[];
-        for (var conversation in selectedConversations) {
-          if (!conversation.unread) {
-            markedConversations.add(conversation);
-            view.conversationListPanelView.markConversationUnread(conversation.docId);
-          }
-        }
-        platform.updateUnread(markedConversations, true).catchError(showAndLogError);
-      } else {
+      if (!currentConfig.sendMultiMessageEnabled || selectedConversations.isEmpty) {
         view.conversationListPanelView.markConversationUnread(activeConversation.docId);
         platform.updateUnread([activeConversation], true).catchError(showAndLogError);
+        return;
       }
+      var markedConversations = <model.Conversation>[];
+      for (var conversation in selectedConversations) {
+        if (!conversation.unread) {
+          markedConversations.add(conversation);
+          view.conversationListPanelView.markConversationUnread(conversation.docId);
+        }
+      }
+      platform.updateUnread(markedConversations, true).catchError(showAndLogError);
       break;
     case UIAction.showConversation:
       ConversationData conversationData = data;
@@ -613,6 +621,7 @@ void command(UIAction action, Data data) {
       ConversationListData conversationListData = data;
       conversations = emptyConversationsSet;
       filteredConversations = emptyConversationsSet;
+      selectedConversations.clear();
       activeConversation = null;
       view.conversationListPanelView.clearConversationList();
       view.conversationPanelView.clear();
@@ -702,7 +711,7 @@ void command(UIAction action, Data data) {
       var selectedReply = suggestedRepliesByCategory[selectedSuggestedRepliesCategory].where((reply) => reply.shortcut == keyPressData.key);
       if (selectedReply.isNotEmpty) {
         assert (selectedReply.length == 1);
-        if (!multiSelectMode) {
+        if (!currentConfig.sendMultiMessageEnabled || selectedConversations.isEmpty) {
           sendReply(selectedReply.first, activeConversation);
           return;
         }
@@ -720,7 +729,7 @@ void command(UIAction action, Data data) {
           if (selectedTag.isEmpty) break;
           assert (selectedTag.length == 1);
           setConversationTag(selectedTag.first, activeConversation);
-          if (!multiSelectMode) {
+          if (!currentConfig.sendMultiMessageEnabled || selectedConversations.isEmpty) {
             setConversationTag(selectedTag.first, activeConversation);
             return;
           }
@@ -746,19 +755,15 @@ void command(UIAction action, Data data) {
       AddTagData tagData = data;
       // TODO: call platform
       break;
-    case UIAction.enableMultiSelectMode:
-      view.conversationListPanelView.showCheckboxes();
+    case UIAction.selectAllConversations:
       view.conversationListPanelView.checkAllConversations();
       selectedConversations.clear();
       selectedConversations.addAll(filteredConversations);
-      multiSelectMode = true;
       break;
-    case UIAction.disableMultiSelectMode:
+    case UIAction.deselectAllConversations:
       view.conversationListPanelView.uncheckSelectAllCheckbox();
       view.conversationListPanelView.uncheckAllConversations();
-      view.conversationListPanelView.hideCheckboxes();
       selectedConversations.clear();
-      multiSelectMode = false;
       break;
     case UIAction.updateSystemMessages:
       SystemMessagesData msgData = data;
@@ -797,7 +802,7 @@ void command(UIAction action, Data data) {
 void updateFilteredConversationList() {
   filteredConversations = filterConversationsByTags(conversations, filterTags, afterDateFilter);
   activeConversation = updateViewForConversations(filteredConversations);
-  if (multiSelectMode) {
+  if (currentConfig.sendMultiMessageEnabled) {
     view.conversationListPanelView.showCheckboxes();
     selectedConversations = selectedConversations.toSet().intersection(filteredConversations.toSet()).toList();
     selectedConversations.forEach((conversation) => view.conversationListPanelView.checkConversation(conversation.docId));

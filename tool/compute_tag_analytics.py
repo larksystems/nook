@@ -12,6 +12,7 @@ import demogs_helper as demogs
 log = Logger(__name__)
 
 CONVERSATIONS_COLLECTION_KEY = 'nook_conversations'
+CONVERSATION_SHARDS_COLLECTION_KEY = 'nook_conversation_shards'
 CONVERSATION_TAGS_COLLECTION_KEY = 'conversationTags'
 DAILY_TAG_METRICS_COLLECTION_KEY = 'daily_tag_metrics'
 TOTAL_COUNTS_METRICS_COLLECTION_KEY = 'total_counts_metrics'
@@ -19,6 +20,8 @@ NEEDS_REPLY_METRICS_COLLECTION_KEY = 'needs_reply_metrics'
 
 NEEDS_REPLY_TAG = "Needs Reply"
 ESCALATE_TAG = "escalate"
+
+KK_PROJECT = None
 
 coda_tags = {}
 
@@ -169,7 +172,8 @@ def compute_total_counts(nook_conversations, ignore_stop=False):
         "messages_count": messages_count,
         "incoming_messages_count": incoming_messages_count,
         "incoming_non_demogs_messages_count": incoming_non_demogs_messages_count,
-        "outgoing_messages_count": outgoing_messages_count
+        "outgoing_messages_count": outgoing_messages_count,
+        "project": KK_PROJECT,
     }
 
     return total_counts
@@ -205,14 +209,18 @@ def compute_needs_reply_metrics(nook_conversations):
 
         # Get the date of the last incoming message
         date_of_last_incoming_message = get_last_incoming_message_dt(conversation["messages"])
-        delay = datetime.now(timezone.utc) - datetime.fromisoformat(date_of_last_incoming_message)
+        datetime_of_last_incoming_message = datetime.fromisoformat(date_of_last_incoming_message)
+        # In case the message is timezone unaware, consider it as UTC
+        if (datetime_of_last_incoming_message.tzinfo == None):
+            datetime_of_last_incoming_message = datetime_of_last_incoming_message.replace(tzinfo=timezone.utc)
+        delay = datetime.now(timezone.utc) - datetime_of_last_incoming_message
 
         if delay > timedelta(days=1):
             needs_reply_more_than_24h += 1
             if escalate_tag_id in conversation_tags:
                 needs_reply_and_escalate_more_than_24h += 1
 
-        needs_reply_dates.append(date_of_last_incoming_message)
+        needs_reply_dates.append(datetime_of_last_incoming_message)
 
         # Count if this conversation is also tagged as escalate
         if escalate_tag_id in conversation_tags:
@@ -222,16 +230,15 @@ def compute_needs_reply_metrics(nook_conversations):
     needs_reply_messages_by_date = {}
 
     for date in needs_reply_dates:
-        iso_date = datetime.fromisoformat(date)
-        if iso_date < earliest_date:
-            earliest_date = iso_date
-        
-        day_date = date.split("T")[0]
+        if date < earliest_date:
+            earliest_date = date
+
+        day_date = date.date().isoformat()
         if day_date not in needs_reply_messages_by_date.keys():
             needs_reply_messages_by_date[day_date] = 0
-        
+
         needs_reply_messages_by_date[day_date] += 1
-    
+
     needs_reply_metrics = {
         "datetime": datetime.now().isoformat(),
         "needs_reply_count": needs_reply_count,
@@ -240,6 +247,7 @@ def compute_needs_reply_metrics(nook_conversations):
         "needs_reply_and_escalate_more_than_24h": needs_reply_and_escalate_more_than_24h,
         "needs_reply_messages_by_date": needs_reply_messages_by_date,
         "earliest_needs_reply_date": earliest_date.isoformat(),
+        "project": KK_PROJECT,
     }
 
     time_end = time.perf_counter_ns()
@@ -249,6 +257,11 @@ def compute_needs_reply_metrics(nook_conversations):
 
     return needs_reply_metrics
 
+def merge_shards(nook_conversation_shards):
+    nook_conversations = []
+    for shard in nook_conversation_shards:
+        nook_conversations.extend(shard["conversations"])
+    return nook_conversations
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -258,6 +271,8 @@ if __name__ == '__main__':
                         help="path to output folder where the analytics should be exported")
     parser.add_argument("coda_tags",
                         help="path to a file with the coda tags used by the project")
+    parser.add_argument("kk_project",
+                        help="the name of the katikati project for this Nook export")
     parser.add_argument("--ignore_stop", action="store_true",
                         help="whether to ignore a stop response")
 
@@ -267,7 +282,7 @@ if __name__ == '__main__':
         parser.print_help()
         exit(1)
 
-    if len(sys.argv) < 4:
+    if len(sys.argv) < 5:
         _usage_and_exit("Wrong number of arguments")
     args = parser.parse_args(sys.argv[1:])
 
@@ -275,11 +290,21 @@ if __name__ == '__main__':
     OUTPUT_FOLDER = args.output_folder
     CODA_TAGS_FILE = args.coda_tags
     IGNORE_STOP = args.ignore_stop
+    KK_PROJECT = args.kk_project
 
     with open(NOOK_EXPORT, mode="r") as nook_export_file:
         nook_export_data = json.load(nook_export_file)
     conversation_tags = nook_export_data[CONVERSATION_TAGS_COLLECTION_KEY]
-    nook_conversations = nook_export_data[CONVERSATIONS_COLLECTION_KEY]
+
+    # If nook_conversation_shards exists, read the data from there, otherwise try to read from nook_conversations
+    if CONVERSATION_SHARDS_COLLECTION_KEY in nook_export_data:
+        nook_conversation_shards = nook_export_data[CONVERSATION_SHARDS_COLLECTION_KEY]
+        nook_conversations = merge_shards(nook_conversation_shards)
+    elif CONVERSATIONS_COLLECTION_KEY in nook_export_data:
+        nook_conversations = nook_export_data[CONVERSATIONS_COLLECTION_KEY]
+    else:
+        log.error('neither nook_conversations nor nook_conversation_shards exists in the firebase export, aborting analytics...')
+        exit(1)
 
     with open(CODA_TAGS_FILE, mode="r") as coda_tags_file:
         coda_tags = json.load(coda_tags_file)
@@ -294,9 +319,6 @@ if __name__ == '__main__':
 
     for tag in all_tags:
         tag_id_to_name[tag_to_tag_id(tag)] = tag
-
-    now = datetime.utcnow().isoformat(timespec='minutes')
-    now = now.replace(":", "-")
 
     daily_metrics = compute_daily_tag_distribution(nook_conversations, IGNORE_STOP)
     # prepare for writing to a json file that can be uploaded to firebase
