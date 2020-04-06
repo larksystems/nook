@@ -694,8 +694,7 @@ class ConversationListPanelView {
       ..classes.add('conversation-list-header__checkbox')
       ..title = 'Select all conversations'
       ..checked = false
-      ..onClick.listen((_) => _selectAllCheckbox.checked ? command(UIAction.enableMultiSelectMode, null) : command(UIAction.disableMultiSelectMode, null));
-    showConversationSelectCheckboxes(currentConfig.sendMultiMessageEnabled);
+      ..onClick.listen((_) => _selectAllCheckbox.checked ? command(UIAction.selectAllConversations, null) : command(UIAction.deselectAllConversations, null));
     panelHeader.append(_selectAllCheckbox);
 
     _conversationPanelTitle = new DivElement()
@@ -726,6 +725,8 @@ class ConversationListPanelView {
 
     conversationFilter = new ConversationFilter();
     conversationListPanel.append(conversationFilter.conversationFilter);
+
+    currentConfig.sendMultiMessageEnabled ? showCheckboxes() : hideCheckboxes();
   }
 
   void updateConversationList(Set<Conversation> conversations) {
@@ -806,10 +807,12 @@ class ConversationListPanelView {
   void checkAllConversations() => _phoneToConversations.forEach((_, conversation) => conversation._check());
   void uncheckAllConversations() => _phoneToConversations.forEach((_, conversation) => conversation._uncheck());
   void showCheckboxes() {
+    _selectAllCheckbox.hidden = false;
     _phoneToConversations.forEach((_, conversation) => conversation._showCheckbox());
     _markUnread.multiSelectMode(true);
   }
   void hideCheckboxes() {
+    _selectAllCheckbox.hidden = true;
     _phoneToConversations.forEach((_, conversation) => conversation._hideCheckbox());
     _markUnread.multiSelectMode(false);
   }
@@ -831,13 +834,6 @@ class ConversationListPanelView {
   void showSelectConversationListMessage() {
     hideLoadSpinner();
     _selectConversationListMessage.hidden = false;
-  }
-
-  void showConversationSelectCheckboxes(bool value) {
-    _selectAllCheckbox.classes.toggle('hidden', !value);
-    for (var conversation in _phoneToConversations.values) {
-      conversation.showSelectCheckbox(value);
-    }
   }
 }
 
@@ -906,6 +902,7 @@ class ConversationSummary with LazyListViewItem {
   bool _unread;
   bool _checked = false;
   bool _selected = false;
+  bool _checkboxVisible = false;
 
   ConversationSummary(this.deidentifiedPhoneNumber, this._text, this._unread);
 
@@ -917,10 +914,10 @@ class ConversationSummary with LazyListViewItem {
       ..classes.add('conversation-selector')
       ..title = 'Select conversation'
       ..checked = _checked
-      ..style.visibility = 'hidden'
+      ..hidden = _checkboxVisible
       ..onClick.listen((_) => _selectCheckbox.checked ? command(UIAction.selectConversation, new ConversationData(deidentifiedPhoneNumber))
                                                       : command(UIAction.deselectConversation, new ConversationData(deidentifiedPhoneNumber)));
-    showSelectCheckbox(currentConfig.sendMultiMessageEnabled);
+    currentConfig.sendMultiMessageEnabled ? _showCheckbox() : _hideCheckbox();
     conversationSummary.append(_selectCheckbox);
 
     var summaryMessage = new DivElement()
@@ -979,14 +976,12 @@ class ConversationSummary with LazyListViewItem {
     if (_selectCheckbox != null) _selectCheckbox.checked = false;
   }
   void _showCheckbox() {
-    if (_selectCheckbox != null) _selectCheckbox.style.visibility = 'visible';
+    _checkboxVisible = true;
+    if (_selectCheckbox != null) _selectCheckbox.hidden = false;
   }
   void _hideCheckbox() {
-    if (_selectCheckbox != null) _selectCheckbox.style.visibility = 'hidden';
-  }
-
-  void showSelectCheckbox(bool value) {
-    if (_selectCheckbox != null) _selectCheckbox.classes.toggle('hidden', !value);
+    _checkboxVisible = false;
+    if (_selectCheckbox != null) _selectCheckbox.hidden = true;
   }
 }
 
