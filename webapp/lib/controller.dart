@@ -61,7 +61,7 @@ class MessageData extends Data {
   MessageData(this.conversationId, this.messageIndex);
 
   @override
-  String toString() => 'MessageData: {conversationId: $conversationId, messageIndex: $messageIndex}}';
+  String toString() => 'MessageData: {conversationId: $conversationId, messageIndex: $messageIndex}';
 }
 
 class ReplyData extends Data {
@@ -70,7 +70,7 @@ class ReplyData extends Data {
   ReplyData(this.replyIndex, {this.replyWithTranslation: false});
 
   @override
-  String toString() => 'ReplyData: {replyIndex: ${replyIndex}, replyWithTranslation: ${replyWithTranslation}}';
+  String toString() => 'ReplyData: {replyIndex: $replyIndex, replyWithTranslation: $replyWithTranslation}';
 }
 
 class ManualReplyData extends Data {
@@ -78,7 +78,7 @@ class ManualReplyData extends Data {
   ManualReplyData(this.replyText);
 
   @override
-  String toString() => 'ManualReplyData: {replyText: ${replyText}}';
+  String toString() => 'ManualReplyData: {replyText: $replyText}';
 }
 
 class TranslationData extends Data {
@@ -88,7 +88,7 @@ class TranslationData extends Data {
   TranslationData(this.translationText, this.conversationId, this.messageIndex);
 
   @override
-  String toString() => 'TranslationData: {translationText: ${translationText}, conversationId: ${conversationId}, messageIndex: ${messageIndex}}';
+  String toString() => 'TranslationData: {translationText: $translationText, conversationId: $conversationId, messageIndex: $messageIndex}';
 }
 
 class ReplyTranslationData extends Data {
@@ -97,7 +97,7 @@ class ReplyTranslationData extends Data {
   ReplyTranslationData(this.translationText, this.replyIndex);
 
   @override
-  String toString() => 'ReplyTranslationData: {translationText: ${translationText}, replyIndex: ${replyIndex}}';
+  String toString() => 'ReplyTranslationData: {translationText: $translationText, replyIndex: $replyIndex}';
 }
 
 class MessageTagData extends Data {
@@ -106,7 +106,7 @@ class MessageTagData extends Data {
   MessageTagData(this.tagId, this.messageIndex);
 
   @override
-  String toString() => 'MessageTagData: {tagId: ${tagId}, messageIndex: ${messageIndex}}';
+  String toString() => 'MessageTagData: {tagId: $tagId, messageIndex: $messageIndex}';
 }
 
 class ConversationTagData extends Data {
@@ -115,7 +115,7 @@ class ConversationTagData extends Data {
   ConversationTagData(this.tagId, this.conversationId);
 
   @override
-  String toString() => 'ConversationTagData: {tagId: ${tagId}, conversationId: ${conversationId}}';
+  String toString() => 'ConversationTagData: {tagId: $tagId, conversationId: $conversationId}';
 }
 
 class FilterTagData extends Data {
@@ -123,7 +123,7 @@ class FilterTagData extends Data {
   FilterTagData(this.tagId);
 
   @override
-  String toString() => 'FilterTagData: {tagId: ${tagId}}';
+  String toString() => 'FilterTagData: {tagId: $tagId}';
 }
 
 class AfterDateFilterData extends Data {
@@ -132,7 +132,7 @@ class AfterDateFilterData extends Data {
   AfterDateFilterData(this.tagId, [this.afterDateFilter]);
 
   @override
-  String toString() => 'AfterDateFilter: {tagId: ${tagId}, afterDateFilter: ${ afterDateFilter}}';
+  String toString() => 'AfterDateFilter: {tagId: $tagId, afterDateFilter: $afterDateFilter}';
 }
 
 class ConversationListData extends Data {
@@ -141,7 +141,7 @@ class ConversationListData extends Data {
   ConversationListData(this.conversationListRoot);
 
   @override
-  String toString() => 'ConversationListData: {conversationListRoot: ${conversationListRoot}}';
+  String toString() => 'ConversationListData: {conversationListRoot: $conversationListRoot}';
 }
 
 class ConversationData extends Data {
@@ -149,7 +149,7 @@ class ConversationData extends Data {
   ConversationData(this.deidentifiedPhoneNumber);
 
   @override
-  String toString() => 'ConversationData: {deidentifiedPhoneNumber: ${deidentifiedPhoneNumber}}';
+  String toString() => 'ConversationData: {deidentifiedPhoneNumber: $deidentifiedPhoneNumber}';
 }
 
 class TagData extends Data {
@@ -157,7 +157,7 @@ class TagData extends Data {
   TagData(this.tagId);
 
   @override
-  String toString() => 'TagData: {tagId: ${tagId}}';
+  String toString() => 'TagData: {tagId: $tagId}';
 }
 
 class NoteData extends Data {
@@ -165,7 +165,7 @@ class NoteData extends Data {
   NoteData(this.noteText);
 
   @override
-  String toString() => 'NoteData: {noteText: ${noteText}}';
+  String toString() => 'NoteData: {noteText: $noteText}';
 
 }
 
@@ -176,7 +176,7 @@ class UserData extends Data {
   UserData(this.displayName, this.email, this.photoUrl);
 
   @override
-  String toString() => 'UserData: {displayName: ${displayName}, email: ${email}, photoUrl: ${photoUrl}}';
+  String toString() => 'UserData: {displayName: $displayName, email: $email, photoUrl: $photoUrl}';
 }
 
 class KeyPressData extends Data {
@@ -184,7 +184,7 @@ class KeyPressData extends Data {
   KeyPressData(this.key);
 
   @override
-  String toString() => 'KeyPressData: {key: ${key}}';
+  String toString() => 'KeyPressData: {key: $key}';
 }
 
 class AddSuggestedReplyData extends Data {
@@ -193,7 +193,7 @@ class AddSuggestedReplyData extends Data {
   AddSuggestedReplyData(this.replyText, this.translationText);
 
   @override
-  String toString() => 'AddSuggestedReply: {replyText: ${replyText}, translationText: ${translationText}}';
+  String toString() => 'AddSuggestedReply: {replyText: $replyText, translationText: $translationText}';
 }
 
 class AddTagData extends Data {
@@ -201,7 +201,7 @@ class AddTagData extends Data {
   AddTagData(this.tagText);
 
   @override
-  String toString() => 'AddTagData: {tagText: ${tagText}}';
+  String toString() => 'AddTagData: {tagText: $tagText}';
 }
 
 class UpdateSuggestedRepliesCategoryData extends Data {
@@ -209,7 +209,7 @@ class UpdateSuggestedRepliesCategoryData extends Data {
   UpdateSuggestedRepliesCategoryData(this.category);
 
   @override
-  String toString() => 'UpdateSuggestedReplies: {category: ${category}}';
+  String toString() => 'UpdateSuggestedReplies: {category: $category}';
 }
 
 class SystemMessagesData extends Data {
@@ -217,7 +217,7 @@ class SystemMessagesData extends Data {
   SystemMessagesData(this.messages);
 
   @override
-  String toString() => 'SystemMessagesData: {messages: ${messages}}';
+  String toString() => 'SystemMessagesData: {messages: ${messages.map((m) => m.toData().toString())}}';
 }
 
 class ToggleData extends Data {
@@ -225,7 +225,7 @@ class ToggleData extends Data {
   ToggleData(this.toggleValue);
 
   @override
-  String toString() => 'ToggleData: {toggleValue: ${toggleValue}}';
+  String toString() => 'ToggleData: {toggleValue: $toggleValue}';
 }
 
 List<model.SystemMessage> systemMessages;
