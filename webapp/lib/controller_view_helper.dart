@@ -47,7 +47,8 @@ void _populateConversationPanelView(model.Conversation conversation) {
         i,
         translation: message.translation,
         incoming: message.direction == model.MessageDirection.In,
-        tags: tags
+        tags: tags,
+        status: message.status
       ));
   }
 }

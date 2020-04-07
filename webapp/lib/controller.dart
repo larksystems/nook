@@ -889,19 +889,20 @@ void sendReply(model.SuggestedReply reply, model.Conversation conversation) asyn
     ..translation = reply.translation
     ..tagIds = [];
   conversation.messages.add(newMessage);
-  view.conversationPanelView.addMessage(
-    new view.MessageView(
+  var newMessageView = new view.MessageView(
       newMessage.text,
       newMessage.datetime,
       conversation.docId,
       conversation.messages.indexOf(newMessage),
       translation: newMessage.translation,
-      incoming: false)
-  );
+      incoming: false);
+  view.conversationPanelView.addMessage(newMessageView);
   try {
     await platform.sendMessage(conversation.docId, reply.text);
   } catch (_) {
     view.snackbarView.showSnackbar('Send Reply Failed', view.SnackbarNotificationType.error);
+    newMessage.status = model.MessageStatus.failed;
+    newMessageView.setStatus(newMessage.status);
     // Rethrow so that others could handle it
     // and so that it is logged through the normal process
     rethrow;
@@ -916,22 +917,24 @@ void sendMultiReply(model.SuggestedReply reply, List<model.Conversation> convers
     ..translation = reply.translation
     ..tagIds = [];
   conversations.forEach((conversation) => conversation.messages.add(newMessage));
+  view.MessageView newMessageView;
   if (conversations.contains(activeConversation)) {
-    view.conversationPanelView.addMessage(
-      new view.MessageView(
+    newMessageView = new view.MessageView(
         newMessage.text,
         newMessage.datetime,
         activeConversation.docId,
         activeConversation.messages.indexOf(newMessage),
         translation: newMessage.translation,
-        incoming: false)
-    );
+        incoming: false);
+    view.conversationPanelView.addMessage(newMessageView);
   }
   List<String> ids = conversations.map((conversation) => conversation.docId).toList();
   try {
     await platform.sendMultiMessage(ids, newMessage.text);
-  } catch (e) {
+  } catch (_) {
     view.snackbarView.showSnackbar('Send Multi Reply Failed', view.SnackbarNotificationType.error);
+    newMessage.status = model.MessageStatus.failed;
+    newMessageView?.setStatus(newMessage.status);
     // Rethrow so that others could handle it
     // and so that it is logged through the normal process
     rethrow;
