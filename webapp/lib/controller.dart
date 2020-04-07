@@ -881,7 +881,7 @@ void updateViewForConversation(model.Conversation conversation) {
   }
 }
 
-void sendReply(model.SuggestedReply reply, model.Conversation conversation) {
+void sendReply(model.SuggestedReply reply, model.Conversation conversation) async {
   model.Message newMessage = new model.Message()
     ..text = reply.text
     ..datetime = new DateTime.now()
@@ -898,10 +898,17 @@ void sendReply(model.SuggestedReply reply, model.Conversation conversation) {
       translation: newMessage.translation,
       incoming: false)
   );
-  platform.sendMessage(conversation.docId, reply.text);
+  try {
+    await platform.sendMessage(conversation.docId, reply.text);
+  } catch (_) {
+    view.snackbarView.showSnackbar('Send Reply Failed', view.SnackbarNotificationType.error);
+    // Rethrow so that others could handle it
+    // and so that it is logged through the normal process
+    rethrow;
+  }
 }
 
-void sendMultiReply(model.SuggestedReply reply, List<model.Conversation> conversations) {
+void sendMultiReply(model.SuggestedReply reply, List<model.Conversation> conversations) async {
   model.Message newMessage = new model.Message()
     ..text = reply.text
     ..datetime = new DateTime.now()
@@ -921,7 +928,14 @@ void sendMultiReply(model.SuggestedReply reply, List<model.Conversation> convers
     );
   }
   List<String> ids = conversations.map((conversation) => conversation.docId).toList();
-  platform.sendMultiMessage(ids, newMessage.text);
+  try {
+    await platform.sendMultiMessage(ids, newMessage.text);
+  } catch (e) {
+    view.snackbarView.showSnackbar('Send Multi Reply Failed', view.SnackbarNotificationType.error);
+    // Rethrow so that others could handle it
+    // and so that it is logged through the normal process
+    rethrow;
+  }
 }
 
 void setConversationTag(model.Tag tag, model.Conversation conversation) {
