@@ -63,13 +63,13 @@ bool isUserSignedIn() {
   return firebaseAuth.currentUser != null;
 }
 
-Future<void> sendMessage(String id, String message) {
+Future<void> sendMessage(String id, String message, {onError(dynamic)}) {
   log.verbose("Sending message $id : $message");
 
-  return sendMultiMessage([id], message);
+  return sendMultiMessage([id], message, onError: onError);
 }
 
-Future<void> sendMultiMessage(List<String> ids, String message) {
+Future<void> sendMultiMessage(List<String> ids, String message, {onError(dynamic)}) async {
   log.verbose("Sending multi-message $ids : $message");
 
   //  {
@@ -85,7 +85,14 @@ Future<void> sendMultiMessage(List<String> ids, String message) {
       'message' : message
     };
 
-  return _pubsubInstance.publish(platform_constants.smsTopic, payload);
+  try {
+    return await _pubsubInstance.publish(platform_constants.smsTopic, payload);
+  } catch (error, trace) {
+    onError(error);
+    // Rethrow so that others could handle it
+    // and so that it is logged through the normal process
+    rethrow;
+  }
 }
 
 void listenForUserConfigurations(UserConfigurationCollectionListener listener) {
