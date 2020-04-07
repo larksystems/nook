@@ -88,7 +88,7 @@ Future<void> sendMultiMessage(List<String> ids, String message, {onError(dynamic
   try {
     return await _pubsubInstance.publish(platform_constants.smsTopic, payload);
   } catch (error, trace) {
-    onError(error);
+    if (onError != null) onError(error);
     // Rethrow so that others could handle it
     // and so that it is logged through the normal process
     rethrow;
