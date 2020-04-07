@@ -897,16 +897,11 @@ void sendReply(model.SuggestedReply reply, model.Conversation conversation) asyn
       translation: newMessage.translation,
       incoming: false);
   view.conversationPanelView.addMessage(newMessageView);
-  try {
-    await platform.sendMessage(conversation.docId, reply.text);
-  } catch (_) {
+  await platform.sendMessage(conversation.docId, reply.text, onError: (_) {
     view.snackbarView.showSnackbar('Send Reply Failed', view.SnackbarNotificationType.error);
     newMessage.status = model.MessageStatus.failed;
     newMessageView.setStatus(newMessage.status);
-    // Rethrow so that others could handle it
-    // and so that it is logged through the normal process
-    rethrow;
-  }
+  });
 }
 
 void sendMultiReply(model.SuggestedReply reply, List<model.Conversation> conversations) async {
@@ -929,16 +924,11 @@ void sendMultiReply(model.SuggestedReply reply, List<model.Conversation> convers
     view.conversationPanelView.addMessage(newMessageView);
   }
   List<String> ids = conversations.map((conversation) => conversation.docId).toList();
-  try {
-    await platform.sendMultiMessage(ids, newMessage.text);
-  } catch (_) {
+  await platform.sendMultiMessage(ids, newMessage.text, onError: (_) {
     view.snackbarView.showSnackbar('Send Multi Reply Failed', view.SnackbarNotificationType.error);
     newMessage.status = model.MessageStatus.failed;
     newMessageView?.setStatus(newMessage.status);
-    // Rethrow so that others could handle it
-    // and so that it is logged through the normal process
-    rethrow;
-  }
+  });
 }
 
 void setConversationTag(model.Tag tag, model.Conversation conversation) {
