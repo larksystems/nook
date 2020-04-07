@@ -960,18 +960,22 @@ void sendReply(model.SuggestedReply reply, model.Conversation conversation) {
     ..tagIds = [];
   log.verbose('Adding reply "${reply.text}" to conversation ${conversation.docId}');
   conversation.messages.add(newMessage);
-  view.conversationPanelView.addMessage(
-    new view.MessageView(
+  var newMessageView = new view.MessageView(
       newMessage.text,
       newMessage.datetime,
       conversation.docId,
       conversation.messages.indexOf(newMessage),
       translation: newMessage.translation,
-      incoming: false)
-  );
-  log.verbose('Sending reply "${reply.text}" for conversation ${conversation.docId}');
-  platform.sendMessage(conversation.docId, reply.text);
-  log.verbose('Reply "${reply.text}" sent to conversation ${conversation.docId}');
+      incoming: false);
+  view.conversationPanelView.addMessage(newMessageView);
+  log.verbose('Sending reply "${reply.text}" to conversation ${conversation.docId}');
+  platform.sendMessage(conversation.docId, reply.text, onError: (_) {
+    log.error('Reply "${reply.text}" failed to be sent to conversation ${conversation.docId}');
+    view.snackbarView.showSnackbar('Send Reply Failed', view.SnackbarNotificationType.error);
+    newMessage.status = model.MessageStatus.failed;
+    newMessageView.setStatus(newMessage.status);
+  });
+  log.verbose('Reply "${reply.text}" queued for sending to conversation ${conversation.docId}');
 }
 
 void sendMultiReply(model.SuggestedReply reply, List<model.Conversation> conversations) {
@@ -985,20 +989,25 @@ void sendMultiReply(model.SuggestedReply reply, List<model.Conversation> convers
     ..tagIds = [];
   log.verbose('Adding reply "${reply.text}" to conversations ${conversationIds}');
   conversations.forEach((conversation) => conversation.messages.add(newMessage));
+  view.MessageView newMessageView;
   if (conversations.contains(activeConversation)) {
-    view.conversationPanelView.addMessage(
-      new view.MessageView(
+    newMessageView = new view.MessageView(
         newMessage.text,
         newMessage.datetime,
         activeConversation.docId,
         activeConversation.messages.indexOf(newMessage),
         translation: newMessage.translation,
-        incoming: false)
-    );
+        incoming: false);
+    view.conversationPanelView.addMessage(newMessageView);
   }
-  log.verbose('Sending reply "${reply.text}" for conversations ${conversationIds}');
-  platform.sendMultiMessage(conversationIds, newMessage.text);
-  log.verbose('Reply "${reply.text}" sent to conversations ${conversationIds}');
+  log.verbose('Sending reply "${reply.text}" to conversations ${conversationIds}');
+  platform.sendMultiMessage(conversationIds, newMessage.text, onError: (_) {
+    log.error('Reply "${reply.text}" failed to be sent to conversations ${conversationIds}');
+    view.snackbarView.showSnackbar('Send Multi Reply Failed', view.SnackbarNotificationType.error);
+    newMessage.status = model.MessageStatus.failed;
+    newMessageView?.setStatus(newMessage.status);
+  });
+  log.verbose('Reply "${reply.text}" queued for sending to conversations ${conversationIds}');
 }
 
 void setConversationTag(model.Tag tag, model.Conversation conversation) {

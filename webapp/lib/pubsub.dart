@@ -13,6 +13,7 @@ Logger log = new Logger('pubsub.dart');
 
 class PubSubClient extends DocPubSubUpdate {
   final String publishUrl;
+  static int _publishCount = 0;
 
   // The firebase user from which the user JWT auth token is obtained.
   final firebase.User user;
@@ -22,7 +23,10 @@ class PubSubClient extends DocPubSubUpdate {
   /// Publish the specified exception.
   /// Callers should catch and handle IOException.
   Future<void> publish(String topic, Map payload) async {
-    log.verbose("publish $topic $payload");
+    // a simplistic way to correlate publish log entries
+    int publishId = _publishCount++;
+
+    log.verbose("publish #$publishId: $topic $payload");
 
     payload["_authenticatedUserEmail"] = this.user.email;
     payload["_authenticatedUserDisplayName"] = this.user.displayName;
@@ -37,12 +41,12 @@ class PubSubClient extends DocPubSubUpdate {
       "payload": payload,
       "fbUserIdToken": await user.getIdToken(),
     });
-    log.verbose("publish About to send: ${body}");
+    log.verbose("publish About to send #$publishId: ${body}");
 
     var client = new BrowserClient();
     var response = await client.post(publishUrl, body: body);
 
-    log.verbose("publish response ${response.statusCode}, ${response.body}");
+    log.verbose("publish response #$publishId: ${response.statusCode}, ${response.body}");
     if (response.statusCode != 200)
       throw PubSubException.fromResponse(response);
   }
