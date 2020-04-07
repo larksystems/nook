@@ -59,17 +59,26 @@ class MessageData extends Data {
   String conversationId;
   int messageIndex;
   MessageData(this.conversationId, this.messageIndex);
+
+  @override
+  String toString() => 'MessageData: {conversationId: $conversationId, messageIndex: $messageIndex}}';
 }
 
 class ReplyData extends Data {
   int replyIndex;
   bool replyWithTranslation;
   ReplyData(this.replyIndex, {this.replyWithTranslation: false});
+
+  @override
+  String toString() => 'ReplyData: {replyIndex: ${replyIndex}, replyWithTranslation: ${replyWithTranslation}}';
 }
 
 class ManualReplyData extends Data {
   String replyText;
   ManualReplyData(this.replyText);
+
+  @override
+  String toString() => 'ManualReplyData: {replyText: ${replyText}}';
 }
 
 class TranslationData extends Data {
@@ -77,56 +86,87 @@ class TranslationData extends Data {
   String conversationId;
   int messageIndex;
   TranslationData(this.translationText, this.conversationId, this.messageIndex);
+
+  @override
+  String toString() => 'TranslationData: {translationText: ${translationText}, conversationId: ${conversationId}, messageIndex: ${messageIndex}}';
 }
 
 class ReplyTranslationData extends Data {
   String translationText;
   int replyIndex;
   ReplyTranslationData(this.translationText, this.replyIndex);
+
+  @override
+  String toString() => 'ReplyTranslationData: {translationText: ${translationText}, replyIndex: ${replyIndex}}';
 }
 
 class MessageTagData extends Data {
   String tagId;
   int messageIndex;
   MessageTagData(this.tagId, this.messageIndex);
+
+  @override
+  String toString() => 'MessageTagData: {tagId: ${tagId}, messageIndex: ${messageIndex}}';
 }
 
 class ConversationTagData extends Data {
   String tagId;
   String conversationId;
   ConversationTagData(this.tagId, this.conversationId);
+
+  @override
+  String toString() => 'ConversationTagData: {tagId: ${tagId}, conversationId: ${conversationId}}';
 }
 
 class FilterTagData extends Data {
   String tagId;
   FilterTagData(this.tagId);
+
+  @override
+  String toString() => 'FilterTagData: {tagId: ${tagId}}';
 }
 
 class AfterDateFilterData extends Data {
   String tagId;
   DateTime afterDateFilter;
   AfterDateFilterData(this.tagId, [this.afterDateFilter]);
+
+  @override
+  String toString() => 'AfterDateFilter: {tagId: ${tagId}, afterDateFilter: ${ afterDateFilter}}';
 }
 
 class ConversationListData extends Data {
   static const NONE = 'none';
   String conversationListRoot;
   ConversationListData(this.conversationListRoot);
+
+  @override
+  String toString() => 'ConversationListData: {conversationListRoot: ${conversationListRoot}}';
 }
 
 class ConversationData extends Data {
   String deidentifiedPhoneNumber;
   ConversationData(this.deidentifiedPhoneNumber);
+
+  @override
+  String toString() => 'ConversationData: {deidentifiedPhoneNumber: ${deidentifiedPhoneNumber}}';
 }
 
 class TagData extends Data {
   String tagId;
   TagData(this.tagId);
+
+  @override
+  String toString() => 'TagData: {tagId: ${tagId}}';
 }
 
 class NoteData extends Data {
   String noteText;
   NoteData(this.noteText);
+
+  @override
+  String toString() => 'NoteData: {noteText: ${noteText}}';
+
 }
 
 class UserData extends Data {
@@ -134,37 +174,58 @@ class UserData extends Data {
   String email;
   String photoUrl;
   UserData(this.displayName, this.email, this.photoUrl);
+
+  @override
+  String toString() => 'UserData: {displayName: ${displayName}, email: ${email}, photoUrl: ${photoUrl}}';
 }
 
 class KeyPressData extends Data {
   String key;
   KeyPressData(this.key);
+
+  @override
+  String toString() => 'KeyPressData: {key: ${key}}';
 }
 
 class AddSuggestedReplyData extends Data {
   String replyText;
   String translationText;
   AddSuggestedReplyData(this.replyText, this.translationText);
+
+  @override
+  String toString() => 'AddSuggestedReply: {replyText: ${replyText}, translationText: ${translationText}}';
 }
 
 class AddTagData extends Data {
   String tagText;
   AddTagData(this.tagText);
+
+  @override
+  String toString() => 'AddTagData: {tagText: ${tagText}}';
 }
 
 class UpdateSuggestedRepliesCategoryData extends Data {
   String category;
   UpdateSuggestedRepliesCategoryData(this.category);
+
+  @override
+  String toString() => 'UpdateSuggestedReplies: {category: ${category}}';
 }
 
 class SystemMessagesData extends Data {
   List<model.SystemMessage> messages;
   SystemMessagesData(this.messages);
+
+  @override
+  String toString() => 'SystemMessagesData: {messages: ${messages}}';
 }
 
 class ToggleData extends Data {
   bool toggleValue;
   ToggleData(this.toggleValue);
+
+  @override
+  String toString() => 'ToggleData: {toggleValue: ${toggleValue}}';
 }
 
 List<model.SystemMessage> systemMessages;
@@ -366,6 +427,7 @@ void applyConfiguration(model.UserConfiguration newConfig) {
   }
 
   currentConfig = newConfig;
+  log.verbose('Updated user configuration: $currentConfig');
 }
 
 void conversationListSelected(String conversationListRoot) {
@@ -454,6 +516,10 @@ model.Conversation nextElement(Iterable<model.Conversation> conversations, model
 }
 
 void command(UIAction action, Data data) {
+  log.verbose('Executing UI command: $actionObjectState - $action - $data');
+  log.verbose('Active conversation: ${activeConversation?.docId}');
+  log.verbose('Selected conversations: ${selectedConversations?.map((c) => c.docId)?.toList()}');
+
   // For most actions, a conversation needs to be active.
   // Early exist if it's not one of the actions valid without an active conversation.
   if (activeConversation == null &&
@@ -483,6 +549,7 @@ void command(UIAction action, Data data) {
         return;
       }
       if (!view.sendingMultiMessagesUserConfirmation(selectedConversations.length)) {
+        log.verbose('User cancelled sending multi message reply: "${selectedReply.text}"');
         return;
       }
       sendMultiReply(selectedReply, selectedConversations);
@@ -495,6 +562,7 @@ void command(UIAction action, Data data) {
         ..translation = '';
       if (!currentConfig.sendMultiMessageEnabled || selectedConversations.isEmpty) {
         if (!view.sendingManualMessageUserConfirmation(oneoffReply.text)) {
+          log.verbose('User cancelled sending manual message reply: "${oneoffReply.text}"');
           return;
         }
         sendReply(oneoffReply, activeConversation);
@@ -502,6 +570,7 @@ void command(UIAction action, Data data) {
         return;
       }
       if (!view.sendingManualMultiMessageUserConfirmation(oneoffReply.text, selectedConversations.length)) {
+        log.verbose('User cancelled sending manual multi message reply: "${oneoffReply.text}"');
         return;
       }
       sendMultiReply(oneoffReply, selectedConversations);
@@ -882,12 +951,14 @@ void updateViewForConversation(model.Conversation conversation) {
 }
 
 void sendReply(model.SuggestedReply reply, model.Conversation conversation) {
+  log.verbose('Preparing to send reply "${reply.text}" to conversation ${conversation.docId}');
   model.Message newMessage = new model.Message()
     ..text = reply.text
     ..datetime = new DateTime.now()
     ..direction = model.MessageDirection.Out
     ..translation = reply.translation
     ..tagIds = [];
+  log.verbose('Adding reply "${reply.text}" to conversation ${conversation.docId}');
   conversation.messages.add(newMessage);
   view.conversationPanelView.addMessage(
     new view.MessageView(
@@ -898,16 +969,21 @@ void sendReply(model.SuggestedReply reply, model.Conversation conversation) {
       translation: newMessage.translation,
       incoming: false)
   );
+  log.verbose('Sending reply "${reply.text}" for conversation ${conversation.docId}');
   platform.sendMessage(conversation.docId, reply.text);
+  log.verbose('Reply "${reply.text}" sent to conversation ${conversation.docId}');
 }
 
 void sendMultiReply(model.SuggestedReply reply, List<model.Conversation> conversations) {
+  List<String> conversationIds = conversations.map((conversation) => conversation.docId).toList();
+  log.verbose('Preparing to send reply "${reply.text}" to conversations $conversationIds');
   model.Message newMessage = new model.Message()
     ..text = reply.text
     ..datetime = new DateTime.now()
     ..direction = model.MessageDirection.Out
     ..translation = reply.translation
     ..tagIds = [];
+  log.verbose('Adding reply "${reply.text}" to conversations ${conversationIds}');
   conversations.forEach((conversation) => conversation.messages.add(newMessage));
   if (conversations.contains(activeConversation)) {
     view.conversationPanelView.addMessage(
@@ -920,8 +996,9 @@ void sendMultiReply(model.SuggestedReply reply, List<model.Conversation> convers
         incoming: false)
     );
   }
-  List<String> ids = conversations.map((conversation) => conversation.docId).toList();
-  platform.sendMultiMessage(ids, newMessage.text);
+  log.verbose('Sending reply "${reply.text}" for conversations ${conversationIds}');
+  platform.sendMultiMessage(conversationIds, newMessage.text);
+  log.verbose('Reply "${reply.text}" sent to conversations ${conversationIds}');
 }
 
 void setConversationTag(model.Tag tag, model.Conversation conversation) {
