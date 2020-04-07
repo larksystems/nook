@@ -377,7 +377,7 @@ class MessageView {
 
   static MessageView selectedMessageView;
 
-  MessageView(String text, DateTime dateTime, String conversationId, int messageIndex, {String translation = '', bool incoming = true, List<TagView> tags = const[]}) {
+  MessageView(String text, DateTime dateTime, String conversationId, int messageIndex, {String translation = '', bool incoming = true, List<TagView> tags = const[], MessageStatus status = null}) {
     message = new DivElement()
       ..classes.add('message')
       ..classes.add(incoming ? 'message--incoming' : 'message--outgoing')
@@ -415,6 +415,8 @@ class MessageView {
       ..classes.add('message__tags');
     tags.forEach((tag) => _messageTags.append(tag.tag));
     message.append(_messageTags);
+
+    setStatus(status);
   }
 
   set translation(String translation) => _messageTranslation.text = translation;
@@ -446,6 +448,14 @@ class MessageView {
   static void _deselect() {
     selectedMessageView?.message?.classes?.remove('message--selected');
     selectedMessageView = null;
+  }
+
+  void setStatus(MessageStatus status) {
+    // TODO handle more types of status
+    if (status == MessageStatus.failed)
+      message.classes.add('message--failed');
+    else
+      message.classes.remove('message--failed');
   }
 }
 
