@@ -38,6 +38,10 @@
   border: 2px solid #ccc;
 }
 
+.message.message--failed .message__bubble {
+  text-decoration: line-through red;
+}
+
 .message__datetime {
   font-size: .8em;
   color: #666;
