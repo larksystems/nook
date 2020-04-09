@@ -31,6 +31,7 @@ class ConversationListShard {
       if (name != null) 'name': name,
     };
   }
+  String toString() => 'ConversationListShard [$docId]: ${toData().toString()}';
 }
 typedef void ConversationListShardCollectionListener(List<ConversationListShard> added,
                                                      List<ConversationListShard> modified,
@@ -172,6 +173,7 @@ class Conversation {
     if (docIdsToPublish.isEmpty) return;
     return pubSubClient.publishDocChange(collectionName, docIdsToPublish, {"unread": unread});
   }
+  String toString() => 'Conversation [$docId]: ${toData().toString()}';
 }
 typedef void ConversationCollectionListener(List<Conversation> added,
                                             List<Conversation> modified,
@@ -209,6 +211,7 @@ class Message {
       if (id != null) 'id': id,
     };
   }
+  String toString() => 'Message: ${toData().toString()}';
 }
 typedef void MessageCollectionListener(List<Message> changes);
 
@@ -315,6 +318,7 @@ class SuggestedReply {
       if (category != null) 'category': category,
     };
   }
+  String toString() => 'SuggestedReply [$docId]: ${toData().toString()}';
 
   /// Set translation in this SuggestedReply.
   /// Callers should catch and handle IOException.
@@ -369,6 +373,7 @@ class Tag {
       if (shortcut != null) 'shortcut': shortcut,
     };
   }
+  String toString() => 'Tag [$docId]: ${toData().toString()}';
 }
 typedef void TagCollectionListener(List<Tag> added,
                                    List<Tag> modified,
@@ -434,6 +439,7 @@ class SystemMessage {
       if (expired != null) 'expired': expired,
     };
   }
+  String toString() => 'SystemMessage [$docId]: ${toData().toString()}';
 }
 typedef void SystemMessageCollectionListener(List<SystemMessage> added,
                                              List<SystemMessage> modified,
@@ -474,6 +480,7 @@ class UserConfiguration {
       if (tagPanelVisibility != null) 'tag_panel_visibility': tagPanelVisibility,
     };
   }
+  String toString() => 'UserConfiguration [$docId]: ${toData().toString()}';
 }
 typedef void UserConfigurationCollectionListener(List<UserConfiguration> added,
                                                  List<UserConfiguration> modified,
