@@ -325,7 +325,7 @@ class AfterDateFilterView {
     try {
       dateTime = parseAfterDateFilterText(_textArea.value);
     } on FormatException catch (e) {
-      snackbarView.showSnackbar("Invalid date/time format: ${e.message}", SnackbarNotificationType.error);
+      command(UIAction.showSnackbar, new SnackbarData("Invalid date/time format: ${e.message}", SnackbarNotificationType.error));
       return;
     }
     command(UIAction.updateAfterDateFilter, new AfterDateFilterData(AFTER_DATE_TAG_ID, dateTime));
@@ -1508,13 +1508,6 @@ class UrlView {
     }
     return false;
   }
-}
-
-enum SnackbarNotificationType {
-  info,
-  success,
-  warning,
-  error
 }
 
 class SnackbarView {

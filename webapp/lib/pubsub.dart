@@ -20,8 +20,8 @@ class PubSubClient extends DocPubSubUpdate {
 
   PubSubClient(this.publishUrl, this.user);
 
-  /// Publish the specified exception.
-  /// Callers should catch and handle IOException.
+  /// Publish the specified [payload] to the [topic].
+  /// Callers should catch and handle PubSubException.
   Future<void> publish(String topic, Map payload) async {
     // a simplistic way to correlate publish log entries
     int publishId = _publishCount++;
@@ -89,7 +89,7 @@ class PubSubException implements Exception {
   final String message;
 
   static fromResponse(Response response) =>
-      PubSubException('[${response.statusCode}] ${response.reasonPhrase}');
+      PubSubException('[${response.statusCode}] ${response.reasonPhrase}, response.headers: ${response.headers}');
 
   PubSubException(this.message);
 

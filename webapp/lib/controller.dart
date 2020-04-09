@@ -50,7 +50,8 @@ enum UIAction {
   deselectAllConversations,
   updateSystemMessages,
   updateSuggestedRepliesCategory,
-  hideAgeTags
+  hideAgeTags,
+  showSnackbar
 }
 
 class Data {}
@@ -226,6 +227,15 @@ class ToggleData extends Data {
 
   @override
   String toString() => 'ToggleData: {toggleValue: $toggleValue}';
+}
+
+class SnackbarData extends Data {
+  String text;
+  SnackbarNotificationType type;
+  SnackbarData(text, type);
+
+  @override
+  String toString() => 'SnackbarData: {text: $text, type: $type}';
 }
 
 List<model.SystemMessage> systemMessages;
@@ -529,7 +539,8 @@ void command(UIAction action, Data data) {
       action != UIAction.signInButtonClicked && action != UIAction.signOutButtonClicked &&
       action != UIAction.userSignedIn && action != UIAction.userSignedOut &&
       action != UIAction.updateSuggestedRepliesCategory && action != UIAction.hideAgeTags &&
-      action != UIAction.selectAllConversations && action != UIAction.deselectAllConversations) {
+      action != UIAction.selectAllConversations && action != UIAction.deselectAllConversations &&
+      action != UIAction.showSnackbar) {
     return;
   }
 
@@ -876,7 +887,11 @@ void command(UIAction action, Data data) {
       // The filter tags menu always shows conversations tags, even when a message is selected
       _populateFilterTagsMenu(filteredConversationTags);
       break;
-    default:
+
+    case UIAction.showSnackbar:
+      SnackbarData snackbarData = data;
+      view.snackbarView.showSnackbar(snackbarData.text, snackbarData.type);
+      break;
   }
 }
 
@@ -969,9 +984,10 @@ void sendReply(model.SuggestedReply reply, model.Conversation conversation) {
       incoming: false);
   view.conversationPanelView.addMessage(newMessageView);
   log.verbose('Sending reply "${reply.text}" to conversation ${conversation.docId}');
-  platform.sendMessage(conversation.docId, reply.text, onError: (_) {
+  platform.sendMessage(conversation.docId, reply.text, onError: (error) {
     log.error('Reply "${reply.text}" failed to be sent to conversation ${conversation.docId}');
-    view.snackbarView.showSnackbar('Send Reply Failed', view.SnackbarNotificationType.error);
+    log.error('Error: ${error}');
+    command(UIAction.showSnackbar, new SnackbarData('Send Reply Failed', SnackbarNotificationType.error));
     newMessage.status = model.MessageStatus.failed;
     newMessageView.setStatus(newMessage.status);
   });
@@ -1001,9 +1017,10 @@ void sendMultiReply(model.SuggestedReply reply, List<model.Conversation> convers
     view.conversationPanelView.addMessage(newMessageView);
   }
   log.verbose('Sending reply "${reply.text}" to conversations ${conversationIds}');
-  platform.sendMultiMessage(conversationIds, newMessage.text, onError: (_) {
+  platform.sendMultiMessage(conversationIds, newMessage.text, onError: (error) {
     log.error('Reply "${reply.text}" failed to be sent to conversations ${conversationIds}');
-    view.snackbarView.showSnackbar('Send Multi Reply Failed', view.SnackbarNotificationType.error);
+    log.error('Error: ${error}');
+    command(UIAction.showSnackbar, new SnackbarData('Send Multi Reply Failed', SnackbarNotificationType.error));
     newMessage.status = model.MessageStatus.failed;
     newMessageView?.setStatus(newMessage.status);
   });
@@ -1145,5 +1162,5 @@ void showAndLogError(error, trace) {
   } else {
     errMsg = "$error";
   }
-  view.snackbarView.showSnackbar(errMsg, view.SnackbarNotificationType.error);
+  command(UIAction.showSnackbar, new SnackbarData(errMsg, SnackbarNotificationType.error));
 }

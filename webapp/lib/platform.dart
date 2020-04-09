@@ -15,6 +15,7 @@ const _SEND_TO_MULTI_IDS_ACTION = "send_to_multi_ids";
 
 DocStorage _docStorage;
 PubSubClient _pubsubInstance;
+PubSubClient _uptimePubSubInstance;
 
 init() async {
   await platform_constants.init();
@@ -42,6 +43,51 @@ init() async {
     _docStorage = FirebaseDocStorage(firebase.firestore());
     _pubsubInstance = new PubSubClient(platform_constants.publishUrl, user);
     controller.command(controller.UIAction.userSignedIn, new controller.UserData(user.displayName, user.email, photoURL));
+    _uptimePubSubInstance = new PubSubClient(platform_constants.statuszUrl, user);
+    initUptimeMonitoring();
+  });
+}
+
+void initUptimeMonitoring() {
+  print('starting uptime monitoring...');
+  const fiveSeconds = const Duration(seconds: 5);
+  const oneMinute = const Duration(minutes: 1);
+
+
+  new Timer.periodic(oneMinute, (Timer t) {
+    _uptimePubSubInstance.publish(platform_constants.statuszTopic, {'ping': '${t.tick}'}).then(
+      (_) {},
+      onError: (error, trace) {
+        log.warning('Uptime ping ${t.tick} failed: $error, $trace');
+        SystemMessage systemMessage = new SystemMessage()
+          ..text = "Warning: your internet connection is unstable, some messages may not send properly. Trying to reconnect...";
+        controller.systemMessages.add(systemMessage);
+        controller.command(controller.UIAction.updateSystemMessages,
+                       new controller.SystemMessagesData(controller.systemMessages));
+
+        List<int> recentSuccessfulTicks = [];
+        Timer fiveSecTimer;
+        fiveSecTimer = new Timer.periodic(fiveSeconds, (Timer tt) {
+          recentSuccessfulTicks.where((tick) => tt.tick - 6 < tick && tick < tt.tick);
+          if (recentSuccessfulTicks.length == 5 || tt.tick > 12) {
+            fiveSecTimer.cancel();
+            controller.systemMessages.remove(systemMessage);
+            controller.command(controller.UIAction.updateSystemMessages,
+                           new controller.SystemMessagesData(controller.systemMessages));
+            return;
+          }
+
+          _uptimePubSubInstance.publish(platform_constants.statuszTopic, {'ping': '${t.tick}.${tt.tick}'}).then(
+            (_) {
+              recentSuccessfulTicks.add(tt.tick);
+            },
+            onError: (error, trace) {
+              log.warning('Uptime ping ${t.tick}.${tt.tick} failed: $error, $trace');
+            }
+          );
+        });
+      }
+    );
   });
 }
 
