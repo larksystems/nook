@@ -12,6 +12,13 @@ enum TagReceiver {
   Message
 }
 
+enum SnackbarNotificationType {
+  info,
+  success,
+  warning,
+  error
+}
+
 // Functions to populate the views with model objects.
 
 void _populateConversationListPanelView(Set<model.Conversation> conversations, bool updateList) {
