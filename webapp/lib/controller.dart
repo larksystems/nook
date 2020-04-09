@@ -450,10 +450,17 @@ void conversationListSelected(String conversationListRoot) {
         ..addAll(added.map((c) => c.docId))
         ..addAll(modified.map((c) => c.docId))
         ..addAll(removed.map((c) => c.docId));
-      conversations.removeWhere((conversation) => updatedIds.contains(conversation.docId));
+      List<model.Conversation> changedConversations = conversations.where((conversation) => updatedIds.contains(conversation.docId)).toList();
+      conversations.removeAll(changedConversations);
       conversations
         ..addAll(added)
         ..addAll(modified);
+
+      log.debug('Updated Ids: $updatedIds');
+      log.debug('Old conversations: $changedConversations');
+      log.debug('New conversations, added: $added');
+      log.debug('New conversations, modified: $modified');
+      log.debug('New conversations, removed: $removed');
 
       // TODO even though they are unlikely to happen, we should also handle the removals in the UI for consistency
 
