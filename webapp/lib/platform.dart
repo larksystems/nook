@@ -49,7 +49,6 @@ init() async {
 }
 
 void initUptimeMonitoring() {
-  print('starting uptime monitoring...');
   const fiveSeconds = const Duration(seconds: 5);
   const oneMinute = const Duration(minutes: 1);
 
@@ -61,7 +60,11 @@ void initUptimeMonitoring() {
 
   Timer Function(Timer) newFiveSecTimer = (Timer t) {
     return new Timer.periodic(fiveSeconds, (Timer tt) {
-      _uptimePubSubInstance.publish(platform_constants.statuszTopic, {'ping': '${t.tick}.${tt.tick}'}).then(
+      Map payload = {
+        'ping': '${t.tick}.${tt.tick}',
+        'lastUserActivity': controller.lastUserActivity.toIso8601String()
+      };
+      _uptimePubSubInstance.publish(platform_constants.statuszTopic, payload).then(
         (_) {
           // Add success to the three pings queue
           lastThreePingsQueue.add(true);
@@ -107,7 +110,11 @@ void initUptimeMonitoring() {
   };
 
   new Timer.periodic(oneMinute, (Timer t) {
-    _uptimePubSubInstance.publish(platform_constants.statuszTopic, {'ping': '${t.tick}'}).then(
+    Map payload = {
+      'ping': '${t.tick}',
+      'lastUserActivity': controller.lastUserActivity.toIso8601String()
+    };
+    _uptimePubSubInstance.publish(platform_constants.statuszTopic, payload).then(
       (_) {
         // Cancel the previous 5 sec timer if it's still going.
         fiveSecTimer?.cancel();
