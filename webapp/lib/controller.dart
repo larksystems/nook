@@ -532,6 +532,8 @@ model.Conversation nextElement(Iterable<model.Conversation> conversations, model
   return conversations.first;
 }
 
+DateTime lastUserActivity = new DateTime.now();
+
 void command(UIAction action, Data data) {
   log.verbose('Executing UI command: $actionObjectState - $action - $data');
   log.verbose('Active conversation: ${activeConversation?.docId}');
@@ -549,6 +551,18 @@ void command(UIAction action, Data data) {
       action != UIAction.selectAllConversations && action != UIAction.deselectAllConversations &&
       action != UIAction.showSnackbar) {
     return;
+  }
+
+  switch (action) {
+    case UIAction.userSignedIn:
+    case UIAction.userSignedOut:
+    case UIAction.updateSystemMessages:
+    case UIAction.showSnackbar:
+      // These are not user actions, skip
+      break;
+    default:
+      lastUserActivity = new DateTime.now();
+      break;
   }
 
   switch (action) {
