@@ -66,6 +66,8 @@ void initUptimeMonitoring() {
       };
       _uptimePubSubInstance.publish(platform_constants.statuszTopic, payload).then(
         (_) {
+          log.success('Uptime ping ${t.tick}.${tt.tick} successful');
+
           // Add success to the three pings queue
           lastThreePingsQueue.add(true);
           lastThreePingsQueue.removeAt(0);
@@ -116,6 +118,8 @@ void initUptimeMonitoring() {
     };
     _uptimePubSubInstance.publish(platform_constants.statuszTopic, payload).then(
       (_) {
+        log.success('Uptime ping ${t.tick} successful');
+
         // Cancel the previous 5 sec timer if it's still going.
         fiveSecTimer?.cancel();
 
