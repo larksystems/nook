@@ -54,14 +54,14 @@ fi
 cd "$WORK_DIR"
 
 cd "$(dirname "$0")"/..
-PROJECT_DIR="$(pwd)"
+NOOK_DIR="$(pwd)"
 
 ########## ensure that node modules have been installed
 
 echo ""
 echo "node version $(node --version)"
-if [ ! -d "$PROJECT_DIR/functions/node_modules" ]; then
-  echo "before deploying, run 'npm install' in $PROJECT_DIR/functions"
+if [ ! -d "$NOOK_DIR/functions/node_modules" ]; then
+  echo "before deploying, run 'npm install' in $NOOK_DIR/functions"
   exit 1
 fi
 
@@ -103,7 +103,7 @@ echo "{\"metadata\": [ {$DEPLOY_DATA} ] }" > public_metadata_nook_app.json
 
 # Deploy using the local firebase tool
 echo "deploying to $FIREBASE_CONSTANTS_PROJECT_ID firebase..."
-node $PROJECT_DIR/functions/node_modules/.bin/firebase \
+node $NOOK_DIR/functions/node_modules/.bin/firebase \
   deploy \
   --project $FIREBASE_CONSTANTS_PROJECT_ID \
   --public public
