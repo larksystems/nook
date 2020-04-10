@@ -21,7 +21,7 @@ class PubSubClient extends DocPubSubUpdate {
   PubSubClient(this.publishUrl, this.user);
 
   /// Publish the specified [payload] to the [topic].
-  /// Callers should catch and handle PubSubException.
+  /// Callers should catch and handle HTTP exceptions (e.g. PubSubException, ClientException).
   Future<void> publish(String topic, Map payload) async {
     // a simplistic way to correlate publish log entries
     int publishId = _publishCount++;
