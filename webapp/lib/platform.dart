@@ -15,6 +15,7 @@ const _SEND_TO_MULTI_IDS_ACTION = "send_to_multi_ids";
 
 DocStorage _docStorage;
 PubSubClient _pubsubInstance;
+PubSubClient _uptimePubSubInstance;
 
 init() async {
   await platform_constants.init();
@@ -42,6 +43,133 @@ init() async {
     _docStorage = FirebaseDocStorage(firebase.firestore());
     _pubsubInstance = new PubSubClient(platform_constants.publishUrl, user);
     controller.command(controller.UIAction.userSignedIn, new controller.UserData(user.displayName, user.email, photoURL));
+    _uptimePubSubInstance = new PubSubClient(platform_constants.statuszUrl, user);
+    initUptimeMonitoring();
+  });
+}
+
+void initUptimeMonitoring() {
+  const fiveSeconds = const Duration(seconds: 5);
+  const oneMinute = const Duration(minutes: 1);
+
+  List<bool> lastThreePingsQueue = [true, true, true]; // If all are Used for marking network disconnect
+  List<bool> lastFivePingsQueue = [true, true, true, true, true]; // Used for marking network connected
+  Timer fiveSecTimer;
+  SystemMessage systemMessage = new SystemMessage()
+      ..text = "Warning: your internet connection is unstable, some messages may not send properly. Trying to reconnect...";
+
+  Timer Function(Timer) newFiveSecTimer = (Timer t) {
+    return new Timer.periodic(fiveSeconds, (Timer tt) {
+      Map payload = {
+        'ping': '${t.tick}.${tt.tick}',
+        'lastUserActivity': controller.lastUserActivity.toIso8601String()
+      };
+      _uptimePubSubInstance.publish(platform_constants.statuszTopic, payload).then(
+        (_) {
+          log.success('Uptime ping ${t.tick}.${tt.tick} successful');
+
+          // Add success to the three pings queue
+          lastThreePingsQueue.add(true);
+          lastThreePingsQueue.removeAt(0);
+
+          // Add success to the five pings queue
+          lastFivePingsQueue.add(true);
+          lastFivePingsQueue.removeAt(0);
+
+          // Hide the warning banner if all of the last five pings were successful, and cancel the 5 sec timer
+          if (lastFivePingsQueue.length != lastFivePingsQueue.where((v) => v).length) {
+            return;
+          }
+
+          controller.systemMessages.remove(systemMessage);
+          controller.command(controller.UIAction.updateSystemMessages, new controller.SystemMessagesData(controller.systemMessages));
+          fiveSecTimer?.cancel();
+        },
+        onError: (error, trace) {
+          log.warning('Uptime ping ${t.tick}.${tt.tick} failed: $error, $trace');
+
+          // Add failure to the three pings queue
+          lastThreePingsQueue.add(false);
+          lastThreePingsQueue.removeAt(0);
+
+          // Add failure to the five pings queue
+          lastFivePingsQueue.add(false);
+          lastFivePingsQueue.removeAt(0);
+
+          // If all the last three pings failed, show the banner
+          if (lastThreePingsQueue.length != lastThreePingsQueue.where((v) => !v).length) {
+            return;
+          }
+
+          if (controller.systemMessages.contains(systemMessage)) {
+            // Message is already displayed, nothing else to do.
+            return;
+          }
+          controller.systemMessages.add(systemMessage);
+          controller.command(controller.UIAction.updateSystemMessages, new controller.SystemMessagesData(controller.systemMessages));
+        });
+    });
+  };
+
+  new Timer.periodic(oneMinute, (Timer t) {
+    Map payload = {
+      'ping': '${t.tick}',
+      'lastUserActivity': controller.lastUserActivity.toIso8601String()
+    };
+    _uptimePubSubInstance.publish(platform_constants.statuszTopic, payload).then(
+      (_) {
+        log.success('Uptime ping ${t.tick} successful');
+
+        // Cancel the previous 5 sec timer if it's still going.
+        fiveSecTimer?.cancel();
+
+        // Add success to the three pings queue
+        lastThreePingsQueue.add(true);
+        lastThreePingsQueue.removeAt(0);
+
+        // Add success to the five pings queue
+        lastFivePingsQueue.add(true);
+        lastFivePingsQueue.removeAt(0);
+
+        // Hide the warning banner if the last five pings were successful.
+        if (lastFivePingsQueue.length == lastFivePingsQueue.where((v) => v).length) {
+          controller.systemMessages.remove(systemMessage);
+          controller.command(controller.UIAction.updateSystemMessages, new controller.SystemMessagesData(controller.systemMessages));
+          return;
+        }
+
+        // Some of the previous 5 pings failed, continue running the 5 sec timer until we get 5 sequential pings
+        fiveSecTimer = newFiveSecTimer(t);
+      },
+      onError: (error, trace) {
+        log.warning('Uptime ping ${t.tick} failed: $error, $trace');
+
+        // Cancel the previous 5 sec timer if it's still going.
+        fiveSecTimer?.cancel();
+
+        // Add failure to the three pings queue
+        lastThreePingsQueue.add(false);
+        lastThreePingsQueue.removeAt(0);
+
+        // Add failure to the five pings queue
+        lastFivePingsQueue.add(false);
+        lastFivePingsQueue.removeAt(0);
+
+        // Start the 5 sec timer
+        fiveSecTimer = newFiveSecTimer(t);
+
+        // If all the last three pings failed, show the banner
+        if (lastThreePingsQueue.length != lastThreePingsQueue.where((v) => !v).length) {
+          return;
+        }
+
+        if (controller.systemMessages.contains(systemMessage)) {
+          // Message is already displayed, nothing else to do.
+          return;
+        }
+        controller.systemMessages.add(systemMessage);
+        controller.command(controller.UIAction.updateSystemMessages, new controller.SystemMessagesData(controller.systemMessages));
+      });
   });
 }
 
