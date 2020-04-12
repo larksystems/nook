@@ -2,30 +2,30 @@ import 'dart:collection';
 
 import 'model.g.dart' as g;
 export 'model.g.dart' hide
-  Conversation,
-  ConversationCollectionListener,
   MessageCollectionListener,
   MessageDirection_fromStringOverride,
   TagType_fromStringOverride;
 
-class DeidentifiedPhoneNumber {
-  String value;
-  String shortValue;
-
-  static DeidentifiedPhoneNumber fromConversationId(String conversationId) {
-    String shortValue = conversationId.split('uuid-')[1].split('-')[0];
-    return new DeidentifiedPhoneNumber()
-      ..shortValue = shortValue
-      ..value = conversationId;
-  }
+extension UserConfigurationUtil on g.UserConfiguration {
+  g.UserConfiguration applyDefaults(g.UserConfiguration defaults) =>
+    new g.UserConfiguration()
+      ..docId = null
+      ..keyboardShortcutsEnabled = this.keyboardShortcutsEnabled ?? defaults.keyboardShortcutsEnabled
+      ..sendCustomMessagesEnabled = this.sendCustomMessagesEnabled ?? defaults.sendCustomMessagesEnabled
+      ..sendMultiMessageEnabled = this.sendMultiMessageEnabled ?? defaults.sendMultiMessageEnabled
+      ..tagPanelVisibility = this.tagPanelVisibility ?? defaults.tagPanelVisibility;
 }
 
-class Conversation extends g.Conversation {
-  static const collectionName = g.Conversation.collectionName;
+extension ConversationListShardUtil on g.ConversationListShard {
+  String get conversationListRoot => docId != null
+    ? "/${g.ConversationListShard.collectionName}/$docId/conversations"
+    : "/nook_conversations";
 
-  DeidentifiedPhoneNumber deidentifiedPhoneNumber;
+  String get displayName => name ?? docId;
+}
 
-  String get documentPath => "$collectionName/${deidentifiedPhoneNumber.value}";
+extension ConversationUtil on g.Conversation {
+  String get shortDeidentifiedPhoneNumber => docId.split('uuid-')[1].split('-')[0];
 
   /// Return the most recent inbound message, or `null`
   g.Message get mostRecentMessageInbound {
@@ -38,14 +38,7 @@ class Conversation extends g.Conversation {
     return null;
   }
 
-  static Conversation fromSnapshot(g.DocSnapshot doc) {
-    var conversation = Conversation();
-    g.Conversation.fromSnapshot(doc, conversation);
-    return conversation
-      ..deidentifiedPhoneNumber = DeidentifiedPhoneNumber.fromConversationId(doc.id);
-  }
-
-  static Comparator<Conversation> mostRecentInboundFirst = (c1, c2) {
+  static int mostRecentInboundFirst(g.Conversation c1, g.Conversation c2) {
     var m1 = c1.mostRecentMessageInbound;
     var m2 = c2.mostRecentMessageInbound;
     if (m1 == null) {
@@ -64,19 +57,57 @@ class Conversation extends g.Conversation {
     }
     var result = m2.datetime.compareTo(m1.datetime);
     return result != 0 ? result : c2.hashCode.compareTo(c1.hashCode);
-  };
-
-  static Future addTagId_forAll(g.DocPubSubUpdate pubSubClient, List<Conversation> docs, String newValue) {
-    return g.Conversation.addToTagId_forAll(pubSubClient, docs, newValue);
-  }
-
-  static Future<bool> setUnread_forAll(g.DocPubSubUpdate pubSubClient, List<Conversation> docs, bool newValue) {
-    return g.Conversation.setUnread_forAll(pubSubClient, docs, newValue);
   }
 }
-typedef ConversationCollectionListener(List<Conversation> changes);
 
-UnmodifiableListView<g.Tag> tagIdsToTags(Iterable<String> tagIds, Iterable<g.Tag> allTags) {
+extension MessageUtil on g.Message {
+  /// Add [tagId] to tagIds in this Message.
+  /// Callers should catch and handle IOException.
+  Future<void> addTagId(g.DocPubSubUpdate pubSubClient, g.Conversation conversation, String tagId) async {
+    if (tagIds.contains(tagId)) return;
+    tagIds.add(tagId);
+    return pubSubClient.publishDocAdd(g.Conversation.collectionName, <String>[
+      conversation.docId
+    ], {
+      "messages/${_messageIndex(conversation)}/tags": [tagId]
+    });
+  }
+
+  /// Remove [tagId] from tagIds in this Message.
+  /// Callers should catch and handle IOException.
+  Future<void> removeTagId(g.DocPubSubUpdate pubSubClient, g.Conversation conversation, String tagId) async {
+    if (!tagIds.contains(tagId)) return;
+    tagIds.remove(tagId);
+    return pubSubClient
+        .publishDocRemove(g.Conversation.collectionName, <String>[
+      conversation.docId
+    ], {
+      "messages/${_messageIndex(conversation)}/tags": [tagId]
+    });
+  }
+
+  Future<void> setTranslation(g.DocPubSubUpdate pubSubClient, g.Conversation conversation, String newTranslation) async {
+    if (translation == newTranslation) return;
+    translation = newTranslation;
+    return pubSubClient.publishDocChange(
+        g.Conversation.collectionName, <String>[
+      conversation.docId
+    ], {
+      "messages/${_messageIndex(conversation)}/translation": newTranslation
+    });
+  }
+
+  /// Return the index of this message within the given conversations list of messages.
+  int _messageIndex(g.Conversation conversation) {
+    // TODO Consider switching to a message-id independent of conversation
+    var index = conversation.messages.indexOf(this);
+    if (index < 0) throw Exception("Cannot find message in conversation");
+    return index;
+  }
+}
+
+UnmodifiableListView<g.Tag> tagIdsToTags(
+    Iterable<String> tagIds, Iterable<g.Tag> allTags) {
   var tags = <g.Tag>[];
   for (var id in tagIds) {
     var tag = allTags.firstWhere((tag) => tag.tagId == id, orElse: () {

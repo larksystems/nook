@@ -4,19 +4,22 @@
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
-from core_data_modules.logging import Logger
+from katikati_pylib.logging import logging
+import tool_utils
 import time
-
+import argparse
 import json
 import sys
 
-log = Logger(__name__)
+log = None
 
 firebase_client = None
 
 def init(CRYPTO_TOKEN_PATH):
     global firebase_client
-    log.info("Setting up Firebase client")    
+    global log
+    log = logging.Logger(__file__, CRYPTO_TOKEN_PATH)
+    log.info("Setting up Firebase client")
     firebase_cred = credentials.Certificate(CRYPTO_TOKEN_PATH)
     firebase_admin.initialize_app(firebase_cred)
     firebase_client = firestore.client()
@@ -43,22 +46,52 @@ def push_document_to_firestore(collection_root, data):
     del data["__id"]
     del data["__subcollections"]
 
-    firebase_client.document(ref_path).set(data)
+    field_data = {}
+    for field in data:
+        if field in sub_collections:
+            # it's not actually a field, it's a collection, process these later
+            continue
+        field_data[field] = data[field]
+    firebase_client.document(ref_path).set(field_data)
+
+    for sub_collection in sub_collections:
+        push_collection_to_firestore(f"{ref_path}/{sub_collection}", data[sub_collection])
 
 
-if (len(sys.argv) != 3):
-    print ("Usage python json_to_firebase.py crypto_token input_path")
-    exit(1)
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("crypto_token_file",
+                        help="path to Firebase crypto token file")
+    parser.add_argument("input_path",
+                        help="path to the input backup file.")
 
-CRYPTO_TOKEN_PATH = sys.argv[1]
-INPUT_PATH = sys.argv[2]
-init(CRYPTO_TOKEN_PATH)
+    def _usage_and_exit(error_message):
+        print(error_message)
+        print()
+        parser.print_help()
+        exit(1)
 
-with open(INPUT_PATH, 'r') as f:
-    data_dict = json.load(f)
+    if len(sys.argv) != 3:
+        _usage_and_exit("Wrong number of arguments")
+    args = parser.parse_args(sys.argv[1:])
 
-for collection_root in data_dict.keys():
-    documents = data_dict[collection_root]
-    push_collection_to_firestore(collection_root, documents)
+    CRYPTO_TOKEN_PATH = args.crypto_token_file
+    INPUT_PATH = args.input_path
 
-log.info(f"Import done")
+    init(CRYPTO_TOKEN_PATH)
+
+
+    with open(INPUT_PATH, 'r') as f:
+        data_dict = json.load(f)
+
+    collection_keys = list(data_dict.keys())
+
+    short_id = tool_utils.short_id()
+    log.audit(f"json_to_firebase: JobID ({short_id}), keys to download {json.dumps(collection_keys)}")
+
+    for collection_root in collection_keys:
+        documents = data_dict[collection_root]
+        push_collection_to_firestore(collection_root, documents)
+
+    log.info(f"Import done")
+    log.notify(f"json_to_firebase completed: JobID {short_id}")

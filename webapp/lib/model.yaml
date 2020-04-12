@@ -1,8 +1,12 @@
+ConversationListShard:
+  firebaseCollectionName: 'nook_conversation_shards'
+  name: 'string'
+
 Conversation:
   firebaseCollectionName: 'nook_conversations'
   demographicsInfo: 'map string'
   tags: 'publishable set string tagIds'
-  messages: 'updatable array Message'
+  messages: 'array Message'
   notes: 'publishable string'
   unread: 'publishable bool, true'
 
@@ -11,9 +15,10 @@ Message:
   direction: 'MessageDirection, MessageDirection.Out'
   datetime: 'datetime'
   status: MessageStatus
-  tags: 'updatable array string tagIds'
+  tags: 'array string tagIds'
   text: 'string'
-  translation: 'updatable string'
+  translation: 'string'
+  id: 'string'
 
 MessageDirection:
   dartType: 'enum'
@@ -37,12 +42,14 @@ SuggestedReply:
   text: 'string'
   translation: 'publishable string'
   shortcut: 'string'
+  seq_no: 'int seqNumber'
+  category: 'string'
 
 Tag:
   firebaseDocId: 'string tagId'
-  text: 'updatable string'
-  type: 'updatable TagType, TagType.Normal'
-  shortcut: 'updatable string'
+  text: 'string'
+  type: 'TagType, TagType.Normal'
+  shortcut: 'string'
 
 TagType:
   dartType: 'enum'
@@ -56,3 +63,11 @@ SystemMessage:
   firebaseDocId: 'string msgId'
   text: string
   expired: 'bool, false'
+
+UserConfiguration:
+  firebaseCollectionName: 'users'
+  firebaseDocId: 'string userId'
+  keyboard_shortcuts_enabled: 'bool keyboardShortcutsEnabled'
+  send_custom_messages_enabled: 'bool sendCustomMessagesEnabled'
+  send_multi_message_enabled: 'bool sendMultiMessageEnabled'
+  tag_panel_visibility: 'bool tagPanelVisibility'

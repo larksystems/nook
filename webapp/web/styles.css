@@ -18,7 +18,7 @@ body {
 header {
     flex: 0 0 auto;
     width: 100%;
-    height: 50px;
+    height: 30px;
     border-bottom: 1px solid #ddd;
     display: flex;
     align-items: stretch;
@@ -38,16 +38,6 @@ main {
 .tag-panel {
     display: flex;
     flex-direction: column;
-}
-
-.conversation-panel {
-    width: 40%;
-}
-
-.conversation-list-panel,
-.reply-panel,
-.tag-panel {
-    width: 20%;
 }
 
 .conversation-list {
@@ -85,8 +75,7 @@ main {
 
 .tags-menu__container {
     position: absolute;
-    max-width: 250px;
-    min-width: 150px;
+    width: 450px;
     height: auto;
     top: auto;
     bottom: 100%;
@@ -95,6 +84,16 @@ main {
     background: white;
     padding: 8px;
     margin: 16px;
+}
+
+.tags-menu__container::before {
+    content: '';
+    width: 150px;
+    height: 100%;
+    background: white;
+    opacity: 0;
+    position: absolute;
+    left: -150px;
 }
 
 .conversation-list-panel {
@@ -111,6 +110,11 @@ main {
     text-align: left;
     padding: 12px 8px;
     color: #666;
+}
+
+.panel-title.panel-title--multiple-cols {
+    display: flex;
+    justify-content: space-between;
 }
 
 .conversation-list-header {
@@ -130,6 +134,12 @@ main {
 .conversation-list-header__mark-unread {
     flex: 0 0 auto;
     padding: 12px;
+}
+
+.select-conversation-list-message {
+    margin: auto;
+    padding-top: 50px;
+    font-weight: bold;
 }
 
 .conversation-list__item {
@@ -159,6 +169,11 @@ main {
 .summary-message {
     padding: 8px;
     flex: 1 1 auto;
+}
+
+.summary-message .summary-message__id {
+    color: #666;
+    font-size: 0.8em;
 }
 
 .messages {
@@ -252,10 +267,12 @@ main {
 
 .conversation-summary__tags {
     display: flex;
+    flex-wrap: wrap;
     place-content: center;
 }
 
-.notes-box {
+.notes-box,
+.new-message-box {
     flex: 0 0 auto;
     width: 100%;
     height: 150px;
@@ -265,12 +282,17 @@ main {
     overflow-y: scroll;
 }
 
+.new-message-box {
+    height: 50px;
+}
+
 .notes-box--fullscreen {
     flex: 1 1 auto;
     height: auto;
 }
 
-.notes-box__textarea {
+.notes-box__textarea,
+.new-message-box__textarea {
     resize: none;
     border: none;
     border-top: 1px solid #ddd;
@@ -289,22 +311,13 @@ main {
     margin: 0 6px;
 }
 
-.title {
-    font-weight: 900;
-    font-size: 18px;
-    line-height: 27px;
-    color: #666;
-    padding: 0 16px 0 8px;
-}
-
 .menu__buttons {
     display: flex;
     align-items: center;
 }
 
 .menu__button {
-    padding: 3px 12px 12px;
-    margin-top: 11px;
+    padding: 3px 4px 4px;
     cursor: pointer;
     border: 1px solid white;
     border-bottom: none;
@@ -318,13 +331,33 @@ main {
 .menu__button:hover {
     background-color: #f9f9f9;
     border-bottom: 1px solid #ddd;
-    padding-bottom: 11px;
+    padding-bottom: 3px;
 }
 
 .menu__button:active {
     background-color: #eee;
     border-bottom: 1px solid #ddd;
-    padding-bottom: 11px;
+    padding-bottom: 3px;
+}
+
+.warning-background {
+    background: #ffcabe;
+}
+
+.conversation-list-select-header {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    float: left;
+    margin: 0 6px;
+}
+
+.conversation-list-select-label {
+    padding-right: 5px;
+}
+
+.conversation-list-select {
+    flex: 0 1 auto;
 }
 
 .auth {
@@ -336,8 +369,8 @@ main {
 }
 
 .user-pic {
-    width: 30px;
-    height: 30px;
+    width: 20px;
+    height: 20px;
     border-radius: 2px;
     background-size: contain;
     margin: 6px;
@@ -370,4 +403,8 @@ img.partner-logo--unicef {
 .project-description p {
     margin: 16px 0;
     text-align: center;
+}
+
+.hidden {
+    display: none;
 }

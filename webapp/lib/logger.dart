@@ -25,6 +25,15 @@ class Logger {
     }
   }
 
+  void success(String s) {
+    switch (logLevel) {
+      case LogLevel.ERROR:
+        return;
+      default:
+        _log(s);
+    }
+  }
+
   void debug(String s) {
     switch (logLevel) {
       case LogLevel.WARNING:

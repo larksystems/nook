@@ -3,15 +3,17 @@ import 'dart:html';
 
 import 'package:intl/intl.dart';
 
+import 'controller.dart';
 import 'dom_utils.dart';
 import 'logger.dart';
-import 'controller.dart';
+import 'model.dart';
 import 'lazy_list_view_model.dart';
 
 
 Logger log = new Logger('view.dart');
 
 MenuView menuView;
+ConversationListSelectHeader conversationListSelectView;
 ConversationListPanelView conversationListPanelView;
 ConversationFilter get conversationFilter => conversationListPanelView.conversationFilter;
 ConversationPanelView conversationPanelView;
@@ -26,6 +28,7 @@ BannerView bannerView;
 
 void init() {
   menuView = new MenuView();
+  conversationListSelectView = new ConversationListSelectHeader();
   conversationListPanelView = new ConversationListPanelView();
   conversationPanelView = new ConversationPanelView();
   replyPanelView = new ReplyPanelView();
@@ -36,10 +39,11 @@ void init() {
   snackbarView = new SnackbarView();
   bannerView = new BannerView();
 
-  querySelector('header').insertAdjacentElement('beforeBegin', bannerView.bannerElement);
   querySelector('header')
-    ..append(menuView.menuElement)
-    ..append(authHeaderView.authElement);
+      ..insertAdjacentElement('beforeBegin', bannerView.bannerElement)
+      ..append(conversationListSelectView.panel)
+      ..append(menuView.menuElement)
+      ..append(authHeaderView.authElement);
 
   document.onKeyDown.listen((event) => command(UIAction.keyPressed, new KeyPressData(event.key)));
 }
@@ -76,6 +80,7 @@ void showOutboxView() {
 }
 
 void showSignedOutView() {
+  conversationListSelectView.panel.style.visibility = 'hidden';
   clearMain();
 
   querySelector('main').append(authMainView.authElement);
@@ -93,12 +98,35 @@ void clearMain() {
   outboxPanelView.remove();
 }
 
+void showTagPanel(bool show) {
+  if (show) {
+    tagPanelView.tagPanel.classes.toggle('hidden', false);
+    conversationListPanelView.conversationListPanel.classes.add('w-20');
+    conversationPanelView.conversationPanel.classes.add('w-40');
+    replyPanelView.replyPanel.classes.add('w-25');
+    tagPanelView.tagPanel.classes.add('w-15');
+    return;
+  }
+  tagPanelView.tagPanel.classes.toggle('hidden', true);
+  conversationListPanelView.conversationListPanel.classes.add('w-25');
+  conversationPanelView.conversationPanel.classes.add('w-45');
+  replyPanelView.replyPanel.classes.add('w-30');
+}
+
 bool sendingMultiMessagesUserConfirmation(int noMessages) {
   return window.confirm('Are you sure you want to send $noMessages SMS message${noMessages == 1 ? "" : "s" }?');
 }
 
 bool taggingMultiConversationsUserConfirmation(int noConversations) {
   return window.confirm('Are you sure you want to tag $noConversations conversation${noConversations == 1 ? "" : "s" }?');
+}
+
+bool sendingManualMessageUserConfirmation(String messageText) {
+  return window.confirm('Are you sure you want to send the following message?\n\n$messageText');
+}
+
+bool sendingManualMultiMessageUserConfirmation(String messageText, int noMessages) {
+  return window.confirm('Are you sure you want to send the following message to $noMessages conversation${noMessages == 1 ? "" : "s" }?\n\n$messageText');
 }
 
 void showNormalStatus(String text) {
@@ -129,13 +157,11 @@ void makeEditable(Element element, {void onChange(), void onEnter()}) {
     });
 }
 
-const APPLICATION_TITLE_TEXT = 'Nook';
 const CONVERSATION_VIEW_TEXT = 'Conversation view';
 const MESSAGES_OUTBOX_VIEW_TEXT = 'Outbox view';
 
 class MenuView {
   DivElement menuElement;
-  DivElement _uiTitle;
   DivElement _buttonContainer;
   DivElement _conversationViewButton;
   DivElement _outboxViewButton;
@@ -143,11 +169,6 @@ class MenuView {
   MenuView() {
     menuElement = new DivElement()
       ..classes.add('menu');
-
-    _uiTitle = new DivElement()
-      ..text = APPLICATION_TITLE_TEXT
-      ..classes.add('title');
-    menuElement.append(_uiTitle);
 
     _conversationViewButton = new DivElement()
       ..classes.add('menu__button')
@@ -184,7 +205,7 @@ class MenuView {
 }
 
 const REPLY_PANEL_TITLE = 'Suggested responses';
-const TAG_PANEL_TITLE = 'Available tags';
+const TAG_PANEL_TITLE = 'Tags';
 const ADD_REPLY_INFO = 'Add new suggested response';
 const ADD_TAG_INFO = 'Add new tag';
 const MARK_UNREAD_INFO = 'Mark unread';
@@ -198,6 +219,8 @@ class ConversationPanelView {
   DivElement _conversationIdCopy;
   DivElement _info;
   DivElement _tags;
+  DivElement _newMessageBox;
+  TextAreaElement _newMessageTextArea;
   AfterDateFilterView _afterDateFilterView;
 
   List<MessageView> _messageViews = [];
@@ -236,6 +259,36 @@ class ConversationPanelView {
     _messages = new DivElement()
       ..classes.add('messages');
     conversationPanel.append(_messages);
+
+    _newMessageBox = new DivElement()
+      ..classes.add('new-message-box');
+    if (!currentConfig.sendCustomMessagesEnabled) {
+      showCustomMessageBox(false);
+    }
+    conversationPanel.append(_newMessageBox);
+
+    _newMessageTextArea = new TextAreaElement()
+      ..classes.add('new-message-box__textarea');
+    makeEditable(_newMessageTextArea, onChange: () {
+      if (_newMessageTextArea.value.length >= SMS_MAX_LENGTH) {
+        _newMessageTextArea.classes.toggle('warning-background', true);
+        return;
+      }
+      _newMessageTextArea.classes.toggle('warning-background', false);
+    });
+    _newMessageBox.append(_newMessageTextArea);
+
+    var buttonElement = new DivElement()
+      ..classes.add('new-message-box__send-button')
+      ..text = SEND_REPLY_BUTTON_TEXT
+      ..onClick.listen((_) {
+        if (_newMessageTextArea.value.length >= SMS_MAX_LENGTH) {
+          showWarningStatus('Message needs to be under $SMS_MAX_LENGTH characters.');
+          return;
+        }
+        command(UIAction.sendManualMessage, new ManualReplyData(_newMessageTextArea.value));
+      });
+    _newMessageBox.append(buttonElement);
 
     _afterDateFilterView = AfterDateFilterView();
     conversationPanel.append(_afterDateFilterView.panel);
@@ -276,6 +329,7 @@ class ConversationPanelView {
     _conversationIdCopy.dataset['copy-value'] = '';
     _info.text = '';
     _messageViews = [];
+    clearNewMessageBox();
 
     int tagsNo = _tags.children.length;
     for (int i = 0; i < tagsNo; i++) {
@@ -286,6 +340,14 @@ class ConversationPanelView {
     for (int i = 0; i < messagesNo; i++) {
       _messages.firstChild.remove();
     }
+  }
+
+  void clearNewMessageBox() {
+    _newMessageTextArea?.value = '';
+  }
+
+  void showCustomMessageBox(bool show) {
+    _newMessageBox.classes.toggle('hidden', !show);
   }
 
   void showAfterDateFilterPrompt(DateTime dateTime) {
@@ -335,7 +397,7 @@ class AfterDateFilterView {
     try {
       dateTime = parseAfterDateFilterText(_textArea.value);
     } on FormatException catch (e) {
-      snackbarView.showSnackbar("Invalid date/time format: ${e.message}", SnackbarNotificationType.error);
+      command(UIAction.showSnackbar, new SnackbarData("Invalid date/time format: ${e.message}", SnackbarNotificationType.error));
       return;
     }
     command(UIAction.updateAfterDateFilter, new AfterDateFilterData(AFTER_DATE_TAG_ID, dateTime));
@@ -387,7 +449,7 @@ class MessageView {
 
   static MessageView selectedMessageView;
 
-  MessageView(String text, DateTime dateTime, String conversationId, int messageIndex, {String translation = '', bool incoming = true, List<TagView> tags = const[]}) {
+  MessageView(String text, DateTime dateTime, String conversationId, int messageIndex, {String translation = '', bool incoming = true, List<TagView> tags = const[], MessageStatus status = null}) {
     message = new DivElement()
       ..classes.add('message')
       ..classes.add(incoming ? 'message--incoming' : 'message--outgoing')
@@ -425,6 +487,8 @@ class MessageView {
       ..classes.add('message__tags');
     tags.forEach((tag) => _messageTags.append(tag.tag));
     message.append(_messageTags);
+
+    setStatus(status);
   }
 
   set translation(String translation) => _messageTranslation.text = translation;
@@ -457,14 +521,23 @@ class MessageView {
     selectedMessageView?.message?.classes?.remove('message--selected');
     selectedMessageView = null;
   }
+
+  void setStatus(MessageStatus status) {
+    // TODO handle more types of status
+    if (status == MessageStatus.failed)
+      message.classes.add('message--failed');
+    else
+      message.classes.remove('message--failed');
+  }
 }
 
 final DateFormat _dateFormat = new DateFormat('E d MMM y');
 final DateFormat _dateFormatNoYear = new DateFormat('E d MMM');
-final DateFormat _hourFormat = new DateFormat('H:m');
+final DateFormat _hourFormat = new DateFormat('HH:mm');
 
 String _formatDateTime(DateTime dateTime) {
   DateTime now = DateTime.now();
+  return dateTime.toIso8601String(); // HACK(mariana): Temporary fix to have a sortable timestamp for each message
   DateTime localDateTime = dateTime.toLocal();
 
   if (_dateFormat.format(now) == _dateFormat.format(localDateTime)) {
@@ -593,6 +666,90 @@ class AfterDateFilterTagView extends FilterTagView {
   }
 }
 
+// A drop down to select which conversation list to display
+class ConversationListSelectHeader {
+  DivElement panel;
+  SelectElement _selectElement;
+  List<ConversationListShard> _shards;
+
+  ConversationListSelectHeader() {
+    panel = new DivElement()
+      ..classes.add('conversation-list-select-header')
+      ..style.visibility = 'hidden';
+
+    panel.append(
+      new SpanElement()
+        ..classes.add('conversation-list-select-label')
+        ..text = 'Conversation List:');
+
+    panel.append(
+      _selectElement = new SelectElement()
+        ..classes.add('conversation-list-select')
+        ..add(OptionElement(data: '... loading conversation lists ...'), null)
+        ..onChange.listen(shardSelected));
+  }
+
+  void updateConversationLists(List<ConversationListShard> shards) {
+    // TODO Consider displaying summary information about each shard... e.g. # of unread conversations
+    if (_shards == null) {
+      _selectElement.options.first.remove();
+      _shards = [];
+      if (shards.isEmpty) {
+        _shards.add(ConversationListShard()..name = 'nook_conversations');
+      } else {
+        _shards.addAll(shards);
+      }
+      if (_shards.length > 1) {
+        _selectElement.add(OptionElement(
+            data: 'Select the conversations to be displayed',
+            value: ConversationListData.NONE
+        ), null);
+      }
+      for (var shard in _shards) {
+        _selectElement.add(OptionElement(
+            data: shard.displayName,
+            value: shard.conversationListRoot
+        ), null);
+      }
+      if (_shards.length > 1) {
+        conversationListSelectView.panel.style.visibility = 'visible';
+      }
+      shardSelected();
+    } else {
+      bool shardingHasChanged = false;
+      for (var newShard in shards) {
+        shardingHasChanged = true;
+        int optionIndex = _shards.length > 1 ? 1 : 0;
+        for (int shardIndex = 0; shardIndex < _shards.length; ++shardIndex) {
+          if (_shards[shardIndex].docId == newShard.docId) {
+            shardingHasChanged = false;
+            var oldOption = _selectElement.options[optionIndex];
+            var isSelected = oldOption.selected;
+            oldOption.replaceWith(OptionElement(
+                data: newShard.displayName,
+                value: newShard.conversationListRoot,
+                selected: isSelected
+            ));
+            _shards[shardIndex] = newShard;
+            break;
+          }
+          ++optionIndex;
+        }
+        if (shardingHasChanged) {
+          break;
+        }
+      }
+      if (shardingHasChanged) {
+        // TODO Prevent all user changes until page is refreshed and display a system message indicating as much
+      }
+    }
+  }
+
+  void shardSelected([Event event]) {
+    command(UIAction.selectConversationList, ConversationListData(_selectElement.value));
+  }
+}
+
 class ConversationListPanelView {
   DivElement conversationListPanel;
   DivElement _conversationPanelTitle;
@@ -600,6 +757,7 @@ class ConversationListPanelView {
   LazyListViewModel _conversationList;
   CheckboxInputElement _selectAllCheckbox;
   DivElement _loadSpinner;
+  DivElement _selectConversationListMessage;
 
   ConversationFilter conversationFilter;
 
@@ -618,7 +776,7 @@ class ConversationListPanelView {
       ..classes.add('conversation-list-header__checkbox')
       ..title = 'Select all conversations'
       ..checked = false
-      ..onClick.listen((_) => _selectAllCheckbox.checked ? command(UIAction.enableMultiSelectMode, null) : command(UIAction.disableMultiSelectMode, null));
+      ..onClick.listen((_) => _selectAllCheckbox.checked ? command(UIAction.selectAllConversations, null) : command(UIAction.deselectAllConversations, null));
     panelHeader.append(_selectAllCheckbox);
 
     _conversationPanelTitle = new DivElement()
@@ -636,6 +794,12 @@ class ConversationListPanelView {
       ..classes.add('load-spinner');
     conversationListPanel.append(_loadSpinner);
 
+    _selectConversationListMessage = new DivElement()
+      ..classes.add('select-conversation-list-message')
+      ..append(SpanElement()..text = "Select a conversation list above")
+      ..hidden = true;
+    conversationListPanel.append(_selectConversationListMessage);
+
     var conversationListElement = new DivElement()
       ..classes.add('conversation-list');
     _conversationList = new LazyListViewModel(conversationListElement);
@@ -643,12 +807,53 @@ class ConversationListPanelView {
 
     conversationFilter = new ConversationFilter();
     conversationListPanel.append(conversationFilter.conversationFilter);
+
+    currentConfig.sendMultiMessageEnabled ? showCheckboxes() : hideCheckboxes();
   }
 
-  void addConversation(ConversationSummary conversationSummary, [int position]) {
-    _conversationList.addItem(conversationSummary, position);
-    _phoneToConversations[conversationSummary.deidentifiedPhoneNumber] = conversationSummary;
+  void updateConversationList(Set<Conversation> conversations) {
+    _phoneToConversations.removeWhere((String uuid, ConversationSummary summary) {
+      if (conversations.any((c) => c.docId == uuid)) return false;
+      _conversationList.removeItem(summary);
+      return true;
+    });
+    List<ConversationSummary> conversationsToAdd = [];
+    for (var conversation in conversations) {
+      ConversationSummary summary = _phoneToConversations[conversation.docId];
+      if (summary != null) {
+        updateConversationSummary(summary, conversation);
+        continue;
+      }
+      summary = new ConversationSummary(
+          conversation.docId,
+          conversation.messages.first.text,
+          conversation.unread);
+      conversationsToAdd.add(summary);
+    }
+    _conversationList.appendItems(conversationsToAdd);
+    for (var conversation in conversationsToAdd) {
+      _phoneToConversations[conversation.deidentifiedPhoneNumber] = conversation;
+    }
     _conversationPanelTitle.text = '${_phoneToConversations.length} conversations';
+  }
+
+  void addOrUpdateConversation(Conversation conversation) {
+    ConversationSummary summary = _phoneToConversations[conversation.docId];
+    if (summary != null) {
+      updateConversationSummary(summary, conversation);
+      return;
+    }
+    summary = new ConversationSummary(
+        conversation.docId,
+        conversation.messages.first.text,
+        conversation.unread);
+    _conversationList.addItem(summary, null);
+    _phoneToConversations[summary.deidentifiedPhoneNumber] = summary;
+    _conversationPanelTitle.text = '${_phoneToConversations.length} conversations';
+  }
+
+  void updateConversationSummary(ConversationSummary summary, Conversation conversation) {
+    conversation.unread ? summary._markUnread() : summary._markRead();
   }
 
   void selectConversation(String deidentifiedPhoneNumber) {
@@ -684,20 +889,35 @@ class ConversationListPanelView {
   void checkAllConversations() => _phoneToConversations.forEach((_, conversation) => conversation._check());
   void uncheckAllConversations() => _phoneToConversations.forEach((_, conversation) => conversation._uncheck());
   void showCheckboxes() {
+    _selectAllCheckbox.hidden = false;
     _phoneToConversations.forEach((_, conversation) => conversation._showCheckbox());
     _markUnread.multiSelectMode(true);
   }
   void hideCheckboxes() {
+    _selectAllCheckbox.hidden = true;
     _phoneToConversations.forEach((_, conversation) => conversation._hideCheckbox());
     _markUnread.multiSelectMode(false);
   }
+
+  void uncheckSelectAllCheckbox() => _selectAllCheckbox.checked = false;
 
   void hideLoadSpinner() {
     _loadSpinner.hidden = true;
   }
 
   void showLoadSpinner() {
+    hideSelectConversationListMessage();
     _loadSpinner.hidden = false;
+  }
+
+
+  void hideSelectConversationListMessage() {
+    _selectConversationListMessage.hidden = true;
+  }
+
+  void showSelectConversationListMessage() {
+    hideLoadSpinner();
+    _selectConversationListMessage.hidden = false;
   }
 }
 
@@ -766,6 +986,7 @@ class ConversationSummary with LazyListViewItem {
   bool _unread;
   bool _checked = false;
   bool _selected = false;
+  bool _checkboxHidden = true;
 
   ConversationSummary(this.deidentifiedPhoneNumber, this._text, this._unread);
 
@@ -777,21 +998,33 @@ class ConversationSummary with LazyListViewItem {
       ..classes.add('conversation-selector')
       ..title = 'Select conversation'
       ..checked = _checked
-      ..style.visibility = 'hidden'
+      ..hidden = _checkboxHidden
       ..onClick.listen((_) => _selectCheckbox.checked ? command(UIAction.selectConversation, new ConversationData(deidentifiedPhoneNumber))
                                                       : command(UIAction.deselectConversation, new ConversationData(deidentifiedPhoneNumber)));
+    currentConfig.sendMultiMessageEnabled ? _showCheckbox() : _hideCheckbox();
     conversationSummary.append(_selectCheckbox);
 
     var summaryMessage = new DivElement()
       ..classes.add('summary-message')
       ..dataset['id'] = deidentifiedPhoneNumber
-      ..text = _text
       ..onClick.listen((_) => command(UIAction.showConversation, new ConversationData(deidentifiedPhoneNumber)));
     if (_selected) conversationSummary.classes.add('conversation-list__item--selected');
     if (_unread) conversationSummary.classes.add('conversation-list__item--unread');
+    summaryMessage
+      ..append(
+        new DivElement()
+          ..classes.add('summary-message__id')
+          ..text = _shortDeidentifiedPhoneNumber)
+      ..append(
+        new DivElement()
+          ..classes.add('summary-message__text')
+          ..text = _text);
     conversationSummary.append(summaryMessage);
     return conversationSummary;
   }
+
+  // HACK(mariana): This should get extracted from the model as it gets computed there for the single conversation view
+  String get _shortDeidentifiedPhoneNumber => deidentifiedPhoneNumber.split('uuid-')[1].split('-')[0];
 
   @override
   void disposeElement() {
@@ -827,31 +1060,42 @@ class ConversationSummary with LazyListViewItem {
     if (_selectCheckbox != null) _selectCheckbox.checked = false;
   }
   void _showCheckbox() {
-    if (_selectCheckbox != null) _selectCheckbox.style.visibility = 'visible';
+    _checkboxHidden = false;
+    if (_selectCheckbox != null) _selectCheckbox.hidden = false;
   }
   void _hideCheckbox() {
-    if (_selectCheckbox != null) _selectCheckbox.style.visibility = 'hidden';
+    _checkboxHidden = true;
+    if (_selectCheckbox != null) _selectCheckbox.hidden = true;
   }
 }
 
 class ReplyPanelView {
   DivElement replyPanel;
   DivElement _panelTitle;
+  SelectElement _replyCategories;
   DivElement _replies;
   DivElement _replyList;
   DivElement _notes;
   TextAreaElement _notesTextArea;
 
   AddActionView _addReply;
+  List<ReplyActionView> _replyViews;
 
   ReplyPanelView() {
     replyPanel = new DivElement()
       ..classes.add('reply-panel');
 
-    _panelTitle = new DivElement()
+    var _panelTitle = new DivElement()
       ..classes.add('panel-title')
-      ..text = REPLY_PANEL_TITLE;
+      ..classes.add('panel-title--multiple-cols');
     replyPanel.append(_panelTitle);
+
+    _replyCategories = new SelectElement();
+    _replyCategories.onChange.listen((_) => command(UIAction.updateSuggestedRepliesCategory, new UpdateSuggestedRepliesCategoryData(_replyCategories.value)));
+
+    _panelTitle
+      ..append(new DivElement()..text = REPLY_PANEL_TITLE)
+      ..append(_replyCategories);
 
     _replies = new DivElement()
       ..classes.add('replies')
@@ -874,11 +1118,34 @@ class ReplyPanelView {
       command(UIAction.updateNote, new NoteData(_notesTextArea.value));
     });
     _notes.append(_notesTextArea);
+    _replyViews = [];
   }
 
   set noteText(String text) => _notesTextArea.value = text;
 
+  set selectedCategory(String category) {
+    int index = _replyCategories.children.indexWhere((Element option) => (option as OptionElement).value == category);
+    if (index == -1) {
+      showWarningStatus("Couldn't find $category in list of suggested replies category, using first");
+      _replyCategories.selectedIndex = 0;
+      command(UIAction.updateSuggestedRepliesCategory, new UpdateSuggestedRepliesCategoryData(_replyCategories.value));
+      return;
+    }
+    _replyCategories.selectedIndex = index;
+  }
+
+  set categories(List<String> categories) {
+    _replyCategories.children.clear();
+    for (var category in categories) {
+      _replyCategories.append(
+        new OptionElement()
+          ..value = category
+          ..text = category);
+    }
+  }
+
   void addReply(ActionView action) {
+    _replyViews.add(action);
     _replyList.append(action.action);
   }
 
@@ -887,17 +1154,27 @@ class ReplyPanelView {
     for (int i = 0; i < repliesNo; i++) {
       _replyList.firstChild.remove();
     }
+    _replyViews.clear();
     assert(_replyList.children.length == 0);
+  }
+
+  void showShortcuts(bool value) {
+    for (var view in _replyViews) {
+      view.showShortcut(value);
+    }
   }
 
   void disableReplies() {
     _replies.remove();
+    _panelTitle.children.clear();
     _panelTitle.text = 'Notes';
     _notes.classes.toggle('notes-box--fullscreen', true);
   }
 
   void enableReplies() {
-    _panelTitle.text = REPLY_PANEL_TITLE;
+    _panelTitle
+      ..append(new DivElement()..text = REPLY_PANEL_TITLE)
+      ..append(_replyCategories);
     replyPanel.insertBefore(_replies, _notes);
     _notes.classes.toggle('notes-box--fullscreen', false);
   }
@@ -908,9 +1185,11 @@ class TagPanelView {
   DivElement _tags;
   DivElement _tagList;
   DivElement _statusPanel;
+  InputElement _hideTagsCheckbox;
   Text _statusText;
 
   AddActionView _addTag;
+  List<TagActionView> _tagViews;
 
   TagPanelView() {
     tagPanel = new DivElement()
@@ -918,8 +1197,20 @@ class TagPanelView {
 
     var panelTitle = new DivElement()
       ..classes.add('panel-title')
-      ..text = TAG_PANEL_TITLE;
+      ..classes.add('panel-title--multiple-cols');
     tagPanel.append(panelTitle);
+
+    _hideTagsCheckbox = new InputElement(type: 'checkbox')
+      ..checked = true
+      ..onChange.listen((_) => command(UIAction.hideAgeTags, new ToggleData(_hideTagsCheckbox.checked)));
+
+    panelTitle
+      ..append(
+        new DivElement()..text = TAG_PANEL_TITLE)
+      ..append(
+        new DivElement()
+          ..append(_hideTagsCheckbox)
+          ..append(new SpanElement()..text = 'Hide demog tags'));
 
     _tags = new DivElement()
       ..classes.add('tags')
@@ -937,9 +1228,12 @@ class TagPanelView {
     tagPanel.append(_statusPanel
       ..classes.add('status-line')
       ..append(_statusText));
+
+    _tagViews = [];
   }
 
   void addTag(ActionView action) {
+    _tagViews.add(action);
     _tagList.append(action.action);
   }
 
@@ -950,20 +1244,28 @@ class TagPanelView {
     }
     assert(_tagList.children.length == 0);
   }
+
+  void showShortcuts(bool value) {
+    for (var view in _tagViews) {
+      view.showShortcut(value);
+    }
+  }
 }
 
 class ActionView {
   DivElement action;
+  DivElement _shortcutElement;
 
   ActionView(String text, String shortcut, String actionId, String buttonText) {
     action = new DivElement()
       ..classes.add('action')
       ..dataset['id'] = actionId;
 
-    var shortcutElement = new DivElement()
+    _shortcutElement = new DivElement()
       ..classes.add('action__shortcut')
       ..text = shortcut;
-    action.append(shortcutElement);
+    showShortcut(currentConfig.keyboardShortcutsEnabled);
+    action.append(_shortcutElement);
 
     var textElement = new DivElement()
       ..classes.add('action__description')
@@ -975,29 +1277,69 @@ class ActionView {
       ..text = buttonText;
     action.append(buttonElement);
   }
+
+  void showShortcut(bool value) {
+    _shortcutElement.classes.toggle('hidden', !value);
+  }
 }
 
 class ReplyActionView extends ActionView {
   ReplyActionView(String text, String translation, String shortcut, int replyIndex, String buttonText) : super(text, shortcut, '$replyIndex', buttonText) {
-    var descriptionElement = action.querySelector('.action__description')
-      ..text = '';
+    action.children.clear();
 
-    var actionText = new DivElement()
-      ..classes.add('action__text')
-      ..text = text;
-    descriptionElement.append(actionText);
+    _shortcutElement = new DivElement()
+      ..classes.add('action__shortcut')
+      ..text = shortcut;
+    showShortcut(currentConfig.keyboardShortcutsEnabled);
+    action.append(_shortcutElement);
 
-    var actionTranslation = new DivElement();
-    actionTranslation
-      ..classes.add('action__translation')
-      ..text = translation;
-    makeEditable(actionTranslation, onChange: () {
-      command(UIAction.updateTranslation, new ReplyTranslationData(actionTranslation.text, replyIndex));
-    });
-    descriptionElement.append(actionTranslation);
+    var textTranslationWrapper = new DivElement()
+      ..style.flex = '1 1 auto';
+    action.append(textTranslationWrapper);
 
-    var buttonElement = action.querySelector('.action__button');
-    buttonElement.onClick.listen((_) => command(UIAction.sendMessage, new ReplyData(replyIndex)));
+    { // Add text
+      var textWrapper = new DivElement()
+        ..style.display = 'flex';
+      textTranslationWrapper.append(textWrapper);
+
+      var descriptionElement = new DivElement()
+        ..classes.add('action__description');
+      textWrapper.append(descriptionElement);
+
+      var textElement = new DivElement()
+        ..classes.add('action__text')
+        ..text = text;
+      descriptionElement.append(textElement);
+
+      var buttonElement = new DivElement()
+        ..classes.add('action__button')
+        ..classes.add('action__button--float')
+        ..text = '$buttonText (En)'; // TODO(mariana): These project-specific preferences should be read from a project config file
+      buttonElement.onClick.listen((_) => command(UIAction.sendMessage, new ReplyData(replyIndex)));
+      textWrapper.append(buttonElement);
+    }
+
+    { // Add translation
+      var translationWrapper = new DivElement()
+        ..style.display = 'flex';
+      textTranslationWrapper.append(translationWrapper);
+
+      var descriptionElement = new DivElement()
+        ..classes.add('action__description');
+      translationWrapper.append(descriptionElement);
+
+      var translationElement = new DivElement()
+        ..classes.add('action__translation')
+        ..text = translation;
+      descriptionElement.append(translationElement);
+
+      var buttonElement = new DivElement()
+        ..classes.add('action__button')
+        ..classes.add('action__button--float')
+        ..text = '$buttonText (Swa)'; // TODO(mariana): These project-specific preferences should be read from a project config file
+      buttonElement.onClick.listen((_) => command(UIAction.sendMessage, new ReplyData(replyIndex, replyWithTranslation: true)));
+      translationWrapper.append(buttonElement);
+    }
   }
 }
 
@@ -1104,7 +1446,7 @@ class MarkUnreadActionView {
   }
 
   void markConversationsUnread([_]) {
-    command(UIAction.markConversationUnread, ConversationData(activeConversation.deidentifiedPhoneNumber.value));
+    command(UIAction.markConversationUnread, ConversationData(activeConversation.docId));
   }
 
   void multiSelectMode(bool enabled) {
@@ -1195,11 +1537,6 @@ class AuthMainView {
       ..classes.add('partner-logo--avf');
     logosContainer.append(avfLogo);
 
-    var unicefLogo = new ImageElement(src: 'assets/UNICEF-logo.svg')
-      ..classes.add('partner-logo')
-      ..classes.add('partner-logo--unicef');
-    logosContainer.append(unicefLogo);
-
     var shortDescription = new DivElement()
       ..classes.add('project-description')
       ..append(new ParagraphElement()..text = descriptionText1)
@@ -1243,13 +1580,6 @@ class UrlView {
     }
     return false;
   }
-}
-
-enum SnackbarNotificationType {
-  info,
-  success,
-  warning,
-  error
 }
 
 class SnackbarView {

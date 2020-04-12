@@ -1,0 +1,14 @@
+text,translation,shortcut
+This is a simple single line message.,Huu ni ujumbe rahisi wa laini moja.,s
+"This is a longer message with a comma, a full stop and a few random characters. --&","Hii ni ujumbe mrefu na comma, kusimamishwa kamili na herufi chache za nasibu. --&",
+"This is a message on multiple lines.
+- Line 1
+- Line 2
+- Line 3
+They should appear on separate lines","Huu ni ujumbe kwenye mistari mingi.
+- Mstari wa 1
+- Mstari wa 2
+- Mstari wa 3
+Wanapaswa kuonekana kwenye mistari tofauti",m
+This message has an emoji - 🦔. Can you see it?,Ujumbe huu una emoji - 🦔. Je! Unaweza kuiona?,?
+This message has an <html> tag. This should be displayed as plain text.,Ujumbe huu una tepe ya <html>. Hii inapaswa kuonyeshwa kama maandishi wazi.,

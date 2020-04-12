@@ -13,14 +13,20 @@ class LazyListViewModel {
 
   /// The DOM element used to display the items
   /// and typically displaying only a subset of the items.
-  final _listView;
+  final DivElement _listView;
 
   /// The vertical scroll distance of the DOM elements in the [_listView] in pixels.
-  int _scrollLength = 0;
+  int _scrollLength = _scrollPadMinHeight;
 
   /// The width of the [_listView] scrolling area in pixels
   /// or `null` if it has not been cached yet.
   int _scrollWidth = 10;
+
+  /// A DOM element used to pad the height of the scroll list
+  /// so that scrolling approximates the list size
+  /// without adding all of the individual DOM elements
+  final _scrollPad = DivElement();
+  static const _scrollPadMinHeight = 30;
 
   /// When the width of the scrolling area changes,
   /// a delayed [Future] is created to recalculate [_scrollLength].
@@ -38,7 +44,7 @@ class LazyListViewModel {
       position = 0;
     }
     _items.insert(position, item);
-    if (position < _listView.children.length) {
+    if (position < _listView.children.length - 1) {
       // Insert the item's element into the cached/visible DOM elements
       Node refChild = _listView.children[position];
       _listView.insertBefore(item.element, refChild);
@@ -48,25 +54,40 @@ class LazyListViewModel {
     }
   }
 
+  void appendItems(Iterable<LazyListViewItem> items) {
+    _items.addAll(items);
+    _updateCachedElements();
+  }
+
   void clearItems() {
     for (var item in _items) {
       item.disposeElement();
     }
+    _scrollPad.remove();
     assert(_listView.children.length == 0);
     _items.clear();
-    _scrollLength = 0;
+    _scrollLength = _scrollPadMinHeight;
   }
 
   void selectItem(LazyListViewItem item) {
     var position = _items.indexOf(item);
     // Add additional elements to the DOM as necessary
     // so that the conversation can be selected.
+    _scrollPad.remove();
     while (position >= _listView.children.length) {
       _listView.append(_items[_listView.children.length].element);
     }
     if (position >= 0) {
       item.element.scrollIntoView();
     }
+    _updateScrollPad();
+  }
+
+  void removeItem(LazyListViewItem item) {
+    _items.remove(item);
+    item.disposeElement();
+    _scrollPad.remove();
+    _updateScrollPad();
   }
 
   /// Update the [LazyListViewItem] elements cached/displayed in the DOM
@@ -80,18 +101,38 @@ class LazyListViewModel {
       // If the scroll area width changed, then recalculate the scroll length
       // because the item heights and thus the scroll length depends upon the scroll area width.
       _scrollLengthRecalc ??= new Future.delayed(const Duration(seconds: 2), () {
-        _scrollLength = _listView.children.fold(0, (len, element) => len + element.clientHeight);
+        _scrollLength = _listView.children.fold(0, (len, element)
+            => element == _scrollPad ? _scrollPadMinHeight : len + element.clientHeight);
         _scrollWidth = _listView.clientWidth;
         _scrollLengthRecalc = null;
       });
     }
 
+    _scrollPad.remove();
     var desiredScrollLength = _listView.scrollTop + 3 * _listView.clientHeight;
     while (_scrollLength < desiredScrollLength && _listView.children.length < _items.length) {
       var item = _items[_listView.children.length];
       _listView.append(item.element);
       _scrollLength += item.element.clientHeight;
     }
+    _updateScrollPad();
+  }
+
+  void _updateScrollPad() {
+    _scrollPad.remove();
+    int padHeight;
+    if (_listView.children.length < _items.length) {
+      // Add a DOM element to pad the height of the scroll list
+      // so that scrolling approximates the list size
+      // without adding all of the individual DOM elements
+      double aveItemHeight = _listView.scrollHeight / _listView.children.length;
+      int numItemsInPad = _items.length - _listView.children.length;
+      padHeight = aveItemHeight.floor() * numItemsInPad;
+    } else {
+      padHeight = _scrollPadMinHeight;
+    }
+    _scrollPad.style.height = "${padHeight}px";
+    _listView.append(_scrollPad);
   }
 
   void _windowResized(_ignored_) {

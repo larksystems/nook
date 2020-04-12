@@ -4,20 +4,23 @@
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
-from core_data_modules.logging import Logger
-from firebase_root_keys import root_keys
-import time
+from katikati_pylib.logging import logging
 
+from firebase_root_keys import root_keys
+import tool_utils
+import time
+import argparse
 import json
 import sys
 
-log = Logger(__name__)
-
+log = None
 firebase_client = None
 
 def init(CRYPTO_TOKEN_PATH):
     global firebase_client
-    log.info("Setting up Firebase client")    
+    global log
+    log = logging.Logger(__file__, CRYPTO_TOKEN_PATH)
+    log.info("Setting up Firebase client")
     firebase_cred = credentials.Certificate(CRYPTO_TOKEN_PATH)
     firebase_admin.initialize_app(firebase_cred)
     firebase_client = firestore.client()
@@ -56,7 +59,7 @@ def import_data_for_firestore_col_root(collection_root):
     log.info (f"import_data_for_firestore_col_root collection_root: {collection_root}")
 
     col = firebase_client.collection(collection_root)
-    
+
     time_start = time.perf_counter_ns()
     lst = list_for_collection_twophase_strategy(col)
     time_end = time.perf_counter_ns()
@@ -67,19 +70,44 @@ def import_data_for_firestore_col_root(collection_root):
     return lst
 
 
-if (len(sys.argv) != 3):
-    print ("Usage python firebase_to_json.py crypto_token output_path")
-    exit(1)
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("crypto_token_file",
+                        help="path to Firebase crypto token file")
+    parser.add_argument("output_path",
+                        help="path to the output backup file."
+                             "if the file already exists, this process will overwrite it.")
+    parser.add_argument("root_collections", nargs="*",
+                        help="a list of root collection keys to export, "
+                             "if not key is passed, it will use a hardcoded list of root keys")
 
-CRYPTO_TOKEN_PATH = sys.argv[1]
-OUTPUT_PATH = sys.argv[2]
-init(CRYPTO_TOKEN_PATH)
+    def _usage_and_exit(error_message):
+        print(error_message)
+        print()
+        parser.print_help()
+        exit(1)
 
-data = {}
+    if len(sys.argv) < 3:
+        _usage_and_exit("Wrong number of arguments")
+    args = parser.parse_args(sys.argv[1:])
 
-for key in root_keys:
-    data[key] = import_data_for_firestore_col_root(key)
+    CRYPTO_TOKEN_PATH = args.crypto_token_file
+    OUTPUT_PATH = args.output_path
 
-log.info(f"Writing to {OUTPUT_PATH}")
-json.dump(data, open(OUTPUT_PATH, 'w'), indent=2)
-log.info(f"Export done")
+    root_keys_to_export = root_keys
+    if len(args.root_collections) > 0:
+        root_keys_to_export = list(args.root_collections)
+
+    init(CRYPTO_TOKEN_PATH)
+
+    data = {}
+
+    short_id = tool_utils.short_id()
+    log.audit(f"firebase_to_json: JobID ({short_id}), keys to download {json.dumps(root_keys_to_export)}")
+    for key in root_keys_to_export:
+        data[key] = import_data_for_firestore_col_root(key)
+
+    log.info(f"Writing to {OUTPUT_PATH}")
+    json.dump(data, open(OUTPUT_PATH, 'w'), indent=2)
+    log.info(f"Export done")
+    log.notify(f"firebase_to_json completed: JobID {short_id}")

@@ -3,6 +3,7 @@ import "dart:convert";
 
 import 'package:firebase/firebase.dart' as firebase;
 import 'package:http/browser_client.dart';
+import 'package:http/http.dart';
 
 import 'logger.dart';
 import 'model.dart' show DocPubSubUpdate;
@@ -12,14 +13,23 @@ Logger log = new Logger('pubsub.dart');
 
 class PubSubClient extends DocPubSubUpdate {
   final String publishUrl;
+  static int _publishCount = 0;
 
   // The firebase user from which the user JWT auth token is obtained.
   final firebase.User user;
 
   PubSubClient(this.publishUrl, this.user);
 
-  Future<bool> publish(String topic, Map payload) async {
-    log.verbose("publish $topic $payload");
+  /// Publish the specified [payload] to the [topic].
+  /// Callers should catch and handle HTTP exceptions (e.g. PubSubException, ClientException).
+  Future<void> publish(String topic, Map payload) async {
+    // a simplistic way to correlate publish log entries
+    int publishId = _publishCount++;
+
+    log.verbose("publish #$publishId: $topic $payload");
+
+    payload["_authenticatedUserEmail"] = this.user.email;
+    payload["_authenticatedUserDisplayName"] = this.user.displayName;
 
     // The user JWT auth token used to authorize the pub/sub operation
     // is only valid for 1 hour. Don't cache it so that the firebase
@@ -31,17 +41,18 @@ class PubSubClient extends DocPubSubUpdate {
       "payload": payload,
       "fbUserIdToken": await user.getIdToken(),
     });
-    log.verbose("publish About to send: ${body}");
+    log.verbose("publish About to send #$publishId: ${body}");
 
     var client = new BrowserClient();
     var response = await client.post(publishUrl, body: body);
 
-    log.verbose("publish response ${response.statusCode}, ${response.body}");
-    return response.statusCode == 200;
+    log.verbose("publish response #$publishId: ${response.statusCode}, ${response.body}");
+    if (response.statusCode != 200)
+      throw PubSubException.fromResponse(response);
   }
 
   @override
-  Future<bool> publishDocAdd(String collectionName, List<String> docIds,
+  Future<void> publishDocAdd(String collectionName, List<String> docIds,
       Map<String, List<dynamic>> additions) {
     return publish(platform_constants.smsTopic, {
       "action": "update_firebase",
@@ -52,7 +63,7 @@ class PubSubClient extends DocPubSubUpdate {
   }
 
   @override
-  Future<bool> publishDocChange(String collectionName, List<String> docIds,
+  Future<void> publishDocChange(String collectionName, List<String> docIds,
       Map<String, dynamic> changes) {
     return publish(platform_constants.smsTopic, {
       "action": "update_firebase",
@@ -63,7 +74,7 @@ class PubSubClient extends DocPubSubUpdate {
   }
 
   @override
-  Future<bool> publishDocRemove(String collectionName, List<String> docIds,
+  Future<void> publishDocRemove(String collectionName, List<String> docIds,
       Map<String, List<dynamic>> removals) {
     return publish(platform_constants.smsTopic, {
       "action": "update_firebase",
@@ -72,4 +83,16 @@ class PubSubClient extends DocPubSubUpdate {
       "removals": removals,
     });
   }
+}
+
+class PubSubException implements Exception {
+  final String message;
+
+  static fromResponse(Response response) =>
+      PubSubException('[${response.statusCode}] ${response.reasonPhrase}, response.headers: ${response.headers}');
+
+  PubSubException(this.message);
+
+  @override
+  String toString() => 'PubSubException: $message';
 }
