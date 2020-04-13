@@ -69,7 +69,7 @@ extension MessageUtil on g.Message {
     return pubSubClient.publishDocAdd(g.Conversation.collectionName, <String>[
       conversation.docId
     ], {
-      "messages/${_messageIndex(conversation)}/tags": [tagId]
+      "messages/${_messageIdOrIndex(conversation)}/tags": [tagId]
     });
   }
 
@@ -82,7 +82,7 @@ extension MessageUtil on g.Message {
         .publishDocRemove(g.Conversation.collectionName, <String>[
       conversation.docId
     ], {
-      "messages/${_messageIndex(conversation)}/tags": [tagId]
+      "messages/${_messageIdOrIndex(conversation)}/tags": [tagId]
     });
   }
 
@@ -93,16 +93,16 @@ extension MessageUtil on g.Message {
         g.Conversation.collectionName, <String>[
       conversation.docId
     ], {
-      "messages/${_messageIndex(conversation)}/translation": newTranslation
+      "messages/${_messageIdOrIndex(conversation)}/translation": newTranslation
     });
   }
 
   /// Return the index of this message within the given conversations list of messages.
-  int _messageIndex(g.Conversation conversation) {
-    // TODO Consider switching to a message-id independent of conversation
+  String _messageIdOrIndex(g.Conversation conversation) {
+    if (this.id != null && this.id.isNotEmpty) return this.id;
     var index = conversation.messages.indexOf(this);
     if (index < 0) throw Exception("Cannot find message in conversation");
-    return index;
+    return index.toString();
   }
 }
 
