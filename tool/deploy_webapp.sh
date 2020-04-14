@@ -20,6 +20,7 @@ FIREBASE_CONSTANTS_DIR="$(pwd)"
 FIREBASE_CONSTANTS_FILENAME="$(basename "$FIREBASE_CONSTANTS")"
 FIREBASE_CONSTANTS_FILE="$FIREBASE_CONSTANTS_DIR/$FIREBASE_CONSTANTS_FILENAME"
 
+cd "$WORK_DIR"
 
 CRYPTO_TOKEN="$2"
 if [ ! -f "$CRYPTO_TOKEN" ]; then
@@ -31,6 +32,8 @@ cd "$(dirname "$CRYPTO_TOKEN")"
 CRYPTO_TOKEN_DIR="$(pwd)"
 CRYPTO_TOKEN_FILENAME="$(basename "$CRYPTO_TOKEN")"
 CRYPTO_TOKEN_FILE="$CRYPTO_TOKEN_DIR/$CRYPTO_TOKEN_FILENAME"
+
+cd "$WORK_DIR"
 
 ########## validate that the firebase constants file and the crypto token point to the same project
 
@@ -50,8 +53,6 @@ if [ "$FIREBASE_CONSTANTS_PROJECT_ID" != "$CRYPTO_TOKEN_PROJECT_ID" ]; then
 fi
 
 ########## cd to the nook project directory and get the absolute path
-
-cd "$WORK_DIR"
 
 cd "$(dirname "$0")"/..
 NOOK_DIR="$(pwd)"
