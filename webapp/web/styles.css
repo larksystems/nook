@@ -131,7 +131,7 @@ main {
     margin: 16px 8px auto;
 }
 
-.conversation-list-header__mark-unread {
+.conversation-list-header__buttons {
     flex: 0 0 auto;
     padding: 12px;
 }
@@ -172,6 +172,13 @@ main {
 }
 
 .summary-message .summary-message__id {
+    color: #666;
+    font-size: 0.8em;
+}
+
+.message-annotation {
+    white-space: nowrap;
+    padding: 8px;
     color: #666;
     font-size: 0.8em;
 }

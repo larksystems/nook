@@ -22,22 +22,38 @@ enum SnackbarNotificationType {
 // Functions to populate the views with model objects.
 
 void _populateConversationListPanelView(Set<model.Conversation> conversations, bool updateList) {
-  view.conversationListPanelView.hideLoadSpinner();
-  view.conversationListPanelView.hideSelectConversationListMessage();
+  _populateConversationListPanelViewWrapper(view.conversationListPanelView, conversations, updateList);
+}
+
+void _populateOutboxConversationListPanelView(Set<model.Conversation> conversations, bool updateList) {
+  _populateConversationListPanelViewWrapper(view.outboxConversationListPanelView, conversations, updateList);
+}
+
+void _populateConversationListPanelViewWrapper(view.ConversationListPanelView panelView, Set<model.Conversation> conversations, bool updateList) {
+  panelView.hideLoadSpinner();
+  panelView.hideSelectConversationListMessage();
   if (conversations.isEmpty || !updateList) {
-    view.conversationListPanelView.clearConversationList();
+    panelView.clearConversationList();
   }
-  view.conversationListPanelView.updateConversationList(conversations);
+  panelView.updateConversationList(conversations);
 }
 
 void _populateConversationPanelView(model.Conversation conversation) {
-  view.conversationPanelView.clear();
-  view.conversationPanelView
+  _populateConversationPanelViewWrapper(view.conversationPanelView, conversation);
+}
+
+void _populateOutboxConversationPanelView(model.Conversation conversation) {
+  _populateConversationPanelViewWrapper(view.outboxConversationPanelView, conversation);
+}
+
+void _populateConversationPanelViewWrapper(view.ConversationPanelView panelView, model.Conversation conversation) {
+  panelView.clear();
+  panelView
     ..deidentifiedPhoneNumber = conversation.docId
     ..deidentifiedPhoneNumberShort = conversation.shortDeidentifiedPhoneNumber
     ..demographicsInfo = conversation.demographicsInfo.values.join(', ');
   for (var tag in model.tagIdsToTags(conversation.tagIds, conversationTags)) {
-    view.conversationPanelView.addTags(new view.ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
+    panelView.addTags(new view.ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
   }
 
   for (int i = 0; i < conversation.messages.length; i++) {
@@ -46,7 +62,7 @@ void _populateConversationPanelView(model.Conversation conversation) {
     for (var tag in model.tagIdsToTags(message.tagIds, messageTags)) {
       tags.add(new view.MessageTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
     }
-    view.conversationPanelView.addMessage(
+    panelView.addMessage(
       new view.MessageView(
         message.text,
         message.datetime,

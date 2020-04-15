@@ -95,6 +95,7 @@ class LazyListViewModel {
   /// the length of the cached/displayed DOM elements "scrollLength",
   /// and the height of the scrolling area.
   void _updateCachedElements([_ignored_]) {
+    if (_hidden) return;
     if (_scrollWidth == null) {
       _scrollWidth = _listView.clientWidth;
     } else if (_scrollWidth != _listView.clientWidth) {
@@ -119,6 +120,7 @@ class LazyListViewModel {
   }
 
   void _updateScrollPad() {
+    if (_hidden) return;
     _scrollPad.remove();
     int padHeight;
     if (_listView.children.length < _items.length) {
@@ -138,6 +140,17 @@ class LazyListViewModel {
   void _windowResized(_ignored_) {
     // Only update the list when it is attached to the DOM
     if (_listView.isConnected) _updateCachedElements();
+  }
+
+  bool _hidden = false;
+
+  void hide() {
+    _hidden = true;
+  }
+
+  void show() {
+    _hidden = false;
+    _updateCachedElements();
   }
 }
 

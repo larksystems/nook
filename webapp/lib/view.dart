@@ -15,13 +15,14 @@ Logger log = new Logger('view.dart');
 MenuView menuView;
 ConversationListSelectHeader conversationListSelectView;
 ConversationListPanelView conversationListPanelView;
+OutboxConversationListPanelView outboxConversationListPanelView;
 ConversationFilter get conversationFilter => conversationListPanelView.conversationFilter;
 ConversationPanelView conversationPanelView;
+ConversationPanelView outboxConversationPanelView;
 ReplyPanelView replyPanelView;
 TagPanelView tagPanelView;
 AuthHeaderView authHeaderView;
 AuthMainView authMainView;
-DivElement outboxPanelView = new DivElement()..text = 'Outbox feature not implemented yet';
 UrlView urlView;
 SnackbarView snackbarView;
 BannerView bannerView;
@@ -30,7 +31,9 @@ void init() {
   menuView = new MenuView();
   conversationListSelectView = new ConversationListSelectHeader();
   conversationListPanelView = new ConversationListPanelView();
+  outboxConversationListPanelView = new OutboxConversationListPanelView();
   conversationPanelView = new ConversationPanelView();
+  outboxConversationPanelView = new ConversationPanelView();
   replyPanelView = new ReplyPanelView();
   tagPanelView = new TagPanelView();
   authHeaderView = new AuthHeaderView();
@@ -44,6 +47,9 @@ void init() {
       ..append(conversationListSelectView.panel)
       ..append(menuView.menuElement)
       ..append(authHeaderView.authElement);
+
+  outboxConversationListPanelView.conversationListPanel.classes.add('w-30');
+  outboxConversationPanelView.conversationPanel.classes.add('w-70');
 
   document.onKeyDown.listen((event) => command(UIAction.keyPressed, new KeyPressData(event.key)));
 }
@@ -71,12 +77,26 @@ void showConversationsView() {
     ..append(tagPanelView.tagPanel)
     ..append(snackbarView.snackbarElement);
   menuView.showViewButtons();
+  conversationListPanelView._conversationList.show();
+  outboxConversationListPanelView._conversationList.hide();
+  if (conversationPanelView._messageViews.isNotEmpty) {
+    conversationPanelView._messageViews.last.message.scrollIntoView();
+  }
 }
 
 void showOutboxView() {
   clearMain();
+
   querySelector('main')
-    ..append(outboxPanelView);
+    ..append(outboxConversationListPanelView.conversationListPanel)
+    ..append(outboxConversationPanelView.conversationPanel)
+    ..append(snackbarView.snackbarElement);
+  menuView.showViewButtons();
+  conversationListPanelView._conversationList.hide();
+  outboxConversationListPanelView._conversationList.show();
+  if (outboxConversationPanelView._messageViews.isNotEmpty) {
+    outboxConversationPanelView._messageViews.last.message.scrollIntoView();
+  }
 }
 
 void showSignedOutView() {
@@ -90,12 +110,13 @@ void showSignedOutView() {
 
 void clearMain() {
   conversationListPanelView.conversationListPanel.remove();
+  outboxConversationListPanelView.conversationListPanel.remove();
   conversationPanelView.conversationPanel.remove();
+  outboxConversationPanelView.conversationPanel.remove();
   replyPanelView.replyPanel.remove();
   tagPanelView.tagPanel.remove();
   authMainView.authElement.remove();
   snackbarView.snackbarElement.remove();
-  outboxPanelView.remove();
 }
 
 void showTagPanel(bool show) {
@@ -320,6 +341,15 @@ class ConversationPanelView {
     MessageView._deselect();
   }
 
+  void removeMessageAtIndex(int index) {
+    _messageViews[index].message.remove();
+    _messageViews.removeAt(index);
+    for (int i = index; i < _messageViews.length; i++) {
+      _messageViews[i]._messageIndex = i;
+      _messageViews[i].message.dataset['messageIndex'] = '$i';
+    }
+   }
+
   MessageView messageViewAtIndex(int index) {
     return _messageViews[index];
   }
@@ -443,32 +473,64 @@ class MessageView {
   DivElement message;
   DivElement _messageBubble;
   DivElement _messageDateTime;
+  DivElement _messageStatus;
+  DivElement _sendMessageButton;
+  DivElement _cancelMessageButton;
   DivElement _messageText;
   DivElement _messageTranslation;
   DivElement _messageTags;
 
+  int _messageIndex;
+
   static MessageView selectedMessageView;
 
-  MessageView(String text, DateTime dateTime, String conversationId, int messageIndex, {String translation = '', bool incoming = true, List<TagView> tags = const[], MessageStatus status = null}) {
+  MessageView(String text, DateTime dateTime, String conversationId, this._messageIndex, {String translation = '', bool incoming = true, List<TagView> tags = const[], MessageStatus status = null}) {
     message = new DivElement()
       ..classes.add('message')
       ..classes.add(incoming ? 'message--incoming' : 'message--outgoing')
       ..dataset['conversationId'] = conversationId
-      ..dataset['messageIndex'] = '$messageIndex';
+      ..dataset['messageIndex'] = '$_messageIndex';
 
     _messageBubble = new DivElement()
       ..classes.add('message__bubble')
       ..onClick.listen((event) {
         event.preventDefault();
         event.stopPropagation();
-        command(UIAction.selectMessage, new MessageData(conversationId, messageIndex));
+        command(UIAction.selectMessage, new MessageData(conversationId, _messageIndex));
       });
     message.append(_messageBubble);
+
+    _cancelMessageButton = new DivElement()
+      ..classes.add('message__btn')
+      ..classes.add('hidden')
+      ..text = 'CANCEL';
+    _cancelMessageButton.onClick.listen((event) {
+      event.preventDefault();
+      event.stopPropagation();
+      command(UIAction.cancelQueuedMessage, new MessageData(conversationId, _messageIndex));
+    });
+    _messageBubble.append(_cancelMessageButton);
+
+    _sendMessageButton = new DivElement()
+      ..classes.add('message__btn')
+      ..classes.add('hidden')
+      ..text = 'SEND';
+    _sendMessageButton.onClick.listen((event) {
+      event.preventDefault();
+      event.stopPropagation();
+      command(UIAction.sendQueuedMessage, new MessageData(conversationId, _messageIndex));
+    });
+    _messageBubble.append(_sendMessageButton);
 
     _messageDateTime = new DivElement()
       ..classes.add('message__datetime')
       ..text = _formatDateTime(dateTime);
     _messageBubble.append(_messageDateTime);
+
+    _messageStatus = new DivElement()
+      ..classes.add('message__status');
+    setStatus(status);
+    _messageBubble.append(_messageStatus);
 
     _messageText = new DivElement()
       ..classes.add('message__text')
@@ -479,7 +541,7 @@ class MessageView {
       ..classes.add('message__translation')
       ..text = translation;
     makeEditable(_messageTranslation, onChange: () {
-      command(UIAction.updateTranslation, new TranslationData(_messageTranslation.text, conversationId, messageIndex));
+      command(UIAction.updateTranslation, new TranslationData(_messageTranslation.text, conversationId, _messageIndex));
     });
     _messageBubble.append(_messageTranslation);
 
@@ -524,10 +586,46 @@ class MessageView {
 
   void setStatus(MessageStatus status) {
     // TODO handle more types of status
-    if (status == MessageStatus.failed)
-      message.classes.add('message--failed');
-    else
-      message.classes.remove('message--failed');
+    switch (status) {
+      case MessageStatus.failed:
+        message.classes.add('message--failed');
+        _messageDateTime.classes.add('hidden');
+        _messageStatus
+          ..classes.remove('hidden')
+          ..classes.add('red')
+          ..text = "message failed to send";
+        _cancelMessageButton.classes.remove('hidden');
+        _sendMessageButton.classes.remove('hidden');
+        break;
+      case MessageStatus.inOutbox:
+        message.classes.add('message--in-outbox');
+        _messageDateTime.classes.add('hidden');
+        _messageStatus
+          ..classes.remove('hidden')
+          ..classes.add('orange')
+          ..text = "in outbox";
+        _cancelMessageButton.classes.remove('hidden');
+        _sendMessageButton.classes.remove('hidden');
+        break;
+      case MessageStatus.pending:
+        message.classes.add('message--pending');
+        _messageDateTime.classes.add('hidden');
+        _messageStatus
+          ..classes.remove('hidden')
+          ..classes.add('green')
+          ..text = "sending...";
+        _cancelMessageButton.classes.add('hidden');
+        _sendMessageButton.classes.add('hidden');
+        break;
+      default:
+        message.classes.remove('message--failed');
+        message.classes.remove('message--in-outbox');
+        message.classes.remove('message--pending');
+        _messageStatus.classes.add('hidden');
+        _cancelMessageButton.classes.add('hidden');
+        _sendMessageButton.classes.add('hidden');
+        _messageDateTime.classes.remove('hidden');
+    }
   }
 }
 
@@ -752,6 +850,7 @@ class ConversationListSelectHeader {
 
 class ConversationListPanelView {
   DivElement conversationListPanel;
+  DivElement _panelHeader;
   DivElement _conversationPanelTitle;
   MarkUnreadActionView _markUnread;
   LazyListViewModel _conversationList;
@@ -768,26 +867,26 @@ class ConversationListPanelView {
     conversationListPanel = new DivElement()
       ..classes.add('conversation-list-panel');
 
-    var panelHeader = new DivElement()
+    _panelHeader = new DivElement()
       ..classes.add('conversation-list-header');
-    conversationListPanel.append(panelHeader);
+    conversationListPanel.append(_panelHeader);
 
     _selectAllCheckbox = new CheckboxInputElement()
       ..classes.add('conversation-list-header__checkbox')
       ..title = 'Select all conversations'
       ..checked = false
       ..onClick.listen((_) => _selectAllCheckbox.checked ? command(UIAction.selectAllConversations, null) : command(UIAction.deselectAllConversations, null));
-    panelHeader.append(_selectAllCheckbox);
+    _panelHeader.append(_selectAllCheckbox);
 
     _conversationPanelTitle = new DivElement()
       ..classes.add('panel-title')
       ..classes.add('conversation-list-header__title')
       ..text = '0 conversations';
-    panelHeader.append(_conversationPanelTitle);
+    _panelHeader.append(_conversationPanelTitle);
 
     _markUnread = MarkUnreadActionView();
-    panelHeader.append(new DivElement()
-      ..classes.add('conversation-list-header__mark-unread')
+    _panelHeader.append(new DivElement()
+      ..classes.add('conversation-list-header__buttons')
       ..append(_markUnread.markUnreadAction));
 
     _loadSpinner = new DivElement()
@@ -921,6 +1020,45 @@ class ConversationListPanelView {
   }
 }
 
+class OutboxConversationListPanelView extends ConversationListPanelView {
+  SendAllActionView _sendAll;
+  CancelAllActionView _cancelAll;
+
+  OutboxConversationListPanelView() : super() {
+    _selectAllCheckbox.remove();
+    _markUnread.markUnreadAction.remove();
+    this.conversationFilter.conversationFilter.remove();
+
+    _sendAll = SendAllActionView();
+    _cancelAll = CancelAllActionView();
+    _panelHeader.append(new DivElement()
+      ..classes.add('conversation-list-header__buttons')
+      ..append(_sendAll.sendAllAction)
+      ..append(_cancelAll.cancelAllAction));
+
+    hideCheckboxes();
+  }
+
+  @override
+  void updateConversationList(Set<Conversation> conversations) {
+    super.updateConversationList(conversations);
+    hideCheckboxes();
+    for (var conversation in conversations) {
+      ConversationSummary summary = _phoneToConversations[conversation.docId];
+      updateConversationSummary(summary, conversation);
+    }
+  }
+
+  @override
+  void updateConversationSummary(ConversationSummary summary, Conversation conversation) {
+    conversation.unread ? summary._markUnread() : summary._markRead();
+
+    int numberOfQueuedMessages = conversation.messages.where((m) => m.status == MessageStatus.inOutbox).length;
+    summary.setAnnotationText('$numberOfQueuedMessages queued msg');
+  }
+
+}
+
 class ConversationFilter {
   DivElement conversationFilter;
   DivElement _tagsContainer;
@@ -980,6 +1118,7 @@ class ConversationFilter {
 
 class ConversationSummary with LazyListViewItem {
   CheckboxInputElement _selectCheckbox;
+  DivElement _annotation;
 
   String deidentifiedPhoneNumber;
   String _text;
@@ -987,6 +1126,7 @@ class ConversationSummary with LazyListViewItem {
   bool _checked = false;
   bool _selected = false;
   bool _checkboxHidden = true;
+  String _annotationText = "";
 
   ConversationSummary(this.deidentifiedPhoneNumber, this._text, this._unread);
 
@@ -1001,7 +1141,6 @@ class ConversationSummary with LazyListViewItem {
       ..hidden = _checkboxHidden
       ..onClick.listen((_) => _selectCheckbox.checked ? command(UIAction.selectConversation, new ConversationData(deidentifiedPhoneNumber))
                                                       : command(UIAction.deselectConversation, new ConversationData(deidentifiedPhoneNumber)));
-    currentConfig.sendMultiMessageEnabled ? _showCheckbox() : _hideCheckbox();
     conversationSummary.append(_selectCheckbox);
 
     var summaryMessage = new DivElement()
@@ -1020,6 +1159,12 @@ class ConversationSummary with LazyListViewItem {
           ..classes.add('summary-message__text')
           ..text = _text);
     conversationSummary.append(summaryMessage);
+
+    _annotation = new DivElement()
+      ..classes.add('message-annotation')
+      ..text = _annotationText;
+    conversationSummary.append(_annotation);
+
     return conversationSummary;
   }
 
@@ -1066,6 +1211,14 @@ class ConversationSummary with LazyListViewItem {
   void _hideCheckbox() {
     _checkboxHidden = true;
     if (_selectCheckbox != null) _selectCheckbox.hidden = true;
+  }
+  void setAnnotationText(String text) {
+    _annotationText = text;
+    if (_annotation != null) _annotation.text = text;
+  }
+  void clearAnnotation() {
+    _annotationText = "";
+    if (_annotation != null) _annotation.text = "";
   }
 }
 
@@ -1459,6 +1612,28 @@ class MarkUnreadActionView {
         ..title = 'Mark current conversation unread'
         ..text = MARK_UNREAD_INFO;
     }
+  }
+}
+
+class SendAllActionView {
+  DivElement sendAllAction;
+
+  SendAllActionView() {
+    sendAllAction = new DivElement()
+      ..classes.add('add-action__button')
+      ..text = "Send all"
+      ..onClick.listen((_) => command(UIAction.sendAllQueuedMessages, null));
+  }
+}
+
+class CancelAllActionView {
+  DivElement cancelAllAction;
+
+  CancelAllActionView() {
+    cancelAllAction = new DivElement()
+      ..classes.add('add-action__button')
+      ..text = "Cancel all"
+      ..onClick.listen((_) => command(UIAction.cancelAllQueuedMessages, null));
   }
 }
 

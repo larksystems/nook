@@ -47,6 +47,25 @@
   color: #666;
 }
 
+.message__status {
+  font-size: .8em;
+  color: #666;
+}
+
+.message__btn {
+  float: right;
+  top: 0;
+  cursor: pointer;
+  font-size: .8em;
+  color: #666;
+  margin-left: 12px;
+}
+
+.message__btn:hover {
+  color: #333;
+  background-color: #f3f3f3;
+}
+
 .message__translation {
   font-size: .8em;
   padding-left: 16px;

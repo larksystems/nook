@@ -24,6 +24,10 @@ enum UIAction {
   updateNote,
   sendMessage,
   sendManualMessage,
+  sendQueuedMessage,
+  cancelQueuedMessage,
+  sendAllQueuedMessages,
+  cancelAllQueuedMessages,
   addTag,
   addFilterTag,
   removeConversationTag,
@@ -247,6 +251,9 @@ class SnackbarData extends Data {
 class SwitchViewData extends Data {
   UIView view;
   SwitchViewData(this.view);
+
+  @override
+  String toString() => 'SwitchViewData: {view: $view}';
 }
 
 List<model.SystemMessage> systemMessages;
@@ -277,6 +284,9 @@ model.UserConfiguration currentConfig;
 
 bool hideDemogsTags;
 
+Map<model.Conversation, List<model.Message>> queuedMessagesPerConversation;
+model.Conversation outboxActiveConversation;
+
 void init() async {
   viewState = UIView.conversations;
   actionObjectState = UIActionObject.conversation;
@@ -297,6 +307,9 @@ void initUI() {
   activeConversation = null;
   selectedSuggestedRepliesCategory = '';
   hideDemogsTags = true;
+
+  queuedMessagesPerConversation = {};
+  outboxActiveConversation = null;
 
   platform.listenForConversationTags(
     (added, modified, removed) {
@@ -516,6 +529,8 @@ void conversationListSelected(String conversationListRoot) {
       if (updatedIds.contains(activeConversation.docId)) {
         updateViewForConversation(activeConversation);
       }
+      outboxActiveConversation = updateOutboxViewForConversations(queuedMessagesPerConversation.keys.toSet());
+      updateOutboxViewForConversation(outboxActiveConversation);
       command(UIAction.markConversationRead, ConversationData(activeConversation.docId));
     },
     conversationListRoot);
@@ -549,32 +564,13 @@ model.Conversation nextElement(Iterable<model.Conversation> conversations, model
 DateTime lastUserActivity = new DateTime.now();
 
 void command(UIAction action, Data data) {
-  if (action == UIAction.switchView) {
-    SwitchViewData viewData = data;
-    if (viewState == viewData.view) return;
-    viewState = viewData.view;
-    view.showSignedInView(viewState);
-    return;
-  }
-
-  switch (viewState) {
-    case UIView.conversations:
-      conversationCommand(action, data);
-      break;
-    case UIView.outbox:
-      outboxCommand(action, data);
-      break;
-  }
-}
-
-void conversationCommand(UIAction action, Data data) {
   log.verbose('Executing UI command: $actionObjectState - $action - $data');
   log.verbose('Active conversation: ${activeConversation?.docId}');
   log.verbose('Selected conversations: ${selectedConversations?.map((c) => c.docId)?.toList()}');
 
   // For most actions, a conversation needs to be active.
   // Early exist if it's not one of the actions valid without an active conversation.
-  if (activeConversation == null &&
+  if (viewState == UIView.conversations && activeConversation == null &&
       action != UIAction.selectConversationList &&
       action != UIAction.addFilterTag && action != UIAction.removeFilterTag &&
       action != UIAction.promptAfterDateFilter && action != UIAction.updateAfterDateFilter &&
@@ -583,6 +579,14 @@ void conversationCommand(UIAction action, Data data) {
       action != UIAction.updateSuggestedRepliesCategory && action != UIAction.hideAgeTags &&
       action != UIAction.selectAllConversations && action != UIAction.deselectAllConversations &&
       action != UIAction.showSnackbar) {
+    return;
+  }
+
+  // Most actions are not valid in the outbox view.
+  if (viewState == UIView.outbox &&
+      !(action == UIAction.showConversation || action == UIAction.switchView ||
+        action == UIAction.sendQueuedMessage || action == UIAction.cancelQueuedMessage ||
+        action == UIAction.sendAllQueuedMessages || action == UIAction.cancelAllQueuedMessages)) {
     return;
   }
 
@@ -610,14 +614,14 @@ void conversationCommand(UIAction action, Data data) {
         selectedReply = translationReply;
       }
       if (!currentConfig.sendMultiMessageEnabled || selectedConversations.isEmpty) {
-        sendReply(selectedReply, activeConversation);
+        queueReply(selectedReply, activeConversation);
         return;
       }
       if (!view.sendingMultiMessagesUserConfirmation(selectedConversations.length)) {
         log.verbose('User cancelled sending multi message reply: "${selectedReply.text}"');
         return;
       }
-      sendMultiReply(selectedReply, selectedConversations);
+      queueMultiReply(selectedReply, selectedConversations);
       break;
     case UIAction.sendManualMessage:
       ManualReplyData replyData = data;
@@ -630,7 +634,7 @@ void conversationCommand(UIAction action, Data data) {
           log.verbose('User cancelled sending manual message reply: "${oneoffReply.text}"');
           return;
         }
-        sendReply(oneoffReply, activeConversation);
+        queueReply(oneoffReply, activeConversation);
         view.conversationPanelView.clearNewMessageBox();
         return;
       }
@@ -638,9 +642,64 @@ void conversationCommand(UIAction action, Data data) {
         log.verbose('User cancelled sending manual multi message reply: "${oneoffReply.text}"');
         return;
       }
-      sendMultiReply(oneoffReply, selectedConversations);
+      queueMultiReply(oneoffReply, selectedConversations);
       view.conversationPanelView.clearNewMessageBox();
       break;
+    case UIAction.sendQueuedMessage:
+      MessageData messageData = data;
+      model.Conversation conversation = conversations.firstWhere((c) => c.docId == messageData.conversationId);
+      var messageToSend = conversation.messages[messageData.messageIndex];
+      sendReply(messageToSend, conversation);
+      break;
+    case UIAction.cancelQueuedMessage:
+      MessageData messageData = data;
+      switch (viewState) {
+        case UIView.conversations:
+          var messageToCancel = activeConversation.messages[messageData.messageIndex];
+          if (messageToCancel == selectedMessage) {
+            command(UIAction.deselectMessage, messageData);
+          }
+          activeConversation.messages.removeAt(messageData.messageIndex);
+          view.conversationPanelView.removeMessageAtIndex(messageData.messageIndex);
+          if (outboxActiveConversation.docId == activeConversation.docId) {
+            view.outboxConversationPanelView.removeMessageAtIndex(messageData.messageIndex);
+          }
+          if (activeConversation.messages.where((m) => m.status == model.MessageStatus.inOutbox).length == 0) {
+            queuedMessagesPerConversation.removeWhere((c, _) => c.docId == activeConversation.docId);
+          }
+          outboxActiveConversation = updateOutboxViewForConversations(queuedMessagesPerConversation.keys.toSet(), updateList: true);
+          break;
+        case UIView.outbox:
+          outboxActiveConversation.messages.removeAt(messageData.messageIndex);
+          view.outboxConversationPanelView.removeMessageAtIndex(messageData.messageIndex);
+          if (outboxActiveConversation.docId == activeConversation.docId) {
+            view.conversationPanelView.removeMessageAtIndex(messageData.messageIndex);
+          }
+          if (outboxActiveConversation.messages.where((m) => m.status == model.MessageStatus.inOutbox).length == 0) {
+            queuedMessagesPerConversation.removeWhere((c, _) => c.docId == outboxActiveConversation.docId);
+          }
+          outboxActiveConversation = updateOutboxViewForConversations(queuedMessagesPerConversation.keys.toSet(), updateList: true);
+          break;
+      }
+      break;
+
+    case UIAction.sendAllQueuedMessages:
+      for (var conversation in queuedMessagesPerConversation.keys) {
+        for (var message in conversation.messages.where((m) => m.status == model.MessageStatus.inOutbox)) {
+          sendReply(message, conversation);
+        }
+      }
+      break;
+
+    case UIAction.cancelAllQueuedMessages:
+      for (var conversation in queuedMessagesPerConversation.keys) {
+        conversation.messages.removeWhere((m) => m.status == model.MessageStatus.inOutbox);
+      }
+      queuedMessagesPerConversation.clear();
+      outboxActiveConversation = updateOutboxViewForConversations(queuedMessagesPerConversation.keys.toSet());
+      updateViewForConversation(activeConversation);
+      break;
+
     case UIAction.addTag:
       TagData tagData = data;
       switch (actionObjectState) {
@@ -682,6 +741,9 @@ void conversationCommand(UIAction action, Data data) {
         activeConversation = nextConversation;
         activeConversation = updateViewForConversations(filteredConversations);
         updateViewForConversation(activeConversation);
+
+        outboxActiveConversation = updateOutboxViewForConversations(queuedMessagesPerConversation.keys.toSet());
+        updateOutboxViewForConversation(outboxActiveConversation);
       }
       break;
     case UIAction.removeMessageTag:
@@ -740,8 +802,10 @@ void conversationCommand(UIAction action, Data data) {
       break;
     case UIAction.markConversationRead:
       ConversationData conversationData = data;
-      view.conversationListPanelView.markConversationRead(conversationData.deidentifiedPhoneNumber);
-      platform.updateUnread([activeConversation], false).catchError(showAndLogError);
+      model.Conversation conversation = conversations.singleWhere((c) => c.docId == conversationData.deidentifiedPhoneNumber);
+      if (!conversation.unread) return;
+      view.conversationListPanelView.markConversationRead(conversation.docId);
+      platform.updateUnread([conversation], false).catchError(showAndLogError);
       break;
     case UIAction.markConversationUnread:
       if (!currentConfig.sendMultiMessageEnabled || selectedConversations.isEmpty) {
@@ -760,8 +824,16 @@ void conversationCommand(UIAction action, Data data) {
       break;
     case UIAction.showConversation:
       ConversationData conversationData = data;
-      activeConversation = filteredConversations.singleWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
-      updateViewForConversation(activeConversation);
+      switch (viewState) {
+        case UIView.conversations:
+          activeConversation = filteredConversations.singleWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
+          updateViewForConversation(activeConversation);
+          break;
+        case UIView.outbox:
+          outboxActiveConversation = queuedMessagesPerConversation.keys.singleWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
+          updateOutboxViewForConversation(outboxActiveConversation);
+          break;
+      }
       break;
     case UIAction.selectConversationList:
       ConversationListData conversationListData = data;
@@ -858,13 +930,13 @@ void conversationCommand(UIAction action, Data data) {
       if (selectedReply.isNotEmpty) {
         assert (selectedReply.length == 1);
         if (!currentConfig.sendMultiMessageEnabled || selectedConversations.isEmpty) {
-          sendReply(selectedReply.first, activeConversation);
+          queueReply(selectedReply.first, activeConversation);
           return;
         }
         if (!view.sendingMultiMessagesUserConfirmation(selectedConversations.length)) {
           return;
         }
-        sendMultiReply(selectedReply.first, selectedConversations);
+        queueMultiReply(selectedReply.first, selectedConversations);
         return;
       }
       // If the shortcut is for a tag and tag panel is enabled, find it and tag it to the conversation/message
@@ -947,13 +1019,13 @@ void conversationCommand(UIAction action, Data data) {
       view.snackbarView.showSnackbar(snackbarData.text, snackbarData.type);
       break;
 
-    default:
+    case UIAction.switchView:
+      SwitchViewData viewData = data;
+      if (viewState == viewData.view) return;
+      viewState = viewData.view;
+      view.showSignedInView(viewState);
       break;
   }
-}
-
-void outboxCommand(UIAction action, Data data) {
-  print('outbox commands not implemented yet');
 }
 
 void updateFilteredConversationList() {
@@ -1007,6 +1079,42 @@ model.Conversation updateViewForConversations(Set<model.Conversation> conversati
   return activeConversation;
 }
 
+
+/// Shows the list of [conversations] and selects the first conversation
+/// where [updateList] is `true` if this list can be updated in place.
+/// Returns the first conversation in the list, or null if list is empty.
+model.Conversation updateOutboxViewForConversations(Set<model.Conversation> conversations, {bool updateList = false}) {
+  // Update outboxConversationListPanelView
+  _populateOutboxConversationListPanelView(conversations, updateList);
+
+  // Update outboxConversationPanelView
+  if (conversations.isEmpty) {
+    view.outboxConversationPanelView.clear();
+    return null;
+  }
+
+  if (outboxActiveConversation == null) {
+    model.Conversation conversationToSelect = conversations.first;
+    view.outboxConversationListPanelView.selectConversation(conversationToSelect.docId);
+    _populateOutboxConversationPanelView(conversationToSelect);
+    return conversationToSelect;
+  }
+
+  var matches = conversations.where((conversation) => conversation.docId == outboxActiveConversation.docId).toList();
+  if (matches.length == 0) {
+    model.Conversation conversationToSelect = conversations.first;
+    view.outboxConversationListPanelView.selectConversation(conversationToSelect.docId);
+    _populateOutboxConversationPanelView(conversationToSelect);
+    return conversationToSelect;
+  }
+
+  if (matches.length > 1) {
+    log.warning('Two conversations seem to have the same deidentified phone number: ${outboxActiveConversation.docId}');
+  }
+  view.outboxConversationListPanelView.selectConversation(outboxActiveConversation.docId);
+  return outboxActiveConversation;
+}
+
 void updateViewForConversation(model.Conversation conversation) {
   if (conversation == null) return;
   // Select the conversation in the list
@@ -1026,13 +1134,22 @@ void updateViewForConversation(model.Conversation conversation) {
   }
 }
 
-void sendReply(model.SuggestedReply reply, model.Conversation conversation) {
+void updateOutboxViewForConversation(model.Conversation conversation) {
+  if (conversation == null) return;
+  // Select the conversation in the list
+  view.outboxConversationListPanelView.selectConversation(conversation.docId);
+  // Replace the previous conversation in the conversation panel
+  _populateOutboxConversationPanelView(conversation);
+}
+
+void queueReply(model.SuggestedReply reply, model.Conversation conversation) {
   log.verbose('Preparing to send reply "${reply.text}" to conversation ${conversation.docId}');
   model.Message newMessage = new model.Message()
     ..text = reply.text
     ..datetime = new DateTime.now()
     ..direction = model.MessageDirection.Out
     ..translation = reply.translation
+    ..status = model.MessageStatus.inOutbox
     ..tagIds = [];
   log.verbose('Adding reply "${reply.text}" to conversation ${conversation.docId}');
   conversation.messages.add(newMessage);
@@ -1042,20 +1159,53 @@ void sendReply(model.SuggestedReply reply, model.Conversation conversation) {
       conversation.docId,
       conversation.messages.indexOf(newMessage),
       translation: newMessage.translation,
+      status: newMessage.status,
       incoming: false);
   view.conversationPanelView.addMessage(newMessageView);
+
+  if (!queuedMessagesPerConversation.containsKey(conversation)) {
+    queuedMessagesPerConversation[conversation] = [];
+  }
+  queuedMessagesPerConversation[conversation].add(newMessage);
+
+  outboxActiveConversation = updateOutboxViewForConversations(queuedMessagesPerConversation.keys.toSet());
+  updateOutboxViewForConversation(outboxActiveConversation);
+}
+
+void sendReply(model.Message reply, model.Conversation conversation) {
   log.verbose('Sending reply "${reply.text}" to conversation ${conversation.docId}');
   platform.sendMessage(conversation.docId, reply.text, onError: (error) {
     log.error('Reply "${reply.text}" failed to be sent to conversation ${conversation.docId}');
     log.error('Error: ${error}');
     command(UIAction.showSnackbar, new SnackbarData('Send Reply Failed', SnackbarNotificationType.error));
-    newMessage.status = model.MessageStatus.failed;
-    newMessageView.setStatus(newMessage.status);
+    reply.status = model.MessageStatus.failed;
+    if (conversation.docId == activeConversation.docId) {
+      var messageView = view.conversationPanelView.messageViewAtIndex(activeConversation.messages.indexOf(reply));
+      messageView.setStatus(reply.status);
+    }
+    if (conversation.docId == outboxActiveConversation.docId) {
+      var messageView = view.outboxConversationPanelView.messageViewAtIndex(outboxActiveConversation.messages.indexOf(reply));
+      messageView.setStatus(reply.status);
+    }
+  }).then((_) {
+    if (conversation.messages.where((m) => m.status == model.MessageStatus.inOutbox).length == 0) {
+      queuedMessagesPerConversation.removeWhere((c, _) => c.docId == conversation.docId);
+    }
+    outboxActiveConversation = updateOutboxViewForConversations(queuedMessagesPerConversation.keys.toSet(), updateList: true);
   });
+  reply.status = model.MessageStatus.pending;
+  if (conversation.docId == activeConversation.docId) {
+    var messageView = view.conversationPanelView.messageViewAtIndex(activeConversation.messages.indexOf(reply));
+    messageView.setStatus(reply.status);
+  }
+  if (conversation.docId == outboxActiveConversation.docId) {
+    var messageView = view.outboxConversationPanelView.messageViewAtIndex(outboxActiveConversation.messages.indexOf(reply));
+    messageView.setStatus(reply.status);
+  }
   log.verbose('Reply "${reply.text}" queued for sending to conversation ${conversation.docId}');
 }
 
-void sendMultiReply(model.SuggestedReply reply, List<model.Conversation> conversations) {
+void queueMultiReply(model.SuggestedReply reply, List<model.Conversation> conversations) {
   List<String> conversationIds = conversations.map((conversation) => conversation.docId).toList();
   log.verbose('Preparing to send reply "${reply.text}" to conversations $conversationIds');
   model.Message newMessage = new model.Message()
@@ -1063,6 +1213,7 @@ void sendMultiReply(model.SuggestedReply reply, List<model.Conversation> convers
     ..datetime = new DateTime.now()
     ..direction = model.MessageDirection.Out
     ..translation = reply.translation
+    ..status = model.MessageStatus.inOutbox
     ..tagIds = [];
   log.verbose('Adding reply "${reply.text}" to conversations ${conversationIds}');
   conversations.forEach((conversation) => conversation.messages.add(newMessage));
@@ -1074,18 +1225,19 @@ void sendMultiReply(model.SuggestedReply reply, List<model.Conversation> convers
         activeConversation.docId,
         activeConversation.messages.indexOf(newMessage),
         translation: newMessage.translation,
+        status: model.MessageStatus.inOutbox,
         incoming: false);
     view.conversationPanelView.addMessage(newMessageView);
   }
-  log.verbose('Sending reply "${reply.text}" to conversations ${conversationIds}');
-  platform.sendMultiMessage(conversationIds, newMessage.text, onError: (error) {
-    log.error('Reply "${reply.text}" failed to be sent to conversations ${conversationIds}');
-    log.error('Error: ${error}');
-    command(UIAction.showSnackbar, new SnackbarData('Send Multi Reply Failed', SnackbarNotificationType.error));
-    newMessage.status = model.MessageStatus.failed;
-    newMessageView?.setStatus(newMessage.status);
-  });
-  log.verbose('Reply "${reply.text}" queued for sending to conversations ${conversationIds}');
+  for (var conversation in conversations) {
+    if (!queuedMessagesPerConversation.containsKey(conversation)) {
+      queuedMessagesPerConversation[conversation] = [];
+    }
+    queuedMessagesPerConversation[conversation].add(newMessage);
+  }
+
+  outboxActiveConversation = updateOutboxViewForConversations(queuedMessagesPerConversation.keys.toSet());
+  updateOutboxViewForConversation(outboxActiveConversation);
 }
 
 void setConversationTag(model.Tag tag, model.Conversation conversation) {

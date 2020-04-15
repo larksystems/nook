@@ -1,3 +1,6 @@
+/*********************************************************/
+/*  Some utilty component classes based on tachyons.css  */
+
 
 /*** Widths */
 
@@ -21,3 +24,58 @@
 .w-90 { width: 90%; }
 .w-95 { width: 95%; }
 .w-100 { width: 100%; }
+
+/*** Colors */
+
+.dark-red { color: #e7040f; }
+.red { color: #ff4136; }
+.light-red { color: #ff725c; }
+.washed-red { color: #ffdfdf; }
+.orange { color: #ff6300; }
+.gold { color: #ffb700; }
+.yellow { color: #ffde37; }
+.light-yellow { color: #fbf1a9; }
+.washed-yellow { color: #fffceb; }
+.purple { color: #5e2ca5; }
+.light-purple { color: #a463f2; }
+.dark-pink { color: #d5008f; }
+.hot-pink { color: #ff41b4; }
+.pink { color: #ff80cc; }
+.light-pink { color: #ffa3d7; }
+.dark-green { color: #137752; }
+.green { color: #19a974; }
+.light-green { color: #9eebcf; }
+.washed-green { color: #e8fdf5; }
+.navy { color: #001b44; }
+.dark-blue { color: #00449e; }
+.blue { color: #357edd; }
+.light-blue { color: #96ccff; }
+.lightest-blue { color: #cdecff; }
+.washed-blue { color: #f6fffe; }
+
+
+.bg-dark-red { background-color: #e7040f; }
+.bg-red { background-color: #ff4136; }
+.bg-light-red { background-color: #ff725c; }
+.bg-washed-red { background-color: #ffdfdf; }
+.bg-orange { background-color: #ff6300; }
+.bg-gold { background-color: #ffb700; }
+.bg-yellow { background-color: #ffde37; }
+.bg-light-yellow { background-color: #fbf1a9; }
+.bg-washed-yellow { background-color: #fffceb; }
+.bg-purple { background-color: #5e2ca5; }
+.bg-light-purple { background-color: #a463f2; }
+.bg-dark-pink { background-color: #d5008f; }
+.bg-hot-pink { background-color: #ff41b4; }
+.bg-pink { background-color: #ff80cc; }
+.bg-light-pink { background-color: #ffa3d7; }
+.bg-dark-green { background-color: #137752; }
+.bg-green { background-color: #19a974; }
+.bg-light-green { background-color: #9eebcf; }
+.bg-washed-green { background-color: #e8fdf5; }
+.bg-navy { background-color: #001b44; }
+.bg-dark-blue { background-color: #00449e; }
+.bg-blue { background-color: #357edd; }
+.bg-light-blue { background-color: #96ccff; }
+.bg-lightest-blue { background-color: #cdecff; }
+.bg-washed-blue { background-color: #f6fffe; }
