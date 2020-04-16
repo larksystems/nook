@@ -39,12 +39,12 @@ cd "$WORK_DIR"
 
 # Get the project id from the firebase constants file
 echo "getting project id from firebase constants..."
-FIREBASE_CONSTANTS_PROJECT_ID=$(cat $FIREBASE_CONSTANTS_FILE | python -c 'import json,sys; constants=json.load(sys.stdin); print(constants["projectId"])')
+FIREBASE_CONSTANTS_PROJECT_ID=$(cat "$FIREBASE_CONSTANTS_FILE" | python -c 'import json,sys; constants=json.load(sys.stdin); print(constants["projectId"])')
 echo "project id: $FIREBASE_CONSTANTS_PROJECT_ID"
 
 # Get the project id from the crypto token file
 echo "getting project id from crypto token..."
-CRYPTO_TOKEN_PROJECT_ID=$(cat $CRYPTO_TOKEN_FILE | python -c 'import json,sys; constants=json.load(sys.stdin); print(constants["project_id"])')
+CRYPTO_TOKEN_PROJECT_ID=$(cat "$CRYPTO_TOKEN_FILE" | python -c 'import json,sys; constants=json.load(sys.stdin); print(constants["project_id"])')
 echo "project id: $CRYPTO_TOKEN_PROJECT_ID"
 
 if [ "$FIREBASE_CONSTANTS_PROJECT_ID" != "$CRYPTO_TOKEN_PROJECT_ID" ]; then
@@ -88,7 +88,7 @@ cp $FIREBASE_CONSTANTS_FILE public/assets/firebase_constants.json
 
 # Copy the latest commit sha1 hash on origin/master into the build folder
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-LASTEST_COMMIT_HASH=$(git rev-parse $CURRENT_BRANCH)
+LASTEST_COMMIT_HASH=$(git rev-parse "$CURRENT_BRANCH")
 DEPLOY_DATA="\"latestCommitHash\": \"$LASTEST_COMMIT_HASH\""
 DEPLOY_DATA="$DEPLOY_DATA, \"timestamp\": \"$(date +"%Y-%m-%dT%H:%M:%S")\""
 DEPLOY_DATA="$DEPLOY_DATA, \"deployed_by\": \"$(git config --get user.email)\""
@@ -104,7 +104,7 @@ echo "{\"metadata\": [ {$DEPLOY_DATA} ] }" > public_metadata_nook_app.json
 
 # Deploy using the local firebase tool
 echo "deploying to $FIREBASE_CONSTANTS_PROJECT_ID firebase..."
-node $NOOK_DIR/functions/node_modules/.bin/firebase \
+node "$NOOK_DIR"/functions/node_modules/.bin/firebase \
   deploy \
   --project $FIREBASE_CONSTANTS_PROJECT_ID \
   --public public
