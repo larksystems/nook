@@ -1163,10 +1163,7 @@ void queueReply(model.SuggestedReply reply, model.Conversation conversation) {
       incoming: false);
   view.conversationPanelView.addMessage(newMessageView);
 
-  if (!queuedMessagesPerConversation.containsKey(conversation)) {
-    queuedMessagesPerConversation[conversation] = [];
-  }
-  queuedMessagesPerConversation[conversation].add(newMessage);
+  queuedMessagesPerConversation.putIfAbsent(conversation, () => []).add(newMessage);
 
   outboxActiveConversation = updateOutboxViewForConversations(queuedMessagesPerConversation.keys.toSet());
   updateOutboxViewForConversation(outboxActiveConversation);
