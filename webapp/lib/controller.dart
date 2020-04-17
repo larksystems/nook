@@ -1230,10 +1230,7 @@ void queueMultiReply(model.SuggestedReply reply, List<model.Conversation> conver
     view.conversationPanelView.addMessage(newMessageView);
   }
   for (var conversation in conversations) {
-    if (!queuedMessagesPerConversation.containsKey(conversation)) {
-      queuedMessagesPerConversation[conversation] = [];
-    }
-    queuedMessagesPerConversation[conversation].add(newMessage);
+    queuedMessagesPerConversation.putIfAbsent(conversation, () => []).add(newMessage);
   }
 
   outboxActiveConversation = updateOutboxViewForConversations(queuedMessagesPerConversation.keys.toSet());
