@@ -264,6 +264,7 @@ UIActionObject actionObjectState = UIActionObject.conversation;
 StreamSubscription conversationListSubscription;
 Set<model.Conversation> conversations;
 Set<model.Conversation> filteredConversations;
+Set<model.Conversation> conversationsInOutbox;
 List<model.SuggestedReply> suggestedReplies;
 Map<String, List<model.SuggestedReply>> suggestedRepliesByCategory;
 String selectedSuggestedRepliesCategory;
@@ -272,8 +273,10 @@ List<model.Tag> messageTags;
 List<model.Tag> filterTags;
 DateTime afterDateFilter;
 model.Conversation activeConversation;
+model.Conversation activeConversationInOutbox;
 List<model.Conversation> selectedConversations;
 model.Message selectedMessage;
+
 model.User signedInUser;
 
 model.UserConfiguration defaultUserConfig;
@@ -283,9 +286,6 @@ model.UserConfiguration currentUserConfig;
 model.UserConfiguration currentConfig;
 
 bool hideDemogsTags;
-
-Map<model.Conversation, List<model.Message>> queuedMessagesPerConversation;
-model.Conversation outboxActiveConversation;
 
 void init() async {
   viewState = UIView.conversations;
@@ -300,16 +300,16 @@ void initUI() {
   systemMessages = [];
   conversations = emptyConversationsSet;
   filteredConversations = emptyConversationsSet;
+  conversationsInOutbox = emptyConversationsSet;
   suggestedReplies = [];
   conversationTags = [];
   messageTags = [];
   selectedConversations = [];
   activeConversation = null;
+  activeConversationInOutbox = null;
   selectedSuggestedRepliesCategory = '';
   hideDemogsTags = true;
 
-  queuedMessagesPerConversation = {};
-  outboxActiveConversation = null;
 
   platform.listenForConversationTags(
     (added, modified, removed) {
@@ -529,8 +529,8 @@ void conversationListSelected(String conversationListRoot) {
       if (updatedIds.contains(activeConversation.docId)) {
         updateViewForConversation(activeConversation);
       }
-      outboxActiveConversation = updateOutboxViewForConversations(queuedMessagesPerConversation.keys.toSet());
-      updateOutboxViewForConversation(outboxActiveConversation);
+      activeConversationInOutbox = updateOutboxViewForConversations(conversationsInOutbox);
+      updateOutboxViewForConversation(activeConversationInOutbox);
       command(UIAction.markConversationRead, ConversationData(activeConversation.docId));
     },
     conversationListRoot);
@@ -661,30 +661,30 @@ void command(UIAction action, Data data) {
           }
           activeConversation.messages.removeAt(messageData.messageIndex);
           view.conversationPanelView.removeMessageAtIndex(messageData.messageIndex);
-          if (outboxActiveConversation.docId == activeConversation.docId) {
+          if (activeConversationInOutbox.docId == activeConversation.docId) {
             view.outboxConversationPanelView.removeMessageAtIndex(messageData.messageIndex);
           }
           if (activeConversation.messages.where((m) => m.status == model.MessageStatus.inOutbox).length == 0) {
-            queuedMessagesPerConversation.removeWhere((c, _) => c.docId == activeConversation.docId);
+            conversationsInOutbox.removeWhere((c) => c.docId == activeConversation.docId);
           }
-          outboxActiveConversation = updateOutboxViewForConversations(queuedMessagesPerConversation.keys.toSet(), updateList: true);
+          activeConversationInOutbox = updateOutboxViewForConversations(conversationsInOutbox, updateList: true);
           break;
         case UIView.outbox:
-          outboxActiveConversation.messages.removeAt(messageData.messageIndex);
+          activeConversationInOutbox.messages.removeAt(messageData.messageIndex);
           view.outboxConversationPanelView.removeMessageAtIndex(messageData.messageIndex);
-          if (outboxActiveConversation.docId == activeConversation.docId) {
+          if (activeConversationInOutbox.docId == activeConversation.docId) {
             view.conversationPanelView.removeMessageAtIndex(messageData.messageIndex);
           }
-          if (outboxActiveConversation.messages.where((m) => m.status == model.MessageStatus.inOutbox).length == 0) {
-            queuedMessagesPerConversation.removeWhere((c, _) => c.docId == outboxActiveConversation.docId);
+          if (activeConversationInOutbox.messages.where((m) => m.status == model.MessageStatus.inOutbox).length == 0) {
+            conversationsInOutbox.removeWhere((c) => c.docId == activeConversationInOutbox.docId);
           }
-          outboxActiveConversation = updateOutboxViewForConversations(queuedMessagesPerConversation.keys.toSet(), updateList: true);
+          activeConversationInOutbox = updateOutboxViewForConversations(conversationsInOutbox, updateList: true);
           break;
       }
       break;
 
     case UIAction.sendAllQueuedMessages:
-      for (var conversation in queuedMessagesPerConversation.keys) {
+      for (var conversation in conversationsInOutbox) {
         for (var message in conversation.messages.where((m) => m.status == model.MessageStatus.inOutbox)) {
           sendReply(message, conversation);
         }
@@ -692,11 +692,11 @@ void command(UIAction action, Data data) {
       break;
 
     case UIAction.cancelAllQueuedMessages:
-      for (var conversation in queuedMessagesPerConversation.keys) {
+      for (var conversation in conversationsInOutbox) {
         conversation.messages.removeWhere((m) => m.status == model.MessageStatus.inOutbox);
       }
-      queuedMessagesPerConversation.clear();
-      outboxActiveConversation = updateOutboxViewForConversations(queuedMessagesPerConversation.keys.toSet());
+      conversationsInOutbox.clear();
+      activeConversationInOutbox = updateOutboxViewForConversations(conversationsInOutbox);
       updateViewForConversation(activeConversation);
       break;
 
@@ -742,8 +742,8 @@ void command(UIAction action, Data data) {
         activeConversation = updateViewForConversations(filteredConversations);
         updateViewForConversation(activeConversation);
 
-        outboxActiveConversation = updateOutboxViewForConversations(queuedMessagesPerConversation.keys.toSet());
-        updateOutboxViewForConversation(outboxActiveConversation);
+        activeConversationInOutbox = updateOutboxViewForConversations(conversationsInOutbox);
+        updateOutboxViewForConversation(activeConversationInOutbox);
       }
       break;
     case UIAction.removeMessageTag:
@@ -830,8 +830,8 @@ void command(UIAction action, Data data) {
           updateViewForConversation(activeConversation);
           break;
         case UIView.outbox:
-          outboxActiveConversation = queuedMessagesPerConversation.keys.singleWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
-          updateOutboxViewForConversation(outboxActiveConversation);
+          activeConversationInOutbox = conversationsInOutbox.singleWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
+          updateOutboxViewForConversation(activeConversationInOutbox);
           break;
       }
       break;
@@ -1093,14 +1093,14 @@ model.Conversation updateOutboxViewForConversations(Set<model.Conversation> conv
     return null;
   }
 
-  if (outboxActiveConversation == null) {
+  if (activeConversationInOutbox == null) {
     model.Conversation conversationToSelect = conversations.first;
     view.outboxConversationListPanelView.selectConversation(conversationToSelect.docId);
     _populateOutboxConversationPanelView(conversationToSelect);
     return conversationToSelect;
   }
 
-  var matches = conversations.where((conversation) => conversation.docId == outboxActiveConversation.docId).toList();
+  var matches = conversations.where((conversation) => conversation.docId == activeConversationInOutbox.docId).toList();
   if (matches.length == 0) {
     model.Conversation conversationToSelect = conversations.first;
     view.outboxConversationListPanelView.selectConversation(conversationToSelect.docId);
@@ -1109,10 +1109,10 @@ model.Conversation updateOutboxViewForConversations(Set<model.Conversation> conv
   }
 
   if (matches.length > 1) {
-    log.warning('Two conversations seem to have the same deidentified phone number: ${outboxActiveConversation.docId}');
+    log.warning('Two conversations seem to have the same deidentified phone number: ${activeConversationInOutbox.docId}');
   }
-  view.outboxConversationListPanelView.selectConversation(outboxActiveConversation.docId);
-  return outboxActiveConversation;
+  view.outboxConversationListPanelView.selectConversation(activeConversationInOutbox.docId);
+  return activeConversationInOutbox;
 }
 
 void updateViewForConversation(model.Conversation conversation) {
@@ -1163,10 +1163,10 @@ void queueReply(model.SuggestedReply reply, model.Conversation conversation) {
       incoming: false);
   view.conversationPanelView.addMessage(newMessageView);
 
-  queuedMessagesPerConversation.putIfAbsent(conversation, () => []).add(newMessage);
+  conversationsInOutbox.add(conversation);
 
-  outboxActiveConversation = updateOutboxViewForConversations(queuedMessagesPerConversation.keys.toSet());
-  updateOutboxViewForConversation(outboxActiveConversation);
+  activeConversationInOutbox = updateOutboxViewForConversations(conversationsInOutbox);
+  updateOutboxViewForConversation(activeConversationInOutbox);
 }
 
 void sendReply(model.Message reply, model.Conversation conversation) {
@@ -1180,23 +1180,23 @@ void sendReply(model.Message reply, model.Conversation conversation) {
       var messageView = view.conversationPanelView.messageViewAtIndex(activeConversation.messages.indexOf(reply));
       messageView.setStatus(reply.status);
     }
-    if (conversation.docId == outboxActiveConversation.docId) {
-      var messageView = view.outboxConversationPanelView.messageViewAtIndex(outboxActiveConversation.messages.indexOf(reply));
+    if (conversation.docId == activeConversationInOutbox.docId) {
+      var messageView = view.outboxConversationPanelView.messageViewAtIndex(activeConversationInOutbox.messages.indexOf(reply));
       messageView.setStatus(reply.status);
     }
   }).then((_) {
     if (conversation.messages.where((m) => m.status == model.MessageStatus.inOutbox).length == 0) {
-      queuedMessagesPerConversation.removeWhere((c, _) => c.docId == conversation.docId);
+      conversationsInOutbox.removeWhere((c) => c.docId == conversation.docId);
     }
-    outboxActiveConversation = updateOutboxViewForConversations(queuedMessagesPerConversation.keys.toSet(), updateList: true);
+    activeConversationInOutbox = updateOutboxViewForConversations(conversationsInOutbox, updateList: true);
   });
   reply.status = model.MessageStatus.pending;
   if (conversation.docId == activeConversation.docId) {
     var messageView = view.conversationPanelView.messageViewAtIndex(activeConversation.messages.indexOf(reply));
     messageView.setStatus(reply.status);
   }
-  if (conversation.docId == outboxActiveConversation.docId) {
-    var messageView = view.outboxConversationPanelView.messageViewAtIndex(outboxActiveConversation.messages.indexOf(reply));
+  if (conversation.docId == activeConversationInOutbox.docId) {
+    var messageView = view.outboxConversationPanelView.messageViewAtIndex(activeConversationInOutbox.messages.indexOf(reply));
     messageView.setStatus(reply.status);
   }
   log.verbose('Reply "${reply.text}" queued for sending to conversation ${conversation.docId}');
@@ -1226,12 +1226,11 @@ void queueMultiReply(model.SuggestedReply reply, List<model.Conversation> conver
         incoming: false);
     view.conversationPanelView.addMessage(newMessageView);
   }
-  for (var conversation in conversations) {
-    queuedMessagesPerConversation.putIfAbsent(conversation, () => []).add(newMessage);
-  }
 
-  outboxActiveConversation = updateOutboxViewForConversations(queuedMessagesPerConversation.keys.toSet());
-  updateOutboxViewForConversation(outboxActiveConversation);
+  conversationsInOutbox.addAll(conversations);
+
+  activeConversationInOutbox = updateOutboxViewForConversations(conversationsInOutbox);
+  updateOutboxViewForConversation(activeConversationInOutbox);
 }
 
 void setConversationTag(model.Tag tag, model.Conversation conversation) {
