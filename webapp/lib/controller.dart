@@ -242,7 +242,7 @@ class ToggleData extends Data {
 class SnackbarData extends Data {
   String text;
   SnackbarNotificationType type;
-  SnackbarData(text, type);
+  SnackbarData(this.text, this.type);
 
   @override
   String toString() => 'SnackbarData: {text: $text, type: $type}';
