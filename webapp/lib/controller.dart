@@ -61,7 +61,7 @@ enum UIAction {
 
 enum UIView {
   conversations,
-  outbox,
+  review,
 }
 
 class Data {}
@@ -264,7 +264,7 @@ UIActionObject actionObjectState = UIActionObject.conversation;
 StreamSubscription conversationListSubscription;
 Set<model.Conversation> conversations;
 Set<model.Conversation> filteredConversations;
-Set<model.Conversation> conversationsInOutbox;
+Set<model.Conversation> conversationsInReviewBox;
 List<model.SuggestedReply> suggestedReplies;
 Map<String, List<model.SuggestedReply>> suggestedRepliesByCategory;
 String selectedSuggestedRepliesCategory;
@@ -273,7 +273,7 @@ List<model.Tag> messageTags;
 List<model.Tag> filterTags;
 DateTime afterDateFilter;
 model.Conversation activeConversation;
-model.Conversation activeConversationInOutbox;
+model.Conversation activeConversationInReviewBox;
 List<model.Conversation> selectedConversations;
 model.Message selectedMessage;
 
@@ -300,13 +300,13 @@ void initUI() {
   systemMessages = [];
   conversations = emptyConversationsSet;
   filteredConversations = emptyConversationsSet;
-  conversationsInOutbox = emptyConversationsSet;
+  conversationsInReviewBox = emptyConversationsSet;
   suggestedReplies = [];
   conversationTags = [];
   messageTags = [];
   selectedConversations = [];
   activeConversation = null;
-  activeConversationInOutbox = null;
+  activeConversationInReviewBox = null;
   selectedSuggestedRepliesCategory = '';
   hideDemogsTags = true;
 
@@ -529,8 +529,8 @@ void conversationListSelected(String conversationListRoot) {
       if (updatedIds.contains(activeConversation.docId)) {
         updateViewForConversation(activeConversation);
       }
-      activeConversationInOutbox = updateOutboxViewForConversations(conversationsInOutbox);
-      updateOutboxViewForConversation(activeConversationInOutbox);
+      activeConversationInReviewBox = updateMessageReviewViewForConversations(conversationsInReviewBox);
+      updateMessageReviewViewForConversation(activeConversationInReviewBox);
       command(UIAction.markConversationRead, ConversationData(activeConversation.docId));
     },
     conversationListRoot);
@@ -582,8 +582,8 @@ void command(UIAction action, Data data) {
     return;
   }
 
-  // Most actions are not valid in the outbox view.
-  if (viewState == UIView.outbox &&
+  // Most actions are not valid in the message review view.
+  if (viewState == UIView.review &&
       !(action == UIAction.showConversation || action == UIAction.switchView ||
         action == UIAction.sendQueuedMessage || action == UIAction.cancelQueuedMessage ||
         action == UIAction.sendAllQueuedMessages || action == UIAction.cancelAllQueuedMessages)) {
@@ -661,42 +661,42 @@ void command(UIAction action, Data data) {
           }
           activeConversation.messages.removeAt(messageData.messageIndex);
           view.conversationPanelView.removeMessageAtIndex(messageData.messageIndex);
-          if (activeConversationInOutbox.docId == activeConversation.docId) {
-            view.outboxConversationPanelView.removeMessageAtIndex(messageData.messageIndex);
+          if (activeConversationInReviewBox.docId == activeConversation.docId) {
+            view.reviewConversationPanelView.removeMessageAtIndex(messageData.messageIndex);
           }
-          if (activeConversation.messages.where((m) => m.status == model.MessageStatus.inOutbox).length == 0) {
-            conversationsInOutbox.removeWhere((c) => c.docId == activeConversation.docId);
+          if (activeConversation.messages.where((m) => m.status == model.MessageStatus.draft).length == 0) {
+            conversationsInReviewBox.removeWhere((c) => c.docId == activeConversation.docId);
           }
-          activeConversationInOutbox = updateOutboxViewForConversations(conversationsInOutbox, updateList: true);
+          activeConversationInReviewBox = updateMessageReviewViewForConversations(conversationsInReviewBox, updateList: true);
           break;
-        case UIView.outbox:
-          activeConversationInOutbox.messages.removeAt(messageData.messageIndex);
-          view.outboxConversationPanelView.removeMessageAtIndex(messageData.messageIndex);
-          if (activeConversationInOutbox.docId == activeConversation.docId) {
+        case UIView.review:
+          activeConversationInReviewBox.messages.removeAt(messageData.messageIndex);
+          view.reviewConversationPanelView.removeMessageAtIndex(messageData.messageIndex);
+          if (activeConversationInReviewBox.docId == activeConversation.docId) {
             view.conversationPanelView.removeMessageAtIndex(messageData.messageIndex);
           }
-          if (activeConversationInOutbox.messages.where((m) => m.status == model.MessageStatus.inOutbox).length == 0) {
-            conversationsInOutbox.removeWhere((c) => c.docId == activeConversationInOutbox.docId);
+          if (activeConversationInReviewBox.messages.where((m) => m.status == model.MessageStatus.draft).length == 0) {
+            conversationsInReviewBox.removeWhere((c) => c.docId == activeConversationInReviewBox.docId);
           }
-          activeConversationInOutbox = updateOutboxViewForConversations(conversationsInOutbox, updateList: true);
+          activeConversationInReviewBox = updateMessageReviewViewForConversations(conversationsInReviewBox, updateList: true);
           break;
       }
       break;
 
     case UIAction.sendAllQueuedMessages:
-      for (var conversation in conversationsInOutbox) {
-        for (var message in conversation.messages.where((m) => m.status == model.MessageStatus.inOutbox)) {
+      for (var conversation in conversationsInReviewBox) {
+        for (var message in conversation.messages.where((m) => m.status == model.MessageStatus.draft)) {
           sendReply(message, conversation);
         }
       }
       break;
 
     case UIAction.cancelAllQueuedMessages:
-      for (var conversation in conversationsInOutbox) {
-        conversation.messages.removeWhere((m) => m.status == model.MessageStatus.inOutbox);
+      for (var conversation in conversationsInReviewBox) {
+        conversation.messages.removeWhere((m) => m.status == model.MessageStatus.draft);
       }
-      conversationsInOutbox.clear();
-      activeConversationInOutbox = updateOutboxViewForConversations(conversationsInOutbox);
+      conversationsInReviewBox.clear();
+      activeConversationInReviewBox = updateMessageReviewViewForConversations(conversationsInReviewBox);
       updateViewForConversation(activeConversation);
       break;
 
@@ -742,8 +742,8 @@ void command(UIAction action, Data data) {
         activeConversation = updateViewForConversations(filteredConversations);
         updateViewForConversation(activeConversation);
 
-        activeConversationInOutbox = updateOutboxViewForConversations(conversationsInOutbox);
-        updateOutboxViewForConversation(activeConversationInOutbox);
+        activeConversationInReviewBox = updateMessageReviewViewForConversations(conversationsInReviewBox);
+        updateMessageReviewViewForConversation(activeConversationInReviewBox);
       }
       break;
     case UIAction.removeMessageTag:
@@ -829,9 +829,9 @@ void command(UIAction action, Data data) {
           activeConversation = filteredConversations.singleWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
           updateViewForConversation(activeConversation);
           break;
-        case UIView.outbox:
-          activeConversationInOutbox = conversationsInOutbox.singleWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
-          updateOutboxViewForConversation(activeConversationInOutbox);
+        case UIView.review:
+          activeConversationInReviewBox = conversationsInReviewBox.singleWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
+          updateMessageReviewViewForConversation(activeConversationInReviewBox);
           break;
       }
       break;
@@ -1083,36 +1083,36 @@ model.Conversation updateViewForConversations(Set<model.Conversation> conversati
 /// Shows the list of [conversations] and selects the first conversation
 /// where [updateList] is `true` if this list can be updated in place.
 /// Returns the first conversation in the list, or null if list is empty.
-model.Conversation updateOutboxViewForConversations(Set<model.Conversation> conversations, {bool updateList = false}) {
-  // Update outboxConversationListPanelView
-  _populateOutboxConversationListPanelView(conversations, updateList);
+model.Conversation updateMessageReviewViewForConversations(Set<model.Conversation> conversations, {bool updateList = false}) {
+  // Update reviewConversationListPanelView
+  _populateReviewConversationListPanelView(conversations, updateList);
 
-  // Update outboxConversationPanelView
+  // Update reviewConversationPanelView
   if (conversations.isEmpty) {
-    view.outboxConversationPanelView.clear();
+    view.reviewConversationPanelView.clear();
     return null;
   }
 
-  if (activeConversationInOutbox == null) {
+  if (activeConversationInReviewBox == null) {
     model.Conversation conversationToSelect = conversations.first;
-    view.outboxConversationListPanelView.selectConversation(conversationToSelect.docId);
-    _populateOutboxConversationPanelView(conversationToSelect);
+    view.reviewConversationListPanelView.selectConversation(conversationToSelect.docId);
+    _populateReviewConversationPanelView(conversationToSelect);
     return conversationToSelect;
   }
 
-  var matches = conversations.where((conversation) => conversation.docId == activeConversationInOutbox.docId).toList();
+  var matches = conversations.where((conversation) => conversation.docId == activeConversationInReviewBox.docId).toList();
   if (matches.length == 0) {
     model.Conversation conversationToSelect = conversations.first;
-    view.outboxConversationListPanelView.selectConversation(conversationToSelect.docId);
-    _populateOutboxConversationPanelView(conversationToSelect);
+    view.reviewConversationListPanelView.selectConversation(conversationToSelect.docId);
+    _populateReviewConversationPanelView(conversationToSelect);
     return conversationToSelect;
   }
 
   if (matches.length > 1) {
-    log.warning('Two conversations seem to have the same deidentified phone number: ${activeConversationInOutbox.docId}');
+    log.warning('Two conversations seem to have the same deidentified phone number: ${activeConversationInReviewBox.docId}');
   }
-  view.outboxConversationListPanelView.selectConversation(activeConversationInOutbox.docId);
-  return activeConversationInOutbox;
+  view.reviewConversationListPanelView.selectConversation(activeConversationInReviewBox.docId);
+  return activeConversationInReviewBox;
 }
 
 void updateViewForConversation(model.Conversation conversation) {
@@ -1134,12 +1134,12 @@ void updateViewForConversation(model.Conversation conversation) {
   }
 }
 
-void updateOutboxViewForConversation(model.Conversation conversation) {
+void updateMessageReviewViewForConversation(model.Conversation conversation) {
   if (conversation == null) return;
   // Select the conversation in the list
-  view.outboxConversationListPanelView.selectConversation(conversation.docId);
+  view.reviewConversationListPanelView.selectConversation(conversation.docId);
   // Replace the previous conversation in the conversation panel
-  _populateOutboxConversationPanelView(conversation);
+  _populateReviewConversationPanelView(conversation);
 }
 
 void queueReply(model.SuggestedReply reply, model.Conversation conversation) {
@@ -1149,7 +1149,7 @@ void queueReply(model.SuggestedReply reply, model.Conversation conversation) {
     ..datetime = new DateTime.now()
     ..direction = model.MessageDirection.Out
     ..translation = reply.translation
-    ..status = model.MessageStatus.inOutbox
+    ..status = model.MessageStatus.draft
     ..tagIds = [];
   log.verbose('Adding reply "${reply.text}" to conversation ${conversation.docId}');
   conversation.messages.add(newMessage);
@@ -1163,10 +1163,10 @@ void queueReply(model.SuggestedReply reply, model.Conversation conversation) {
       incoming: false);
   view.conversationPanelView.addMessage(newMessageView);
 
-  conversationsInOutbox.add(conversation);
+  conversationsInReviewBox.add(conversation);
 
-  activeConversationInOutbox = updateOutboxViewForConversations(conversationsInOutbox);
-  updateOutboxViewForConversation(activeConversationInOutbox);
+  activeConversationInReviewBox = updateMessageReviewViewForConversations(conversationsInReviewBox);
+  updateMessageReviewViewForConversation(activeConversationInReviewBox);
 }
 
 void sendReply(model.Message reply, model.Conversation conversation) {
@@ -1180,23 +1180,23 @@ void sendReply(model.Message reply, model.Conversation conversation) {
       var messageView = view.conversationPanelView.messageViewAtIndex(activeConversation.messages.indexOf(reply));
       messageView.setStatus(reply.status);
     }
-    if (conversation.docId == activeConversationInOutbox.docId) {
-      var messageView = view.outboxConversationPanelView.messageViewAtIndex(activeConversationInOutbox.messages.indexOf(reply));
+    if (conversation.docId == activeConversationInReviewBox.docId) {
+      var messageView = view.reviewConversationPanelView.messageViewAtIndex(activeConversationInReviewBox.messages.indexOf(reply));
       messageView.setStatus(reply.status);
     }
   }).then((_) {
-    if (conversation.messages.where((m) => m.status == model.MessageStatus.inOutbox).length == 0) {
-      conversationsInOutbox.removeWhere((c) => c.docId == conversation.docId);
+    if (conversation.messages.where((m) => m.status == model.MessageStatus.draft).length == 0) {
+      conversationsInReviewBox.removeWhere((c) => c.docId == conversation.docId);
     }
-    activeConversationInOutbox = updateOutboxViewForConversations(conversationsInOutbox, updateList: true);
+    activeConversationInReviewBox = updateMessageReviewViewForConversations(conversationsInReviewBox, updateList: true);
   });
   reply.status = model.MessageStatus.pending;
   if (conversation.docId == activeConversation.docId) {
     var messageView = view.conversationPanelView.messageViewAtIndex(activeConversation.messages.indexOf(reply));
     messageView.setStatus(reply.status);
   }
-  if (conversation.docId == activeConversationInOutbox.docId) {
-    var messageView = view.outboxConversationPanelView.messageViewAtIndex(activeConversationInOutbox.messages.indexOf(reply));
+  if (conversation.docId == activeConversationInReviewBox.docId) {
+    var messageView = view.reviewConversationPanelView.messageViewAtIndex(activeConversationInReviewBox.messages.indexOf(reply));
     messageView.setStatus(reply.status);
   }
   log.verbose('Reply "${reply.text}" queued for sending to conversation ${conversation.docId}');
@@ -1210,7 +1210,7 @@ void queueMultiReply(model.SuggestedReply reply, List<model.Conversation> conver
     ..datetime = new DateTime.now()
     ..direction = model.MessageDirection.Out
     ..translation = reply.translation
-    ..status = model.MessageStatus.inOutbox
+    ..status = model.MessageStatus.draft
     ..tagIds = [];
   log.verbose('Adding reply "${reply.text}" to conversations ${conversationIds}');
   conversations.forEach((conversation) => conversation.messages.add(newMessage));
@@ -1222,15 +1222,15 @@ void queueMultiReply(model.SuggestedReply reply, List<model.Conversation> conver
         activeConversation.docId,
         activeConversation.messages.indexOf(newMessage),
         translation: newMessage.translation,
-        status: model.MessageStatus.inOutbox,
+        status: model.MessageStatus.draft,
         incoming: false);
     view.conversationPanelView.addMessage(newMessageView);
   }
 
-  conversationsInOutbox.addAll(conversations);
+  conversationsInReviewBox.addAll(conversations);
 
-  activeConversationInOutbox = updateOutboxViewForConversations(conversationsInOutbox);
-  updateOutboxViewForConversation(activeConversationInOutbox);
+  activeConversationInReviewBox = updateMessageReviewViewForConversations(conversationsInReviewBox);
+  updateMessageReviewViewForConversation(activeConversationInReviewBox);
 }
 
 void setConversationTag(model.Tag tag, model.Conversation conversation) {

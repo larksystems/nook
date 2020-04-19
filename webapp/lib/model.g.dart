@@ -247,14 +247,14 @@ class MessageDirection {
 MessageDirection Function(String text) MessageDirection_fromStringOverride;
 
 class MessageStatus {
-  static const inOutbox = MessageStatus('inOutbox');
+  static const draft = MessageStatus('draft');
   static const pending = MessageStatus('pending');
   static const confirmed = MessageStatus('confirmed');
   static const failed = MessageStatus('failed');
   static const unknown = MessageStatus('unknown');
 
   static const values = <MessageStatus>[
-    inOutbox,
+    draft,
     pending,
     confirmed,
     failed,

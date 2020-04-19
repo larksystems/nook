@@ -15,10 +15,10 @@ Logger log = new Logger('view.dart');
 MenuView menuView;
 ConversationListSelectHeader conversationListSelectView;
 ConversationListPanelView conversationListPanelView;
-OutboxConversationListPanelView outboxConversationListPanelView;
+ReviewConversationListPanelView reviewConversationListPanelView;
 ConversationFilter get conversationFilter => conversationListPanelView.conversationFilter;
 ConversationPanelView conversationPanelView;
-ConversationPanelView outboxConversationPanelView;
+ConversationPanelView reviewConversationPanelView;
 ReplyPanelView replyPanelView;
 TagPanelView tagPanelView;
 AuthHeaderView authHeaderView;
@@ -31,9 +31,9 @@ void init() {
   menuView = new MenuView();
   conversationListSelectView = new ConversationListSelectHeader();
   conversationListPanelView = new ConversationListPanelView();
-  outboxConversationListPanelView = new OutboxConversationListPanelView();
+  reviewConversationListPanelView = new ReviewConversationListPanelView();
   conversationPanelView = new ConversationPanelView();
-  outboxConversationPanelView = new ConversationPanelView();
+  reviewConversationPanelView = new ConversationPanelView();
   replyPanelView = new ReplyPanelView();
   tagPanelView = new TagPanelView();
   authHeaderView = new AuthHeaderView();
@@ -48,8 +48,8 @@ void init() {
       ..append(menuView.menuElement)
       ..append(authHeaderView.authElement);
 
-  outboxConversationListPanelView.conversationListPanel.classes.add('w-30');
-  outboxConversationPanelView.conversationPanel.classes.add('w-70');
+  reviewConversationListPanelView.conversationListPanel.classes.add('w-30');
+  reviewConversationPanelView.conversationPanel.classes.add('w-70');
 
   document.onKeyDown.listen((event) => command(UIAction.keyPressed, new KeyPressData(event.key)));
 }
@@ -60,8 +60,8 @@ void showSignedInView(UIView view) {
     case UIView.conversations:
       showConversationsView();
       break;
-    case UIView.outbox:
-      showOutboxView();
+    case UIView.review:
+      showReviewView();
       break;
   }
   showNormalStatus('signed in');
@@ -78,24 +78,24 @@ void showConversationsView() {
     ..append(snackbarView.snackbarElement);
   menuView.showViewButtons();
   conversationListPanelView._conversationList.show();
-  outboxConversationListPanelView._conversationList.hide();
+  reviewConversationListPanelView._conversationList.hide();
   if (conversationPanelView._messageViews.isNotEmpty) {
     conversationPanelView._messageViews.last.message.scrollIntoView();
   }
 }
 
-void showOutboxView() {
+void showReviewView() {
   clearMain();
 
   querySelector('main')
-    ..append(outboxConversationListPanelView.conversationListPanel)
-    ..append(outboxConversationPanelView.conversationPanel)
+    ..append(reviewConversationListPanelView.conversationListPanel)
+    ..append(reviewConversationPanelView.conversationPanel)
     ..append(snackbarView.snackbarElement);
   menuView.showViewButtons();
   conversationListPanelView._conversationList.hide();
-  outboxConversationListPanelView._conversationList.show();
-  if (outboxConversationPanelView._messageViews.isNotEmpty) {
-    outboxConversationPanelView._messageViews.last.message.scrollIntoView();
+  reviewConversationListPanelView._conversationList.show();
+  if (reviewConversationPanelView._messageViews.isNotEmpty) {
+    reviewConversationPanelView._messageViews.last.message.scrollIntoView();
   }
 }
 
@@ -110,9 +110,9 @@ void showSignedOutView() {
 
 void clearMain() {
   conversationListPanelView.conversationListPanel.remove();
-  outboxConversationListPanelView.conversationListPanel.remove();
+  reviewConversationListPanelView.conversationListPanel.remove();
   conversationPanelView.conversationPanel.remove();
-  outboxConversationPanelView.conversationPanel.remove();
+  reviewConversationPanelView.conversationPanel.remove();
   replyPanelView.replyPanel.remove();
   tagPanelView.tagPanel.remove();
   authMainView.authElement.remove();
@@ -179,13 +179,13 @@ void makeEditable(Element element, {void onChange(), void onEnter()}) {
 }
 
 const CONVERSATION_VIEW_TEXT = 'Conversation view';
-const MESSAGES_OUTBOX_VIEW_TEXT = 'Outbox view';
+const MESSAGES_REVIEW_VIEW_TEXT = 'Review view';
 
 class MenuView {
   DivElement menuElement;
   DivElement _buttonContainer;
   DivElement _conversationViewButton;
-  DivElement _outboxViewButton;
+  DivElement _reviewViewButton;
 
   MenuView() {
     menuElement = new DivElement()
@@ -197,15 +197,15 @@ class MenuView {
       ..text = CONVERSATION_VIEW_TEXT
       ..onClick.listen((_) => command(UIAction.switchView, new SwitchViewData(UIView.conversations)));
 
-    _outboxViewButton = new DivElement()
+    _reviewViewButton = new DivElement()
       ..classes.add('menu__button')
-      ..text = MESSAGES_OUTBOX_VIEW_TEXT
-      ..onClick.listen((_) => command(UIAction.switchView, new SwitchViewData(UIView.outbox)));
+      ..text = MESSAGES_REVIEW_VIEW_TEXT
+      ..onClick.listen((_) => command(UIAction.switchView, new SwitchViewData(UIView.review)));
 
     _buttonContainer = new DivElement()
       ..classes.add('menu__buttons')
       ..append(_conversationViewButton)
-      ..append(_outboxViewButton);
+      ..append(_reviewViewButton);
     menuElement.append(_buttonContainer);
   }
 
@@ -216,11 +216,11 @@ class MenuView {
     switch (view) {
       case UIView.conversations:
         _conversationViewButton.classes.toggle('menu__button--selected', true);
-        _outboxViewButton.classes.toggle('menu__button--selected', false);
+        _reviewViewButton.classes.toggle('menu__button--selected', false);
         break;
-      case UIView.outbox:
+      case UIView.review:
         _conversationViewButton.classes.toggle('menu__button--selected', false);
-        _outboxViewButton.classes.toggle('menu__button--selected', true);
+        _reviewViewButton.classes.toggle('menu__button--selected', true);
     }
   }
 }
@@ -597,13 +597,13 @@ class MessageView {
         _cancelMessageButton.classes.remove('hidden');
         _sendMessageButton.classes.remove('hidden');
         break;
-      case MessageStatus.inOutbox:
-        message.classes.add('message--in-outbox');
+      case MessageStatus.draft:
+        message.classes.add('message--draft');
         _messageDateTime.classes.add('hidden');
         _messageStatus
           ..classes.remove('hidden')
           ..classes.add('orange')
-          ..text = "in outbox";
+          ..text = "draft";
         _cancelMessageButton.classes.remove('hidden');
         _sendMessageButton.classes.remove('hidden');
         break;
@@ -619,7 +619,7 @@ class MessageView {
         break;
       default:
         message.classes.remove('message--failed');
-        message.classes.remove('message--in-outbox');
+        message.classes.remove('message--draft');
         message.classes.remove('message--pending');
         _messageStatus.classes.add('hidden');
         _cancelMessageButton.classes.add('hidden');
@@ -1020,11 +1020,11 @@ class ConversationListPanelView {
   }
 }
 
-class OutboxConversationListPanelView extends ConversationListPanelView {
+class ReviewConversationListPanelView extends ConversationListPanelView {
   SendAllActionView _sendAll;
   CancelAllActionView _cancelAll;
 
-  OutboxConversationListPanelView() : super() {
+  ReviewConversationListPanelView() : super() {
     _selectAllCheckbox.remove();
     _markUnread.markUnreadAction.remove();
     this.conversationFilter.conversationFilter.remove();
@@ -1053,7 +1053,7 @@ class OutboxConversationListPanelView extends ConversationListPanelView {
   void updateConversationSummary(ConversationSummary summary, Conversation conversation) {
     conversation.unread ? summary._markUnread() : summary._markRead();
 
-    int numberOfQueuedMessages = conversation.messages.where((m) => m.status == MessageStatus.inOutbox).length;
+    int numberOfQueuedMessages = conversation.messages.where((m) => m.status == MessageStatus.draft).length;
     summary.setAnnotationText('$numberOfQueuedMessages queued msg');
   }
 

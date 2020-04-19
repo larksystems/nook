@@ -25,8 +25,8 @@ void _populateConversationListPanelView(Set<model.Conversation> conversations, b
   _populateConversationListPanelViewWrapper(view.conversationListPanelView, conversations, updateList);
 }
 
-void _populateOutboxConversationListPanelView(Set<model.Conversation> conversations, bool updateList) {
-  _populateConversationListPanelViewWrapper(view.outboxConversationListPanelView, conversations, updateList);
+void _populateReviewConversationListPanelView(Set<model.Conversation> conversations, bool updateList) {
+  _populateConversationListPanelViewWrapper(view.reviewConversationListPanelView, conversations, updateList);
 }
 
 void _populateConversationListPanelViewWrapper(view.ConversationListPanelView panelView, Set<model.Conversation> conversations, bool updateList) {
@@ -42,8 +42,8 @@ void _populateConversationPanelView(model.Conversation conversation) {
   _populateConversationPanelViewWrapper(view.conversationPanelView, conversation);
 }
 
-void _populateOutboxConversationPanelView(model.Conversation conversation) {
-  _populateConversationPanelViewWrapper(view.outboxConversationPanelView, conversation);
+void _populateReviewConversationPanelView(model.Conversation conversation) {
+  _populateConversationPanelViewWrapper(view.reviewConversationPanelView, conversation);
 }
 
 void _populateConversationPanelViewWrapper(view.ConversationPanelView panelView, model.Conversation conversation) {
