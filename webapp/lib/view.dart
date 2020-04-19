@@ -54,6 +54,8 @@ void initSignedInView() {
     ..append(tagPanelView.tagPanel)
     ..append(snackbarView.snackbarElement);
   showNormalStatus('signed in');
+
+  currentConfig.tagPanelVisibility ? showTagPanel() : hideTagPanel();
 }
 
 void initSignedOutView() {
@@ -73,15 +75,15 @@ void clearMain() {
   snackbarView.snackbarElement.remove();
 }
 
-void showTagPanel(bool show) {
-  if (show) {
-    tagPanelView.tagPanel.classes.toggle('hidden', false);
-    conversationListPanelView.conversationListPanel.classes.add('w-20');
-    conversationPanelView.conversationPanel.classes.add('w-40');
-    replyPanelView.replyPanel.classes.add('w-25');
-    tagPanelView.tagPanel.classes.add('w-15');
-    return;
-  }
+void showTagPanel() {
+  tagPanelView.tagPanel.classes.toggle('hidden', false);
+  conversationListPanelView.conversationListPanel.classes.add('w-20');
+  conversationPanelView.conversationPanel.classes.add('w-40');
+  replyPanelView.replyPanel.classes.add('w-25');
+  tagPanelView.tagPanel.classes.add('w-15');
+}
+
+void hideTagPanel() {
   tagPanelView.tagPanel.classes.toggle('hidden', true);
   conversationListPanelView.conversationListPanel.classes.add('w-25');
   conversationPanelView.conversationPanel.classes.add('w-45');
@@ -190,9 +192,7 @@ class ConversationPanelView {
 
     _newMessageBox = new DivElement()
       ..classes.add('new-message-box');
-    if (!currentConfig.sendCustomMessagesEnabled) {
-      showCustomMessageBox(false);
-    }
+    currentConfig.sendCustomMessagesEnabled ? showCustomMessageBox() : hideCustomMessageBox();
     conversationPanel.append(_newMessageBox);
 
     _newMessageTextArea = new TextAreaElement()
@@ -274,8 +274,12 @@ class ConversationPanelView {
     _newMessageTextArea?.value = '';
   }
 
-  void showCustomMessageBox(bool show) {
-    _newMessageBox.classes.toggle('hidden', !show);
+  void showCustomMessageBox() {
+    _newMessageBox.classes.remove('hidden');
+  }
+
+  void hideCustomMessageBox() {
+    _newMessageBox.classes.add('hidden');
   }
 
   void showAfterDateFilterPrompt(DateTime dateTime) {
@@ -1047,6 +1051,8 @@ class ReplyPanelView {
     });
     _notes.append(_notesTextArea);
     _replyViews = [];
+
+    currentConfig.keyboardShortcutsEnabled ? showShortcuts() : hideShortcuts();
   }
 
   set noteText(String text) => _notesTextArea.value = text;
@@ -1086,9 +1092,15 @@ class ReplyPanelView {
     assert(_replyList.children.length == 0);
   }
 
-  void showShortcuts(bool value) {
+  void showShortcuts() {
     for (var view in _replyViews) {
-      view.showShortcut(value);
+      view.showShortcut();
+    }
+  }
+
+  void hideShortcuts() {
+    for (var view in _replyViews) {
+      view.hideShortcut();
     }
   }
 
@@ -1158,6 +1170,8 @@ class TagPanelView {
       ..append(_statusText));
 
     _tagViews = [];
+
+    currentConfig.keyboardShortcutsEnabled ? showShortcuts() : hideShortcuts();
   }
 
   void addTag(ActionView action) {
@@ -1173,9 +1187,15 @@ class TagPanelView {
     assert(_tagList.children.length == 0);
   }
 
-  void showShortcuts(bool value) {
+  void showShortcuts() {
     for (var view in _tagViews) {
-      view.showShortcut(value);
+      view.showShortcut();
+    }
+  }
+
+  void hideShortcuts() {
+    for (var view in _tagViews) {
+      view.hideShortcut();
     }
   }
 }
@@ -1192,7 +1212,7 @@ class ActionView {
     _shortcutElement = new DivElement()
       ..classes.add('action__shortcut')
       ..text = shortcut;
-    showShortcut(currentConfig.keyboardShortcutsEnabled);
+    currentConfig.keyboardShortcutsEnabled ? showShortcut() : hideShortcut();
     action.append(_shortcutElement);
 
     var textElement = new DivElement()
@@ -1206,8 +1226,12 @@ class ActionView {
     action.append(buttonElement);
   }
 
-  void showShortcut(bool value) {
-    _shortcutElement.classes.toggle('hidden', !value);
+  void showShortcut() {
+    _shortcutElement.classes.remove('hidden');
+  }
+
+  void hideShortcut() {
+    _shortcutElement.classes.add('hidden');
   }
 }
 
@@ -1218,7 +1242,7 @@ class ReplyActionView extends ActionView {
     _shortcutElement = new DivElement()
       ..classes.add('action__shortcut')
       ..text = shortcut;
-    showShortcut(currentConfig.keyboardShortcutsEnabled);
+    currentConfig.keyboardShortcutsEnabled ? showShortcut() : hideShortcut();
     action.append(_shortcutElement);
 
     var textTranslationWrapper = new DivElement()

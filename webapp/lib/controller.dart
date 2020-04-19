@@ -415,12 +415,12 @@ void initUI() {
 /// If a flag is not set in the data map, it defaults to the existing values
 void applyConfiguration(model.UserConfiguration newConfig) {
   if (currentConfig.keyboardShortcutsEnabled != newConfig.keyboardShortcutsEnabled) {
-    view.replyPanelView.showShortcuts(newConfig.keyboardShortcutsEnabled ?? false);
-    view.tagPanelView.showShortcuts(newConfig.keyboardShortcutsEnabled ?? false);
+    newConfig.keyboardShortcutsEnabled ? view.replyPanelView.showShortcuts() : view.replyPanelView.hideShortcuts();
+    newConfig.keyboardShortcutsEnabled ? view.tagPanelView.showShortcuts() : view.tagPanelView.hideShortcuts();
   }
 
   if (currentConfig.sendCustomMessagesEnabled != newConfig.sendCustomMessagesEnabled) {
-    view.conversationPanelView.showCustomMessageBox(newConfig.sendCustomMessagesEnabled ?? false);
+    newConfig.sendCustomMessagesEnabled ? view.conversationPanelView.showCustomMessageBox() : view.conversationPanelView.hideCustomMessageBox();
   }
 
   if (currentConfig.sendMultiMessageEnabled != newConfig.sendMultiMessageEnabled) {
@@ -433,7 +433,7 @@ void applyConfiguration(model.UserConfiguration newConfig) {
   }
 
   if (currentConfig.tagPanelVisibility != newConfig.tagPanelVisibility) {
-    view.showTagPanel(newConfig.tagPanelVisibility ?? false);
+    newConfig.tagPanelVisibility ? view.showTagPanel() : view.hideTagPanel();
   }
 
   currentConfig = newConfig;
