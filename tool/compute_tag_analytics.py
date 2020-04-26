@@ -240,7 +240,7 @@ def compute_needs_reply_metrics(nook_conversations):
         needs_reply_messages_by_date[day_date] += 1
 
     needs_reply_metrics = {
-        "datetime": datetime.now().isoformat(),
+        "datetime": datetime.now(timezone.utc).isoformat(),
         "needs_reply_count": needs_reply_count,
         "needs_reply_more_than_24h": needs_reply_more_than_24h,
         "needs_reply_and_escalate_count": needs_reply_and_escalate_count,
