@@ -7,8 +7,7 @@ import json
 import sys
 
 import firebase_util
-from firebase_util import firebase_client
-from firebase_util import log
+from firebase_util import firebase_client, log, LoggerType
 import tool_utils
 
 def push_collection_to_firestore(collection_root, documents):
@@ -64,7 +63,7 @@ if __name__ == '__main__':
     CRYPTO_TOKEN_PATH = args.crypto_token_file
     INPUT_PATH = args.input_path
 
-    firebase_util.init(CRYPTO_TOKEN_PATH)
+    firebase_util.init(CRYPTO_TOKEN_PATH, LoggerType.KATIKATI_PYLIB)
 
 
     with open(INPUT_PATH, 'r') as f:

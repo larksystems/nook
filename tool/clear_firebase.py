@@ -6,8 +6,7 @@ import json
 import sys
 
 import firebase_util
-from firebase_util import firebase_client
-from firebase_util import log
+from firebase_util import firebase_client, log, LoggerType
 from firebase_root_keys import root_keys
 import tool_utils
 
@@ -67,7 +66,7 @@ if __name__ == '__main__':
         exit(1)
 
     CRYPTO_TOKEN_PATH = sys.argv[1]
-    firebase_util.init(CRYPTO_TOKEN_PATH)
+    firebase_util.init(CRYPTO_TOKEN_PATH, LoggerType.KATIKATI_PYLIB)
 
     data = {}
 
