@@ -1,30 +1,14 @@
 # Temporary tool that reads from JSON and uploads it to Firebase
 # Relies on an undocumented .collections() API call and a hard coded list of top level collections
-
-import firebase_admin
-from firebase_admin import credentials
-from firebase_admin import firestore
 import hashlib
-from katikati_pylib.logging import logging
 import time
 import tool_utils
-
 import json
 import sys
 
-log = None
-
-firebase_client = None
-
-def init(CRYPTO_TOKEN_PATH):
-    global firebase_client
-    global log
-    log = logging.Logger(__file__, CRYPTO_TOKEN_PATH)
-    log.info("Setting up Firebase client")
-    firebase_cred = credentials.Certificate(CRYPTO_TOKEN_PATH)
-    firebase_admin.initialize_app(firebase_cred)
-    firebase_client = firestore.client()
-    log.info("Done")
+import firebase_util
+from firebase_util import firebase_client
+from firebase_util import log
 
 def push_collection_to_firestore(collection_root, documents):
     log.info(f"push_collection_to_firestore {collection_root}")
@@ -54,7 +38,7 @@ if __name__ == '__main__':
     CRYPTO_TOKEN_PATH = sys.argv[1]
     CONTENT_TYPE = sys.argv[2]
     INPUT_PATH = sys.argv[3]
-    init(CRYPTO_TOKEN_PATH)
+    firebase_util.init(CRYPTO_TOKEN_PATH)
 
     valid_content_type = ["suggested_replies", "message_tags", "conversation_tags"]
     if CONTENT_TYPE not in valid_content_type:
