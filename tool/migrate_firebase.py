@@ -1,29 +1,14 @@
 # Migration tool for firebase collections
 # Relies on an undocumented .collections() API call and a hard coded list of top level collections
 
-import firebase_admin
-from firebase_admin import credentials
-from firebase_admin import firestore
-from core_data_modules.logging import Logger
 import time
-
 import json
 import sys
 import os.path
 
 import migrate_nook_model
-
-log = Logger(__name__)
-
-firebase_client = None
-
-def init(crypto_token_path):
-    global firebase_client
-    log.info("Setting up Firebase client")    
-    firebase_cred = credentials.Certificate(crypto_token_path)
-    firebase_admin.initialize_app(firebase_cred)
-    firebase_client = firestore.client()
-    log.info("Done")
+import firebase_util
+from firebase_util import firebase_client, log, LoggerType
 
 def read_document_ids(collection_root):
     log.info (f"read_document_ids {collection_root}")
@@ -133,7 +118,7 @@ if len(sys.argv) > 4:
 doc_count = 0
 skip_count = 0
 migration_count = 0
-init(crypto_token_path)
+firebase_util.init(crypto_token_path, LoggerType.CORE_DATA_MODULES)
 # migrate_collection("suggestedReplies",   migrate_nook_model.migrate_SuggestedReply)
 migrate_collection("nook_conversations", migrate_nook_model.migrate_Conversation)
 migrate_collection("conversationTags",   migrate_nook_model.migrate_Tag)
