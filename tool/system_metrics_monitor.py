@@ -68,7 +68,7 @@ def run_system_metric_monitor(interval=DEFAULT_INTERVAL):
     parser.add_argument("crypto_token_file", type=str, help="path to Firebase crypto token file")
     args = parser.parse_args()
 
-    initialize_firebase(args.crypto_token_file, LoggerType.CORE_DATA_MODULES)
+    firebase_util.init(args.crypto_token_file, LoggerType.CORE_DATA_MODULES)
     runner = threading.Thread(target=get_and_publish_system_metrics, args=(interval,))
     runner.start()
 
