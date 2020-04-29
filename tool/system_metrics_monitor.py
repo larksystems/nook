@@ -6,7 +6,10 @@ import argparse
 
 import psutil
 import firebase_util
-from firebase_util import firebase_client, log, LoggerType
+from firebase_util import firebase_client
+from core_data_modules.logging import Logger
+
+log = log = Logger(__name__)
 
 COLLECTION = 'pipeline_system_metrics' #name of the firebase collections to store metrics
 DEFAULT_INTERVAL = 60 # wait interval between each set of metric readings in seconds
@@ -68,7 +71,7 @@ def run_system_metric_monitor(interval=DEFAULT_INTERVAL):
     parser.add_argument("crypto_token_file", type=str, help="path to Firebase crypto token file")
     args = parser.parse_args()
 
-    firebase_util.init(args.crypto_token_file, LoggerType.CORE_DATA_MODULES)
+    firebase_util.init(args.crypto_token_file, log)
     runner = threading.Thread(target=get_and_publish_system_metrics, args=(interval,))
     runner.start()
 

@@ -9,7 +9,10 @@ import os.path
 import validate_nook_model as model
 import validate_nook_model_custom as custom
 import firebase_util
-from firebase_util import firebase_client, log, LoggerType
+from firebase_util import firebase_client
+from core_data_modules.logging import Logger
+
+log = log = Logger(__name__)
 
 def validate_documents(collection_root, validationMethod):
     log.info (f"validate_documents {collection_root}")
@@ -49,7 +52,7 @@ if not os.path.isfile(crypto_token_path):
     usage()
     exit(1)
 
-firebase_util.init(crypto_token_path, LoggerType.CORE_DATA_MODULES)
+firebase_util.init(crypto_token_path, log)
 validate_documents("systemMessages",     model.validate_SystemMessage_doc)
 validate_documents("suggestedReplies",   model.validate_SuggestedReply_doc)
 validate_documents("conversationTags",   custom.validate_ConversationTag)

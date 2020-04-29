@@ -7,9 +7,12 @@ import json
 import sys
 
 import firebase_util
-from firebase_util import firebase_client, log, LoggerType
+from firebase_util import firebase_client
+from katikati_pylib.logging import logging
 from firebase_root_keys import root_keys
 import tool_utils
+
+log = None
 
 def list_for_collection_twophase_strategy(col):
     log.info (f"processing: {col._path}")
@@ -82,8 +85,10 @@ if __name__ == '__main__':
     root_keys_to_export = root_keys
     if len(args.root_collections) > 0:
         root_keys_to_export = list(args.root_collections)
+    
+    log = logging.Logger(__file__, CRYPTO_TOKEN_PATH)
 
-    firebase_util.init(CRYPTO_TOKEN_PATH, LoggerType.KATIKATI_PYLIB)
+    firebase_util.init(CRYPTO_TOKEN_PATH, log)
 
     data = {}
 

@@ -8,7 +8,10 @@ import os.path
 
 import migrate_nook_model
 import firebase_util
-from firebase_util import firebase_client, log, LoggerType
+from firebase_util import firebase_client
+from core_data_modules.logging import Logger
+
+log = log = Logger(__name__)
 
 def read_document_ids(collection_root):
     log.info (f"read_document_ids {collection_root}")
@@ -118,7 +121,7 @@ if len(sys.argv) > 4:
 doc_count = 0
 skip_count = 0
 migration_count = 0
-firebase_util.init(crypto_token_path, LoggerType.CORE_DATA_MODULES)
+firebase_util.init(crypto_token_path, log)
 # migrate_collection("suggestedReplies",   migrate_nook_model.migrate_SuggestedReply)
 migrate_collection("nook_conversations", migrate_nook_model.migrate_Conversation)
 migrate_collection("conversationTags",   migrate_nook_model.migrate_Tag)
