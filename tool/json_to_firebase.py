@@ -7,11 +7,11 @@ import json
 import sys
 
 import firebase_util
-from firebase_util import firebase_client
 from katikati_pylib.logging import logging
 import tool_utils
 
 log = None
+firebase_client = None
 
 def push_collection_to_firestore(collection_root, documents):
     log.info (f"push_collection_to_firestore {collection_root}")
@@ -68,7 +68,7 @@ if __name__ == '__main__':
 
     log = logging.Logger(__file__, CRYPTO_TOKEN_PATH)
 
-    firebase_util.init(CRYPTO_TOKEN_PATH, log)
+    firebase_client = firebase_util.init(CRYPTO_TOKEN_PATH, log)
 
 
     with open(INPUT_PATH, 'r') as f:
