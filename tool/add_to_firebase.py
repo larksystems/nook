@@ -6,7 +6,7 @@ import tool_utils
 import json
 import sys
 
-import firebase_util
+from firebase_util import init_firebase_client
 from katikati_pylib.logging import logging
 
 log = None
@@ -43,7 +43,7 @@ if __name__ == '__main__':
     
     log = logging.Logger(__file__, CRYPTO_TOKEN_PATH)
 
-    firebase_client = firebase_util.init(CRYPTO_TOKEN_PATH, log)
+    firebase_client = init_firebase_client(CRYPTO_TOKEN_PATH, log)
 
     valid_content_type = ["suggested_replies", "message_tags", "conversation_tags"]
     if CONTENT_TYPE not in valid_content_type:
