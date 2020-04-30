@@ -11,7 +11,7 @@ import migrate_nook_model
 from firebase_util import init_firebase_client
 from core_data_modules.logging import Logger
 
-log = log = Logger(__name__)
+log = Logger(__name__)
 firebase_client = None
 
 def read_document_ids(collection_root):

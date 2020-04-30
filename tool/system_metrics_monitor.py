@@ -8,7 +8,7 @@ import psutil
 from firebase_util import init_firebase_client
 from core_data_modules.logging import Logger
 
-log = log = Logger(__name__)
+log = Logger(__name__)
 firebase_client = None
 
 COLLECTION = 'pipeline_system_metrics' #name of the firebase collections to store metrics
