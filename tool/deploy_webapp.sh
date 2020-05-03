@@ -11,7 +11,7 @@ WORK_DIR="$(pwd)"
 
 FIREBASE_CONSTANTS="$1"
 if [ ! -f "$FIREBASE_CONSTANTS" ]; then
-  echo "could not find FIREBASE_CONSTANTS: $FIREBASE_CONSTANTS"
+  echo "could not find FIREBASE_CONSTANTS: $FIREBASE_CONSTANTS" 
   exit 1
 fi
 
@@ -57,15 +57,6 @@ fi
 cd "$(dirname "$0")"/..
 NOOK_DIR="$(pwd)"
 
-########## ensure that node modules have been installed
-
-echo ""
-echo "node version $(node --version)"
-if [ ! -d "$NOOK_DIR/functions/node_modules" ]; then
-  echo "before deploying, run 'npm install' in $NOOK_DIR/functions"
-  exit 1
-fi
-
 ########## rebuild the webapp
 
 echo ""
@@ -104,11 +95,29 @@ echo "{\"metadata\": [ {$DEPLOY_DATA} ] }" > public_metadata_nook_app.json
 
 # Deploy using the local firebase tool
 echo "deploying to $FIREBASE_CONSTANTS_PROJECT_ID firebase..."
-node "$NOOK_DIR"/functions/node_modules/.bin/firebase \
-  deploy \
+firebase deploy \
   --project $FIREBASE_CONSTANTS_PROJECT_ID \
   --public public
 echo "firebase deploy result: $?"
+
+echo ""
+echo "deploy cloud functions"
+cd cloud_functions
+
+for FUNCTION_NAME in Publish Log StatusZ
+do
+gcloud --project $CRYPTO_TOKEN_PROJECT_ID functions deploy \
+  $FUNCTION_NAME \
+  --entry-point $FUNCTION_NAME \
+  --runtime python37 \
+  --allow-unauthenticated \
+  --region=europe-west1 \
+  --trigger-http
+done
+
+cd ..
+echo ""
+echo "Done updating cloud functions..."
 
 echo ""
 echo "updating nook webapp metadata..."
