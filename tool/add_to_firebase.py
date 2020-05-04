@@ -43,7 +43,7 @@ if __name__ == '__main__':
     
     log = logging.Logger(__file__, CRYPTO_TOKEN_PATH)
 
-    firebase_client = init_firebase_client(CRYPTO_TOKEN_PATH, log)
+    firebase_client = init_firebase_client(CRYPTO_TOKEN_PATH)
 
     valid_content_type = ["suggested_replies", "message_tags", "conversation_tags"]
     if CONTENT_TYPE not in valid_content_type:

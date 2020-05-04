@@ -71,7 +71,7 @@ if __name__ == '__main__':
     
     log = logging.Logger(__file__, CRYPTO_TOKEN_PATH)
 
-    firebase_client = init_firebase_client(CRYPTO_TOKEN_PATH, log)
+    firebase_client = init_firebase_client(CRYPTO_TOKEN_PATH)
 
     data = {}
 
