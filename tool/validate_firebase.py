@@ -52,7 +52,7 @@ if not os.path.isfile(crypto_token_path):
     usage()
     exit(1)
 
-firebase_client = init_firebase_client(crypto_token_path, log)
+firebase_client = init_firebase_client(crypto_token_path)
 validate_documents("systemMessages",     model.validate_SystemMessage_doc)
 validate_documents("suggestedReplies",   model.validate_SuggestedReply_doc)
 validate_documents("conversationTags",   custom.validate_ConversationTag)
