@@ -3,25 +3,16 @@ import datetime as dt
 import threading
 import sys
 import argparse
+
 import psutil
-import firebase_admin
-from firebase_admin import credentials
-from firebase_admin import firestore
+from firebase_util import init_firebase_client
 from core_data_modules.logging import Logger
+
+log = Logger(__name__)
+firebase_client = None
 
 COLLECTION = 'pipeline_system_metrics' #name of the firebase collections to store metrics
 DEFAULT_INTERVAL = 60 # wait interval between each set of metric readings in seconds
-
-log = Logger(__name__)
-
-
-def initialize_firebase(CRYPTO_TOKEN_PATH):
-    global firebase_client
-    log.info("Setting up Firebase client")
-    firebase_cred = credentials.Certificate(CRYPTO_TOKEN_PATH)
-    firebase_admin.initialize_app(firebase_cred)
-    firebase_client = firestore.client()
-    log.info("Firebase client ready")
 
 
 def get_and_publish_system_metrics(interval):
@@ -80,7 +71,7 @@ def run_system_metric_monitor(interval=DEFAULT_INTERVAL):
     parser.add_argument("crypto_token_file", type=str, help="path to Firebase crypto token file")
     args = parser.parse_args()
 
-    initialize_firebase(args.crypto_token_file)
+    firebase_client = init_firebase_client(args.crypto_token_file)
     runner = threading.Thread(target=get_and_publish_system_metrics, args=(interval,))
     runner.start()
 
