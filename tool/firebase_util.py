@@ -57,7 +57,10 @@ def push_document_to_firestore(collection_root, data, firebase_client, CRYPTO_TO
         for sub_collection in sub_collections:
             push_collection_to_firestore(f"{ref_path}/{sub_collection}", data[sub_collection], firebase_client, CRYPTO_TOKEN_PATH)
     else:
-        doc_id = list(data.keys())[0]
-        doc_fields = data[doc_id]
-        ref_path = f"{collection_root}/{doc_id}"
-        firebase_client.document(ref_path).set(doc_fields)
+        _push_document_fields_to_firestore(collection_root, data, firebase_client)
+
+def _push_document_fields_to_firestore(collection_root, data, firebase_client):
+    doc_id = list(data.keys())[0]
+    doc_fields = data[doc_id]
+    ref_path = f"{collection_root}/{doc_id}"
+    firebase_client.document(ref_path).set(doc_fields)
