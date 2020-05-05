@@ -32,6 +32,9 @@ def push_collection_to_firestore(collection_root, documents, firebase_client, CR
     log.info (f"push_collection_to_firestore {collection_root} in {ms_elapsed} ms")
 
 def push_document_to_firestore(collection_root, data, firebase_client, CRYPTO_TOKEN_PATH):
+    global log
+    if log is None:
+        log = logging.Logger(__file__, CRYPTO_TOKEN_PATH)
     if "__id" in data:
         ref_path = data["__reference_path"]
         doc_id = data["__id"]
