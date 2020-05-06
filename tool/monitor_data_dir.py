@@ -7,7 +7,7 @@ from firebase_util import init_firebase_client
 from data_dir_stat import get_size_and_upload
 
 CRYPTO_TOKEN_PATH = None
-DEFAULT_INTERVAL = 600
+DEFAULT_INTERVAL = 600 # 10 minutes
 project = None
 dirpath = None
 firebase_client = None
@@ -15,7 +15,7 @@ firebase_client = None
 def run():
     while True:
         get_size_and_upload(CRYPTO_TOKEN_PATH, dirpath, project, firebase_client)
-        time.sleep(3) 
+        time.sleep(DEFAULT_INTERVAL)
 
 
 if __name__ == '__main__':
