@@ -22,7 +22,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Monitor data dir size")
     parser.add_argument("crypto_token_file", type=str, help="path to Firebase crypto token file")
     parser.add_argument("project", type=str, help="name of the project")
-    parser.add_argument("dirname", type=str, help="name of the directory to monitor")
+    parser.add_argument("dirname", type=str, help="path of directory to monitor")
     args = parser.parse_args()
     
     CRYPTO_TOKEN_PATH = args.crypto_token_file
