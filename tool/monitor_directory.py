@@ -6,15 +6,11 @@ import datetime
 from firebase_util import init_firebase_client
 from katikati_pylib.logging import logging
 
-CRYPTO_TOKEN_PATH = None
 DEFAULT_INTERVAL = 600 # 10 minutes
 firebase_client = None
 log = None
 
 def get_size_and_upload(dirpath, project):
-    global log
-    if log is None:
-        log = logging.Logger(__file__, CRYPTO_TOKEN_PATH)
     dirname = os.path.basename(dirpath)
     dir_size = get_dir_size_in_mb(dirpath)
     log.info(f'Retrieved size of directory {dirname} as {dir_size}MB')
@@ -43,10 +39,15 @@ if __name__ == '__main__':
     parser.add_argument("dirpath", type=str, help="path of directory to monitor")
     args = parser.parse_args()
     
-    CRYPTO_TOKEN_PATH = args.crypto_token_file
     dirpath = os.path.abspath(args.dirpath)
     project = args.project
-    firebase_client = init_firebase_client(CRYPTO_TOKEN_PATH)
+    
+    global log
+    if log is None:
+        log = logging.Logger(__file__, args.crypto_token_file)
+
+    firebase_client = init_firebase_client(args.crypto_token_file)
+    
     while True:
         get_size_and_upload(dirpath, project)
         time.sleep(DEFAULT_INTERVAL)
