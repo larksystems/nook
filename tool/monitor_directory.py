@@ -17,15 +17,16 @@ def get_size_and_upload(dirpath, project):
         log = logging.Logger(__file__, CRYPTO_TOKEN_PATH)
     dirname = os.path.basename(dirpath)
     dir_size = get_dir_size_in_mb(dirpath)
+    log.info(f'Retrieved size of directory {dirname} as {dir_size}MB')
     entry = {
         'project': project,
         'dirname': dirname,
-        'size_in_mb': round(dir_size, 1)
+        'size_in_mb': dir_size
     }
     collection = 'dir_size_metrics'
     timestamp = datetime.datetime.now().isoformat()
     firebase_client.collection(collection).document(timestamp).set(entry)
-    log.info('Pushed size of directory {} successfully to Firestore'.format(dirname))
+    log.info(f'Pushed size of directory {dirname} successfully to Firestore')
 
 # size in MB
 def get_dir_size_in_mb(dirpath):
@@ -34,7 +35,7 @@ def get_dir_size_in_mb(dirpath):
         for file in files:
             filename = os.path.join(path, file)
             dir_size += os.path.getsize(filename)
-    return dir_size / (1024 * 1024)
+    return round((dir_size / (1024 * 1024)), 1)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Monitor size of a directory")
