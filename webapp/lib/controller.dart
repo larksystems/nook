@@ -8,6 +8,7 @@ import 'model.dart' as model;
 import 'platform.dart' as platform;
 import 'pubsub.dart' show PubSubException;
 import 'view.dart' as view;
+import 'platform_constants.dart' as platform_constants;
 
 part 'controller_platform_helper.dart';
 part 'controller_view_helper.dart';
@@ -796,7 +797,7 @@ void command(UIAction action, Data data) {
         ..userName = userData.displayName
         ..userEmail = userData.email;
       view.authHeaderView.signIn(userData.displayName, userData.photoUrl);
-      view.initSignedInView();
+      view.initSignedInView(platform_constants.latestCommitHash);
       initUI();
       break;
     case UIAction.signInButtonClicked:

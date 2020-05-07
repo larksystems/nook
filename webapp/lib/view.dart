@@ -44,7 +44,7 @@ void init() {
   document.onKeyDown.listen((event) => command(UIAction.keyPressed, new KeyPressData(event.key)));
 }
 
-void initSignedInView() {
+void initSignedInView(String latestCommitHash) {
   clearMain();
 
   querySelector('main')
@@ -53,7 +53,7 @@ void initSignedInView() {
     ..append(replyPanelView.replyPanel)
     ..append(tagPanelView.tagPanel)
     ..append(snackbarView.snackbarElement);
-  showNormalStatus('signed in');
+  showNormalStatus('signed in: ${latestCommitHash.substring(0, 8)}...');
 
   currentConfig.tagPanelVisibility ? showTagPanel() : hideTagPanel();
 }

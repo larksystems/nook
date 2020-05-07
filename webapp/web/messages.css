@@ -63,7 +63,9 @@
 
 .status-line {
   margin-right: 6px;
+  margin-left: 6px;
   text-align: right;
+  white-space: nowrap;
   color: #999;
 }
 
