@@ -42,10 +42,7 @@ if __name__ == '__main__':
     dirpath = os.path.abspath(args.dirpath)
     project = args.project
     
-    global log
-    if log is None:
-        log = logging.Logger(__file__, args.crypto_token_file)
-
+    log = logging.Logger(__file__, args.crypto_token_file)
     firebase_client = init_firebase_client(args.crypto_token_file)
     
     while True:
