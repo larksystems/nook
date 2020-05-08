@@ -15,6 +15,9 @@ doc/api/
 # Ignore IntelliJ project files
 *.iml
 
+# pipenv virtual environment cache
+.venv
+
 node_modules
 .DS_Store
 /public
