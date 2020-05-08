@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:html';
+import 'dart:convert';
 
 import 'package:intl/intl.dart';
 
@@ -44,8 +45,11 @@ void init() {
   document.onKeyDown.listen((event) => command(UIAction.keyPressed, new KeyPressData(event.key)));
 }
 
-void initSignedInView(String latestCommitHash) {
+void initSignedInView() async {
   clearMain();
+
+  var latestCommitHashConfigJson = await HttpRequest.getString('assets/latest_commit_hash.json');
+  var latestCommitHash = (json.decode(latestCommitHashConfigJson) as Map)['latestCommitHash'];
 
   querySelector('main')
     ..append(conversationListPanelView.conversationListPanel)
@@ -55,7 +59,7 @@ void initSignedInView(String latestCommitHash) {
     ..append(snackbarView.snackbarElement);
   showNormalStatus('signed in: ${latestCommitHash.substring(0, 8)}...');
 
-  currentConfig.tagPanelVisibility ? showTagPanel() : hideTagPanel();
+  //currentConfig.tagPanelVisibility ? showTagPanel() : hideTagPanel();
 }
 
 void initSignedOutView() {
