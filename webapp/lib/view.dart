@@ -59,7 +59,7 @@ void initSignedInView() async {
     ..append(snackbarView.snackbarElement);
   showNormalStatus('signed in: ${latestCommitHash.substring(0, 8)}...');
 
-  //currentConfig.tagPanelVisibility ? showTagPanel() : hideTagPanel();
+  currentConfig.tagPanelVisibility ? showTagPanel() : hideTagPanel();
 }
 
 void initSignedOutView() {
