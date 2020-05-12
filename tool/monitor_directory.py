@@ -13,14 +13,15 @@ log = None
 def get_size_and_upload(dirpath, project):
     dirname = os.path.basename(dirpath)
     dir_size = get_dir_size_in_mb(dirpath)
+    timestamp = datetime.datetime.now().isoformat()
     log.info(f'Retrieved size of directory {dirname} as {dir_size}MB')
     entry = {
         'project': project,
         'dirname': dirname,
-        'size_in_mb': dir_size
+        'size_in_mb': dir_size,
+        'timestamp': timestamp
     }
     collection = 'dir_size_metrics'
-    timestamp = datetime.datetime.now().isoformat()
     firebase_client.collection(collection).document(timestamp).set(entry)
     log.info(f'Pushed size of directory {dirname} successfully to Firestore')
 
