@@ -45,11 +45,8 @@ void init() {
   document.onKeyDown.listen((event) => command(UIAction.keyPressed, new KeyPressData(event.key)));
 }
 
-void initSignedInView() async {
+void initSignedInView() {
   clearMain();
-
-  var latestCommitHashConfigJson = await HttpRequest.getString('assets/latest_commit_hash.json');
-  var latestCommitHash = (json.decode(latestCommitHashConfigJson) as Map)['latestCommitHash'];
 
   querySelector('main')
     ..append(conversationListPanelView.conversationListPanel)
@@ -57,9 +54,14 @@ void initSignedInView() async {
     ..append(replyPanelView.replyPanel)
     ..append(tagPanelView.tagPanel)
     ..append(snackbarView.snackbarElement);
-  showNormalStatus('signed in: ${latestCommitHash.substring(0, 8)}...');
+  showNormalStatus('signed in');
 
   currentConfig.tagPanelVisibility ? showTagPanel() : hideTagPanel();
+
+  HttpRequest.getString('assets/latest_commit_hash.json').then((latestCommitHashConfigJson) {
+    var latestCommitHash = (json.decode(latestCommitHashConfigJson) as Map)['latestCommitHash'];
+    showNormalStatus('signed in: ${latestCommitHash.substring(0, 8)}...');
+  });
 }
 
 void initSignedOutView() {
