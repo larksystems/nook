@@ -6,6 +6,7 @@ from firebase_admin import firestore
 from katikati_pylib.logging import logging
 
 log = None
+firebase_client = None
 
 def init_firebase_client(CRYPTO_TOKEN_PATH):
     global log
@@ -18,23 +19,17 @@ def init_firebase_client(CRYPTO_TOKEN_PATH):
     log.info("Done")
     return firebase_client
 
-def push_collection_to_firestore(collection_root, documents, firebase_client, CRYPTO_TOKEN_PATH):
-    global log
-    if log is None:
-        log = logging.Logger(__file__, CRYPTO_TOKEN_PATH)
+def push_collection_to_firestore(collection_root, documents):
     log.info (f"push_collection_to_firestore {collection_root}")
     col = firebase_client.collection(collection_root)
     time_start = time.perf_counter_ns()
     for document_dict in documents:
-        push_document_to_firestore(collection_root, document_dict, firebase_client, CRYPTO_TOKEN_PATH)
+        push_document_to_firestore(collection_root, document_dict)
     time_end = time.perf_counter_ns()
     ms_elapsed = (time_end - time_start) / (1000 * 1000)
     log.info (f"push_collection_to_firestore {collection_root} in {ms_elapsed} ms")
 
-def push_document_to_firestore(collection_root, data, firebase_client, CRYPTO_TOKEN_PATH):
-    global log
-    if log is None:
-        log = logging.Logger(__file__, CRYPTO_TOKEN_PATH)
+def push_document_to_firestore(collection_root, data):
     if "__id" in data:
         ref_path = data["__reference_path"]
         doc_id = data["__id"]
@@ -55,11 +50,11 @@ def push_document_to_firestore(collection_root, data, firebase_client, CRYPTO_TO
         firebase_client.document(ref_path).set(field_data)
 
         for sub_collection in sub_collections:
-            push_collection_to_firestore(f"{ref_path}/{sub_collection}", data[sub_collection], firebase_client, CRYPTO_TOKEN_PATH)
+            push_collection_to_firestore(f"{ref_path}/{sub_collection}", data[sub_collection])
     else:
-        _push_document_fields_to_firestore(collection_root, data, firebase_client)
+        _push_document_fields_to_firestore(collection_root, data)
 
-def _push_document_fields_to_firestore(collection_root, data, firebase_client):
+def _push_document_fields_to_firestore(collection_root, data):
     doc_id = list(data.keys())[0]
     doc_fields = data[doc_id]
     ref_path = f"{collection_root}/{doc_id}"
