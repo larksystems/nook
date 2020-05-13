@@ -6,9 +6,9 @@ import json
 import sys
 import os.path
 
+import firebase_util
 import validate_nook_model as model
 import validate_nook_model_custom as custom
-from firebase_util import init_firebase_client
 from core_data_modules.logging import Logger
 
 log = Logger(__name__)
@@ -52,7 +52,7 @@ if not os.path.isfile(crypto_token_path):
     usage()
     exit(1)
 
-firebase_client = init_firebase_client(crypto_token_path)
+firebase_client = firebase_util.init_firebase_client(crypto_token_path)
 validate_documents("systemMessages",     model.validate_SystemMessage_doc)
 validate_documents("suggestedReplies",   model.validate_SuggestedReply_doc)
 validate_documents("conversationTags",   custom.validate_ConversationTag)

@@ -6,7 +6,7 @@ import argparse
 import json
 import sys
 
-from firebase_util import init_firebase_client, push_collection_to_firestore
+import firebase_util
 from katikati_pylib.logging import logging
 import tool_utils
 
@@ -36,7 +36,7 @@ if __name__ == '__main__':
 
     log = logging.Logger(__file__, CRYPTO_TOKEN_PATH)
 
-    firebase_client = init_firebase_client(CRYPTO_TOKEN_PATH)
+    firebase_client = firebase_util.init_firebase_client(CRYPTO_TOKEN_PATH)
 
 
     with open(INPUT_PATH, 'r') as f:
@@ -49,7 +49,7 @@ if __name__ == '__main__':
 
     for collection_root in collection_keys:
         documents = data_dict[collection_root]
-        push_collection_to_firestore(collection_root, documents, firebase_client, CRYPTO_TOKEN_PATH)
+        firebase_util.push_collection_to_firestore(collection_root, documents)
 
     log.info(f"Import done")
     log.notify(f"json_to_firebase completed: JobID {short_id}")

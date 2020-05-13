@@ -6,7 +6,7 @@ import tool_utils
 import json
 import sys
 
-from firebase_util import init_firebase_client, push_collection_to_firestore
+import firebase_util
 from katikati_pylib.logging import logging
 
 log = None
@@ -27,7 +27,7 @@ if __name__ == '__main__':
     
     log = logging.Logger(__file__, CRYPTO_TOKEN_PATH)
 
-    firebase_client = init_firebase_client(CRYPTO_TOKEN_PATH)
+    firebase_client = firebase_util.init_firebase_client(CRYPTO_TOKEN_PATH)
 
     valid_content_type = ["suggested_replies", "message_tags", "conversation_tags"]
     if CONTENT_TYPE not in valid_content_type:
@@ -69,7 +69,7 @@ if __name__ == '__main__':
         
         short_id = tool_utils.short_id()
         log.audit(f"add_to_firebase, suggested_replies: JobID ({short_id}), keys to download {json.dumps(suggested_replies_documents)}")
-        push_collection_to_firestore(suggested_replies_collection, suggested_replies_documents, firebase_client, CRYPTO_TOKEN_PATH)
+        firebase_util.push_collection_to_firestore(suggested_replies_collection, suggested_replies_documents)
         log.notify(f"add_to_firebase, suggested_replies: JobID {short_id}")
         log.info(f"Uploaded {len(suggested_replies_documents)} suggested replies")
 
@@ -104,7 +104,7 @@ if __name__ == '__main__':
 
         short_id = tool_utils.short_id()
         log.audit(f"add_to_firebase, conversation_tags: JobID ({short_id}), keys to download {json.dumps(tags_documents)}")
-        push_collection_to_firestore(tags_collection, tags_documents, firebase_client, CRYPTO_TOKEN_PATH)
+        firebase_util.push_collection_to_firestore(tags_collection, tags_documents)
         log.notify(f"add_to_firebase, conversation_tags: JobID {short_id}")
         log.info(f"Uploaded {len(tags_documents)} {content_type} tags")
 

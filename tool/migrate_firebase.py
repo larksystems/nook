@@ -8,7 +8,7 @@ import os.path
 
 from firebase_admin import firestore
 import migrate_nook_model
-from firebase_util import init_firebase_client
+import firebase_util
 from core_data_modules.logging import Logger
 
 log = Logger(__name__)
@@ -122,7 +122,7 @@ if len(sys.argv) > 4:
 doc_count = 0
 skip_count = 0
 migration_count = 0
-firebase_client = init_firebase_client(crypto_token_path)
+firebase_client = firebase_util.init_firebase_client(crypto_token_path)
 # migrate_collection("suggestedReplies",   migrate_nook_model.migrate_SuggestedReply)
 migrate_collection("nook_conversations", migrate_nook_model.migrate_Conversation)
 migrate_collection("conversationTags",   migrate_nook_model.migrate_Tag)
