@@ -26,14 +26,17 @@ def push_collection_to_firestore(collection_root, documents):
     col = firebase_client.collection(collection_root)
     time_start = time.perf_counter_ns()
     for document_dict in documents:
-        if "__id" in document_dict:
-            _push_document_to_firestore(collection_root, document_dict)
-        else:
-            _push_document_fields_to_firestore(collection_root, document_dict)
+        push_document_to_firestore(collection_root, document_dict)
     time_end = time.perf_counter_ns()
     ms_elapsed = (time_end - time_start) / (1000 * 1000)
     log.info (f"push_collection_to_firestore {collection_root} in {ms_elapsed} ms")
 
+
+def push_document_to_firestore(collection_root, data):
+    if "__id" in data:
+        _push_document_to_firestore(collection_root, data)
+    else:
+        _push_document_fields_to_firestore(collection_root, data)
 
 """
 Example of document structure
