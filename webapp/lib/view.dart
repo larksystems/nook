@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:html';
+import 'dart:convert';
 
 import 'package:intl/intl.dart';
 
@@ -56,6 +57,11 @@ void initSignedInView() {
   showNormalStatus('signed in');
 
   currentConfig.tagPanelVisibility ? showTagPanel() : hideTagPanel();
+
+  HttpRequest.getString('assets/latest_commit_hash.json').then((latestCommitHashConfigJson) {
+    var latestCommitHash = (json.decode(latestCommitHashConfigJson) as Map)['latestCommitHash'];
+    showNormalStatus('signed in: ${latestCommitHash.substring(0, 8)}...');
+  });
 }
 
 void initSignedOutView() {
