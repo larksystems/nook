@@ -26,29 +26,13 @@ def push_collection_to_firestore(collection_root, documents):
     col = firebase_client.collection(collection_root)
     time_start = time.perf_counter_ns()
     for document_dict in documents:
-        push_document_to_firestore(collection_root, document_dict)
+        firestore_format_document_dict = _convert_to_firestore_format(collection_root, document_dict)
+        push_document_to_firestore(collection_root, firestore_format_document_dict)
     time_end = time.perf_counter_ns()
     ms_elapsed = (time_end - time_start) / (1000 * 1000)
     log.info (f"push_collection_to_firestore {collection_root} in {ms_elapsed} ms")
 
-
 def push_document_to_firestore(collection_root, data):
-    if "__id" in data:
-        _push_document_to_firestore(collection_root, data)
-    else:
-        _push_document_fields_to_firestore(collection_root, data)
-
-"""
-Example of document structure
-{
-    "field1": "",
-    "field2": "",
-    "__id": "doc-1",
-    "__reference_path": "collection-1/doc-1",
-    "__subcollections": []
-},
-"""
-def _push_document_to_firestore(collection_root, data):
     ref_path = data["__reference_path"]
     doc_id = data["__id"]
     sub_collections = data["__subcollections"]
@@ -70,17 +54,14 @@ def _push_document_to_firestore(collection_root, data):
     for sub_collection in sub_collections:
         push_collection_to_firestore(f"{ref_path}/{sub_collection}", data[sub_collection])
 
-"""
-Example of document structure
-{
-    "doc-1": {
-      "field1": "",
-      "field2": "",
-    }
-  }
-"""
-def _push_document_fields_to_firestore(collection_root, data):
-    doc_id = list(data.keys())[0]
-    doc_fields = data[doc_id]
-    ref_path = f"{collection_root}/{doc_id}"
-    firebase_client.document(ref_path).set(doc_fields)
+def _convert_to_firestore_format(collection_root, data):
+    firestore_format = {}
+    if "__id" in data:
+        firestore_format = data
+    else:
+        doc_id = list(data.keys())[0]
+        firestore_format["__id"] = doc_id
+        firestore_format["__reference_path"] = f"{collection_root}/{doc_id}"
+        firestore_format["__subcollections"] = []
+        firestore_format.update(data[doc_id])
+    return firestore_format
