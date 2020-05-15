@@ -40,7 +40,7 @@ if __name__ == '__main__':
     if CONTENT_TYPE == "suggested_replies":
         # Make sure that the fields that the Firestore model expects exist
         # TODO(mariana): Move to using a validator
-        assert len(data_dict.keys()) == 1
+        assert len(data_dict.keys()) >= 1
         suggested_replies_collection = "suggestedReplies"
         suggested_replies = data_dict[suggested_replies_collection]
         suggested_replies_documents = []
@@ -78,7 +78,7 @@ if __name__ == '__main__':
         content_type = CONTENT_TYPE.replace("_tags", "")
         # Make sure that the fields that the Firestore model expects exist
         # TODO(mariana): Move to using a validator
-        assert len(data_dict.keys()) == 1
+        assert len(data_dict.keys()) >= 1
         tags_collection = f"{content_type}Tags"
         tags = data_dict[tags_collection]
         tags_documents = []
@@ -98,7 +98,7 @@ if __name__ == '__main__':
             assert "shortcut" in tag_data.keys()
             tag_fields["shortcut"] = tag_data["shortcut"]
             assert "type" in tag_data.keys()
-            assert tag_data["type"] == "normal" or tag_data["type"] == "important"
+            assert tag_data["type"] == "TagType.normal" or tag_data["type"] == "TagType.important"
             tag_fields["type"] = f'TagType.{tag_data["type"]}'
 
             tags_documents.append({tag_id : tag_fields})
