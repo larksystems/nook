@@ -105,6 +105,7 @@ if __name__ == '__main__':
 
         short_id = tool_utils.short_id()
         log.audit(f"add_to_firebase, conversation_tags: JobID ({short_id}), keys to download {json.dumps(tags_documents)}")
+        tags_documents = firebase_util.convert_documents_to_firestore_format(tags_collection, tags_documents)
         firebase_util.push_collection_to_firestore(tags_collection, tags_documents)
         log.notify(f"add_to_firebase, conversation_tags: JobID {short_id}")
         log.info(f"Uploaded {len(tags_documents)} {content_type} tags")
