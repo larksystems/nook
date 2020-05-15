@@ -54,14 +54,14 @@ def push_document_to_firestore(collection_root, data):
     for sub_collection in sub_collections:
         push_collection_to_firestore(f"{ref_path}/{sub_collection}", data[sub_collection])
 
-def _convert_to_firestore_format(collection_root, data):
-    firestore_format = {}
-    if "__id" in data:
-        firestore_format = data
-    else:
-        doc_id = list(data.keys())[0]
-        firestore_format["__id"] = doc_id
-        firestore_format["__reference_path"] = f"{collection_root}/{doc_id}"
-        firestore_format["__subcollections"] = []
-        firestore_format.update(data[doc_id])
-    return firestore_format
+def convert_documents_to_firestore_format(collection_root, documents):
+    firestore_documents = []
+    for doc in documents:
+        firestore_doc = {}
+        doc_id = list(doc.keys())[0]
+        firestore_doc["__id"] = doc_id
+        firestore_doc["__reference_path"] = f"{collection_root}/{doc_id}"
+        firestore_doc["__subcollections"] = []
+        firestore_doc.update(doc[doc_id])
+        firestore_documents.append(firestore_doc)
+    return firestore_documents
