@@ -261,6 +261,17 @@ main {
     background-color: #ddd;
 }
 
+.conversation-summary__warning {
+    flex: 0 0 auto;
+    background: url(assets/icon-warning.png);
+    background-size: contain;
+    width: 16px;
+    height: 16px;
+    margin: 6px;
+    opacity: 0.7;
+    cursor: pointer;
+}
+
 .conversation-summary__demographics {
     color: #666;
 }

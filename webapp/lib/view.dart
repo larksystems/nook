@@ -151,6 +151,7 @@ class ConversationPanelView {
   // HTML elements
   DivElement conversationPanel;
   DivElement _messages;
+  DivElement _conversationWarning;
   DivElement _conversationId;
   DivElement _conversationIdCopy;
   DivElement _info;
@@ -173,6 +174,11 @@ class ConversationPanelView {
     var title = new DivElement()
       ..classes.add('conversation-summary__title');
     conversationSummary.append(title);
+
+    _conversationWarning = new DivElement()
+      ..classes.add('conversation-summary__warning')
+      ..classes.add('hidden');
+    title.append(_conversationWarning);
 
     _conversationId = new DivElement()
       ..classes.add('conversation-summary__id');
@@ -264,6 +270,7 @@ class ConversationPanelView {
     _info.text = '';
     _messageViews = [];
     clearNewMessageBox();
+    clearWarning();
 
     int tagsNo = _tags.children.length;
     for (int i = 0; i < tagsNo; i++) {
@@ -290,6 +297,16 @@ class ConversationPanelView {
 
   void showAfterDateFilterPrompt(DateTime dateTime) {
     _afterDateFilterView.showPrompt(dateTime);
+  }
+
+  void showWarning(String explanation) {
+    _conversationWarning.title = explanation;
+    _conversationWarning.classes.remove('hidden');
+  }
+
+  void clearWarning() {
+    _conversationWarning.title = '';
+    _conversationWarning.classes.add('hidden');
   }
 }
 
