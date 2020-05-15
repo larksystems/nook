@@ -69,6 +69,7 @@ if __name__ == '__main__':
         
         short_id = tool_utils.short_id()
         log.audit(f"add_to_firebase, suggested_replies: JobID ({short_id}), keys to download {json.dumps(suggested_replies_documents)}")
+        suggested_replies_documents = firebase_util.convert_documents_to_firestore_format(suggested_replies_collection, suggested_replies_documents)
         firebase_util.push_collection_to_firestore(suggested_replies_collection, suggested_replies_documents)
         log.notify(f"add_to_firebase, suggested_replies: JobID {short_id}")
         log.info(f"Uploaded {len(suggested_replies_documents)} suggested replies")
