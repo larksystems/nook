@@ -26,7 +26,6 @@ def push_collection_to_firestore(collection_root, documents):
     col = firebase_client.collection(collection_root)
     time_start = time.perf_counter_ns()
     for document_dict in documents:
-        firestore_format_document_dict = _convert_to_firestore_format(collection_root, document_dict)
         push_document_to_firestore(collection_root, firestore_format_document_dict)
     time_end = time.perf_counter_ns()
     ms_elapsed = (time_end - time_start) / (1000 * 1000)
