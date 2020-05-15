@@ -5,7 +5,7 @@ import time
 import json
 import sys
 
-from firebase_util import init_firebase_client
+import firebase_util
 from katikati_pylib.logging import logging
 from firebase_root_keys import root_keys
 import tool_utils
@@ -71,7 +71,7 @@ if __name__ == '__main__':
     
     log = logging.Logger(__file__, CRYPTO_TOKEN_PATH)
 
-    firebase_client = init_firebase_client(CRYPTO_TOKEN_PATH)
+    firebase_client = firebase_util.init_firebase_client(CRYPTO_TOKEN_PATH)
 
     data = {}
 

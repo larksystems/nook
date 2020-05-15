@@ -6,27 +6,11 @@ import tool_utils
 import json
 import sys
 
-from firebase_util import init_firebase_client
+import firebase_util
 from katikati_pylib.logging import logging
 
 log = None
 firebase_client = None
-
-def push_collection_to_firestore(collection_root, documents):
-    log.info(f"push_collection_to_firestore {collection_root}")
-    col = firebase_client.collection(collection_root)
-    time_start = time.perf_counter_ns()
-    for document_dict in documents:
-        push_document_to_firestore(collection_root, document_dict)
-    time_end = time.perf_counter_ns()
-    ms_elapsed = (time_end - time_start) / (1000 * 1000)
-    log.info(f"push_collection_to_firestore {collection_root} in {ms_elapsed} ms")
-
-def push_document_to_firestore(collection_root, data):
-    doc_id = list(data.keys())[0]
-    doc_fields = data[doc_id]
-    ref_path = f"{collection_root}/{doc_id}"
-    firebase_client.document(ref_path).set(doc_fields)
 
 def text_to_doc_id(prefix, text):
     return f"{prefix}-" + hashlib.sha256(text.encode("utf-8")).hexdigest()[0:8]
@@ -43,7 +27,7 @@ if __name__ == '__main__':
     
     log = logging.Logger(__file__, CRYPTO_TOKEN_PATH)
 
-    firebase_client = init_firebase_client(CRYPTO_TOKEN_PATH)
+    firebase_client = firebase_util.init_firebase_client(CRYPTO_TOKEN_PATH)
 
     valid_content_type = ["suggested_replies", "message_tags", "conversation_tags"]
     if CONTENT_TYPE not in valid_content_type:
@@ -56,7 +40,7 @@ if __name__ == '__main__':
     if CONTENT_TYPE == "suggested_replies":
         # Make sure that the fields that the Firestore model expects exist
         # TODO(mariana): Move to using a validator
-        assert len(data_dict.keys()) == 1
+        assert len(data_dict.keys()) >= 1
         suggested_replies_collection = "suggestedReplies"
         suggested_replies = data_dict[suggested_replies_collection]
         suggested_replies_documents = []
@@ -85,7 +69,8 @@ if __name__ == '__main__':
         
         short_id = tool_utils.short_id()
         log.audit(f"add_to_firebase, suggested_replies: JobID ({short_id}), keys to download {json.dumps(suggested_replies_documents)}")
-        push_collection_to_firestore(suggested_replies_collection, suggested_replies_documents)
+        suggested_replies_documents = firebase_util.convert_documents_to_firestore_format(suggested_replies_collection, suggested_replies_documents)
+        firebase_util.push_collection_to_firestore(suggested_replies_collection, suggested_replies_documents)
         log.notify(f"add_to_firebase, suggested_replies: JobID {short_id}")
         log.info(f"Uploaded {len(suggested_replies_documents)} suggested replies")
 
@@ -93,7 +78,7 @@ if __name__ == '__main__':
         content_type = CONTENT_TYPE.replace("_tags", "")
         # Make sure that the fields that the Firestore model expects exist
         # TODO(mariana): Move to using a validator
-        assert len(data_dict.keys()) == 1
+        assert len(data_dict.keys()) >= 1
         tags_collection = f"{content_type}Tags"
         tags = data_dict[tags_collection]
         tags_documents = []
@@ -113,14 +98,15 @@ if __name__ == '__main__':
             assert "shortcut" in tag_data.keys()
             tag_fields["shortcut"] = tag_data["shortcut"]
             assert "type" in tag_data.keys()
-            assert tag_data["type"] == "normal" or tag_data["type"] == "important"
+            assert tag_data["type"] == "TagType.normal" or tag_data["type"] == "TagType.important"
             tag_fields["type"] = f'TagType.{tag_data["type"]}'
 
             tags_documents.append({tag_id : tag_fields})
 
         short_id = tool_utils.short_id()
         log.audit(f"add_to_firebase, conversation_tags: JobID ({short_id}), keys to download {json.dumps(tags_documents)}")
-        push_collection_to_firestore(tags_collection, tags_documents)
+        tags_documents = firebase_util.convert_documents_to_firestore_format(tags_collection, tags_documents)
+        firebase_util.push_collection_to_firestore(tags_collection, tags_documents)
         log.notify(f"add_to_firebase, conversation_tags: JobID {short_id}")
         log.info(f"Uploaded {len(tags_documents)} {content_type} tags")
 
