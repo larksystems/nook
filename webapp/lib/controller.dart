@@ -182,7 +182,8 @@ class UserData extends Data {
 
 class KeyPressData extends Data {
   String key;
-  KeyPressData(this.key);
+  bool hasModifierKey;
+  KeyPressData(this.key, this.hasModifierKey);
 
   @override
   String toString() => 'KeyPressData: {key: $key}';
@@ -232,7 +233,7 @@ class ToggleData extends Data {
 class SnackbarData extends Data {
   String text;
   SnackbarNotificationType type;
-  SnackbarData(text, type);
+  SnackbarData(this.text, this.type);
 
   @override
   String toString() => 'SnackbarData: {text: $text, type: $type}';
@@ -821,17 +822,14 @@ void command(UIAction action, Data data) {
         view.snackbarView.hideSnackbar();
       }
       // If the shortcut is for a reply, find it and send it
-      var selectedReply = suggestedRepliesByCategory[selectedSuggestedRepliesCategory].where((reply) => reply.shortcut == keyPressData.key);
+      var selectedReply = suggestedRepliesByCategory[selectedSuggestedRepliesCategory].where((reply) => reply.shortcut == keyPressData.key && !keyPressData.hasModifierKey);
       if (selectedReply.isNotEmpty) {
         assert (selectedReply.length == 1);
         if (!currentConfig.sendMultiMessageEnabled || selectedConversations.isEmpty) {
           sendReply(selectedReply.first, activeConversation);
           return;
         }
-        if (!view.sendingMultiMessagesUserConfirmation(selectedConversations.length)) {
-          return;
-        }
-        sendMultiReply(selectedReply.first, selectedConversations);
+        command(UIAction.showSnackbar, new SnackbarData('Cannot send multiple messages using keyboard shortcuts. Please use the send button on the suggested reply you want to send instead.', SnackbarNotificationType.warning));
         return;
       }
       // If the shortcut is for a tag and tag panel is enabled, find it and tag it to the conversation/message
