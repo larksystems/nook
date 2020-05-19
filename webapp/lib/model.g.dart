@@ -349,6 +349,7 @@ class Tag {
   String text;
   TagType type;
   String shortcut;
+  bool filterable;
 
   String get tagId => docId;
 
@@ -360,7 +361,8 @@ class Tag {
     return (modelObj ?? Tag())
       ..text = String_fromData(data['text'])
       ..type = TagType.fromString(data['type'] as String) ?? TagType.Normal
-      ..shortcut = String_fromData(data['shortcut']);
+      ..shortcut = String_fromData(data['shortcut'])
+      ..filterable = bool_fromData(data['filterable']);
   }
 
   static void listen(DocStorage docStorage, TagCollectionListener listener, String collectionRoot) =>
@@ -371,6 +373,7 @@ class Tag {
       if (text != null) 'text': text,
       if (type != null) 'type': type.toString(),
       if (shortcut != null) 'shortcut': shortcut,
+      if (filterable != null) 'filterable': filterable,
     };
   }
   String toString() => 'Tag [$docId]: ${toData().toString()}';

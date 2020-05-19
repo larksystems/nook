@@ -295,11 +295,10 @@ void initUI() {
         ..addAll(added)
         ..addAll(modified);
 
-      var filteredTags = _filterDemogsTagsIfNeeded(conversationTags);
-      _populateFilterTagsMenu(filteredTags);
+      _populateFilterTagsMenu(conversationTags);
 
       if (actionObjectState == UIActionObject.conversation) {
-        _populateTagPanelView(filteredTags, TagReceiver.Conversation);
+        _populateTagPanelView(conversationTags, TagReceiver.Conversation);
       }
     }
   );
@@ -316,7 +315,7 @@ void initUI() {
         ..addAll(modified);
 
       if (actionObjectState == UIActionObject.message) {
-        _populateTagPanelView(_filterDemogsTagsIfNeeded(messageTags), TagReceiver.Message);
+        _populateTagPanelView(messageTags, TagReceiver.Message);
       }
     }
   );
@@ -484,7 +483,7 @@ void conversationListSelected(String conversationListRoot) {
       List<String> filterTagIds = view.urlView.pageUrlFilterTags;
       filterTags = filterTagIds.map((tagId) => conversationTags.singleWhere((tag) => tag.tagId == tagId)).toList();
       filteredConversations = filterConversationsByTags(conversations, filterTags, afterDateFilter);
-      _populateFilterTagsMenu(_filterDemogsTagsIfNeeded(conversationTags));
+      _populateFilterTagsMenu(conversationTags);
       _populateSelectedFilterTags(filterTags);
 
       activeConversation = updateViewForConversations(filteredConversations, updateList: true);
@@ -684,7 +683,7 @@ void command(UIAction action, Data data) {
       MessageData messageData = data;
       selectedMessage = activeConversation.messages[messageData.messageIndex];
       view.conversationPanelView.selectMessage(messageData.messageIndex);
-      _populateTagPanelView(_filterDemogsTagsIfNeeded(messageTags), TagReceiver.Message);
+      _populateTagPanelView(messageTags, TagReceiver.Message);
       switch (actionObjectState) {
         case UIActionObject.conversation:
           actionObjectState = UIActionObject.message;
@@ -700,7 +699,7 @@ void command(UIAction action, Data data) {
         case UIActionObject.message:
           selectedMessage = null;
           view.conversationPanelView.deselectMessage();
-          _populateTagPanelView(_filterDemogsTagsIfNeeded(conversationTags), TagReceiver.Conversation);
+          _populateTagPanelView(conversationTags, TagReceiver.Conversation);
           actionObjectState = UIActionObject.conversation;
           break;
       }
@@ -895,18 +894,16 @@ void command(UIAction action, Data data) {
     case UIAction.hideAgeTags:
       ToggleData toggleData = data;
       hideDemogsTags = toggleData.toggleValue;
-      var filteredConversationTags = _filterDemogsTagsIfNeeded(conversationTags);
-      var filteredMessageTags = _filterDemogsTagsIfNeeded(messageTags);
       switch (actionObjectState) {
         case UIActionObject.conversation:
-          _populateTagPanelView(filteredConversationTags, TagReceiver.Conversation);
+          _populateTagPanelView(conversationTags, TagReceiver.Conversation);
           break;
         case UIActionObject.message:
-          _populateTagPanelView(filteredMessageTags, TagReceiver.Message);
+          _populateTagPanelView(messageTags, TagReceiver.Message);
           break;
       }
       // The filter tags menu always shows conversations tags, even when a message is selected
-      _populateFilterTagsMenu(filteredConversationTags);
+      _populateFilterTagsMenu(conversationTags);
       break;
 
     case UIAction.showSnackbar:
@@ -981,7 +978,7 @@ void updateViewForConversation(model.Conversation conversation) {
     case UIActionObject.message:
       selectedMessage = null;
       view.conversationPanelView.deselectMessage();
-      _populateTagPanelView(_filterDemogsTagsIfNeeded(conversationTags), TagReceiver.Conversation);
+      _populateTagPanelView(conversationTags, TagReceiver.Conversation);
       break;
   }
 }

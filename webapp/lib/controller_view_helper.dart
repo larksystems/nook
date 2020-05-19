@@ -78,6 +78,7 @@ void _populateReplyPanelView(List<model.SuggestedReply> replies) {
 }
 
 void _populateTagPanelView(List<model.Tag> tags, TagReceiver tagReceiver) {
+  tags = _filterDemogsTagsIfNeeded(tags);
   view.tagPanelView.clear();
   String buttonText = '';
   switch (tagReceiver) {
@@ -114,6 +115,9 @@ void _populateTagPanelView(List<model.Tag> tags, TagReceiver tagReceiver) {
 }
 
 void _populateFilterTagsMenu(List<model.Tag> tags) {
+  tags = _filterDemogsTagsIfNeeded(tags);
+  var filterableTags = tags.where((tag) => tag.filterable == null ? false : tag.filterable).toList();
+  tags = filterableTags.isEmpty ? tags : filterableTags;
   view.conversationFilter.clearMenuTags();
   for (var tag in tags) {
     view.conversationFilter.addMenuTag(new view.FilterMenuTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
