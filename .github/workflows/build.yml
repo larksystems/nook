@@ -1,0 +1,28 @@
+name: Nook CI
+
+on:
+  pull_request:
+    branches: [ master ]
+    paths:
+      'webapp/**'
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    container:
+      image:  google/dart:latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: |
+        cd webapp
+        pub get
+    - name: Build Release
+      run: |
+        cd webapp
+        pub global activate webdev
+        export PATH="$PATH":"$HOME/.pub-cache/bin"
+        webdev build
