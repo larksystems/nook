@@ -643,12 +643,8 @@ void command(UIAction action, Data data) {
       platform.removeConversationTag(activeConversation, tag.tagId).catchError(showAndLogError);
       view.conversationPanelView.removeTag(tag.tagId);
       if (filterTags.contains(tag)) {
-        // Select the next conversation in the list
-        var nextConversation = nextElement(filteredConversations, activeConversation);
         filteredConversations.remove(activeConversation);
-        activeConversation = nextConversation;
-        activeConversation = updateViewForConversations(filteredConversations);
-        updateViewForConversation(activeConversation);
+        view.conversationPanelView.showWarning('Conversation no longer meets filtering constraints');
       }
       break;
     case UIAction.removeMessageTag:
@@ -935,6 +931,10 @@ model.Conversation updateViewForConversations(Set<model.Conversation> conversati
 
   // Update conversationPanelView
   if (conversations.isEmpty) {
+    if (activeConversation != null) {
+      view.conversationPanelView.showWarning('Conversation no longer meets filtering constraints');
+      return activeConversation;
+    }
     view.conversationPanelView.clear();
     view.replyPanelView.noteText = '';
     actionObjectState = UIActionObject.conversation;
@@ -952,18 +952,15 @@ model.Conversation updateViewForConversations(Set<model.Conversation> conversati
 
   var matches = conversations.where((conversation) => conversation.docId == activeConversation.docId).toList();
   if (matches.length == 0) {
-    model.Conversation conversationToSelect = conversations.first;
-    view.conversationListPanelView.selectConversation(conversationToSelect.docId);
-    _populateConversationPanelView(conversationToSelect);
-    view.replyPanelView.noteText = conversationToSelect.notes;
-    actionObjectState = UIActionObject.conversation;
-    return conversationToSelect;
+    view.conversationPanelView.showWarning('Conversation no longer meets filtering constraints');
+    return activeConversation;
   }
 
   if (matches.length > 1) {
     log.warning('Two conversations seem to have the same deidentified phone number: ${activeConversation.docId}');
   }
   view.conversationListPanelView.selectConversation(activeConversation.docId);
+  view.conversationPanelView.clearWarning();
   return activeConversation;
 }
 
