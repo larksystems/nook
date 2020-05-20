@@ -1,8 +1,8 @@
 name: Nook CI
 
 on:
-  push:
-    branches: [ setup-github-actions ]
+  pull_request:
+    branches: [ master ]
     paths:
     - 'webapp/**'
 
