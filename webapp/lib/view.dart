@@ -42,7 +42,9 @@ void init() {
       ..append(conversationListSelectView.panel)
       ..append(authHeaderView.authElement);
 
-  document.onKeyDown.listen((event) => command(UIAction.keyPressed, new KeyPressData(event.key)));
+  document.onKeyDown.listen(
+    (event) => command(UIAction.keyPressed,
+                       new KeyPressData(event.key, event.altKey || event.ctrlKey || event.metaKey || event.shiftKey)));
 }
 
 void initSignedInView() {
