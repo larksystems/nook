@@ -1,3 +1,3 @@
 import 'controller.dart' as controller;
 
-void init() => controller.ini();
+void init() => controller.init();
