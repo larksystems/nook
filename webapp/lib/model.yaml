@@ -50,6 +50,7 @@ Tag:
   text: 'string'
   type: 'TagType, TagType.Normal'
   shortcut: 'string'
+  filterable: 'bool'
 
 TagType:
   dartType: 'enum'
