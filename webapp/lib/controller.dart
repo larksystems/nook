@@ -821,8 +821,11 @@ void command(UIAction action, Data data) {
         // Hide the snackbar if it's visible
         view.snackbarView.hideSnackbar();
       }
+      // If the keypress it has a modifier key, prevent all replies and tags
+      if (keyPressData.hasModifierKey) return;
+
       // If the shortcut is for a reply, find it and send it
-      var selectedReply = suggestedRepliesByCategory[selectedSuggestedRepliesCategory].where((reply) => reply.shortcut == keyPressData.key && !keyPressData.hasModifierKey);
+      var selectedReply = suggestedRepliesByCategory[selectedSuggestedRepliesCategory].where((reply) => reply.shortcut == keyPressData.key);
       if (selectedReply.isNotEmpty) {
         assert (selectedReply.length == 1);
         if (!currentConfig.sendMultiMessageEnabled || selectedConversations.isEmpty) {
