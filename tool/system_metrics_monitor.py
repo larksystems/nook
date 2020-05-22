@@ -12,7 +12,7 @@ log = Logger(__name__)
 firebase_client = None
 
 COLLECTION = 'pipeline_system_metrics' #name of the firebase collections to store metrics
-DEFAULT_INTERVAL = 60 # wait interval between each set of metric readings in seconds
+DEFAULT_INTERVAL = 600 # wait interval between each set of metric readings in seconds
 
 
 def get_and_publish_system_metrics(interval):
