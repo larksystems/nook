@@ -78,9 +78,8 @@ extension MessageUtil on g.Message {
   /// Callers should catch and handle IOException.
   Future<void> removeTagId(g.DocPubSubUpdate pubSubClient, g.Conversation conversation, String tagId) async {
     if (!tagIds.contains(tagId)) return;
-    tagIds.remove(tagId);
     assert(this.id != null, "Expected non-null message identifier");
-    tagIds.add(tagId);
+    tagIds.remove(tagId);
     return pubSubClient.publishAddOpinion('nook_messages/remove_tags', {
       "conversation_id": conversation.docId,
       "message_id": this.id,
