@@ -79,12 +79,14 @@ extension MessageUtil on g.Message {
   Future<void> removeTagId(g.DocPubSubUpdate pubSubClient, g.Conversation conversation, String tagId) async {
     if (!tagIds.contains(tagId)) return;
     tagIds.remove(tagId);
-    return pubSubClient
-        .publishDocRemove(g.Conversation.collectionName, <String>[
-      conversation.docId
-    ], {
-      "messages/${_messageIndex(conversation)}/tags": [tagId]
+    assert(this.id != null, "Expected non-null message identifier");
+    tagIds.add(tagId);
+    return pubSubClient.publishAddOpinion('nook_messages/remove_tags', {
+      "conversation_id": conversation.docId,
+      "message_id": this.id,
+      "tags": [tagId],
     });
+
   }
 
   Future<void> setTranslation(g.DocPubSubUpdate pubSubClient, g.Conversation conversation, String newTranslation) async {
