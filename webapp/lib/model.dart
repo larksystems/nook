@@ -65,11 +65,12 @@ extension MessageUtil on g.Message {
   /// Callers should catch and handle IOException.
   Future<void> addTagId(g.DocPubSubUpdate pubSubClient, g.Conversation conversation, String tagId) async {
     if (tagIds.contains(tagId)) return;
+    assert(this.id != null, "Expected non-null message identifier");
     tagIds.add(tagId);
-    return pubSubClient.publishDocAdd(g.Conversation.collectionName, <String>[
-      conversation.docId
-    ], {
-      "messages/${_messageIndex(conversation)}/tags": [tagId]
+    return pubSubClient.publishAddOpinion('nook_messages/add_tags', {
+      "conversation_id": conversation.docId,
+      "message_id": this.id,
+      "tags": [tagId],
     });
   }
 

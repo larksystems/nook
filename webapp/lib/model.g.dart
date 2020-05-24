@@ -611,6 +611,9 @@ abstract class DocBatchUpdate {
 
 /// A pub/sub based mechanism for updating documents
 abstract class DocPubSubUpdate {
+  /// Publish the given opinion for the given namespace.
+  Future<void> publishAddOpinion(String namespace, Map<String, dynamic> opinion);
+
   /// Publish the given document list/set additions,
   /// where [additions] is a mapping of field name to new values to be added to the list/set.
   /// Callers should catch and handle IOException.

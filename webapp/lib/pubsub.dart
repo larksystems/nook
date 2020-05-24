@@ -52,6 +52,17 @@ class PubSubClient extends DocPubSubUpdate {
   }
 
   @override
+  Future<void> publishAddOpinion(String namespace,
+      Map<String, dynamic> opinion) {
+    return publish(platform_constants.smsTopic, {
+      "source": "nook",
+      "action": "add_opinion",
+      "namespace": namespace,
+      "opinion": opinion,
+    });
+  }
+
+  @override
   Future<void> publishDocAdd(String collectionName, List<String> docIds,
       Map<String, List<dynamic>> additions) {
     return publish(platform_constants.smsTopic, {
