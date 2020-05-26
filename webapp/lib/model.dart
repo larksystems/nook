@@ -85,7 +85,6 @@ extension MessageUtil on g.Message {
       "message_id": this.id,
       "tags": [tagId],
     });
-
   }
 
   Future<void> setTranslation(g.DocPubSubUpdate pubSubClient, g.Conversation conversation, String newTranslation) async {
