@@ -31,11 +31,14 @@ class ConversationListShard {
       if (name != null) 'name': name,
     };
   }
+
   String toString() => 'ConversationListShard [$docId]: ${toData().toString()}';
 }
-typedef void ConversationListShardCollectionListener(List<ConversationListShard> added,
-                                                     List<ConversationListShard> modified,
-                                                     List<ConversationListShard> removed);
+typedef void ConversationListShardCollectionListener(
+  List<ConversationListShard> added,
+  List<ConversationListShard> modified,
+  List<ConversationListShard> removed,
+);
 
 class Conversation {
   static const collectionName = 'nook_conversations';
@@ -173,11 +176,14 @@ class Conversation {
     if (docIdsToPublish.isEmpty) return;
     return pubSubClient.publishDocChange(collectionName, docIdsToPublish, {"unread": unread});
   }
+
   String toString() => 'Conversation [$docId]: ${toData().toString()}';
 }
-typedef void ConversationCollectionListener(List<Conversation> added,
-                                            List<Conversation> modified,
-                                            List<Conversation> removed);
+typedef void ConversationCollectionListener(
+  List<Conversation> added,
+  List<Conversation> modified,
+  List<Conversation> removed,
+);
 
 class Message {
   MessageDirection direction;
@@ -211,9 +217,9 @@ class Message {
       if (id != null) 'id': id,
     };
   }
+
   String toString() => 'Message: ${toData().toString()}';
 }
-typedef void MessageCollectionListener(List<Message> changes);
 
 class MessageDirection {
   static const In = MessageDirection('in');
@@ -318,7 +324,6 @@ class SuggestedReply {
       if (category != null) 'category': category,
     };
   }
-  String toString() => 'SuggestedReply [$docId]: ${toData().toString()}';
 
   /// Set translation in this SuggestedReply.
   /// Callers should catch and handle IOException.
@@ -339,10 +344,14 @@ class SuggestedReply {
     if (docIdsToPublish.isEmpty) return;
     return pubSubClient.publishDocChange(collectionName, docIdsToPublish, {"translation": translation});
   }
+
+  String toString() => 'SuggestedReply [$docId]: ${toData().toString()}';
 }
-typedef void SuggestedReplyCollectionListener(List<SuggestedReply> added,
-                                              List<SuggestedReply> modified,
-                                              List<SuggestedReply> removed);
+typedef void SuggestedReplyCollectionListener(
+  List<SuggestedReply> added,
+  List<SuggestedReply> modified,
+  List<SuggestedReply> removed,
+);
 
 class Tag {
   String docId;
@@ -376,11 +385,14 @@ class Tag {
       if (filterable != null) 'filterable': filterable,
     };
   }
+
   String toString() => 'Tag [$docId]: ${toData().toString()}';
 }
-typedef void TagCollectionListener(List<Tag> added,
-                                   List<Tag> modified,
-                                   List<Tag> removed);
+typedef void TagCollectionListener(
+  List<Tag> added,
+  List<Tag> modified,
+  List<Tag> removed,
+);
 
 class TagType {
   static const Normal = TagType('normal');
@@ -442,11 +454,14 @@ class SystemMessage {
       if (expired != null) 'expired': expired,
     };
   }
+
   String toString() => 'SystemMessage [$docId]: ${toData().toString()}';
 }
-typedef void SystemMessageCollectionListener(List<SystemMessage> added,
-                                             List<SystemMessage> modified,
-                                             List<SystemMessage> removed);
+typedef void SystemMessageCollectionListener(
+  List<SystemMessage> added,
+  List<SystemMessage> modified,
+  List<SystemMessage> removed,
+);
 
 class UserConfiguration {
   static const collectionName = 'users';
@@ -483,11 +498,14 @@ class UserConfiguration {
       if (tagPanelVisibility != null) 'tag_panel_visibility': tagPanelVisibility,
     };
   }
+
   String toString() => 'UserConfiguration [$docId]: ${toData().toString()}';
 }
-typedef void UserConfigurationCollectionListener(List<UserConfiguration> added,
-                                                 List<UserConfiguration> modified,
-                                                 List<UserConfiguration> removed);
+typedef void UserConfigurationCollectionListener(
+  List<UserConfiguration> added,
+  List<UserConfiguration> modified,
+  List<UserConfiguration> removed,
+);
 
 // ======================================================================
 // Core firebase/yaml utilities

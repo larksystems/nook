@@ -2,7 +2,6 @@ import 'dart:collection';
 
 import 'model.g.dart' as g;
 export 'model.g.dart' hide
-  MessageCollectionListener,
   MessageDirection_fromStringOverride,
   TagType_fromStringOverride;
 
@@ -85,7 +84,6 @@ extension MessageUtil on g.Message {
       "message_id": this.id,
       "tags": [tagId],
     });
-
   }
 
   Future<void> setTranslation(g.DocPubSubUpdate pubSubClient, g.Conversation conversation, String newTranslation) async {
