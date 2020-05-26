@@ -217,9 +217,9 @@ class Message {
       if (id != null) 'id': id,
     };
   }
+
   String toString() => 'Message: ${toData().toString()}';
 }
-typedef void MessageCollectionListener(List<Message> changes);
 
 class MessageDirection {
   static const In = MessageDirection('in');

@@ -2,7 +2,6 @@ import 'dart:collection';
 
 import 'model.g.dart' as g;
 export 'model.g.dart' hide
-  MessageCollectionListener,
   MessageDirection_fromStringOverride,
   TagType_fromStringOverride;
 
