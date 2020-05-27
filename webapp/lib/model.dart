@@ -95,6 +95,7 @@ extension MessageUtil on g.Message {
     return pubSubClient.publishAddOpinion('nook_messages/set_translation', {
       "conversation_id": conversation.docId,
       "message_id": this.id,
+      "text": text,
       "translation": translation,
     });
   }
