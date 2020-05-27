@@ -769,8 +769,12 @@ class ConversationListPanelView {
   }
 
   void updateConversationList(Set<Conversation> conversations) {
+    Set<String> uuidSets = Set<String>();
+    for (Conversation c in conversations) {
+      uuidSets.add(c.docId);
+    }
     _phoneToConversations.removeWhere((String uuid, ConversationSummary summary) {
-      if (conversations.any((c) => c.docId == uuid)) return false;
+      if (uuidSets.contains(uuid)) return false;
       _conversationList.removeItem(summary);
       return true;
     });
