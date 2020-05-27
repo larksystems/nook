@@ -278,7 +278,11 @@ Future<void> updateUnread(List<Conversation> conversations, bool newValue) {
       ? conversations[0].docId
       : "${conversations.length} conversations"
   }");
-  return Conversation.setUnreadForAll(_pubsubInstance, conversations, newValue);
+  var futures = <Future>[];
+  for (var conversation in conversations) {
+    futures.add(conversation.setUnread(_pubsubInstance, newValue));
+  }
+  return Future.wait(futures);
 }
 
 Future<void> addConversationTag(Conversation conversation, String tagId) {
