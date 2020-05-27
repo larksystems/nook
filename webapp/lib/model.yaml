@@ -4,6 +4,7 @@ ConversationListShard:
 
 Conversation:
   firebaseCollectionName: 'nook_conversations'
+  namespace:              'nook_conversations'
   demographicsInfo: 'map string'
   tags: 'publishable set string tagIds'
   messages: 'array Message'
