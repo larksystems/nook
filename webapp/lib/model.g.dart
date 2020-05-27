@@ -359,6 +359,7 @@ class Tag {
   TagType type;
   String shortcut;
   bool filterable;
+  String category;
 
   String get tagId => docId;
 
@@ -371,7 +372,8 @@ class Tag {
       ..text = String_fromData(data['text'])
       ..type = TagType.fromString(data['type'] as String) ?? TagType.Normal
       ..shortcut = String_fromData(data['shortcut'])
-      ..filterable = bool_fromData(data['filterable']);
+      ..filterable = bool_fromData(data['filterable'])
+      ..category = String_fromData(data['category']);
   }
 
   static void listen(DocStorage docStorage, TagCollectionListener listener, String collectionRoot) =>
@@ -383,6 +385,7 @@ class Tag {
       if (type != null) 'type': type.toString(),
       if (shortcut != null) 'shortcut': shortcut,
       if (filterable != null) 'filterable': filterable,
+      if (category != null) 'category': category,
     };
   }
 

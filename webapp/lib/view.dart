@@ -882,6 +882,8 @@ class ConversationFilter {
   DivElement conversationFilter;
   DivElement _tagsContainer;
   DivElement _tagsMenu;
+  DivElement _tagsMenuWrapper;
+  SelectElement _tagCategories;
   DivElement _tagsMenuContainer;
 
   ConversationFilter() {
@@ -895,9 +897,17 @@ class ConversationFilter {
     _tagsMenu = new DivElement()
       ..classes.add('tags-menu');
 
+    _tagsMenuWrapper = new DivElement()
+      ..classes.add('tags-menu__wrapper');
+    _tagsMenu.append(_tagsMenuWrapper);
+
+    _tagCategories = new SelectElement();
+    _tagCategories.onChange.listen((_) => command(UIAction.updateFilterTagsCategory, new UpdateFilterTagsCategoryData(_tagCategories.value)));
+    _tagsMenuWrapper.append(_tagCategories);
+
     _tagsMenuContainer = new DivElement()
       ..classes.add('tags-menu__container');
-    _tagsMenu.append(_tagsMenuContainer);
+    _tagsMenuWrapper.append(_tagsMenuContainer);
 
     conversationFilter.append(_tagsMenu);
 
@@ -932,6 +942,27 @@ class ConversationFilter {
       _tagsMenuContainer.firstChild.remove();
     }
     assert(_tagsMenuContainer.children.length == 0);
+  }
+
+  set selectedCategory(String category) {
+    int index = _tagCategories.children.indexWhere((Element option) => (option as OptionElement).value == category);
+    if (index == -1) {
+      showWarningStatus("Couldn't find $category in list of suggested replies category, using first");
+      _tagCategories.selectedIndex = 0;
+      command(UIAction.updateFilterTagsCategory, new UpdateFilterTagsCategoryData(_tagCategories.value));
+      return;
+    }
+    _tagCategories.selectedIndex = index;
+  }
+
+  set categories(List<String> categories) {
+    _tagCategories.children.clear();
+    for (var category in categories) {
+      _tagCategories.append(
+        new OptionElement()
+          ..value = category
+          ..text = category);
+    }
   }
 }
 

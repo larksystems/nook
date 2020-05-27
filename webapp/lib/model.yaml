@@ -51,6 +51,7 @@ Tag:
   type: 'TagType, TagType.Normal'
   shortcut: 'string'
   filterable: 'bool'
+  category: 'string'
 
 TagType:
   dartType: 'enum'
