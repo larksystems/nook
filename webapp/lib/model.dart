@@ -88,12 +88,13 @@ extension MessageUtil on g.Message {
 
   Future<void> setTranslation(g.DocPubSubUpdate pubSubClient, g.Conversation conversation, String newTranslation) async {
     if (translation == newTranslation) return;
+    assert(this.id != null, "Expected non-null message identifier");
     translation = newTranslation;
-    return pubSubClient.publishDocChange(
-        g.Conversation.collectionName, <String>[
-      conversation.docId
-    ], {
-      "messages/${_messageIndex(conversation)}/translation": newTranslation
+    return pubSubClient.publishAddOpinion('nook_messages/set_translation', {
+      "conversation_id": conversation.docId,
+      "message_id": this.id,
+      "text": text,
+      "translation": translation,
     });
   }
 
