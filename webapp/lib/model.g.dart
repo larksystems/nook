@@ -159,22 +159,15 @@ class Conversation {
 
   /// Set unread in this Conversation.
   /// Callers should catch and handle IOException.
-  Future<void> setUnread(DocPubSubUpdate pubSubClient, bool unread) {
-    return setUnreadForAll(pubSubClient, [this], unread);
-  }
-
-  /// Set unread in each Conversation.
-  /// Callers should catch and handle IOException.
-  static Future<void> setUnreadForAll(DocPubSubUpdate pubSubClient, List<Conversation> docs, bool unread) async {
-    final docIdsToPublish = <String>[];
-    for (var doc in docs) {
-      if (doc.unread != unread) {
-        doc.unread = unread;
-        docIdsToPublish.add(doc.docId);
-      }
+  Future<void> setUnread(DocPubSubUpdate pubSubClient, bool newUnread) {
+    if (unread == newUnread) {
+      return Future.value(null);
     }
-    if (docIdsToPublish.isEmpty) return;
-    return pubSubClient.publishDocChange(collectionName, docIdsToPublish, {"unread": unread});
+    unread = newUnread;
+    return pubSubClient.publishAddOpinion('nook_conversations/set_unread', {
+      'conversation_id': docId,
+      'unread': unread,
+    });
   }
 
   String toString() => 'Conversation [$docId]: ${toData().toString()}';
