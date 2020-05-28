@@ -152,3 +152,11 @@ Map<String, List<model.SuggestedReply>> _groupRepliesIntoCategories(List<model.S
   }
   return result;
 }
+
+Map<String, List<model.Tag>> _groupTagsIntoCategories(List<model.Tag> tags) {
+  Map<String, List<model.Tag>> result = {};
+  for (model.Tag tag in tags) {
+    result.putIfAbsent(tag.group, () => []).add(tag);
+  }
+  return result;
+}
