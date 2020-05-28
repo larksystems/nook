@@ -90,7 +90,7 @@ class Conversation {
     tagIds.addAll(toBeAdded);
     return pubSubClient.publishAddOpinion('nook_conversations/add_tags', {
       'conversation_id': docId,
-      'tagIds': toBeAdded.toList(),
+      'tags': toBeAdded.toList(),
     });
   }
 
@@ -103,7 +103,7 @@ class Conversation {
     tagIds = newTagIds;
     return pubSubClient.publishAddOpinion('nook_conversations/set_tags', {
       'conversation_id': docId,
-      'tagIds': tagIds,
+      'tags': tagIds,
     });
   }
 
@@ -120,7 +120,7 @@ class Conversation {
     tagIds.removeAll(toBeRemoved);
     return pubSubClient.publishAddOpinion('nook_conversations/remove_tags', {
       'conversation_id': docId,
-      'tagIds': toBeRemoved.toList(),
+      'tags': toBeRemoved.toList(),
     });
   }
 
