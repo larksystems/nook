@@ -327,22 +327,15 @@ class SuggestedReply {
 
   /// Set translation in this SuggestedReply.
   /// Callers should catch and handle IOException.
-  Future<void> setTranslation(DocPubSubUpdate pubSubClient, String translation) {
-    return setTranslationForAll(pubSubClient, [this], translation);
-  }
-
-  /// Set translation in each SuggestedReply.
-  /// Callers should catch and handle IOException.
-  static Future<void> setTranslationForAll(DocPubSubUpdate pubSubClient, List<SuggestedReply> docs, String translation) async {
-    final docIdsToPublish = <String>[];
-    for (var doc in docs) {
-      if (doc.translation != translation) {
-        doc.translation = translation;
-        docIdsToPublish.add(doc.docId);
-      }
+  Future<void> setTranslation(DocPubSubUpdate pubSubClient, String newTranslation) {
+    if (translation == newTranslation) {
+      return Future.value(null);
     }
-    if (docIdsToPublish.isEmpty) return;
-    return pubSubClient.publishDocChange(collectionName, docIdsToPublish, {"translation": translation});
+    translation = newTranslation;
+    return pubSubClient.publishAddOpinion('nook_suggested_replies/set_translation', {
+      'suggestedreply_id': docId,
+      'translation': translation,
+    });
   }
 
   String toString() => 'SuggestedReply [$docId]: ${toData().toString()}';

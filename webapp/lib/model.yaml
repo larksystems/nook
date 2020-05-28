@@ -37,6 +37,7 @@ MessageStatus:
     - unknown
 
 SuggestedReply:
+  namespace: 'nook_suggested_replies'
   firebaseCollectionName: 'suggestedReplies'
   firebaseDocId: 'string suggestedReplyId'
   text: 'string'
