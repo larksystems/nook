@@ -247,11 +247,6 @@ void listenForMessageTags(TagCollectionListener listener) =>
 void listenForSuggestedReplies(SuggestedReplyCollectionListener listener) =>
     SuggestedReply.listen(_docStorage, listener);
 
-Future<void> updateSuggestedReplyTranslation(SuggestedReply reply, String newText) {
-  log.verbose("Updating suggested reply translation ${reply.suggestedReplyId}, '$newText'");
-  return reply.setTranslation(_pubsubInstance, newText);
-}
-
 Future<void> addMessageTag(Conversation conversation, Message message, String tagId) {
   log.verbose("Adding tag $tagId to message in conversation ${conversation.docId}");
   return message.addTagId(_pubsubInstance, conversation, tagId);

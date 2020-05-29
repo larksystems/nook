@@ -40,7 +40,7 @@ SuggestedReply:
   firebaseCollectionName: 'suggestedReplies'
   firebaseDocId: 'string suggestedReplyId'
   text: 'string'
-  translation: 'publishable string'
+  translation: string
   shortcut: 'string'
   seq_no: 'int seqNumber'
   category: 'string'
@@ -51,7 +51,7 @@ Tag:
   type: 'TagType, TagType.Normal'
   shortcut: 'string'
   filterable: 'bool'
-  group: 'string'
+  group: "string, ''"
 
 TagType:
   dartType: 'enum'

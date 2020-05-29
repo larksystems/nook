@@ -786,14 +786,7 @@ void command(UIAction action, Data data) {
       selectedConversations.remove(conversation);
       break;
     case UIAction.updateTranslation:
-      if (data is ReplyTranslationData) {
-        var reply = suggestedRepliesByCategory[selectedSuggestedRepliesCategory][data.replyIndex];
-        SaveTextAction.textChange(
-          "${reply.docId}.translation",
-          data.translationText,
-          (newText) => platform.updateSuggestedReplyTranslation(reply, newText),
-        );
-      } else if (data is TranslationData) {
+      if (data is TranslationData) {
         TranslationData messageTranslation = data;
         var conversation = activeConversation;
         var message = conversation.messages[messageTranslation.messageIndex];
