@@ -126,22 +126,15 @@ class Conversation {
 
   /// Set notes in this Conversation.
   /// Callers should catch and handle IOException.
-  Future<void> setNotes(DocPubSubUpdate pubSubClient, String notes) {
-    return setNotesForAll(pubSubClient, [this], notes);
-  }
-
-  /// Set notes in each Conversation.
-  /// Callers should catch and handle IOException.
-  static Future<void> setNotesForAll(DocPubSubUpdate pubSubClient, List<Conversation> docs, String notes) async {
-    final docIdsToPublish = <String>[];
-    for (var doc in docs) {
-      if (doc.notes != notes) {
-        doc.notes = notes;
-        docIdsToPublish.add(doc.docId);
-      }
+  Future<void> setNotes(DocPubSubUpdate pubSubClient, String newNotes) {
+    if (notes == newNotes) {
+      return Future.value(null);
     }
-    if (docIdsToPublish.isEmpty) return;
-    return pubSubClient.publishDocChange(collectionName, docIdsToPublish, {"notes": notes});
+    notes = newNotes;
+    return pubSubClient.publishAddOpinion('nook_conversations/set_notes', {
+      'conversation_id': docId,
+      'notes': notes,
+    });
   }
 
   /// Set unread in this Conversation.
