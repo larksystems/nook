@@ -587,19 +587,4 @@ abstract class DocBatchUpdate {
 abstract class DocPubSubUpdate {
   /// Publish the given opinion for the given namespace.
   Future<void> publishAddOpinion(String namespace, Map<String, dynamic> opinion);
-
-  /// Publish the given document list/set additions,
-  /// where [additions] is a mapping of field name to new values to be added to the list/set.
-  /// Callers should catch and handle IOException.
-  Future<void> publishDocAdd(String collectionName, List<String> docIds, Map<String, List<dynamic>> additions);
-
-  /// Publish the given document changes,
-  /// where [changes] is a mapping of field name to new value.
-  /// Callers should catch and handle IOException.
-  Future<void> publishDocChange(String collectionName, List<String> docIds, Map<String, dynamic> changes);
-
-  /// Publish the given document list/set removals,
-  /// where [removals] is a mapping of field name to old values to be removed from the list/set.
-  /// Callers should catch and handle IOException.
-  Future<void> publishDocRemove(String collectionName, List<String> docIds, Map<String, List<dynamic>> removals);
 }
