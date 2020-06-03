@@ -151,6 +151,7 @@ main {
     display: flex;
     border-bottom: 1px solid lightgray;
     border-left: 5px solid #fff;
+    word-break: break-word;
 }
 
 .conversation-list__item:hover {

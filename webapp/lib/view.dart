@@ -84,18 +84,35 @@ void clearMain() {
 }
 
 void showTagPanel() {
-  tagPanelView.tagPanel.classes.toggle('hidden', false);
-  conversationListPanelView.conversationListPanel.classes.add('w-20');
-  conversationPanelView.conversationPanel.classes.add('w-40');
-  replyPanelView.replyPanel.classes.add('w-25');
-  tagPanelView.tagPanel.classes.add('w-15');
+  tagPanelView.tagPanel.classes
+    ..toggle('hidden', false)
+    ..toggle('w-0', false)
+    ..toggle('w-15', true);
+  conversationListPanelView.conversationListPanel.classes
+    ..toggle('w-25', false)
+    ..toggle('w-20', true);
+  conversationPanelView.conversationPanel.classes
+    ..toggle('w-45', false)
+    ..toggle('w-40', true);
+  replyPanelView.replyPanel.classes
+    ..toggle('w-30', false)
+    ..toggle('w-25', true);
 }
 
 void hideTagPanel() {
-  tagPanelView.tagPanel.classes.toggle('hidden', true);
-  conversationListPanelView.conversationListPanel.classes.add('w-25');
-  conversationPanelView.conversationPanel.classes.add('w-45');
-  replyPanelView.replyPanel.classes.add('w-30');
+  tagPanelView.tagPanel.classes
+    ..toggle('hidden', true)
+    ..toggle('w-0', true)
+    ..toggle('w-15', false);
+  conversationListPanelView.conversationListPanel.classes
+    ..toggle('w-25', true)
+    ..toggle('w-20', false);
+  conversationPanelView.conversationPanel.classes
+    ..toggle('w-45', true)
+    ..toggle('w-40', false);
+  replyPanelView.replyPanel.classes
+    ..toggle('w-30', true)
+    ..toggle('w-25', false);
 }
 
 bool sendingMultiMessagesUserConfirmation(int noMessages) {
@@ -1282,6 +1299,7 @@ class ActionView {
 
     var buttonElement = new DivElement()
       ..classes.add('action__button')
+      ..classes.add('action__button--float')
       ..text = buttonText;
     action.append(buttonElement);
   }
@@ -1311,7 +1329,7 @@ class ReplyActionView extends ActionView {
 
     { // Add text
       var textWrapper = new DivElement()
-        ..style.display = 'flex';
+        ..style.position = 'relative';
       textTranslationWrapper.append(textWrapper);
 
       var descriptionElement = new DivElement()
@@ -1333,7 +1351,7 @@ class ReplyActionView extends ActionView {
 
     { // Add translation
       var translationWrapper = new DivElement()
-        ..style.display = 'flex';
+        ..style.position = 'relative';
       textTranslationWrapper.append(translationWrapper);
 
       var descriptionElement = new DivElement()

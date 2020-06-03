@@ -20,6 +20,7 @@
 
 .action__description {
   flex:  1 1 auto;
+  word-break: break-word;
 }
 
 .action__translation {
@@ -44,6 +45,7 @@
   box-shadow: 0 0 5px 4px #eee;
   position: absolute;
   right: 0;
+  top: 0;
 }
 
 .new-message-box__send-button {
