@@ -273,20 +273,19 @@ Future<void> updateUnread(List<Conversation> conversations, bool newValue) {
       ? conversations[0].docId
       : "${conversations.length} conversations"
   }");
-  return Conversation.setUnreadForAll(_pubsubInstance, conversations, newValue);
+  var futures = <Future>[];
+  for (var conversation in conversations) {
+    futures.add(conversation.setUnread(_pubsubInstance, newValue));
+  }
+  return Future.wait(futures);
 }
 
 Future<void> addConversationTag(Conversation conversation, String tagId) {
   log.verbose("Adding tag $tagId to ${conversation.docId}");
-  return conversation.addTagId(_pubsubInstance, tagId);
-}
-
-Future<void> addConversationTag_forAll(List<Conversation> conversations, String tagId) {
-  log.verbose("Adding tag $tagId to ${conversations.length} conversations");
-  return Conversation.addTagIdToAll(_pubsubInstance, conversations, tagId);
+  return conversation.addTagIds(_pubsubInstance, [tagId]);
 }
 
 Future<void> removeConversationTag(Conversation conversation, String tagId) {
   log.verbose("Removing tag $tagId from ${conversation.docId}");
-  return conversation.removeTagId(_pubsubInstance, tagId);
+  return conversation.removeTagIds(_pubsubInstance, [tagId]);
 }

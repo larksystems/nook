@@ -61,39 +61,6 @@ class PubSubClient extends DocPubSubUpdate {
       "opinion": opinion,
     });
   }
-
-  @override
-  Future<void> publishDocAdd(String collectionName, List<String> docIds,
-      Map<String, List<dynamic>> additions) {
-    return publish(platform_constants.smsTopic, {
-      "action": "update_firebase",
-      "collection": collectionName,
-      "ids": docIds,
-      "additions": additions,
-    });
-  }
-
-  @override
-  Future<void> publishDocChange(String collectionName, List<String> docIds,
-      Map<String, dynamic> changes) {
-    return publish(platform_constants.smsTopic, {
-      "action": "update_firebase",
-      "collection": collectionName,
-      "ids": docIds,
-      "changes": changes,
-    });
-  }
-
-  @override
-  Future<void> publishDocRemove(String collectionName, List<String> docIds,
-      Map<String, List<dynamic>> removals) {
-    return publish(platform_constants.smsTopic, {
-      "action": "update_firebase",
-      "collection": collectionName,
-      "ids": docIds,
-      "removals": removals,
-    });
-  }
 }
 
 class PubSubException implements Exception {
