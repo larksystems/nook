@@ -20,7 +20,7 @@
   border-radius: 6px;
   flex: 0 1 auto;
   flex-wrap: inherit;
-  word-wrap: break-word;
+  word-break: break-word;
   overflow: hidden;
 }
 
