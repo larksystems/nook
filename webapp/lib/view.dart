@@ -964,9 +964,11 @@ class ConversationFilter {
     List<num> widths = _tagGroupsContainers[category].querySelectorAll('.tag__name').toList().map((e) => e.getBoundingClientRect().width).toList();
     num avgGridWidth = widths.fold(0, (previousValue, width) => previousValue + width);
     avgGridWidth = avgGridWidth / widths.length;
-    avgGridWidth = math.min(avgGridWidth + 15, 138);
-    _tagGroupsContainers[category]
-        .style.setProperty('grid-template-columns', 'repeat(auto-fill, ${avgGridWidth}px)');
+    num colSpacing = 10;
+    num minColWidth = math.min(avgGridWidth + 2 * colSpacing, 138);
+    num containerWidth = _tagsMenuWrapper.getBoundingClientRect().width;
+    num columnWidth = containerWidth / (containerWidth / minColWidth).floor() - colSpacing;
+    _tagGroupsContainers[category].style.setProperty('grid-template-columns', 'repeat(auto-fill, ${columnWidth}px)');
   }
 
   void modifyMenuTag(FilterMenuTagView tag, String category) {
