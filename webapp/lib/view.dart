@@ -596,9 +596,11 @@ class ConversationTagView extends TagView {
 class FilterMenuTagView extends TagView {
   FilterMenuTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle) {
     _removeButton.remove();
-    tag.onClick.listen((_) {
-      handleClicked(tagId);
-    });
+    _tagText
+      ..classes.add('clickable')
+      ..onClick.listen((_) {
+        handleClicked(tagId);
+      });
   }
 
   void handleClicked(String tagId) {
