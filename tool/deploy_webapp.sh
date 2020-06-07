@@ -108,7 +108,7 @@ echo "firebase deploy result: $?"
 # Deploy cloud functions if SKIP_CLOUD_FUNCTIONS is unset
 if [ -z "$SKIP_CLOUD_FUNCTIONS" ]; then
   echo ""
-  echo "deploying cloud functions"
+  echo "deploying cloud functions..."
   cd cloud_functions
 
   for FUNCTION_NAME in Publish Log StatusZ
@@ -124,7 +124,7 @@ if [ -z "$SKIP_CLOUD_FUNCTIONS" ]; then
 
   cd ..
   echo ""
-  echo "done updating cloud functions..."
+  echo "done updating cloud functions"
 else
   echo ""
   echo "skipping deploying cloud functions"
