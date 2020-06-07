@@ -50,7 +50,6 @@ enum UIAction {
   deselectAllConversations,
   updateSystemMessages,
   updateSuggestedRepliesCategory,
-  updateFilterTagsCategory,
   hideAgeTags,
   showSnackbar
 }
@@ -263,7 +262,6 @@ List<model.Tag> messageTags;
 List<model.Tag> filterTags;
 DateTime afterDateFilter;
 Map<String, List<model.Tag>> filterTagsByCategory;
-String selectedFilterTagsCategory;
 model.Conversation activeConversation;
 List<model.Conversation> selectedConversations;
 model.Message selectedMessage;
@@ -294,7 +292,6 @@ void initUI() {
   selectedConversations = [];
   activeConversation = null;
   selectedSuggestedRepliesCategory = '';
-  selectedFilterTagsCategory = '';
   hideDemogsTags = true;
 
   platform.listenForConversationTags(
@@ -310,32 +307,16 @@ void initUI() {
 
       // Update the replies by category map
       filterTagsByCategory = _groupTagsIntoCategories(conversationTags);
-      // Empty sublist if there are no replies to show
-      if (filterTagsByCategory.isEmpty) {
-        filterTagsByCategory[''] = [];
-      }
-      // Sort each sub-list alphabetically
-      for (var tags in filterTagsByCategory.values) {
-        tags.sort((r1, r2) => r1.text.compareTo(r2.text));
-      }
-      List<String> categories = filterTagsByCategory.keys.toList();
-      categories.sort((c1, c2) => c1.compareTo(c2));
-      // Replace list of categories in the UI selector
-      view.conversationFilter.categories = categories;
-      // If the categories have changed under us and the selected one no longer exists,
-      // default to the first category, whichever it is
-      if (!categories.contains(selectedFilterTagsCategory)) {
-        selectedFilterTagsCategory = categories.first;
-      }
-      // Select the selected category in the UI and add the tags for it
-      view.conversationFilter.selectedCategory = selectedFilterTagsCategory;
-      _populateFilterTagsMenu(filterTagsByCategory[selectedFilterTagsCategory]);
+      _removeTagsFromFilterMenu(_groupTagsIntoCategories(removed));
+      _addTagsToFilterMenu(_groupTagsIntoCategories(added));
+      _modifyTagsInFilterMenu(_groupTagsIntoCategories(modified));
 
       if (actionObjectState == UIActionObject.conversation) {
         _populateTagPanelView(conversationTags, TagReceiver.Conversation);
       }
     }
   );
+  _addDateTagToFilterMenu();
 
   platform.listenForMessageTags(
     (added, modified, removed) {
@@ -580,7 +561,6 @@ void command(UIAction action, Data data) {
       action != UIAction.signInButtonClicked && action != UIAction.signOutButtonClicked &&
       action != UIAction.userSignedIn && action != UIAction.userSignedOut &&
       action != UIAction.updateSuggestedRepliesCategory && action != UIAction.hideAgeTags &&
-      action != UIAction.updateFilterTagsCategory &&
       action != UIAction.selectAllConversations && action != UIAction.deselectAllConversations &&
       action != UIAction.showSnackbar) {
     return;
@@ -914,11 +894,6 @@ void command(UIAction action, Data data) {
       selectedSuggestedRepliesCategory = updateCategoryData.category;
       _populateReplyPanelView(suggestedRepliesByCategory[selectedSuggestedRepliesCategory]);
       break;
-    case UIAction.updateFilterTagsCategory:
-      UpdateFilterTagsCategoryData updateCategoryData = data;
-      selectedFilterTagsCategory = updateCategoryData.category;
-      _populateFilterTagsMenu(filterTagsByCategory[selectedFilterTagsCategory]);
-      break;
     case UIAction.hideAgeTags:
       ToggleData toggleData = data;
       hideDemogsTags = toggleData.toggleValue;
@@ -930,8 +905,6 @@ void command(UIAction action, Data data) {
           _populateTagPanelView(messageTags, TagReceiver.Message);
           break;
       }
-      // The filter tags menu always shows conversations tags, even when a message is selected
-      _populateFilterTagsMenu(filterTagsByCategory[selectedFilterTagsCategory]);
       break;
 
     case UIAction.showSnackbar:

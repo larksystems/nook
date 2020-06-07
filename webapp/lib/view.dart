@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:html';
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:intl/intl.dart';
 
@@ -595,9 +596,11 @@ class ConversationTagView extends TagView {
 class FilterMenuTagView extends TagView {
   FilterMenuTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle) {
     _removeButton.remove();
-    tag.onClick.listen((_) {
-      handleClicked(tagId);
-    });
+    _tagText
+      ..classes.add('clickable')
+      ..onClick.listen((_) {
+        handleClicked(tagId);
+      });
   }
 
   void handleClicked(String tagId) {
@@ -904,8 +907,8 @@ class ConversationFilter {
   DivElement _tagsContainer;
   DivElement _tagsMenu;
   DivElement _tagsMenuWrapper;
-  SelectElement _tagCategories;
-  DivElement _tagsMenuContainer;
+  Map<String, List<FilterMenuTagView>> _tagGroups;
+  Map<String, DivElement> _tagGroupsContainers;
 
   ConversationFilter() {
     conversationFilter = new DivElement()
@@ -917,28 +920,69 @@ class ConversationFilter {
 
     _tagsMenu = new DivElement()
       ..classes.add('tags-menu');
+    conversationFilter.append(_tagsMenu);
+
+    var tagsMenuBox = new DivElement()
+      ..classes.add('tags-menu__box');
+    _tagsMenu.append(tagsMenuBox);
 
     _tagsMenuWrapper = new DivElement()
       ..classes.add('tags-menu__wrapper');
-    _tagsMenu.append(_tagsMenuWrapper);
-
-    _tagCategories = new SelectElement();
-    _tagCategories.onChange.listen((_) => command(UIAction.updateFilterTagsCategory, new UpdateFilterTagsCategoryData(_tagCategories.value)));
-    _tagsMenuWrapper.append(_tagCategories);
-
-    _tagsMenuContainer = new DivElement()
-      ..classes.add('tags-menu__container');
-    _tagsMenuWrapper.append(_tagsMenuContainer);
-
-    conversationFilter.append(_tagsMenu);
+    tagsMenuBox.append(_tagsMenuWrapper);
 
     _tagsContainer = new DivElement()
       ..classes.add('tags-container');
     conversationFilter.append(_tagsContainer);
+
+    _tagGroupsContainers = {};
+    _tagGroups = {};
   }
 
-  void addMenuTag(FilterMenuTagView tag) {
-    _tagsMenuContainer.append(tag.tag);
+  void addMenuTag(FilterMenuTagView tag, String category) {
+    _tagGroups.putIfAbsent(category, () => []).add(tag);
+    _tagGroupsContainers.putIfAbsent(category, () {
+      var newContainerTitle = new DivElement()
+        ..classes.add('tags-menu__group-name')
+        ..text = category;
+      _tagsMenuWrapper.append(newContainerTitle);
+
+      var newContainer = new DivElement()
+        ..classes.add('tags-menu__container');
+      _tagsMenuWrapper.append(newContainer);
+
+      var separator = new DivElement()
+        ..classes.add('tags-menu__group-separator');
+      _tagsMenuWrapper.append(separator);
+
+      newContainerTitle.onClick.listen((event) {
+          newContainer.classes.toggle('hidden');
+          newContainerTitle.classes.toggle('folded');
+        });
+
+      return newContainer;
+    }).append(tag.tag);
+    List<num> widths = _tagGroupsContainers[category].querySelectorAll('.tag__name').toList().map((e) => e.getBoundingClientRect().width).toList();
+    num avgGridWidth = widths.fold(0, (previousValue, width) => previousValue + width);
+    avgGridWidth = avgGridWidth / widths.length;
+    num colSpacing = 10;
+    num minColWidth = math.min(avgGridWidth + 2 * colSpacing, 138);
+    num containerWidth = _tagsMenuWrapper.getBoundingClientRect().width;
+    num columnWidth = containerWidth / (containerWidth / minColWidth).floor() - colSpacing;
+    _tagGroupsContainers[category].style.setProperty('grid-template-columns', 'repeat(auto-fill, ${columnWidth}px)');
+  }
+
+  void modifyMenuTag(FilterMenuTagView tag, String category) {
+    int index = _tagGroups[category].indexWhere((t) => t.tag.dataset["id"] == tag.tag.dataset["id"]);
+    _tagGroups[category][index].tag.remove();
+    _tagGroups[category].removeAt(index);
+    _tagGroups[category].insert(index, tag);
+    _tagGroupsContainers[category].children.insert(index, tag.tag);
+  }
+
+  void removeMenuTag(FilterMenuTagView tag, String category) {
+    int index = _tagGroups[category].indexWhere((t) => t.tag.dataset["id"] == tag.tag.dataset["id"]);
+    _tagGroups[category][index].tag.remove();
+    _tagGroups[category].removeAt(index);
   }
 
   void addFilterTag(FilterTagView tag) {
@@ -958,32 +1002,11 @@ class ConversationFilter {
   }
 
   void clearMenuTags() {
-    int tagsNo = _tagsMenuContainer.children.length;
+    int tagsNo = _tagsMenuWrapper.children.length;
     for (int i = 0; i < tagsNo; i++) {
-      _tagsMenuContainer.firstChild.remove();
+      _tagsMenuWrapper.firstChild.remove();
     }
-    assert(_tagsMenuContainer.children.length == 0);
-  }
-
-  set selectedCategory(String category) {
-    int index = _tagCategories.children.indexWhere((Element option) => (option as OptionElement).value == category);
-    if (index == -1) {
-      showWarningStatus("Couldn't find $category in list of suggested replies category, using first");
-      _tagCategories.selectedIndex = 0;
-      command(UIAction.updateFilterTagsCategory, new UpdateFilterTagsCategoryData(_tagCategories.value));
-      return;
-    }
-    _tagCategories.selectedIndex = index;
-  }
-
-  set categories(List<String> categories) {
-    _tagCategories.children.clear();
-    for (var category in categories) {
-      _tagCategories.append(
-        new OptionElement()
-          ..value = category
-          ..text = category);
-    }
+    assert(_tagsMenuWrapper.children.length == 0);
   }
 }
 

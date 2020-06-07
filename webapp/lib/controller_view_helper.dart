@@ -114,15 +114,32 @@ void _populateTagPanelView(List<model.Tag> tags, TagReceiver tagReceiver) {
   }
 }
 
-void _populateFilterTagsMenu(List<model.Tag> tags) {
-  tags = _filterDemogsTagsIfNeeded(tags);
-  var filterableTags = tags.where((tag) => tag.filterable == null ? false : tag.filterable).toList();
-  tags = filterableTags.isEmpty ? tags : filterableTags;
-  view.conversationFilter.clearMenuTags();
-  for (var tag in tags) {
-    view.conversationFilter.addMenuTag(new view.FilterMenuTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
+void _removeTagsFromFilterMenu(Map<String, List<model.Tag>> tagsByCategory) {
+  for (var category in tagsByCategory.keys.toList()..sort()) {
+    for (var tag in tagsByCategory[category]) {
+      view.conversationFilter.removeMenuTag(new view.FilterMenuTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)), category);
+    }
   }
-  view.conversationFilter.addMenuTag(view.AfterDateFilterMenuTagView());
+}
+
+void _addTagsToFilterMenu(Map<String, List<model.Tag>> tagsByCategory) {
+  for (var category in tagsByCategory.keys.toList()..sort()) {
+    for (var tag in tagsByCategory[category]) {
+      view.conversationFilter.addMenuTag(new view.FilterMenuTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)), category);
+    }
+  }
+}
+
+void _modifyTagsInFilterMenu(Map<String, List<model.Tag>> tagsByCategory) {
+  for (var category in tagsByCategory.keys.toList()..sort()) {
+    for (var tag in tagsByCategory[category]) {
+      view.conversationFilter.modifyMenuTag(new view.FilterMenuTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)), category);
+    }
+  }
+}
+
+void _addDateTagToFilterMenu() {
+  view.conversationFilter.addMenuTag(view.AfterDateFilterMenuTagView(), "Date");
 }
 
 void _populateSelectedFilterTags(List<model.Tag> tags) {
@@ -154,6 +171,12 @@ Map<String, List<model.SuggestedReply>> _groupRepliesIntoCategories(List<model.S
 }
 
 Map<String, List<model.Tag>> _groupTagsIntoCategories(List<model.Tag> tags) {
+  tags.sort((tag1, tag2) {
+    int groupCompare = tag1.group.compareTo(tag2.group);
+    if (groupCompare != 0) return groupCompare;
+    return tag1.text.compareTo(tag2.text);
+  });
+
   Map<String, List<model.Tag>> result = {};
   for (model.Tag tag in tags) {
     result.putIfAbsent(tag.group, () => []).add(tag);

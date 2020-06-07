@@ -73,10 +73,8 @@ main {
     visibility: visible;
 }
 
-.tags-menu__wrapper {
+.tags-menu__box {
     position: absolute;
-    width: 450px;
-    height: auto;
     top: auto;
     bottom: 100%;
     left: 130px;
@@ -84,9 +82,10 @@ main {
     background: white;
     padding: 8px;
     margin: 16px;
+    z-index: 5;
 }
 
-.tags-menu__wrapper::before {
+.tags-menu__box::before {
     content: '';
     width: 150px;
     height: 100%;
@@ -96,9 +95,41 @@ main {
     left: -150px;
 }
 
-.tags-menu__container {
-    max-height: 300px;
+.tags-menu__wrapper {
+    width: 450px;
+    height: auto;
+    max-height: 400px;
     overflow-y: scroll;
+}
+
+.tags-menu__container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 138px);
+    grid-gap: 4px 10px;
+}
+
+.tags-menu__group-name {
+    margin: 8px;
+    cursor: pointer;
+}
+
+.tags-menu__group-name::before {
+    content: "▼";
+    font-size: .6em;
+    font-weight: bold;
+    padding-right: 7px;
+}
+
+.tags-menu__group-name.folded::before {
+    content: "►";
+}
+
+.tags-menu__group-separator {
+    text-align: center;
+    border-bottom: 1px solid #bbb;
+    border-top: 7px solid white;
+    border-left: 32px solid white;
+    border-right: 32px solid white;
 }
 
 .conversation-list-panel {
