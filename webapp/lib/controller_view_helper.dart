@@ -114,7 +114,7 @@ void _populateTagPanelView(List<model.Tag> tags, TagReceiver tagReceiver) {
   }
 }
 
-void _removeTagsToFilterMenu(Map<String, List<model.Tag>> tagsByCategory) {
+void _removeTagsFromFilterMenu(Map<String, List<model.Tag>> tagsByCategory) {
   for (var category in tagsByCategory.keys.toList()..sort()) {
     for (var tag in tagsByCategory[category]) {
       view.conversationFilter.removeMenuTag(new view.FilterMenuTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)), category);

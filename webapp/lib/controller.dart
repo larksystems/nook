@@ -307,7 +307,7 @@ void initUI() {
 
       // Update the replies by category map
       filterTagsByCategory = _groupTagsIntoCategories(conversationTags);
-      _removeTagsToFilterMenu(_groupTagsIntoCategories(removed));
+      _removeTagsFromFilterMenu(_groupTagsIntoCategories(removed));
       _addTagsToFilterMenu(_groupTagsIntoCategories(added));
       _modifyTagsInFilterMenu(_groupTagsIntoCategories(modified));
 
