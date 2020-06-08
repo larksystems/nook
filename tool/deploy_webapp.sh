@@ -1,7 +1,7 @@
 # Exit immediately if a command exits with a non-zero status
 set -e
-if [ $# -ne 2 ]; then
-    echo "Usage: $0 path/to/firebase/deployment/constants.json path/to/crypto/token/file"
+if [ $# -lt 2 ] || [ $# -gt 3 ]; then
+    echo "Usage: $0 [--skip-cloud-functions] path/to/firebase/deployment/constants.json path/to/crypto/token/file"
     exit 1
 fi
 
@@ -9,9 +9,14 @@ WORK_DIR="$(pwd)"
 
 ########## validate argument(s)
 
+if [ "$1" = "--skip-cloud-functions" ]; then
+  SKIP_CLOUD_FUNCTIONS=true
+  shift
+fi
+
 FIREBASE_CONSTANTS="$1"
 if [ ! -f "$FIREBASE_CONSTANTS" ]; then
-  echo "could not find FIREBASE_CONSTANTS: $FIREBASE_CONSTANTS" 
+  echo "could not find FIREBASE_CONSTANTS: $FIREBASE_CONSTANTS"
   exit 1
 fi
 
@@ -100,24 +105,30 @@ firebase deploy \
   --public public
 echo "firebase deploy result: $?"
 
-echo ""
-echo "deploy cloud functions"
-cd cloud_functions
+# Deploy cloud functions if SKIP_CLOUD_FUNCTIONS is unset
+if [ -z "$SKIP_CLOUD_FUNCTIONS" ]; then
+  echo ""
+  echo "deploying cloud functions..."
+  cd cloud_functions
 
-for FUNCTION_NAME in Publish Log StatusZ
-do
-gcloud --project $CRYPTO_TOKEN_PROJECT_ID functions deploy \
-  $FUNCTION_NAME \
-  --entry-point $FUNCTION_NAME \
-  --runtime python37 \
-  --allow-unauthenticated \
-  --region=europe-west1 \
-  --trigger-http
-done
+  for FUNCTION_NAME in Publish Log StatusZ
+  do
+  gcloud --project $CRYPTO_TOKEN_PROJECT_ID functions deploy \
+    $FUNCTION_NAME \
+    --entry-point $FUNCTION_NAME \
+    --runtime python37 \
+    --allow-unauthenticated \
+    --region=europe-west1 \
+    --trigger-http
+  done
 
-cd ..
-echo ""
-echo "Done updating cloud functions..."
+  cd ..
+  echo ""
+  echo "done updating cloud functions"
+else
+  echo ""
+  echo "skipping deploying cloud functions"
+fi
 
 echo ""
 echo "updating nook webapp metadata..."
