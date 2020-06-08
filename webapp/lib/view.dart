@@ -59,7 +59,7 @@ void initSignedInView() {
     ..append(snackbarView.snackbarElement);
   showNormalStatus('signed in');
 
-  currentConfig.tagPanelVisibility ? showTagPanel() : hideTagPanel();
+  currentConfig.tagsPanelVisibility ? showTagPanel() : hideTagPanel();
 
   HttpRequest.getString('assets/latest_commit_hash.json').then((latestCommitHashConfigJson) {
     var latestCommitHash = (json.decode(latestCommitHashConfigJson) as Map)['latestCommitHash'];

@@ -12,7 +12,7 @@ extension UserConfigurationUtil on g.UserConfiguration {
       ..keyboardShortcutsEnabled = this.keyboardShortcutsEnabled ?? defaults.keyboardShortcutsEnabled
       ..sendCustomMessagesEnabled = this.sendCustomMessagesEnabled ?? defaults.sendCustomMessagesEnabled
       ..sendMultiMessageEnabled = this.sendMultiMessageEnabled ?? defaults.sendMultiMessageEnabled
-      ..tagPanelVisibility = this.tagPanelVisibility ?? defaults.tagPanelVisibility;
+      ..tagsPanelVisibility = this.tagsPanelVisibility ?? defaults.tagsPanelVisibility;
 }
 
 extension ConversationListShardUtil on g.ConversationListShard {

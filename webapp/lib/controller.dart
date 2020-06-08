@@ -446,8 +446,8 @@ void applyConfiguration(model.UserConfiguration newConfig) {
     }
   }
 
-  if (currentConfig.tagPanelVisibility != newConfig.tagPanelVisibility) {
-    newConfig.tagPanelVisibility ? view.showTagPanel() : view.hideTagPanel();
+  if (currentConfig.tagsPanelVisibility != newConfig.tagsPanelVisibility) {
+    newConfig.tagsPanelVisibility ? view.showTagPanel() : view.hideTagPanel();
   }
 
   currentConfig = newConfig;
@@ -527,7 +527,7 @@ model.UserConfiguration get baseUserConfiguration => new model.UserConfiguration
     ..keyboardShortcutsEnabled = false
     ..sendCustomMessagesEnabled = false
     ..sendMultiMessageEnabled = false
-    ..tagPanelVisibility = false;
+    ..tagsPanelVisibility = false;
 
 model.UserConfiguration get emptyUserConfiguration => new model.UserConfiguration();
 
@@ -837,7 +837,7 @@ void command(UIAction action, Data data) {
         return;
       }
       // If the shortcut is for a tag and tag panel is enabled, find it and tag it to the conversation/message
-      if (!currentConfig.tagPanelVisibility) return;
+      if (!currentConfig.tagsPanelVisibility) return;
       switch (actionObjectState) {
         case UIActionObject.conversation:
           var selectedTag = _filterDemogsTagsIfNeeded(conversationTags).where((tag) => tag.shortcut == keyPressData.key);
