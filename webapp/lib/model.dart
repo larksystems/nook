@@ -9,10 +9,17 @@ extension UserConfigurationUtil on g.UserConfiguration {
   g.UserConfiguration applyDefaults(g.UserConfiguration defaults) =>
     new g.UserConfiguration()
       ..docId = null
-      ..keyboardShortcutsEnabled = this.keyboardShortcutsEnabled ?? defaults.keyboardShortcutsEnabled
+      ..tagsKeyboardShortcutsEnabled = this.tagsKeyboardShortcutsEnabled ?? defaults.tagsKeyboardShortcutsEnabled
+      ..repliesKeyboardShortcutsEnabled = this.repliesKeyboardShortcutsEnabled ?? defaults.repliesKeyboardShortcutsEnabled
+      ..sendMessagesEnabled = this.sendMessagesEnabled ?? defaults.sendMessagesEnabled
       ..sendCustomMessagesEnabled = this.sendCustomMessagesEnabled ?? defaults.sendCustomMessagesEnabled
       ..sendMultiMessageEnabled = this.sendMultiMessageEnabled ?? defaults.sendMultiMessageEnabled
-      ..tagsPanelVisibility = this.tagsPanelVisibility ?? defaults.tagsPanelVisibility;
+      ..tagMessagesEnabled = this.tagMessagesEnabled ?? defaults.tagMessagesEnabled
+      ..tagConversationsEnabled = this.tagConversationsEnabled ?? defaults.tagConversationsEnabled
+      ..editTranslationsEnabled = this.editTranslationsEnabled ?? defaults.editTranslationsEnabled
+      ..editNotesEnabled = this.editNotesEnabled ?? defaults.editNotesEnabled
+      ..tagsPanelVisibility = this.tagsPanelVisibility ?? defaults.tagsPanelVisibility
+      ..repliesPanelVisibility = this.repliesPanelVisibility ?? defaults.repliesPanelVisibility;
 }
 
 extension ConversationListShardUtil on g.ConversationListShard {

@@ -1152,7 +1152,7 @@ class ReplyPanelView {
     _notes.append(_notesTextArea);
     _replyViews = [];
 
-    currentConfig.keyboardShortcutsEnabled ? showShortcuts() : hideShortcuts();
+    currentConfig.repliesKeyboardShortcutsEnabled ? showShortcuts() : hideShortcuts();
   }
 
   set noteText(String text) => _notesTextArea.value = text;
@@ -1271,7 +1271,7 @@ class TagPanelView {
 
     _tagViews = [];
 
-    currentConfig.keyboardShortcutsEnabled ? showShortcuts() : hideShortcuts();
+    currentConfig.tagsKeyboardShortcutsEnabled ? showShortcuts() : hideShortcuts();
   }
 
   void addTag(ActionView action) {
@@ -1312,7 +1312,6 @@ class ActionView {
     _shortcutElement = new DivElement()
       ..classes.add('action__shortcut')
       ..text = shortcut;
-    currentConfig.keyboardShortcutsEnabled ? showShortcut() : hideShortcut();
     action.append(_shortcutElement);
 
     var textElement = new DivElement()
@@ -1343,7 +1342,7 @@ class ReplyActionView extends ActionView {
     _shortcutElement = new DivElement()
       ..classes.add('action__shortcut')
       ..text = shortcut;
-    currentConfig.keyboardShortcutsEnabled ? showShortcut() : hideShortcut();
+    currentConfig.repliesKeyboardShortcutsEnabled ? showShortcut() : hideShortcut();
     action.append(_shortcutElement);
 
     var textTranslationWrapper = new DivElement()
@@ -1398,6 +1397,7 @@ class ReplyActionView extends ActionView {
 
 class TagActionView extends ActionView {
   TagActionView(String text, String shortcut, String tagId, String buttonText) : super(text, shortcut, tagId, buttonText) {
+    currentConfig.tagsKeyboardShortcutsEnabled ? showShortcut() : hideShortcut();
     var buttonElement = action.querySelector('.action__button');
     buttonElement.onClick.listen((_) => command(UIAction.addTag, new TagData(action.dataset['id'])));
   }

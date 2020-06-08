@@ -424,7 +424,8 @@ class UserConfiguration {
   static const collectionName = 'users';
 
   String docId;
-  bool keyboardShortcutsEnabled;
+  bool tagsKeyboardShortcutsEnabled;
+  bool repliesKeyboardShortcutsEnabled;
   bool sendMessagesEnabled;
   bool sendCustomMessagesEnabled;
   bool sendMultiMessageEnabled;
@@ -443,7 +444,8 @@ class UserConfiguration {
   static UserConfiguration fromData(data, [UserConfiguration modelObj]) {
     if (data == null) return null;
     return (modelObj ?? UserConfiguration())
-      ..keyboardShortcutsEnabled = bool_fromData(data['keyboard_shortcuts_enabled'])
+      ..tagsKeyboardShortcutsEnabled = bool_fromData(data['tags_keyboard_shortcuts_enabled'])
+      ..repliesKeyboardShortcutsEnabled = bool_fromData(data['replies_keyboard_shortcuts_enabled'])
       ..sendMessagesEnabled = bool_fromData(data['send_messages_enabled'])
       ..sendCustomMessagesEnabled = bool_fromData(data['send_custom_messages_enabled'])
       ..sendMultiMessageEnabled = bool_fromData(data['send_multi_message_enabled'])
@@ -461,7 +463,8 @@ class UserConfiguration {
 
   Map<String, dynamic> toData() {
     return {
-      if (keyboardShortcutsEnabled != null) 'keyboard_shortcuts_enabled': keyboardShortcutsEnabled,
+      if (tagsKeyboardShortcutsEnabled != null) 'tags_keyboard_shortcuts_enabled': tagsKeyboardShortcutsEnabled,
+      if (repliesKeyboardShortcutsEnabled != null) 'replies_keyboard_shortcuts_enabled': repliesKeyboardShortcutsEnabled,
       if (sendMessagesEnabled != null) 'send_messages_enabled': sendMessagesEnabled,
       if (sendCustomMessagesEnabled != null) 'send_custom_messages_enabled': sendCustomMessagesEnabled,
       if (sendMultiMessageEnabled != null) 'send_multi_message_enabled': sendMultiMessageEnabled,

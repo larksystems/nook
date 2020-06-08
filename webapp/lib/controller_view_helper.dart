@@ -110,7 +110,9 @@ void _populateTagPanelView(List<model.Tag> tags, TagReceiver tagReceiver) {
   });
 
   for (var tag in tags) {
-    view.tagPanelView.addTag(new view.TagActionView(tag.text, tag.shortcut, tag.tagId, buttonText));
+    var tagView = new view.TagActionView(tag.text, tag.shortcut, tag.tagId, buttonText);
+    currentConfig.tagsKeyboardShortcutsEnabled ? tagView.showShortcut() : tagView.hideShortcut();
+    view.tagPanelView.addTag(tagView);
   }
 }
 

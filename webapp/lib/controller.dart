@@ -428,9 +428,11 @@ void initUI() {
 /// Sets user customization flags from the data map
 /// If a flag is not set in the data map, it defaults to the existing values
 void applyConfiguration(model.UserConfiguration newConfig) {
-  if (currentConfig.keyboardShortcutsEnabled != newConfig.keyboardShortcutsEnabled) {
-    newConfig.keyboardShortcutsEnabled ? view.replyPanelView.showShortcuts() : view.replyPanelView.hideShortcuts();
-    newConfig.keyboardShortcutsEnabled ? view.tagPanelView.showShortcuts() : view.tagPanelView.hideShortcuts();
+  if (currentConfig.repliesKeyboardShortcutsEnabled != newConfig.repliesKeyboardShortcutsEnabled) {
+    newConfig.repliesKeyboardShortcutsEnabled ? view.replyPanelView.showShortcuts() : view.replyPanelView.hideShortcuts();
+  }
+  if (currentConfig.tagsKeyboardShortcutsEnabled != newConfig.tagsKeyboardShortcutsEnabled) {
+    newConfig.tagsKeyboardShortcutsEnabled ? view.tagPanelView.showShortcuts() : view.tagPanelView.hideShortcuts();
   }
 
   if (currentConfig.sendCustomMessagesEnabled != newConfig.sendCustomMessagesEnabled) {
@@ -524,10 +526,17 @@ SplayTreeSet<model.Conversation> get emptyConversationsSet =>
     SplayTreeSet(model.ConversationUtil.mostRecentInboundFirst);
 
 model.UserConfiguration get baseUserConfiguration => new model.UserConfiguration()
-    ..keyboardShortcutsEnabled = false
+    ..repliesKeyboardShortcutsEnabled = false
+    ..tagsKeyboardShortcutsEnabled = false
+    ..sendMessagesEnabled = false
     ..sendCustomMessagesEnabled = false
     ..sendMultiMessageEnabled = false
-    ..tagsPanelVisibility = false;
+    ..tagMessagesEnabled = false
+    ..tagConversationsEnabled = false
+    ..editTranslationsEnabled = false
+    ..editNotesEnabled = false
+    ..tagsPanelVisibility = false
+    ..repliesPanelVisibility = false;
 
 model.UserConfiguration get emptyUserConfiguration => new model.UserConfiguration();
 
@@ -808,9 +817,6 @@ void command(UIAction action, Data data) {
       platform.signOut();
       break;
     case UIAction.keyPressed:
-      // Keyboard shortcuts not enabled, skip processing the action.
-      if (!currentConfig.keyboardShortcutsEnabled) return;
-
       KeyPressData keyPressData = data;
       if (keyPressData.key == 'Enter') {
         // Select the next conversation in the list
@@ -824,22 +830,33 @@ void command(UIAction action, Data data) {
       }
       // If the keypress it has a modifier key, prevent all replies and tags
       if (keyPressData.hasModifierKey) return;
-
-      // If the shortcut is for a reply, find it and send it
-      var selectedReply = suggestedRepliesByCategory[selectedSuggestedRepliesCategory].where((reply) => reply.shortcut == keyPressData.key);
-      if (selectedReply.isNotEmpty) {
-        assert (selectedReply.length == 1);
-        if (!currentConfig.sendMultiMessageEnabled || selectedConversations.isEmpty) {
-          sendReply(selectedReply.first, activeConversation);
+      // If the configuration allows it, try to match the key with a reply shortcut
+      if (currentConfig.sendMessagesEnabled &&
+          currentConfig.repliesPanelVisibility &&
+          currentConfig.repliesKeyboardShortcutsEnabled) {
+        // If the shortcut is for a reply, find it and send it
+        var selectedReply = suggestedRepliesByCategory[selectedSuggestedRepliesCategory].where((reply) => reply.shortcut == keyPressData.key);
+        if (selectedReply.isNotEmpty) {
+          assert (selectedReply.length == 1);
+          if (!currentConfig.sendMultiMessageEnabled || selectedConversations.isEmpty) {
+            sendReply(selectedReply.first, activeConversation);
+            return;
+          }
+          String text = 'Cannot send multiple messages using keyboard shortcuts. '
+                        'Please use the send button on the suggested reply you want to send instead.';
+          command(UIAction.showSnackbar, new SnackbarData(text, SnackbarNotificationType.warning));
           return;
         }
-        command(UIAction.showSnackbar, new SnackbarData('Cannot send multiple messages using keyboard shortcuts. Please use the send button on the suggested reply you want to send instead.', SnackbarNotificationType.warning));
-        return;
       }
-      // If the shortcut is for a tag and tag panel is enabled, find it and tag it to the conversation/message
-      if (!currentConfig.tagsPanelVisibility) return;
+
+      // If the configuration allows it, try to match the key with a conversation or message shortcut
+      if (!(currentConfig.tagMessagesEnabled || currentConfig.tagConversationsEnabled) &&
+          !currentConfig.tagsKeyboardShortcutsEnabled &&
+          !currentConfig.tagsPanelVisibility) return;
       switch (actionObjectState) {
         case UIActionObject.conversation:
+          // Early exit if tagging conversations is disabled
+          if (!currentConfig.tagConversationsEnabled) return;
           var selectedTag = _filterDemogsTagsIfNeeded(conversationTags).where((tag) => tag.shortcut == keyPressData.key);
           if (selectedTag.isEmpty) break;
           assert (selectedTag.length == 1);
@@ -854,6 +871,8 @@ void command(UIAction action, Data data) {
           setMultiConversationTag(selectedTag.first, selectedConversations);
           return;
         case UIActionObject.message:
+          // Early exit if tagging messages is disabled
+          if (!currentConfig.tagConversationsEnabled) return;
           var selectedTag = _filterDemogsTagsIfNeeded(messageTags).where((tag) => tag.shortcut == keyPressData.key);
           if (selectedTag.isEmpty) break;
           assert (selectedTag.length == 1);

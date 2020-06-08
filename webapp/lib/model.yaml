@@ -70,7 +70,8 @@ SystemMessage:
 UserConfiguration:
   firebaseCollectionName: 'users'
   firebaseDocId: 'string userId'
-  keyboard_shortcuts_enabled: 'bool keyboardShortcutsEnabled'
+  tags_keyboard_shortcuts_enabled: 'bool tagsKeyboardShortcutsEnabled'
+  replies_keyboard_shortcuts_enabled: 'bool repliesKeyboardShortcutsEnabled'
   send_messages_enabled: 'bool sendMessagesEnabled'
   send_custom_messages_enabled: 'bool sendCustomMessagesEnabled'
   send_multi_message_enabled: 'bool sendMultiMessageEnabled'
