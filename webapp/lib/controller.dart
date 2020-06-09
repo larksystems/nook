@@ -276,8 +276,8 @@ model.UserConfiguration currentConfig;
 bool hideDemogsTags;
 
 void init() async {
-  defaultUserConfig = currentConfig = baseUserConfiguration;
-  currentUserConfig = emptyUserConfiguration;
+  defaultUserConfig = baseUserConfiguration;
+  currentUserConfig = currentConfig = emptyUserConfiguration;
   view.init();
   await platform.init();
 }
@@ -422,6 +422,8 @@ void initUI() {
       applyConfiguration(newConfig);
     }
   );
+  // Apply the default configuration before loading any new configs.
+  applyConfiguration(defaultUserConfig);
 }
 
 
@@ -431,8 +433,13 @@ void applyConfiguration(model.UserConfiguration newConfig) {
   if (currentConfig.repliesKeyboardShortcutsEnabled != newConfig.repliesKeyboardShortcutsEnabled) {
     newConfig.repliesKeyboardShortcutsEnabled ? view.replyPanelView.showShortcuts() : view.replyPanelView.hideShortcuts();
   }
+
   if (currentConfig.tagsKeyboardShortcutsEnabled != newConfig.tagsKeyboardShortcutsEnabled) {
     newConfig.tagsKeyboardShortcutsEnabled ? view.tagPanelView.showShortcuts() : view.tagPanelView.hideShortcuts();
+  }
+
+  if (currentConfig.sendMessagesEnabled != newConfig.sendMessagesEnabled) {
+    newConfig.sendMessagesEnabled ? view.replyPanelView.showButtons() : view.replyPanelView.hideButtons();
   }
 
   if (currentConfig.sendCustomMessagesEnabled != newConfig.sendCustomMessagesEnabled) {
@@ -448,8 +455,29 @@ void applyConfiguration(model.UserConfiguration newConfig) {
     }
   }
 
-  if (currentConfig.tagsPanelVisibility != newConfig.tagsPanelVisibility) {
-    newConfig.tagsPanelVisibility ? view.showTagPanel() : view.hideTagPanel();
+  if (currentConfig.tagMessagesEnabled != newConfig.tagMessagesEnabled) {
+    if (actionObjectState == UIActionObject.message) {
+      newConfig.tagMessagesEnabled ? view.tagPanelView.showButtons() : view.tagPanelView.hideButtons();
+    }
+  }
+
+  if (currentConfig.tagConversationsEnabled != newConfig.tagConversationsEnabled) {
+    if (actionObjectState == UIActionObject.conversation) {
+      newConfig.tagConversationsEnabled ? view.tagPanelView.showButtons() : view.tagPanelView.hideButtons();
+    }
+  }
+
+  if (currentConfig.editTranslationsEnabled != newConfig.editTranslationsEnabled) {
+    newConfig.editTranslationsEnabled ? view.conversationPanelView.enableEditableTranslations() : view.conversationPanelView.disableEditableTranslations();
+  }
+
+  if (currentConfig.editNotesEnabled != newConfig.editNotesEnabled) {
+    newConfig.editNotesEnabled ? view.replyPanelView.enableEditableNotes() : view.replyPanelView.disableEditableNotes();
+  }
+
+  if (currentConfig.tagsPanelVisibility != newConfig.tagsPanelVisibility ||
+      currentConfig.repliesPanelVisibility != newConfig.repliesPanelVisibility) {
+    view.showPanels(newConfig.repliesPanelVisibility, newConfig.tagsPanelVisibility);
   }
 
   currentConfig = newConfig;
