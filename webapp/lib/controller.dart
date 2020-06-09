@@ -719,10 +719,7 @@ void command(UIAction action, Data data) {
     case UIAction.markConversationRead:
       ConversationData conversationData = data;
       model.Conversation conversation = conversations.singleWhere((c) => c.docId == conversationData.deidentifiedPhoneNumber);
-      if (filteredConversations.contains(conversation)) {
-        // Update the conversation list UI only if it's in the list
-        view.conversationListPanelView.markConversationRead(conversationData.deidentifiedPhoneNumber);
-      }
+      view.conversationListPanelView.markConversationRead(conversation.docId);
       platform.updateUnread([conversation], false).catchError(showAndLogError);
       break;
     case UIAction.markConversationUnread:
@@ -991,6 +988,7 @@ void updateViewForConversation(model.Conversation conversation) {
     // Select the conversation in the list
     view.conversationListPanelView.selectConversation(conversation.docId);
   } else {
+    // If it's not in the list, show warning
     view.conversationPanelView.showWarning('Conversation no longer meets filtering constraints');
   }
 }
