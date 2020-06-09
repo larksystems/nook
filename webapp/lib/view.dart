@@ -852,19 +852,19 @@ class ConversationListPanelView {
   }
 
   void markConversationRead(String deidentifiedPhoneNumber) {
-    _phoneToConversations[deidentifiedPhoneNumber]._markRead();
+    _phoneToConversations[deidentifiedPhoneNumber]?._markRead();
   }
 
   void markConversationUnread(String deidentifiedPhoneNumber) {
-    _phoneToConversations[deidentifiedPhoneNumber]._markUnread();
+    _phoneToConversations[deidentifiedPhoneNumber]?._markUnread();
   }
 
   void checkConversation(String deidentifiedPhoneNumber) {
-    _phoneToConversations[deidentifiedPhoneNumber]._check();
+    _phoneToConversations[deidentifiedPhoneNumber]?._check();
   }
 
   void uncheckConversation(String deidentifiedPhoneNumber) {
-    _phoneToConversations[deidentifiedPhoneNumber]._uncheck();
+    _phoneToConversations[deidentifiedPhoneNumber]?._uncheck();
   }
 
   void checkAllConversations() => _phoneToConversations.forEach((_, conversation) => conversation._check());

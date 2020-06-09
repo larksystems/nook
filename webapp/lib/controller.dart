@@ -514,8 +514,10 @@ void conversationListSelected(String conversationListRoot) {
       // Update the active conversation view as needed
       if (updatedIds.contains(activeConversation.docId)) {
         updateViewForConversation(activeConversation);
+        if (!activeConversation.unread) {
+          command(UIAction.markConversationRead, ConversationData(activeConversation.docId));
+        }
       }
-      command(UIAction.markConversationRead, ConversationData(activeConversation.docId));
     },
     conversationListRoot);
 }
@@ -716,8 +718,9 @@ void command(UIAction action, Data data) {
       break;
     case UIAction.markConversationRead:
       ConversationData conversationData = data;
-      view.conversationListPanelView.markConversationRead(conversationData.deidentifiedPhoneNumber);
-      platform.updateUnread([activeConversation], false).catchError(showAndLogError);
+      model.Conversation conversation = conversations.singleWhere((c) => c.docId == conversationData.deidentifiedPhoneNumber);
+      view.conversationListPanelView.markConversationRead(conversation.docId);
+      platform.updateUnread([conversation], false).catchError(showAndLogError);
       break;
     case UIAction.markConversationUnread:
       if (!currentConfig.sendMultiMessageEnabled || selectedConversations.isEmpty) {
@@ -968,8 +971,6 @@ model.Conversation updateViewForConversations(Set<model.Conversation> conversati
 
 void updateViewForConversation(model.Conversation conversation) {
   if (conversation == null) return;
-  // Select the conversation in the list
-  view.conversationListPanelView.selectConversation(conversation.docId);
   // Replace the previous conversation in the conversation panel
   _populateConversationPanelView(conversation);
   view.replyPanelView.noteText = conversation.notes;
@@ -982,6 +983,13 @@ void updateViewForConversation(model.Conversation conversation) {
       view.conversationPanelView.deselectMessage();
       _populateTagPanelView(conversationTags, TagReceiver.Conversation);
       break;
+  }
+  if (filteredConversations.contains(conversation)) {
+    // Select the conversation in the list
+    view.conversationListPanelView.selectConversation(conversation.docId);
+  } else {
+    // If it's not in the list, show warning
+    view.conversationPanelView.showWarning('Conversation no longer meets filtering constraints');
   }
 }
 
