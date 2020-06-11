@@ -458,9 +458,11 @@ class MessageView {
     _messageTranslation = new DivElement()
       ..classes.add('message__translation')
       ..text = translation;
-    makeEditable(_messageTranslation, onChange: () {
-      command(UIAction.updateTranslation, new TranslationData(_messageTranslation.text, conversationId, messageIndex));
-    });
+    if (currentConfig.editTranslationsEnabled) {
+      makeEditable(_messageTranslation, onChange: () {
+        command(UIAction.updateTranslation, new TranslationData(_messageTranslation.text, conversationId, messageIndex));
+      });
+    }
     _messageBubble.append(_messageTranslation);
 
     _messageTags = new DivElement()
