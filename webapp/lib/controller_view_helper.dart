@@ -74,7 +74,8 @@ void _populateReplyPanelView(List<model.SuggestedReply> replies) {
   for (var reply in replies) {
     int replyIndex = replies.indexOf(reply);
     var replyView = new view.ReplyActionView(reply.text, reply.translation, reply.shortcut, replyIndex, buttonText);
-    currentConfig.tagsKeyboardShortcutsEnabled ? replyView.showShortcut() : replyView.hideShortcut();
+    currentConfig.repliesKeyboardShortcutsEnabled ? replyView.showShortcut() : replyView.hideShortcut();
+    currentConfig.sendMessagesEnabled ? replyView.showButtons() : replyView.hideButtons();
     view.replyPanelView.addReply(replyView);
   }
 }
@@ -114,6 +115,14 @@ void _populateTagPanelView(List<model.Tag> tags, TagReceiver tagReceiver) {
   for (var tag in tags) {
     var tagView = new view.TagActionView(tag.text, tag.shortcut, tag.tagId, buttonText);
     currentConfig.tagsKeyboardShortcutsEnabled ? tagView.showShortcut() : tagView.hideShortcut();
+    switch (tagReceiver) {
+      case TagReceiver.Conversation:
+        currentConfig.tagConversationsEnabled ? tagView.showButtons() : tagView.hideButtons();
+        break;
+      case TagReceiver.Message:
+        currentConfig.tagMessagesEnabled ? tagView.showButtons() : tagView.hideButtons();
+        break;
+    }
     view.tagPanelView.addTag(tagView);
   }
 }
