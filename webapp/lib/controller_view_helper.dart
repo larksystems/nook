@@ -40,24 +40,28 @@ void _populateConversationPanelView(model.Conversation conversation) {
     view.conversationPanelView.addTags(new view.ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
   }
 
-  for (int i = 0; i < conversation.messages.length; i++) {
-    var message = conversation.messages[i];
-    List<view.TagView> tags = [];
-    for (var tag in model.tagIdsToTags(message.tagIds, messageTags)) {
-      tags.add(new view.MessageTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
-    }
-    view.conversationPanelView.addMessage(
-      new view.MessageView(
-        message.text,
-        message.datetime,
-        conversation.docId,
-        i,
-        translation: message.translation,
-        incoming: message.direction == model.MessageDirection.In,
-        tags: tags,
-        status: message.status
-      ));
+  for (var message in conversation.messages) {
+    _addMessageToView(message, conversation);
   }
+}
+
+void _addMessageToView(model.Message message, model.Conversation conversation) {
+  List<view.TagView> tags = [];
+  for (var tag in model.tagIdsToTags(message.tagIds, messageTags)) {
+    tags.add(new view.MessageTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
+  }
+  var messageView = new view.MessageView(
+      message.text,
+      message.datetime,
+      conversation.docId,
+      conversation.messages.indexOf(message),
+      translation: message.translation,
+      incoming: message.direction == model.MessageDirection.In,
+      tags: tags,
+      status: message.status
+    );
+  currentConfig.editTranslationsEnabled ? messageView.enableEditableTranslations() : messageView.disableEditableTranslations();
+  view.conversationPanelView.addMessage(messageView);
 }
 
 void _populateReplyPanelView(List<model.SuggestedReply> replies) {
