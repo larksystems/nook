@@ -784,6 +784,7 @@ void command(UIAction action, Data data) {
       activeConversation = null;
       view.conversationListPanelView.clearConversationList();
       view.conversationPanelView.clear();
+      view.replyPanelView.noteText = '';
       activeConversation = null;
       if (conversationListData.conversationListRoot == ConversationListData.NONE) {
         view.conversationListPanelView.showSelectConversationListMessage();
