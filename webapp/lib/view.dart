@@ -1166,8 +1166,9 @@ class ReplyPanelView {
     _replyList = new DivElement();
     _replies.append(_replyList);
 
-    _addReply = new AddReplyActionView(ADD_REPLY_INFO);
-    _replies.append(_addReply.addAction);
+    // TODO(mariana): support adding replies
+    // _addReply = new AddReplyActionView(ADD_REPLY_INFO);
+    // _replies.append(_addReply.addAction);
 
     _notes = new DivElement()
       ..classes.add('notes-box');
@@ -1321,8 +1322,9 @@ class TagPanelView {
     _tagList = new DivElement();
     _tags.append(_tagList);
 
-    _addTag = new AddTagActionView(ADD_TAG_INFO);
-    _tags.append(_addTag.addAction);
+    // TODO(mariana): support adding tags
+    // _addTag = new AddTagActionView(ADD_TAG_INFO);
+    // _tags.append(_addTag.addAction);
 
     _statusPanel = new DivElement();
     _statusText = new Text('loading...');
