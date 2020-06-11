@@ -1258,9 +1258,11 @@ class ReplyPanelView {
 
   void enableEditableNotes() {
     // Just replace the notes HTML element with new one and call [makeEditable] on it.
+    var text = _notesTextArea.value;
     _notesTextArea.remove();
     _notesTextArea = new TextAreaElement()
-      ..classes.add('notes-box__textarea');
+      ..classes.add('notes-box__textarea')
+      ..value = text;
     makeEditable(_notesTextArea, onChange: () {
       command(UIAction.updateNote, new NoteData(_notesTextArea.value));
     });
@@ -1269,11 +1271,12 @@ class ReplyPanelView {
 
   void disableEditableNotes() {
     // Just replace the notes HTML element with new one, and don't call [makeEditable].
-    print('----------- disableEditableNotes');
+    var text = _notesTextArea.value;
     _notesTextArea.remove();
     _notesTextArea = new TextAreaElement()
       ..classes.add('notes-box__textarea')
-      ..disabled = true;
+      ..disabled = true
+      ..value = text;
     _notes.append(_notesTextArea);
   }
 }
