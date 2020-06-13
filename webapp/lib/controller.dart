@@ -431,48 +431,45 @@ void initUI() {
 /// If a flag is not set in the data map, it defaults to the existing values
 void applyConfiguration(model.UserConfiguration newConfig) {
   if (currentConfig.repliesKeyboardShortcutsEnabled != newConfig.repliesKeyboardShortcutsEnabled) {
-    newConfig.repliesKeyboardShortcutsEnabled ? view.replyPanelView.showShortcuts() : view.replyPanelView.hideShortcuts();
+    view.replyPanelView.showShortcuts(newConfig.repliesKeyboardShortcutsEnabled);
   }
 
   if (currentConfig.tagsKeyboardShortcutsEnabled != newConfig.tagsKeyboardShortcutsEnabled) {
-    newConfig.tagsKeyboardShortcutsEnabled ? view.tagPanelView.showShortcuts() : view.tagPanelView.hideShortcuts();
+    view.tagPanelView.showShortcuts(newConfig.tagsKeyboardShortcutsEnabled);
   }
 
   if (currentConfig.sendMessagesEnabled != newConfig.sendMessagesEnabled) {
-    newConfig.sendMessagesEnabled ? view.replyPanelView.showButtons() : view.replyPanelView.hideButtons();
+    view.replyPanelView.showButtons(newConfig.sendMessagesEnabled);
   }
 
   if (currentConfig.sendCustomMessagesEnabled != newConfig.sendCustomMessagesEnabled) {
-    newConfig.sendCustomMessagesEnabled ? view.conversationPanelView.showCustomMessageBox() : view.conversationPanelView.hideCustomMessageBox();
+    view.conversationPanelView.showCustomMessageBox(newConfig.sendCustomMessagesEnabled);
   }
 
   if (currentConfig.sendMultiMessageEnabled != newConfig.sendMultiMessageEnabled) {
-    if (newConfig.sendMultiMessageEnabled) {
-      view.conversationListPanelView.showCheckboxes();
-    } else {
-      view.conversationListPanelView.hideCheckboxes();
-      command(UIAction.deselectAllConversations, null);
-    }
+    view.conversationListPanelView.showCheckboxes(newConfig.sendMultiMessageEnabled);
+    // Start off with no selected conversations
+    command(UIAction.deselectAllConversations, null);
   }
 
   if (currentConfig.tagMessagesEnabled != newConfig.tagMessagesEnabled) {
     if (actionObjectState == UIActionObject.message) {
-      newConfig.tagMessagesEnabled ? view.tagPanelView.showButtons() : view.tagPanelView.hideButtons();
+      view.tagPanelView.showButtons(newConfig.tagMessagesEnabled);
     }
   }
 
   if (currentConfig.tagConversationsEnabled != newConfig.tagConversationsEnabled) {
     if (actionObjectState == UIActionObject.conversation) {
-      newConfig.tagConversationsEnabled ? view.tagPanelView.showButtons() : view.tagPanelView.hideButtons();
+      view.tagPanelView.showButtons(newConfig.tagConversationsEnabled);
     }
   }
 
   if (currentConfig.editTranslationsEnabled != newConfig.editTranslationsEnabled) {
-    newConfig.editTranslationsEnabled ? view.conversationPanelView.enableEditableTranslations() : view.conversationPanelView.disableEditableTranslations();
+    view.conversationPanelView.enableEditableTranslations(newConfig.editTranslationsEnabled);
   }
 
   if (currentConfig.editNotesEnabled != newConfig.editNotesEnabled) {
-    newConfig.editNotesEnabled ? view.replyPanelView.enableEditableNotes() : view.replyPanelView.disableEditableNotes();
+    view.replyPanelView.enableEditableNotes(newConfig.editNotesEnabled);
   }
 
   if (currentConfig.tagsPanelVisibility != newConfig.tagsPanelVisibility ||
@@ -532,7 +529,7 @@ void conversationListSelected(String conversationListRoot) {
 
       activeConversation = updateViewForConversations(filteredConversations, updateList: true);
       if (currentConfig.sendMultiMessageEnabled) {
-        view.conversationListPanelView.showCheckboxes();
+        view.conversationListPanelView.showCheckboxes(currentConfig.sendMultiMessageEnabled);
         Set selectedConversationsIds = selectedConversations.map((c) => c.docId).toSet();
         Set filteredConversationsIds = filteredConversations.map((c) => c.docId).toSet();
         Set updatedSelectedConversationsIds = selectedConversationsIds.intersection(filteredConversationsIds);
@@ -966,7 +963,7 @@ void updateFilteredConversationList() {
   filteredConversations = filterConversationsByTags(conversations, filterTags, afterDateFilter);
   activeConversation = updateViewForConversations(filteredConversations);
   if (currentConfig.sendMultiMessageEnabled) {
-    view.conversationListPanelView.showCheckboxes();
+    view.conversationListPanelView.showCheckboxes(currentConfig.sendMultiMessageEnabled);
     selectedConversations = selectedConversations.toSet().intersection(filteredConversations.toSet()).toList();
     selectedConversations.forEach((conversation) => view.conversationListPanelView.checkConversation(conversation.docId));
   }

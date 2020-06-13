@@ -60,7 +60,7 @@ void _addMessageToView(model.Message message, model.Conversation conversation) {
       tags: tags,
       status: message.status
     );
-  currentConfig.editTranslationsEnabled ? messageView.enableEditableTranslations() : messageView.disableEditableTranslations();
+  messageView.enableEditableTranslations(currentConfig.editTranslationsEnabled);
   view.conversationPanelView.addMessage(messageView);
 }
 
@@ -78,8 +78,8 @@ void _populateReplyPanelView(List<model.SuggestedReply> replies) {
   for (var reply in replies) {
     int replyIndex = replies.indexOf(reply);
     var replyView = new view.ReplyActionView(reply.text, reply.translation, reply.shortcut, replyIndex, buttonText);
-    currentConfig.repliesKeyboardShortcutsEnabled ? replyView.showShortcut() : replyView.hideShortcut();
-    currentConfig.sendMessagesEnabled ? replyView.showButtons() : replyView.hideButtons();
+    replyView.showShortcut(currentConfig.repliesKeyboardShortcutsEnabled);
+    replyView.showButtons(currentConfig.sendMessagesEnabled);
     view.replyPanelView.addReply(replyView);
   }
 }
@@ -118,13 +118,13 @@ void _populateTagPanelView(List<model.Tag> tags, TagReceiver tagReceiver) {
 
   for (var tag in tags) {
     var tagView = new view.TagActionView(tag.text, tag.shortcut, tag.tagId, buttonText);
-    currentConfig.tagsKeyboardShortcutsEnabled ? tagView.showShortcut() : tagView.hideShortcut();
+    tagView.showShortcut(currentConfig.tagsKeyboardShortcutsEnabled);
     switch (tagReceiver) {
       case TagReceiver.Conversation:
-        currentConfig.tagConversationsEnabled ? tagView.showButtons() : tagView.hideButtons();
+        tagView.showButtons(currentConfig.tagConversationsEnabled);
         break;
       case TagReceiver.Message:
-        currentConfig.tagMessagesEnabled ? tagView.showButtons() : tagView.hideButtons();
+        tagView.showButtons(currentConfig.tagMessagesEnabled);
         break;
     }
     view.tagPanelView.addTag(tagView);

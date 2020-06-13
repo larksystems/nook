@@ -300,23 +300,17 @@ class ConversationPanelView {
     _newMessageTextArea?.value = '';
   }
 
-  void showCustomMessageBox() {
-    _newMessageBox.classes.remove('hidden');
-  }
-
-  void hideCustomMessageBox() {
-    _newMessageBox.classes.add('hidden');
-  }
-
-  void enableEditableTranslations() {
-    for (var messageView in _messageViews) {
-      messageView.enableEditableTranslations();
+  void showCustomMessageBox(bool show) {
+    if (show) {
+      _newMessageBox.classes.remove('hidden');
+    } else {
+      _newMessageBox.classes.add('hidden');
     }
   }
 
-  void disableEditableTranslations() {
+  void enableEditableTranslations(bool enable) {
     for (var messageView in _messageViews) {
-      messageView.disableEditableTranslations();
+      messageView.enableEditableTranslations(enable);
     }
   }
 
@@ -507,30 +501,22 @@ class MessageView {
       message.classes.remove('message--failed');
   }
 
-  void enableEditableTranslations() {
-    // Just replace the translation HTML element with new one and call [makeEditable] on it.
+  void enableEditableTranslations(bool enable) {
+    // Just replace the translation HTML element with new one and call [makeEditable] on it if editable.
     String translation = _messageTranslation.text;
     _messageTranslation.remove();
     _messageTranslation = new DivElement()
       ..classes.add('message__translation')
       ..text = translation;
-    makeEditable(_messageTranslation, onChange: () {
-      command(UIAction.updateTranslation,
-              new TranslationData(
-                  _messageTranslation.text,
-                  message.dataset['conversationId'],
-                  int.parse(message.dataset['messageIndex'])));
-    });
-    _messageBubble.append(_messageTranslation);
-  }
-
-  void disableEditableTranslations() {
-    // Just replace the translation HTML element with new one, and don't call [makeEditable].
-    String translation = _messageTranslation.text;
-    _messageTranslation.remove();
-    _messageTranslation = new DivElement()
-      ..classes.add('message__translation')
-      ..text = translation;
+    if (enable) {
+      makeEditable(_messageTranslation, onChange: () {
+        command(UIAction.updateTranslation,
+                new TranslationData(
+                    _messageTranslation.text,
+                    message.dataset['conversationId'],
+                    int.parse(message.dataset['messageIndex'])));
+      });
+    }
     _messageBubble.append(_messageTranslation);
   }
 }
@@ -896,15 +882,10 @@ class ConversationListPanelView {
 
   void checkAllConversations() => _phoneToConversations.forEach((_, conversation) => conversation._check());
   void uncheckAllConversations() => _phoneToConversations.forEach((_, conversation) => conversation._uncheck());
-  void showCheckboxes() {
-    _selectAllCheckbox.hidden = false;
-    _phoneToConversations.forEach((_, conversation) => conversation._showCheckbox());
-    _markUnread.multiSelectMode(true);
-  }
-  void hideCheckboxes() {
-    _selectAllCheckbox.hidden = true;
-    _phoneToConversations.forEach((_, conversation) => conversation._hideCheckbox());
-    _markUnread.multiSelectMode(false);
+  void showCheckboxes(bool show) {
+    _selectAllCheckbox.hidden = !show;
+    _markUnread.multiSelectMode(show);
+    _phoneToConversations.forEach((_, conversation) => conversation._showCheckbox(show));
   }
 
   void uncheckSelectAllCheckbox() => _selectAllCheckbox.checked = false;
@@ -1117,13 +1098,9 @@ class ConversationSummary with LazyListViewItem {
     _checked = false;
     if (_selectCheckbox != null) _selectCheckbox.checked = false;
   }
-  void _showCheckbox() {
-    _checkboxHidden = false;
-    if (_selectCheckbox != null) _selectCheckbox.hidden = false;
-  }
-  void _hideCheckbox() {
-    _checkboxHidden = true;
-    if (_selectCheckbox != null) _selectCheckbox.hidden = true;
+  void _showCheckbox(bool show) {
+    _checkboxHidden = !show;
+    if (_selectCheckbox != null) _selectCheckbox.hidden = !show;
   }
 }
 
@@ -1215,27 +1192,15 @@ class ReplyPanelView {
     assert(_replyList.children.length == 0);
   }
 
-  void showShortcuts() {
+  void showShortcuts(bool show) {
     for (var view in _replyViews) {
-      view.showShortcut();
+      view.showShortcut(show);
     }
   }
 
-  void hideShortcuts() {
+  void showButtons(bool show) {
     for (var view in _replyViews) {
-      view.hideShortcut();
-    }
-  }
-
-  void showButtons() {
-    for (var view in _replyViews) {
-      view.showButtons();
-    }
-  }
-
-  void hideButtons() {
-    for (var view in _replyViews) {
-      view.hideButtons();
+      view.showButtons(show);
     }
   }
 
@@ -1254,27 +1219,20 @@ class ReplyPanelView {
     _notes.classes.toggle('notes-box--fullscreen', false);
   }
 
-  void enableEditableNotes() {
-    // Just replace the notes HTML element with new one and call [makeEditable] on it.
+  void enableEditableNotes(bool enable) {
+    // Just replace the notes HTML element with new one and call [makeEditable] on it, or disable it.
     var text = _notesTextArea.value;
     _notesTextArea.remove();
     _notesTextArea = new TextAreaElement()
       ..classes.add('notes-box__textarea')
       ..value = text;
-    makeEditable(_notesTextArea, onChange: () {
-      command(UIAction.updateNote, new NoteData(_notesTextArea.value));
-    });
-    _notes.append(_notesTextArea);
-  }
-
-  void disableEditableNotes() {
-    // Just replace the notes HTML element with new one, and don't call [makeEditable].
-    var text = _notesTextArea.value;
-    _notesTextArea.remove();
-    _notesTextArea = new TextAreaElement()
-      ..classes.add('notes-box__textarea')
-      ..disabled = true
-      ..value = text;
+    if (enable) {
+      makeEditable(_notesTextArea, onChange: () {
+        command(UIAction.updateNote, new NoteData(_notesTextArea.value));
+      });
+    } else {
+      _notesTextArea.disabled = true;
+    }
     _notes.append(_notesTextArea);
   }
 }
@@ -1345,27 +1303,15 @@ class TagPanelView {
     assert(_tagList.children.length == 0);
   }
 
-  void showShortcuts() {
+  void showShortcuts(bool show) {
     for (var view in _tagViews) {
-      view.showShortcut();
+      view.showShortcut(show);
     }
   }
 
-  void hideShortcuts() {
+  void showButtons(bool show) {
     for (var view in _tagViews) {
-      view.hideShortcut();
-    }
-  }
-
-  void showButtons() {
-    for (var view in _tagViews) {
-      view.showButtons();
-    }
-  }
-
-  void hideButtons() {
-    for (var view in _tagViews) {
-      view.hideButtons();
+      view.showButtons(show);
     }
   }
 }
@@ -1398,20 +1344,20 @@ class ActionView {
     _buttonElements = [buttonElement];
   }
 
-  void showShortcut() {
-    _shortcutElement.classes.remove('hidden');
+  void showShortcut(bool show) {
+    if (show) {
+      _shortcutElement.classes.remove('hidden');
+    } else {
+      _shortcutElement.classes.add('hidden');
+    }
   }
 
-  void hideShortcut() {
-    _shortcutElement.classes.add('hidden');
-  }
-
-  void showButtons() {
-    _buttonElements.forEach((element) => element.classes.remove('hidden'));
-  }
-
-  void hideButtons() {
-    _buttonElements.forEach((element) => element.classes.add('hidden'));
+  void showButtons(bool show) {
+    if (show) {
+      _buttonElements.forEach((element) => element.classes.remove('hidden'));
+    } else {
+      _buttonElements.forEach((element) => element.classes.add('hidden'));
+    }
   }
 }
 
