@@ -250,7 +250,8 @@ class MessageStatus {
         if (value.name == valueName) return value;
       }
     }
-    log.warning('unknown MessageStatus $text');
+    // This is commented out because it generates too much noise in the logs
+    // log.warning('unknown MessageStatus $text');
     return defaultValue;
   }
 
