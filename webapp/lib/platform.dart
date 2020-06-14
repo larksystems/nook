@@ -176,8 +176,9 @@ void initUptimeMonitoring() {
 firebase.Auth get firebaseAuth => firebase.auth();
 
 /// Signs the user in.
-signIn() {
+signIn(String domain) {
   var provider = new firebase.GoogleAuthProvider();
+  provider.setCustomParameters({'hd': domain});
   firebaseAuth.signInWithPopup(provider);
 }
 
