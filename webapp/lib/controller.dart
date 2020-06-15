@@ -820,7 +820,7 @@ void command(UIAction action, Data data) {
       initUI();
       break;
     case UIAction.signInButtonClicked:
-    SignInData signInData = data;
+      SignInData signInData = data;
       platform.signIn(signInDomainsInfo[signInData.domain]['domain']);
       break;
     case UIAction.signOutButtonClicked:
