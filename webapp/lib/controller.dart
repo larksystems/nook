@@ -291,8 +291,8 @@ model.UserConfiguration currentConfig;
 bool hideDemogsTags;
 
 void init() async {
-  defaultUserConfig = currentConfig = baseUserConfiguration;
-  currentUserConfig = emptyUserConfiguration;
+  defaultUserConfig = baseUserConfiguration;
+  currentUserConfig = currentConfig = emptyUserConfiguration;
   view.init();
   await platform.init();
 }
@@ -437,32 +437,59 @@ void initUI() {
       applyConfiguration(newConfig);
     }
   );
+  // Apply the default configuration before loading any new configs.
+  applyConfiguration(defaultUserConfig);
 }
 
 
 /// Sets user customization flags from the data map
 /// If a flag is not set in the data map, it defaults to the existing values
 void applyConfiguration(model.UserConfiguration newConfig) {
-  if (currentConfig.keyboardShortcutsEnabled != newConfig.keyboardShortcutsEnabled) {
-    newConfig.keyboardShortcutsEnabled ? view.replyPanelView.showShortcuts() : view.replyPanelView.hideShortcuts();
-    newConfig.keyboardShortcutsEnabled ? view.tagPanelView.showShortcuts() : view.tagPanelView.hideShortcuts();
+  if (currentConfig.repliesKeyboardShortcutsEnabled != newConfig.repliesKeyboardShortcutsEnabled) {
+    view.replyPanelView.showShortcuts(newConfig.repliesKeyboardShortcutsEnabled);
+  }
+
+  if (currentConfig.tagsKeyboardShortcutsEnabled != newConfig.tagsKeyboardShortcutsEnabled) {
+    view.tagPanelView.showShortcuts(newConfig.tagsKeyboardShortcutsEnabled);
+  }
+
+  if (currentConfig.sendMessagesEnabled != newConfig.sendMessagesEnabled) {
+    view.replyPanelView.showButtons(newConfig.sendMessagesEnabled);
   }
 
   if (currentConfig.sendCustomMessagesEnabled != newConfig.sendCustomMessagesEnabled) {
-    newConfig.sendCustomMessagesEnabled ? view.conversationPanelView.showCustomMessageBox() : view.conversationPanelView.hideCustomMessageBox();
+    view.conversationPanelView.showCustomMessageBox(newConfig.sendCustomMessagesEnabled);
   }
 
   if (currentConfig.sendMultiMessageEnabled != newConfig.sendMultiMessageEnabled) {
-    if (newConfig.sendMultiMessageEnabled) {
-      view.conversationListPanelView.showCheckboxes();
-    } else {
-      view.conversationListPanelView.hideCheckboxes();
-      command(UIAction.deselectAllConversations, null);
+    view.conversationListPanelView.showCheckboxes(newConfig.sendMultiMessageEnabled);
+    // Start off with no selected conversations
+    command(UIAction.deselectAllConversations, null);
+  }
+
+  if (currentConfig.tagMessagesEnabled != newConfig.tagMessagesEnabled) {
+    if (actionObjectState == UIActionObject.message) {
+      view.tagPanelView.showButtons(newConfig.tagMessagesEnabled);
     }
   }
 
-  if (currentConfig.tagPanelVisibility != newConfig.tagPanelVisibility) {
-    newConfig.tagPanelVisibility ? view.showTagPanel() : view.hideTagPanel();
+  if (currentConfig.tagConversationsEnabled != newConfig.tagConversationsEnabled) {
+    if (actionObjectState == UIActionObject.conversation) {
+      view.tagPanelView.showButtons(newConfig.tagConversationsEnabled);
+    }
+  }
+
+  if (currentConfig.editTranslationsEnabled != newConfig.editTranslationsEnabled) {
+    view.conversationPanelView.enableEditableTranslations(newConfig.editTranslationsEnabled);
+  }
+
+  if (currentConfig.editNotesEnabled != newConfig.editNotesEnabled) {
+    view.replyPanelView.enableEditableNotes(newConfig.editNotesEnabled);
+  }
+
+  if (currentConfig.tagsPanelVisibility != newConfig.tagsPanelVisibility ||
+      currentConfig.repliesPanelVisibility != newConfig.repliesPanelVisibility) {
+    view.showPanels(newConfig.repliesPanelVisibility, newConfig.tagsPanelVisibility);
   }
 
   currentConfig = newConfig;
@@ -517,7 +544,7 @@ void conversationListSelected(String conversationListRoot) {
 
       activeConversation = updateViewForConversations(filteredConversations, updateList: true);
       if (currentConfig.sendMultiMessageEnabled) {
-        view.conversationListPanelView.showCheckboxes();
+        view.conversationListPanelView.showCheckboxes(currentConfig.sendMultiMessageEnabled);
         Set selectedConversationsIds = selectedConversations.map((c) => c.docId).toSet();
         Set filteredConversationsIds = filteredConversations.map((c) => c.docId).toSet();
         Set updatedSelectedConversationsIds = selectedConversationsIds.intersection(filteredConversationsIds);
@@ -541,10 +568,17 @@ SplayTreeSet<model.Conversation> get emptyConversationsSet =>
     SplayTreeSet(model.ConversationUtil.mostRecentInboundFirst);
 
 model.UserConfiguration get baseUserConfiguration => new model.UserConfiguration()
-    ..keyboardShortcutsEnabled = false
+    ..repliesKeyboardShortcutsEnabled = false
+    ..tagsKeyboardShortcutsEnabled = false
+    ..sendMessagesEnabled = false
     ..sendCustomMessagesEnabled = false
     ..sendMultiMessageEnabled = false
-    ..tagPanelVisibility = false;
+    ..tagMessagesEnabled = false
+    ..tagConversationsEnabled = false
+    ..editTranslationsEnabled = false
+    ..editNotesEnabled = false
+    ..tagsPanelVisibility = false
+    ..repliesPanelVisibility = false;
 
 model.UserConfiguration get emptyUserConfiguration => new model.UserConfiguration();
 
@@ -765,6 +799,7 @@ void command(UIAction action, Data data) {
       activeConversation = null;
       view.conversationListPanelView.clearConversationList();
       view.conversationPanelView.clear();
+      view.replyPanelView.noteText = '';
       activeConversation = null;
       if (conversationListData.conversationListRoot == ConversationListData.NONE) {
         view.conversationListPanelView.showSelectConversationListMessage();
@@ -827,9 +862,6 @@ void command(UIAction action, Data data) {
       platform.signOut();
       break;
     case UIAction.keyPressed:
-      // Keyboard shortcuts not enabled, skip processing the action.
-      if (!currentConfig.keyboardShortcutsEnabled) return;
-
       KeyPressData keyPressData = data;
       if (keyPressData.key == 'Enter') {
         // Select the next conversation in the list
@@ -843,22 +875,33 @@ void command(UIAction action, Data data) {
       }
       // If the keypress it has a modifier key, prevent all replies and tags
       if (keyPressData.hasModifierKey) return;
-
-      // If the shortcut is for a reply, find it and send it
-      var selectedReply = suggestedRepliesByCategory[selectedSuggestedRepliesCategory].where((reply) => reply.shortcut == keyPressData.key);
-      if (selectedReply.isNotEmpty) {
-        assert (selectedReply.length == 1);
-        if (!currentConfig.sendMultiMessageEnabled || selectedConversations.isEmpty) {
-          sendReply(selectedReply.first, activeConversation);
+      // If the configuration allows it, try to match the key with a reply shortcut
+      if (currentConfig.sendMessagesEnabled &&
+          currentConfig.repliesPanelVisibility &&
+          currentConfig.repliesKeyboardShortcutsEnabled) {
+        // If the shortcut is for a reply, find it and send it
+        var selectedReply = suggestedRepliesByCategory[selectedSuggestedRepliesCategory].where((reply) => reply.shortcut == keyPressData.key);
+        if (selectedReply.isNotEmpty) {
+          assert (selectedReply.length == 1);
+          if (!currentConfig.sendMultiMessageEnabled || selectedConversations.isEmpty) {
+            sendReply(selectedReply.first, activeConversation);
+            return;
+          }
+          String text = 'Cannot send multiple messages using keyboard shortcuts. '
+                        'Please use the send button on the suggested reply you want to send instead.';
+          command(UIAction.showSnackbar, new SnackbarData(text, SnackbarNotificationType.warning));
           return;
         }
-        command(UIAction.showSnackbar, new SnackbarData('Cannot send multiple messages using keyboard shortcuts. Please use the send button on the suggested reply you want to send instead.', SnackbarNotificationType.warning));
-        return;
       }
-      // If the shortcut is for a tag and tag panel is enabled, find it and tag it to the conversation/message
-      if (!currentConfig.tagPanelVisibility) return;
+
+      // If the configuration allows it, try to match the key with a conversation or message shortcut
+      if (!(currentConfig.tagMessagesEnabled || currentConfig.tagConversationsEnabled) &&
+          !currentConfig.tagsKeyboardShortcutsEnabled &&
+          !currentConfig.tagsPanelVisibility) return;
       switch (actionObjectState) {
         case UIActionObject.conversation:
+          // Early exit if tagging conversations is disabled
+          if (!currentConfig.tagConversationsEnabled) return;
           var selectedTag = _filterDemogsTagsIfNeeded(conversationTags).where((tag) => tag.shortcut == keyPressData.key);
           if (selectedTag.isEmpty) break;
           assert (selectedTag.length == 1);
@@ -873,6 +916,8 @@ void command(UIAction action, Data data) {
           setMultiConversationTag(selectedTag.first, selectedConversations);
           return;
         case UIActionObject.message:
+          // Early exit if tagging messages is disabled
+          if (!currentConfig.tagConversationsEnabled) return;
           var selectedTag = _filterDemogsTagsIfNeeded(messageTags).where((tag) => tag.shortcut == keyPressData.key);
           if (selectedTag.isEmpty) break;
           assert (selectedTag.length == 1);
@@ -937,7 +982,7 @@ void updateFilteredConversationList() {
   filteredConversations = filterConversationsByTags(conversations, filterTags, afterDateFilter);
   activeConversation = updateViewForConversations(filteredConversations);
   if (currentConfig.sendMultiMessageEnabled) {
-    view.conversationListPanelView.showCheckboxes();
+    view.conversationListPanelView.showCheckboxes(currentConfig.sendMultiMessageEnabled);
     selectedConversations = selectedConversations.toSet().intersection(filteredConversations.toSet()).toList();
     selectedConversations.forEach((conversation) => view.conversationListPanelView.checkConversation(conversation.docId));
   }
@@ -1019,21 +1064,17 @@ void sendReply(model.SuggestedReply reply, model.Conversation conversation) {
     ..tagIds = [];
   log.verbose('Adding reply "${reply.text}" to conversation ${conversation.docId}');
   conversation.messages.add(newMessage);
-  var newMessageView = new view.MessageView(
-      newMessage.text,
-      newMessage.datetime,
-      conversation.docId,
-      conversation.messages.indexOf(newMessage),
-      translation: newMessage.translation,
-      incoming: false);
-  view.conversationPanelView.addMessage(newMessageView);
+  _addMessageToView(newMessage, conversation);
   log.verbose('Sending reply "${reply.text}" to conversation ${conversation.docId}');
   platform.sendMessage(conversation.docId, reply.text, onError: (error) {
     log.error('Reply "${reply.text}" failed to be sent to conversation ${conversation.docId}');
     log.error('Error: ${error}');
     command(UIAction.showSnackbar, new SnackbarData('Send Reply Failed', SnackbarNotificationType.error));
     newMessage.status = model.MessageStatus.failed;
-    newMessageView.setStatus(newMessage.status);
+    if (conversation.docId == activeConversation.docId) {
+      int newMessageIndex = activeConversation.messages.indexOf(newMessage);
+      view.conversationPanelView.messageViewAtIndex(newMessageIndex).setStatus(newMessage.status);
+    }
   });
   log.verbose('Reply "${reply.text}" queued for sending to conversation ${conversation.docId}');
 }
@@ -1049,16 +1090,8 @@ void sendMultiReply(model.SuggestedReply reply, List<model.Conversation> convers
     ..tagIds = [];
   log.verbose('Adding reply "${reply.text}" to conversations ${conversationIds}');
   conversations.forEach((conversation) => conversation.messages.add(newMessage));
-  view.MessageView newMessageView;
   if (conversations.contains(activeConversation)) {
-    newMessageView = new view.MessageView(
-        newMessage.text,
-        newMessage.datetime,
-        activeConversation.docId,
-        activeConversation.messages.indexOf(newMessage),
-        translation: newMessage.translation,
-        incoming: false);
-    view.conversationPanelView.addMessage(newMessageView);
+    _addMessageToView(newMessage, activeConversation);
   }
   log.verbose('Sending reply "${reply.text}" to conversations ${conversationIds}');
   platform.sendMultiMessage(conversationIds, newMessage.text, onError: (error) {
@@ -1066,7 +1099,10 @@ void sendMultiReply(model.SuggestedReply reply, List<model.Conversation> convers
     log.error('Error: ${error}');
     command(UIAction.showSnackbar, new SnackbarData('Send Multi Reply Failed', SnackbarNotificationType.error));
     newMessage.status = model.MessageStatus.failed;
-    newMessageView?.setStatus(newMessage.status);
+    if (conversationIds.contains(activeConversation.docId)) {
+      int newMessageIndex = activeConversation.messages.indexOf(newMessage);
+      view.conversationPanelView.messageViewAtIndex(newMessageIndex).setStatus(newMessage.status);
+    }
   });
   log.verbose('Reply "${reply.text}" queued for sending to conversations ${conversationIds}');
 }

@@ -59,12 +59,10 @@ void initSignedInView() {
     ..append(snackbarView.snackbarElement);
   showNormalStatus('signed in');
 
-  currentConfig.tagPanelVisibility ? showTagPanel() : hideTagPanel();
-
   HttpRequest.getString('assets/latest_commit_hash.json').then((latestCommitHashConfigJson) {
     var latestCommitHash = (json.decode(latestCommitHashConfigJson) as Map)['latestCommitHash'];
     showNormalStatus('signed in: ${latestCommitHash.substring(0, 8)}...');
-  });
+  }, onError: (_) { /* Do nothing */ });
 }
 
 void initSignedOutView() {
@@ -84,36 +82,32 @@ void clearMain() {
   snackbarView.snackbarElement.remove();
 }
 
-void showTagPanel() {
-  tagPanelView.tagPanel.classes
-    ..toggle('hidden', false)
-    ..toggle('w-0', false)
-    ..toggle('w-15', true);
-  conversationListPanelView.conversationListPanel.classes
-    ..toggle('w-25', false)
-    ..toggle('w-20', true);
-  conversationPanelView.conversationPanel.classes
-    ..toggle('w-45', false)
-    ..toggle('w-40', true);
-  replyPanelView.replyPanel.classes
-    ..toggle('w-30', false)
-    ..toggle('w-25', true);
-}
+var layouts = {
+  'true-true':   {"conversationListPanel": "w-20", "conversationPanel": "w-40", "replyPanel": "w-25", "tagPanel": "w-15"},
+  'true-false':  {"conversationListPanel": "w-25", "conversationPanel": "w-45", "replyPanel": "w-30", "tagPanel": "w-0" },
+  'false-true':  {"conversationListPanel": "w-30", "conversationPanel": "w-50", "replyPanel": "w-0" , "tagPanel": "w-20"},
+  'false-false': {"conversationListPanel": "w-35", "conversationPanel": "w-65", "replyPanel": "w-0" , "tagPanel": "w-0" },
+};
 
-void hideTagPanel() {
-  tagPanelView.tagPanel.classes
-    ..toggle('hidden', true)
-    ..toggle('w-0', true)
-    ..toggle('w-15', false);
-  conversationListPanelView.conversationListPanel.classes
-    ..toggle('w-25', true)
-    ..toggle('w-20', false);
-  conversationPanelView.conversationPanel.classes
-    ..toggle('w-45', true)
-    ..toggle('w-40', false);
-  replyPanelView.replyPanel.classes
-    ..toggle('w-30', true)
-    ..toggle('w-25', false);
+var layout = ['1', '1'];
+
+void showPanels(showReplyPanel, showTagPanel) {
+  replyPanelView.replyPanel.classes.toggle('hidden', !showReplyPanel);
+  tagPanelView.tagPanel.classes.toggle('hidden', !showTagPanel);
+
+  String layoutKey = '$showReplyPanel-$showTagPanel';
+
+  // Remove previous w-* classes
+  conversationListPanelView.conversationListPanel.classes.removeWhere((element) => element.startsWith('w-'));
+  conversationPanelView.conversationPanel.classes.removeWhere((element) => element.startsWith('w-'));
+  replyPanelView.replyPanel.classes.removeWhere((element) => element.startsWith('w-'));
+  tagPanelView.tagPanel.classes.removeWhere((element) => element.startsWith('w-'));
+
+  // Set the classes based on the new layout
+  conversationListPanelView.conversationListPanel.classes.toggle(layouts[layoutKey]['conversationListPanel'], true);
+  conversationPanelView.conversationPanel.classes.toggle(layouts[layoutKey]['conversationPanel'], true);
+  replyPanelView.replyPanel.classes.toggle(layouts[layoutKey]['replyPanel'], true);
+  tagPanelView.tagPanel.classes.toggle(layouts[layoutKey]['tagPanel'], true);
 }
 
 bool sendingMultiMessagesUserConfirmation(int noMessages) {
@@ -224,7 +218,6 @@ class ConversationPanelView {
 
     _newMessageBox = new DivElement()
       ..classes.add('new-message-box');
-    currentConfig.sendCustomMessagesEnabled ? showCustomMessageBox() : hideCustomMessageBox();
     conversationPanel.append(_newMessageBox);
 
     _newMessageTextArea = new TextAreaElement()
@@ -307,12 +300,18 @@ class ConversationPanelView {
     _newMessageTextArea?.value = '';
   }
 
-  void showCustomMessageBox() {
-    _newMessageBox.classes.remove('hidden');
+  void showCustomMessageBox(bool show) {
+    if (show) {
+      _newMessageBox.classes.remove('hidden');
+    } else {
+      _newMessageBox.classes.add('hidden');
+    }
   }
 
-  void hideCustomMessageBox() {
-    _newMessageBox.classes.add('hidden');
+  void enableEditableTranslations(bool enable) {
+    for (var messageView in _messageViews) {
+      messageView.enableEditableTranslations(enable);
+    }
   }
 
   void showAfterDateFilterPrompt(DateTime dateTime) {
@@ -453,9 +452,6 @@ class MessageView {
     _messageTranslation = new DivElement()
       ..classes.add('message__translation')
       ..text = translation;
-    makeEditable(_messageTranslation, onChange: () {
-      command(UIAction.updateTranslation, new TranslationData(_messageTranslation.text, conversationId, messageIndex));
-    });
     _messageBubble.append(_messageTranslation);
 
     _messageTags = new DivElement()
@@ -503,6 +499,25 @@ class MessageView {
       message.classes.add('message--failed');
     else
       message.classes.remove('message--failed');
+  }
+
+  void enableEditableTranslations(bool enable) {
+    // Just replace the translation HTML element with new one and call [makeEditable] on it if editable.
+    String translation = _messageTranslation.text;
+    _messageTranslation.remove();
+    _messageTranslation = new DivElement()
+      ..classes.add('message__translation')
+      ..text = translation;
+    if (enable) {
+      makeEditable(_messageTranslation, onChange: () {
+        command(UIAction.updateTranslation,
+                new TranslationData(
+                    _messageTranslation.text,
+                    message.dataset['conversationId'],
+                    int.parse(message.dataset['messageIndex'])));
+      });
+    }
+    _messageBubble.append(_messageTranslation);
   }
 }
 
@@ -784,8 +799,6 @@ class ConversationListPanelView {
 
     conversationFilter = new ConversationFilter();
     conversationListPanel.append(conversationFilter.conversationFilter);
-
-    currentConfig.sendMultiMessageEnabled ? showCheckboxes() : hideCheckboxes();
   }
 
   void updateConversationList(Set<Conversation> conversations) {
@@ -869,15 +882,10 @@ class ConversationListPanelView {
 
   void checkAllConversations() => _phoneToConversations.forEach((_, conversation) => conversation._check());
   void uncheckAllConversations() => _phoneToConversations.forEach((_, conversation) => conversation._uncheck());
-  void showCheckboxes() {
-    _selectAllCheckbox.hidden = false;
-    _phoneToConversations.forEach((_, conversation) => conversation._showCheckbox());
-    _markUnread.multiSelectMode(true);
-  }
-  void hideCheckboxes() {
-    _selectAllCheckbox.hidden = true;
-    _phoneToConversations.forEach((_, conversation) => conversation._hideCheckbox());
-    _markUnread.multiSelectMode(false);
+  void showCheckboxes(bool show) {
+    _selectAllCheckbox.hidden = !show;
+    _markUnread.multiSelectMode(show);
+    _phoneToConversations.forEach((_, conversation) => conversation._showCheckbox(show));
   }
 
   void uncheckSelectAllCheckbox() => _selectAllCheckbox.checked = false;
@@ -1033,7 +1041,6 @@ class ConversationSummary with LazyListViewItem {
       ..hidden = _checkboxHidden
       ..onClick.listen((_) => _selectCheckbox.checked ? command(UIAction.selectConversation, new ConversationData(deidentifiedPhoneNumber))
                                                       : command(UIAction.deselectConversation, new ConversationData(deidentifiedPhoneNumber)));
-    currentConfig.sendMultiMessageEnabled ? _showCheckbox() : _hideCheckbox();
     conversationSummary.append(_selectCheckbox);
 
     var summaryMessage = new DivElement()
@@ -1091,13 +1098,9 @@ class ConversationSummary with LazyListViewItem {
     _checked = false;
     if (_selectCheckbox != null) _selectCheckbox.checked = false;
   }
-  void _showCheckbox() {
-    _checkboxHidden = false;
-    if (_selectCheckbox != null) _selectCheckbox.hidden = false;
-  }
-  void _hideCheckbox() {
-    _checkboxHidden = true;
-    if (_selectCheckbox != null) _selectCheckbox.hidden = true;
+  void _showCheckbox(bool show) {
+    _checkboxHidden = !show;
+    if (_selectCheckbox != null) _selectCheckbox.hidden = !show;
   }
 }
 
@@ -1137,8 +1140,9 @@ class ReplyPanelView {
     _replyList = new DivElement();
     _replies.append(_replyList);
 
-    _addReply = new AddReplyActionView(ADD_REPLY_INFO);
-    _replies.append(_addReply.addAction);
+    // TODO(mariana): support adding replies
+    // _addReply = new AddReplyActionView(ADD_REPLY_INFO);
+    // _replies.append(_addReply.addAction);
 
     _notes = new DivElement()
       ..classes.add('notes-box');
@@ -1146,13 +1150,9 @@ class ReplyPanelView {
 
     _notesTextArea = new TextAreaElement()
       ..classes.add('notes-box__textarea');
-    makeEditable(_notesTextArea, onChange: () {
-      command(UIAction.updateNote, new NoteData(_notesTextArea.value));
-    });
     _notes.append(_notesTextArea);
-    _replyViews = [];
 
-    currentConfig.keyboardShortcutsEnabled ? showShortcuts() : hideShortcuts();
+    _replyViews = [];
   }
 
   set noteText(String text) => _notesTextArea.value = text;
@@ -1192,15 +1192,15 @@ class ReplyPanelView {
     assert(_replyList.children.length == 0);
   }
 
-  void showShortcuts() {
+  void showShortcuts(bool show) {
     for (var view in _replyViews) {
-      view.showShortcut();
+      view.showShortcut(show);
     }
   }
 
-  void hideShortcuts() {
+  void showButtons(bool show) {
     for (var view in _replyViews) {
-      view.hideShortcut();
+      view.showButtons(show);
     }
   }
 
@@ -1217,6 +1217,23 @@ class ReplyPanelView {
       ..append(_replyCategories);
     replyPanel.insertBefore(_replies, _notes);
     _notes.classes.toggle('notes-box--fullscreen', false);
+  }
+
+  void enableEditableNotes(bool enable) {
+    // Just replace the notes HTML element with new one and call [makeEditable] on it, or disable it.
+    var text = _notesTextArea.value;
+    _notesTextArea.remove();
+    _notesTextArea = new TextAreaElement()
+      ..classes.add('notes-box__textarea')
+      ..value = text;
+    if (enable) {
+      makeEditable(_notesTextArea, onChange: () {
+        command(UIAction.updateNote, new NoteData(_notesTextArea.value));
+      });
+    } else {
+      _notesTextArea.disabled = true;
+    }
+    _notes.append(_notesTextArea);
   }
 }
 
@@ -1260,8 +1277,9 @@ class TagPanelView {
     _tagList = new DivElement();
     _tags.append(_tagList);
 
-    _addTag = new AddTagActionView(ADD_TAG_INFO);
-    _tags.append(_addTag.addAction);
+    // TODO(mariana): support adding tags
+    // _addTag = new AddTagActionView(ADD_TAG_INFO);
+    // _tags.append(_addTag.addAction);
 
     _statusPanel = new DivElement();
     _statusText = new Text('loading...');
@@ -1270,8 +1288,6 @@ class TagPanelView {
       ..append(_statusText));
 
     _tagViews = [];
-
-    currentConfig.keyboardShortcutsEnabled ? showShortcuts() : hideShortcuts();
   }
 
   void addTag(ActionView action) {
@@ -1287,15 +1303,15 @@ class TagPanelView {
     assert(_tagList.children.length == 0);
   }
 
-  void showShortcuts() {
+  void showShortcuts(bool show) {
     for (var view in _tagViews) {
-      view.showShortcut();
+      view.showShortcut(show);
     }
   }
 
-  void hideShortcuts() {
+  void showButtons(bool show) {
     for (var view in _tagViews) {
-      view.hideShortcut();
+      view.showButtons(show);
     }
   }
 }
@@ -1303,6 +1319,7 @@ class TagPanelView {
 class ActionView {
   DivElement action;
   DivElement _shortcutElement;
+  List<DivElement> _buttonElements;
 
   ActionView(String text, String shortcut, String actionId, String buttonText) {
     action = new DivElement()
@@ -1312,7 +1329,6 @@ class ActionView {
     _shortcutElement = new DivElement()
       ..classes.add('action__shortcut')
       ..text = shortcut;
-    currentConfig.keyboardShortcutsEnabled ? showShortcut() : hideShortcut();
     action.append(_shortcutElement);
 
     var textElement = new DivElement()
@@ -1325,30 +1341,41 @@ class ActionView {
       ..classes.add('action__button--float')
       ..text = buttonText;
     action.append(buttonElement);
+    _buttonElements = [buttonElement];
   }
 
-  void showShortcut() {
-    _shortcutElement.classes.remove('hidden');
+  void showShortcut(bool show) {
+    if (show) {
+      _shortcutElement.classes.remove('hidden');
+    } else {
+      _shortcutElement.classes.add('hidden');
+    }
   }
 
-  void hideShortcut() {
-    _shortcutElement.classes.add('hidden');
+  void showButtons(bool show) {
+    if (show) {
+      _buttonElements.forEach((element) => element.classes.remove('hidden'));
+    } else {
+      _buttonElements.forEach((element) => element.classes.add('hidden'));
+    }
   }
 }
 
 class ReplyActionView extends ActionView {
+
   ReplyActionView(String text, String translation, String shortcut, int replyIndex, String buttonText) : super(text, shortcut, '$replyIndex', buttonText) {
     action.children.clear();
 
     _shortcutElement = new DivElement()
       ..classes.add('action__shortcut')
       ..text = shortcut;
-    currentConfig.keyboardShortcutsEnabled ? showShortcut() : hideShortcut();
     action.append(_shortcutElement);
 
     var textTranslationWrapper = new DivElement()
       ..style.flex = '1 1 auto';
     action.append(textTranslationWrapper);
+
+    _buttonElements = [];
 
     { // Add text
       var textWrapper = new DivElement()
@@ -1370,6 +1397,7 @@ class ReplyActionView extends ActionView {
         ..text = '$buttonText (En)'; // TODO(mariana): These project-specific preferences should be read from a project config file
       buttonElement.onClick.listen((_) => command(UIAction.sendMessage, new ReplyData(replyIndex)));
       textWrapper.append(buttonElement);
+      _buttonElements.add(buttonElement);
     }
 
     { // Add translation
@@ -1392,6 +1420,7 @@ class ReplyActionView extends ActionView {
         ..text = '$buttonText (Swa)'; // TODO(mariana): These project-specific preferences should be read from a project config file
       buttonElement.onClick.listen((_) => command(UIAction.sendMessage, new ReplyData(replyIndex, replyWithTranslation: true)));
       translationWrapper.append(buttonElement);
+      _buttonElements.add(buttonElement);
     }
   }
 }

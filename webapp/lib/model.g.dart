@@ -250,6 +250,8 @@ class MessageStatus {
         if (value.name == valueName) return value;
       }
     }
+    // This is commented out because it generates too much noise in the logs
+    // log.warning('unknown MessageStatus $text');
     return defaultValue;
   }
 
@@ -423,10 +425,17 @@ class UserConfiguration {
   static const collectionName = 'users';
 
   String docId;
-  bool keyboardShortcutsEnabled;
+  bool tagsKeyboardShortcutsEnabled;
+  bool repliesKeyboardShortcutsEnabled;
+  bool sendMessagesEnabled;
   bool sendCustomMessagesEnabled;
   bool sendMultiMessageEnabled;
-  bool tagPanelVisibility;
+  bool tagMessagesEnabled;
+  bool tagConversationsEnabled;
+  bool editTranslationsEnabled;
+  bool editNotesEnabled;
+  bool tagsPanelVisibility;
+  bool repliesPanelVisibility;
 
   String get userId => docId;
 
@@ -436,10 +445,17 @@ class UserConfiguration {
   static UserConfiguration fromData(data, [UserConfiguration modelObj]) {
     if (data == null) return null;
     return (modelObj ?? UserConfiguration())
-      ..keyboardShortcutsEnabled = bool_fromData(data['keyboard_shortcuts_enabled'])
+      ..tagsKeyboardShortcutsEnabled = bool_fromData(data['tags_keyboard_shortcuts_enabled'])
+      ..repliesKeyboardShortcutsEnabled = bool_fromData(data['replies_keyboard_shortcuts_enabled'])
+      ..sendMessagesEnabled = bool_fromData(data['send_messages_enabled'])
       ..sendCustomMessagesEnabled = bool_fromData(data['send_custom_messages_enabled'])
       ..sendMultiMessageEnabled = bool_fromData(data['send_multi_message_enabled'])
-      ..tagPanelVisibility = bool_fromData(data['tag_panel_visibility']);
+      ..tagMessagesEnabled = bool_fromData(data['tag_messages_enabled'])
+      ..tagConversationsEnabled = bool_fromData(data['tag_conversations_enabled'])
+      ..editTranslationsEnabled = bool_fromData(data['edit_translations_enabled'])
+      ..editNotesEnabled = bool_fromData(data['edit_notes_enabled'])
+      ..tagsPanelVisibility = bool_fromData(data['tags_panel_visibility'])
+      ..repliesPanelVisibility = bool_fromData(data['replies_panel_visibility']);
   }
 
   static StreamSubscription listen(DocStorage docStorage, UserConfigurationCollectionListener listener,
@@ -448,10 +464,17 @@ class UserConfiguration {
 
   Map<String, dynamic> toData() {
     return {
-      if (keyboardShortcutsEnabled != null) 'keyboard_shortcuts_enabled': keyboardShortcutsEnabled,
+      if (tagsKeyboardShortcutsEnabled != null) 'tags_keyboard_shortcuts_enabled': tagsKeyboardShortcutsEnabled,
+      if (repliesKeyboardShortcutsEnabled != null) 'replies_keyboard_shortcuts_enabled': repliesKeyboardShortcutsEnabled,
+      if (sendMessagesEnabled != null) 'send_messages_enabled': sendMessagesEnabled,
       if (sendCustomMessagesEnabled != null) 'send_custom_messages_enabled': sendCustomMessagesEnabled,
       if (sendMultiMessageEnabled != null) 'send_multi_message_enabled': sendMultiMessageEnabled,
-      if (tagPanelVisibility != null) 'tag_panel_visibility': tagPanelVisibility,
+      if (tagMessagesEnabled != null) 'tag_messages_enabled': tagMessagesEnabled,
+      if (tagConversationsEnabled != null) 'tag_conversations_enabled': tagConversationsEnabled,
+      if (editTranslationsEnabled != null) 'edit_translations_enabled': editTranslationsEnabled,
+      if (editNotesEnabled != null) 'edit_notes_enabled': editNotesEnabled,
+      if (tagsPanelVisibility != null) 'tags_panel_visibility': tagsPanelVisibility,
+      if (repliesPanelVisibility != null) 'replies_panel_visibility': repliesPanelVisibility,
     };
   }
 

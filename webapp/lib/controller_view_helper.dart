@@ -40,24 +40,28 @@ void _populateConversationPanelView(model.Conversation conversation) {
     view.conversationPanelView.addTags(new view.ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
   }
 
-  for (int i = 0; i < conversation.messages.length; i++) {
-    var message = conversation.messages[i];
-    List<view.TagView> tags = [];
-    for (var tag in model.tagIdsToTags(message.tagIds, messageTags)) {
-      tags.add(new view.MessageTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
-    }
-    view.conversationPanelView.addMessage(
-      new view.MessageView(
-        message.text,
-        message.datetime,
-        conversation.docId,
-        i,
-        translation: message.translation,
-        incoming: message.direction == model.MessageDirection.In,
-        tags: tags,
-        status: message.status
-      ));
+  for (var message in conversation.messages) {
+    _addMessageToView(message, conversation);
   }
+}
+
+void _addMessageToView(model.Message message, model.Conversation conversation) {
+  List<view.TagView> tags = [];
+  for (var tag in model.tagIdsToTags(message.tagIds, messageTags)) {
+    tags.add(new view.MessageTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
+  }
+  var messageView = new view.MessageView(
+      message.text,
+      message.datetime,
+      conversation.docId,
+      conversation.messages.indexOf(message),
+      translation: message.translation,
+      incoming: message.direction == model.MessageDirection.In,
+      tags: tags,
+      status: message.status
+    );
+  messageView.enableEditableTranslations(currentConfig.editTranslationsEnabled);
+  view.conversationPanelView.addMessage(messageView);
 }
 
 void _populateReplyPanelView(List<model.SuggestedReply> replies) {
@@ -73,7 +77,10 @@ void _populateReplyPanelView(List<model.SuggestedReply> replies) {
   String buttonText = SEND_REPLY_BUTTON_TEXT;
   for (var reply in replies) {
     int replyIndex = replies.indexOf(reply);
-    view.replyPanelView.addReply(new view.ReplyActionView(reply.text, reply.translation, reply.shortcut, replyIndex, buttonText));
+    var replyView = new view.ReplyActionView(reply.text, reply.translation, reply.shortcut, replyIndex, buttonText);
+    replyView.showShortcut(currentConfig.repliesKeyboardShortcutsEnabled);
+    replyView.showButtons(currentConfig.sendMessagesEnabled);
+    view.replyPanelView.addReply(replyView);
   }
 }
 
@@ -110,7 +117,17 @@ void _populateTagPanelView(List<model.Tag> tags, TagReceiver tagReceiver) {
   });
 
   for (var tag in tags) {
-    view.tagPanelView.addTag(new view.TagActionView(tag.text, tag.shortcut, tag.tagId, buttonText));
+    var tagView = new view.TagActionView(tag.text, tag.shortcut, tag.tagId, buttonText);
+    tagView.showShortcut(currentConfig.tagsKeyboardShortcutsEnabled);
+    switch (tagReceiver) {
+      case TagReceiver.Conversation:
+        tagView.showButtons(currentConfig.tagConversationsEnabled);
+        break;
+      case TagReceiver.Message:
+        tagView.showButtons(currentConfig.tagMessagesEnabled);
+        break;
+    }
+    view.tagPanelView.addTag(tagView);
   }
 }
 
