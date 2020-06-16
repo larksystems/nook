@@ -180,6 +180,21 @@ class UserData extends Data {
   String toString() => 'UserData: {displayName: $displayName, email: $email, photoUrl: $photoUrl}';
 }
 
+enum SignInDomain { avf, lark, ucam }
+const signInDomainsInfo = {
+  SignInDomain.avf: {"displayName": "Africa's Voices", "domain": "africasvoices.org"},
+  SignInDomain.lark: {"displayName": "Lark Systems", "domain": "lark.systems"},
+  SignInDomain.ucam: {"displayName": "University of Cambridge", "domain": "cam.ac.uk"},
+};
+
+class SignInData extends Data {
+  SignInDomain domain;
+  SignInData(this.domain);
+
+  @override
+  String toString() => 'SignInData: {domain: $domain}';
+}
+
 class KeyPressData extends Data {
   String key;
   bool hasModifierKey;
@@ -805,7 +820,8 @@ void command(UIAction action, Data data) {
       initUI();
       break;
     case UIAction.signInButtonClicked:
-      platform.signIn();
+      SignInData signInData = data;
+      platform.signIn(signInDomainsInfo[signInData.domain]['domain']);
       break;
     case UIAction.signOutButtonClicked:
       platform.signOut();

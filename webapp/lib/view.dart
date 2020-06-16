@@ -1520,7 +1520,6 @@ class AuthHeaderView {
   DivElement _userPic;
   DivElement _userName;
   ButtonElement _signOutButton;
-  ButtonElement _signInButton;
 
   AuthHeaderView() {
     authElement = new DivElement()
@@ -1538,11 +1537,6 @@ class AuthHeaderView {
       ..text = 'Sign out'
       ..onClick.listen((_) => command(UIAction.signOutButtonClicked, null));
     authElement.append(_signOutButton);
-
-    _signInButton = new ButtonElement()
-      ..text = 'Sign in'
-      ..onClick.listen((_) => command(UIAction.signInButtonClicked, null));
-    authElement.append(_signInButton);
   }
 
   void signIn(String userName, userPicUrl) {
@@ -1554,9 +1548,6 @@ class AuthHeaderView {
     _userName.attributes.remove('hidden');
     _userPic.attributes.remove('hidden');
     _signOutButton.attributes.remove('hidden');
-
-    // Hide sign-in button.
-    _signInButton.setAttribute('hidden', 'true');
   }
 
   void signOut() {
@@ -1564,18 +1555,13 @@ class AuthHeaderView {
     _userName.attributes['hidden'] = 'true';
     _userPic.attributes['hidden'] = 'true';
     _signOutButton.attributes['hidden'] = 'true';
-
-    // Show sign-in button.
-    _signInButton.attributes.remove('hidden');
   }
 }
 
 class AuthMainView {
   DivElement authElement;
-  ButtonElement _signInButton;
 
   final descriptionText1 = 'Sign in to Nook where you can manage SMS conversations.';
-  final descriptionText2 = 'Please contact Africa\'s Voices for login details.';
 
   AuthMainView() {
     authElement = new DivElement()
@@ -1592,14 +1578,15 @@ class AuthMainView {
 
     var shortDescription = new DivElement()
       ..classes.add('project-description')
-      ..append(new ParagraphElement()..text = descriptionText1)
-      ..append(new ParagraphElement()..text = descriptionText2);
+      ..append(new ParagraphElement()..text = descriptionText1);
     authElement.append(shortDescription);
 
-    _signInButton = new ButtonElement()
-      ..text = 'Sign in'
-      ..onClick.listen((_) => command(UIAction.signInButtonClicked, null));
-    authElement.append(_signInButton);
+    for (var domain in SignInDomain.values) {
+      var signInButton = new ButtonElement()
+        ..text = "Sign in with ${signInDomainsInfo[domain]['displayName']}"
+        ..onClick.listen((_) => command(UIAction.signInButtonClicked, new SignInData(domain)));
+      authElement.append(signInButton);
+    }
   }
 }
 
