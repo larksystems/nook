@@ -114,17 +114,14 @@ extension MessageUtil on g.Message {
   }
 }
 
-UnmodifiableListView<g.Tag> tagIdsToTags(
-    Iterable<String> tagIds, Iterable<g.Tag> allTags) {
-  var tags = <g.Tag>[];
-  for (var id in tagIds) {
-    var tag = allTags.firstWhere((tag) => tag.tagId == id, orElse: () {
-      g.log.warning('failed to find tag with id: $id');
-      return null;
-    });
-    if (tag != null) tags.add(tag);
-  }
-  return UnmodifiableListView(tags);
+extension NotFoundTagType on g.TagType {
+  static const NotFound = g.TagType('not found');
+
+  static const values = <g.TagType>[
+    g.TagType.Normal,
+    g.TagType.Important,
+    NotFoundTagType.NotFound,
+  ];
 }
 
 class User {

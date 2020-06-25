@@ -36,7 +36,7 @@ void _populateConversationPanelView(model.Conversation conversation) {
     ..deidentifiedPhoneNumber = conversation.docId
     ..deidentifiedPhoneNumberShort = conversation.shortDeidentifiedPhoneNumber
     ..demographicsInfo = conversation.demographicsInfo.values.join(', ');
-  for (var tag in model.tagIdsToTags(conversation.tagIds, conversationTags)) {
+  for (var tag in tagIdsToTags(conversation.tagIds, conversationTags)) {
     view.conversationPanelView.addTags(new view.ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
   }
 
@@ -47,7 +47,7 @@ void _populateConversationPanelView(model.Conversation conversation) {
 
 void _addMessageToView(model.Message message, model.Conversation conversation) {
   List<view.TagView> tags = [];
-  for (var tag in model.tagIdsToTags(message.tagIds, messageTags)) {
+  for (var tag in tagIdsToTags(message.tagIds, messageTags)) {
     tags.add(new view.MessageTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
   }
   var messageView = new view.MessageView(
@@ -171,6 +171,9 @@ view.TagStyle tagTypeToStyle(model.TagType tagType) {
     case model.TagType.Important:
       return view.TagStyle.Important;
     default:
+      if (tagType == model.NotFoundTagType.NotFound) {
+        return view.TagStyle.Yellow;
+      }
       return view.TagStyle.None;
   }
 }
