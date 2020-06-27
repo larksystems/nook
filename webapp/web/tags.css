@@ -6,12 +6,15 @@
 
 .tag--green .tag__name {
   color:  darkgreen;
+  font-weight: bold;
 }
 .tag--yellow .tag__name {
   color: darkorange;
+  font-weight: bold;
 }
 .tag--red .tag__name {
   color: crimson;
+  font-weight: bold;
 }
 .tag--important .tag__name {
   border-color: crimson;

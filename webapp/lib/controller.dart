@@ -528,6 +528,8 @@ void conversationListSelected(String conversationListRoot) {
       log.debug('New conversations, modified: $modified');
       log.debug('New conversations, removed: $removed');
 
+      updateMissingTagIds(conversations, conversationTags);
+
       // TODO even though they are unlikely to happen, we should also handle the removals in the UI for consistency
 
       // Determine if the active conversation data needs to be replaced
@@ -538,7 +540,7 @@ void conversationListSelected(String conversationListRoot) {
 
       // Get any filter tags from the url
       List<String> filterTagIds = view.urlView.pageUrlFilterTags;
-      filterTags = filterTagIds.map((tagId) => conversationTags.singleWhere((tag) => tag.tagId == tagId)).toList();
+      filterTags = tagIdsToTags(filterTagIds, conversationTags).toList();
       filteredConversations = filterConversationsByTags(conversations, filterTags, afterDateFilter);
       _populateSelectedFilterTags(filterTags);
 
@@ -721,8 +723,8 @@ void command(UIAction action, Data data) {
       break;
     case UIAction.removeFilterTag:
       FilterTagData tagData = data;
-      model.Tag tag = conversationTags.singleWhere((tag) => tag.tagId == tagData.tagId);
-      filterTags.remove(tag);
+      model.Tag tag = tagIdsToTags([tagData.tagId], conversationTags).first;
+      filterTags.removeWhere((t) => t.tagId == tag.tagId);
       view.urlView.pageUrlFilterTags = filterTags.map((tag) => tag.tagId).toList();
       view.conversationFilter.removeFilterTag(tag.tagId);
       updateFilteredConversationList();
@@ -1149,6 +1151,36 @@ Set<model.Conversation> filterConversationsByTags(Set<model.Conversation> conver
   return filteredConversations;
 }
 
+void updateMissingTagIds(Set<model.Conversation> conversations, List<model.Tag> tags) {
+  var newTagIdsWithMissingInfo = extractTagIdsWithMissingInfo(conversations, tags.toSet());
+  var tagsWithMissingInfo = conversationTags.where((tag) => tag.type == model.NotFoundTagType.NotFound).toSet();
+  if (newTagIdsWithMissingInfo.isEmpty) {
+    conversationTags.removeWhere((tag) => tag.type == model.NotFoundTagType.NotFound);
+  }
+  var tagIdsWithMissingInfo = tagsWithMissingInfo.map((tag) => tag.docId).toSet();
+  // remove tags that are no longer missing their info
+  var tagIdsToRemove = tagIdsWithMissingInfo.difference(newTagIdsWithMissingInfo);
+  if (tagIdsToRemove.isNotEmpty) {
+    var tagsToRemove = tagIdsToTags(tagIdsToRemove, conversationTags);
+    _removeTagsFromFilterMenu({tagsToRemove.first.group: tagsToRemove});
+  }
+  // add tags that are new
+  var tagIdsToAdd = newTagIdsWithMissingInfo.difference(tagIdsWithMissingInfo);
+  if (tagIdsToAdd.isEmpty) return;
+  var tagsToAdd = tagIdsToTags(tagIdsToAdd, conversationTags);
+  conversationTags.addAll(tagsToAdd);
+  _addTagsToFilterMenu({tagsToAdd.first.group: tagsToAdd});
+}
+
+Set<String> extractTagIdsWithMissingInfo(Set<model.Conversation> conversations, Set<model.Tag> tags) {
+  Set<String> tagIdsWithMissingInfo = {};
+  Set<String> tagIds = tags.map((e) => e.docId).toSet();
+  for (var conversation in conversations) {
+    tagIdsWithMissingInfo.addAll(conversation.tagIds.difference(tagIds));
+  }
+  return tagIdsWithMissingInfo;
+}
+
 /// [SaveTextAction] manages changes to a model object's text field
 /// by consolidating multiple keystrokes over a rolling 3 second period
 /// into a single platform update operation.
@@ -1204,6 +1236,26 @@ class SaveTextAction {
       log.warning('save note failed: $_changeId\n  $e\n$s');
     }
   }
+}
+
+Map<String, model.Tag> _notFoundTagIds = {};
+
+UnmodifiableListView<model.Tag> tagIdsToTags(Iterable<String> tagIds, Iterable<model.Tag> allTags) {
+  var tags = <model.Tag>[];
+  for (var id in tagIds) {
+    var tag = allTags.firstWhere((tag) => tag.tagId == id, orElse: () {
+      log.warning('failed to find tag with id: $id');
+      _notFoundTagIds.putIfAbsent(id, () => new model.Tag()
+          ..docId = id
+          ..text = id
+          ..type = model.NotFoundTagType.NotFound
+          ..filterable = true
+          ..group = 'not found');
+      return _notFoundTagIds[id];
+    });
+    tags.add(tag);
+  }
+  return UnmodifiableListView(tags);
 }
 
 List<model.Tag> _filterDemogsTagsIfNeeded(List<model.Tag> tagList) {
