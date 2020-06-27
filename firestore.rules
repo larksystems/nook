@@ -3,18 +3,30 @@ service cloud.firestore {
     function isEmailVerified() {
       return
         request.auth != null &&
-        request.auth.token.email_verified &&
-        (request.auth.token.email.matches(".*@africasvoices.org$") ||
-        request.auth.token.email.matches(".*@lark.systems$"));
+        request.auth.token.email_verified;
+    }
+
+    function isEmailDomainAllowed() {
+      return
+      	request.auth.token.email.matches(".*@africasvoices.org$") ||
+        request.auth.token.email.matches(".*@lark.systems$");
+    }
+
+    function isUserAllowed() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.token.email))
     }
 
     match /{collection}/{docId} {
       allow read, write: if
-        isEmailVerified();
+        isEmailVerified() &&
+        isEmailDomainAllowed() &&
+        isUserAllowed();
 
       match /{nestedCollection2}/{nestedDocId2} {
         allow read, write: if
           isEmailVerified() &&
+          isEmailDomainAllowed() &&
+          isUserAllowed() &&
           (collection != "tables" ||
           docId != "uuid-table");
       }
