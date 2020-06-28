@@ -1174,9 +1174,10 @@ void updateMissingTagIds(Set<model.Conversation> conversations, List<model.Tag> 
 
 Set<String> extractTagIdsWithMissingInfo(Set<model.Conversation> conversations, Set<model.Tag> tags) {
   Set<String> tagIdsWithMissingInfo = {};
-  Set<String> tagIds = tags.map((e) => e.docId).toSet();
+  Set<model.Tag> tagsWithoutMissingInfo = tags.where((tag) => tag.type != model.NotFoundTagType.NotFound).toSet();
+  Set<String> tagIdsWithoutMissingInfo = tagsWithoutMissingInfo.map((e) => e.docId).toSet();
   for (var conversation in conversations) {
-    tagIdsWithMissingInfo.addAll(conversation.tagIds.difference(tagIds));
+    tagIdsWithMissingInfo.addAll(conversation.tagIds.difference(tagIdsWithoutMissingInfo));
   }
   return tagIdsWithMissingInfo;
 }
