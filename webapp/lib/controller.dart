@@ -180,11 +180,12 @@ class UserData extends Data {
   String toString() => 'UserData: {displayName: $displayName, email: $email, photoUrl: $photoUrl}';
 }
 
-enum SignInDomain { avf, lark, ucam }
+enum SignInDomain { avf, lark, ucam, gmail }
 const signInDomainsInfo = {
   SignInDomain.avf: {"displayName": "Africa's Voices", "domain": "africasvoices.org"},
   SignInDomain.lark: {"displayName": "Lark Systems", "domain": "lark.systems"},
   SignInDomain.ucam: {"displayName": "University of Cambridge", "domain": "cam.ac.uk"},
+  SignInDomain.gmail: {"displayName": "Gmail", "domain": "gmail.com"},
 };
 
 class SignInData extends Data {
