@@ -1163,6 +1163,7 @@ void updateMissingTagIds(Set<model.Conversation> conversations, List<model.Tag> 
   var tagIdsToRemove = tagIdsWithMissingInfo.difference(newTagIdsWithMissingInfo);
   if (tagIdsToRemove.isNotEmpty) {
     var tagsToRemove = tagIdsToTags(tagIdsToRemove, conversationTags);
+    conversationTags.removeWhere((tag) => tagsToRemove.contains(tag));
     _removeTagsFromFilterMenu({tagsToRemove.first.group: tagsToRemove});
   }
   // add tags that are new
