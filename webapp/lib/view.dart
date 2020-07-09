@@ -989,6 +989,10 @@ class ConversationFilter {
 
   void removeMenuTag(FilterMenuTagView tag, String category) {
     int index = _tagGroups[category].indexWhere((t) => t.tag.dataset["id"] == tag.tag.dataset["id"]);
+    if (index < 0) {
+      log.warning("Trying to remove a tag that doesn't exist in the menu: ${tag.tag.dataset["id"]}");
+      return;
+    }
     _tagGroups[category][index].tag.remove();
     _tagGroups[category].removeAt(index);
   }
