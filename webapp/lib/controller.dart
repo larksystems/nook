@@ -50,6 +50,7 @@ enum UIAction {
   deselectAllConversations,
   updateSystemMessages,
   updateSuggestedRepliesCategory,
+  updateTagsGroup,
   hideAgeTags,
   showSnackbar
 }
@@ -230,6 +231,14 @@ class UpdateSuggestedRepliesCategoryData extends Data {
   String toString() => 'UpdateSuggestedRepliesCategoryData: {category: $category}';
 }
 
+class UpdateTagsGroupData extends Data {
+  String group;
+  UpdateTagsGroupData(this.group);
+
+  @override
+  String toString() => 'UpdateTagsGroupData: {group: $group}';
+}
+
 class UpdateFilterTagsCategoryData extends Data {
   String category;
   UpdateFilterTagsCategoryData(this.category);
@@ -274,7 +283,11 @@ List<model.SuggestedReply> suggestedReplies;
 Map<String, List<model.SuggestedReply>> suggestedRepliesByCategory;
 String selectedSuggestedRepliesCategory;
 List<model.Tag> conversationTags;
+Map<String, List<model.Tag>> conversationTagsByGroup;
+String selectedConversationTagsGroup;
 List<model.Tag> messageTags;
+Map<String, List<model.Tag>> messageTagsByGroup;
+String selectedMessageTagsGroup;
 List<model.Tag> filterTags;
 DateTime afterDateFilter;
 Map<String, List<model.Tag>> filterTagsByCategory;
@@ -308,6 +321,8 @@ void initUI() {
   selectedConversations = [];
   activeConversation = null;
   selectedSuggestedRepliesCategory = '';
+  selectedConversationTagsGroup = '';
+  selectedMessageTagsGroup = '';
   hideDemogsTags = true;
 
   platform.listenForConversationTags(
@@ -321,14 +336,35 @@ void initUI() {
         ..addAll(added)
         ..addAll(modified);
 
-      // Update the replies by category map
+      // Update the filter tags by category map
       filterTagsByCategory = _groupTagsIntoCategories(conversationTags);
       _removeTagsFromFilterMenu(_groupTagsIntoCategories(removed));
       _addTagsToFilterMenu(_groupTagsIntoCategories(added));
       _modifyTagsInFilterMenu(_groupTagsIntoCategories(modified));
 
+      // Update the conversation tags by group map
+      conversationTagsByGroup = _groupTagsIntoCategories(conversationTags);
+      // Empty sublist if there are no tags to show
+      if (conversationTagsByGroup.isEmpty) {
+        conversationTagsByGroup[''] = [];
+      }
+      // Sort by sequence number
+      for (var tags in conversationTagsByGroup.values) {
+        tags.sort((t1, t2) => t1.text.compareTo(t2.text));
+      }
+      List<String> groups = conversationTagsByGroup.keys.toList();
+      groups.sort((c1, c2) => c1.compareTo(c2));
+      // Replace list of groups in the UI selector
+      view.tagPanelView.groups = groups;
+      // If the groups have changed under us and the selected one no longer exists,
+      // default to the first group, whichever it is
+      if (!groups.contains(selectedConversationTagsGroup)) {
+        selectedConversationTagsGroup = groups.first;
+      }
+
       if (actionObjectState == UIActionObject.conversation) {
-        _populateTagPanelView(conversationTags, TagReceiver.Conversation);
+        view.tagPanelView.selectedGroup = selectedConversationTagsGroup;
+        _populateTagPanelView(conversationTagsByGroup[selectedConversationTagsGroup], TagReceiver.Conversation);
       }
     }
   );
@@ -345,8 +381,29 @@ void initUI() {
         ..addAll(added)
         ..addAll(modified);
 
+      // Update the message tags by group map
+      messageTagsByGroup = _groupTagsIntoCategories(messageTags);
+      // Empty sublist if there are no tags to show
+      if (messageTagsByGroup.isEmpty) {
+        messageTagsByGroup[''] = [];
+      }
+      // Sort by sequence number
+      for (var tags in messageTagsByGroup.values) {
+        tags.sort((t1, t2) => t1.text.compareTo(t2.text));
+      }
+      List<String> groups = messageTagsByGroup.keys.toList();
+      groups.sort((c1, c2) => c1.compareTo(c2));
+      // Replace list of groups in the UI selector
+      view.tagPanelView.groups = groups;
+      // If the groups have changed under us and the selected one no longer exists,
+      // default to the first group, whichever it is
+      if (!groups.contains(selectedMessageTagsGroup)) {
+        selectedMessageTagsGroup = groups.first;
+      }
+
       if (actionObjectState == UIActionObject.message) {
-        _populateTagPanelView(messageTags, TagReceiver.Message);
+        view.tagPanelView.selectedGroup = selectedMessageTagsGroup;
+        _populateTagPanelView(messageTagsByGroup[selectedMessageTagsGroup], TagReceiver.Message);
       }
     }
   );
@@ -614,7 +671,8 @@ void command(UIAction action, Data data) {
       action != UIAction.promptAfterDateFilter && action != UIAction.updateAfterDateFilter &&
       action != UIAction.signInButtonClicked && action != UIAction.signOutButtonClicked &&
       action != UIAction.userSignedIn && action != UIAction.userSignedOut &&
-      action != UIAction.updateSuggestedRepliesCategory && action != UIAction.hideAgeTags &&
+      action != UIAction.updateSuggestedRepliesCategory &&
+      action != UIAction.updateTagsGroup && action != UIAction.hideAgeTags &&
       action != UIAction.selectAllConversations && action != UIAction.deselectAllConversations &&
       action != UIAction.showSnackbar) {
     return;
@@ -747,7 +805,8 @@ void command(UIAction action, Data data) {
       MessageData messageData = data;
       selectedMessage = activeConversation.messages[messageData.messageIndex];
       view.conversationPanelView.selectMessage(messageData.messageIndex);
-      _populateTagPanelView(messageTags, TagReceiver.Message);
+      view.tagPanelView.selectedGroup = selectedMessageTagsGroup;
+      _populateTagPanelView(messageTagsByGroup[selectedMessageTagsGroup], TagReceiver.Message);
       switch (actionObjectState) {
         case UIActionObject.conversation:
           actionObjectState = UIActionObject.message;
@@ -763,7 +822,8 @@ void command(UIAction action, Data data) {
         case UIActionObject.message:
           selectedMessage = null;
           view.conversationPanelView.deselectMessage();
-          _populateTagPanelView(conversationTags, TagReceiver.Conversation);
+          view.tagPanelView.selectedGroup = selectedConversationTagsGroup;
+          _populateTagPanelView(conversationTagsByGroup[selectedConversationTagsGroup], TagReceiver.Conversation);
           actionObjectState = UIActionObject.conversation;
           break;
       }
@@ -961,15 +1021,30 @@ void command(UIAction action, Data data) {
       selectedSuggestedRepliesCategory = updateCategoryData.category;
       _populateReplyPanelView(suggestedRepliesByCategory[selectedSuggestedRepliesCategory]);
       break;
+    case UIAction.updateTagsGroup:
+      UpdateTagsGroupData updateGroupData = data;
+      switch (actionObjectState) {
+        case UIActionObject.conversation:
+          selectedConversationTagsGroup = updateGroupData.group;
+          _populateTagPanelView(conversationTagsByGroup[selectedConversationTagsGroup], TagReceiver.Conversation);
+          break;
+        case UIActionObject.message:
+          selectedMessageTagsGroup = updateGroupData.group;
+          _populateTagPanelView(messageTagsByGroup[selectedMessageTagsGroup], TagReceiver.Message);
+          break;
+      }
+      break;
     case UIAction.hideAgeTags:
       ToggleData toggleData = data;
       hideDemogsTags = toggleData.toggleValue;
       switch (actionObjectState) {
         case UIActionObject.conversation:
-          _populateTagPanelView(conversationTags, TagReceiver.Conversation);
+          view.tagPanelView.selectedGroup = selectedConversationTagsGroup;
+          _populateTagPanelView(conversationTagsByGroup[selectedConversationTagsGroup], TagReceiver.Conversation);
           break;
         case UIActionObject.message:
-          _populateTagPanelView(messageTags, TagReceiver.Message);
+          view.tagPanelView.selectedGroup = selectedMessageTagsGroup;
+          _populateTagPanelView(messageTagsByGroup[selectedMessageTagsGroup], TagReceiver.Message);
           break;
       }
       break;
@@ -1045,7 +1120,8 @@ void updateViewForConversation(model.Conversation conversation) {
     case UIActionObject.message:
       selectedMessage = null;
       view.conversationPanelView.deselectMessage();
-      _populateTagPanelView(conversationTags, TagReceiver.Conversation);
+      view.tagPanelView.selectedGroup = selectedConversationTagsGroup;
+      _populateTagPanelView(conversationTagsByGroup[selectedConversationTagsGroup], TagReceiver.Conversation);
       break;
   }
   if (filteredConversations.contains(conversation)) {
