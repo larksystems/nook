@@ -348,7 +348,7 @@ void initUI() {
       if (conversationTagsByGroup.isEmpty) {
         conversationTagsByGroup[''] = [];
       }
-      // Sort by sequence number
+      // Sort tags alphabetically
       for (var tags in conversationTagsByGroup.values) {
         tags.sort((t1, t2) => t1.text.compareTo(t2.text));
       }
@@ -387,7 +387,7 @@ void initUI() {
       if (messageTagsByGroup.isEmpty) {
         messageTagsByGroup[''] = [];
       }
-      // Sort by sequence number
+      // Sort tags alphabetically
       for (var tags in messageTagsByGroup.values) {
         tags.sort((t1, t2) => t1.text.compareTo(t2.text));
       }
