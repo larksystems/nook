@@ -1258,7 +1258,7 @@ class TagPanelView {
     tagPanel.append(panelTitle);
 
     _tagGroups = new SelectElement()
-      ..onChange.listen((_) => command(UIAction.updateTagsGroup, new UpdateTagsGroupData(_tagGroups.value)));
+      ..onChange.listen((_) => command(UIAction.updateDisplayedTagsGroup, new UpdateTagsGroupData(_tagGroups.value)));
 
     _hideTagsCheckbox = new InputElement(type: 'checkbox')
       ..checked = true
@@ -1297,7 +1297,7 @@ class TagPanelView {
     if (index == -1) {
       showWarningStatus("Couldn't find $group in list of tag groups, using first");
       _tagGroups.selectedIndex = 0;
-      command(UIAction.updateTagsGroup, new UpdateTagsGroupData(_tagGroups.value));
+      command(UIAction.updateDisplayedTagsGroup, new UpdateTagsGroupData(_tagGroups.value));
       return;
     }
     _tagGroups.selectedIndex = index;

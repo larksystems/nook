@@ -50,7 +50,7 @@ enum UIAction {
   deselectAllConversations,
   updateSystemMessages,
   updateSuggestedRepliesCategory,
-  updateTagsGroup,
+  updateDisplayedTagsGroup,
   hideAgeTags,
   showSnackbar
 }
@@ -672,7 +672,7 @@ void command(UIAction action, Data data) {
       action != UIAction.signInButtonClicked && action != UIAction.signOutButtonClicked &&
       action != UIAction.userSignedIn && action != UIAction.userSignedOut &&
       action != UIAction.updateSuggestedRepliesCategory &&
-      action != UIAction.updateTagsGroup && action != UIAction.hideAgeTags &&
+      action != UIAction.updateDisplayedTagsGroup && action != UIAction.hideAgeTags &&
       action != UIAction.selectAllConversations && action != UIAction.deselectAllConversations &&
       action != UIAction.showSnackbar) {
     return;
@@ -1021,7 +1021,7 @@ void command(UIAction action, Data data) {
       selectedSuggestedRepliesCategory = updateCategoryData.category;
       _populateReplyPanelView(suggestedRepliesByCategory[selectedSuggestedRepliesCategory]);
       break;
-    case UIAction.updateTagsGroup:
+    case UIAction.updateDisplayedTagsGroup:
       UpdateTagsGroupData updateGroupData = data;
       switch (actionObjectState) {
         case UIActionObject.conversation:
