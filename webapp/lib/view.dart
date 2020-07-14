@@ -257,12 +257,46 @@ class ConversationPanelView {
     message.message.scrollIntoView();
   }
 
+  void padOrTrimMessageViews(int count) {
+    if (_messageViews.length == count) return;
+    if (_messageViews.length > count) {
+      for (int i = _messageViews.length - 1; i >= count; --i) {
+        _messages.children.removeAt(i);
+        _messageViews.removeAt(i);
+      }
+      return;
+    }
+
+    for (int i = _messageViews.length; i < count; i++) {
+      MessageView message = new MessageView('', DateTime.now(), '', i);
+      _messages.append(message.message);
+      _messageViews.add(message);
+    }
+  }
+
+  void updateMessage(MessageView message, int index) {
+    if (index >= _messageViews.length) {
+      _messages.append(message.message);
+      _messageViews.add(message);
+      return;
+    }
+    _messages.children[index] = message.message;
+    _messageViews[index] = message;
+  }
+
   void addTags(TagView tag) {
     _tags.append(tag.tag);
   }
 
   void removeTag(String tagId) {
     _tags.children.removeWhere((Element d) => d.dataset["id"] == tagId);
+  }
+
+  void removeTags() {
+    int tagsNo = _tags.children.length;
+    for (int i = 0; i < tagsNo; i++) {
+      _tags.firstChild.remove();
+    }
   }
 
   void selectMessage(int index) {
@@ -282,13 +316,9 @@ class ConversationPanelView {
     _conversationIdCopy.dataset['copy-value'] = '';
     _info.text = '';
     _messageViews = [];
+    removeTags();
     clearNewMessageBox();
     clearWarning();
-
-    int tagsNo = _tags.children.length;
-    for (int i = 0; i < tagsNo; i++) {
-      _tags.firstChild.remove();
-    }
 
     int messagesNo = _messages.children.length;
     for (int i = 0; i < messagesNo; i++) {

@@ -30,7 +30,11 @@ void _populateConversationListPanelView(Set<model.Conversation> conversations, b
   view.conversationListPanelView.updateConversationList(conversations);
 }
 
-void _populateConversationPanelView(model.Conversation conversation) {
+void _populateConversationPanelView(model.Conversation conversation, {bool updateInPlace: false}) {
+  if (updateInPlace) {
+    _updateConversationPanelView(conversation);
+    return;
+  }
   view.conversationPanelView.clear();
   view.conversationPanelView
     ..deidentifiedPhoneNumber = conversation.docId
@@ -41,11 +45,29 @@ void _populateConversationPanelView(model.Conversation conversation) {
   }
 
   for (var message in conversation.messages) {
-    _addMessageToView(message, conversation);
+    view.MessageView messageView = _generateMessageView(message, conversation);
+    view.conversationPanelView.addMessage(messageView);
   }
 }
 
-void _addMessageToView(model.Message message, model.Conversation conversation) {
+void _updateConversationPanelView(model.Conversation conversation) {
+  view.conversationPanelView
+    ..deidentifiedPhoneNumber = conversation.docId
+    ..deidentifiedPhoneNumberShort = conversation.shortDeidentifiedPhoneNumber
+    ..demographicsInfo = conversation.demographicsInfo.values.join(', ');
+  view.conversationPanelView.removeTags();
+  for (var tag in tagIdsToTags(conversation.tagIds, conversationTags)) {
+    view.conversationPanelView.addTags(new view.ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
+  }
+
+  view.conversationPanelView.padOrTrimMessageViews(conversation.messages.length);
+  for (int i = 0; i < conversation.messages.length; i++) {
+    view.MessageView messageView = _generateMessageView(conversation.messages[i], conversation);
+    view.conversationPanelView.updateMessage(messageView, i);
+  }
+}
+
+view.MessageView _generateMessageView(model.Message message, model.Conversation conversation) {
   List<view.TagView> tags = [];
   for (var tag in tagIdsToTags(message.tagIds, messageTags)) {
     tags.add(new view.MessageTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
@@ -61,7 +83,7 @@ void _addMessageToView(model.Message message, model.Conversation conversation) {
       status: message.status
     );
   messageView.enableEditableTranslations(currentConfig.editTranslationsEnabled);
-  view.conversationPanelView.addMessage(messageView);
+  return messageView;
 }
 
 void _populateReplyPanelView(List<model.SuggestedReply> replies) {

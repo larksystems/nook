@@ -615,7 +615,7 @@ void conversationListSelected(String conversationListRoot) {
 
       // Update the active conversation view as needed
       if (updatedIds.contains(activeConversation.docId)) {
-        updateViewForConversation(activeConversation);
+        updateViewForConversation(activeConversation, updateInPlace: true);
         if (!activeConversation.unread) {
           command(UIAction.markConversationRead, ConversationData(activeConversation.docId));
         }
@@ -851,6 +851,7 @@ void command(UIAction action, Data data) {
       break;
     case UIAction.showConversation:
       ConversationData conversationData = data;
+      if (conversationData.deidentifiedPhoneNumber == activeConversation.docId) break;
       activeConversation = filteredConversations.singleWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
       updateViewForConversation(activeConversation);
       break;
@@ -1108,10 +1109,10 @@ model.Conversation updateViewForConversations(Set<model.Conversation> conversati
   return activeConversation;
 }
 
-void updateViewForConversation(model.Conversation conversation) {
+void updateViewForConversation(model.Conversation conversation, {bool updateInPlace: false}) {
   if (conversation == null) return;
   // Replace the previous conversation in the conversation panel
-  _populateConversationPanelView(conversation);
+  _populateConversationPanelView(conversation, updateInPlace: updateInPlace);
   view.replyPanelView.noteText = conversation.notes;
   // Deselect message if selected
   switch (actionObjectState) {
@@ -1143,7 +1144,7 @@ void sendReply(model.SuggestedReply reply, model.Conversation conversation) {
     ..tagIds = [];
   log.verbose('Adding reply "${reply.text}" to conversation ${conversation.docId}');
   conversation.messages.add(newMessage);
-  _addMessageToView(newMessage, conversation);
+  view.conversationPanelView.addMessage(_generateMessageView(newMessage, conversation));
   log.verbose('Sending reply "${reply.text}" to conversation ${conversation.docId}');
   platform.sendMessage(conversation.docId, reply.text, onError: (error) {
     log.error('Reply "${reply.text}" failed to be sent to conversation ${conversation.docId}');
@@ -1170,7 +1171,7 @@ void sendMultiReply(model.SuggestedReply reply, List<model.Conversation> convers
   log.verbose('Adding reply "${reply.text}" to conversations ${conversationIds}');
   conversations.forEach((conversation) => conversation.messages.add(newMessage));
   if (conversations.contains(activeConversation)) {
-    _addMessageToView(newMessage, activeConversation);
+    view.conversationPanelView.addMessage(_generateMessageView(newMessage, activeConversation));
   }
   log.verbose('Sending reply "${reply.text}" to conversations ${conversationIds}');
   platform.sendMultiMessage(conversationIds, newMessage.text, onError: (error) {
