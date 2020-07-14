@@ -965,11 +965,16 @@ class ConversationFilter {
       newContainerTitle.onClick.listen((event) {
           newContainer.classes.toggle('hidden');
           newContainerTitle.classes.toggle('folded');
-        });
+      });
+      // Start off folded
+      newContainer.classes.toggle('hidden', true);
+      newContainerTitle.classes.toggle('folded', true);
 
       return newContainer;
     }).append(tag.tag);
+    _tagGroupsContainers[category].style.display = 'block'; // briefly override any display settings to make sure we can compute getBoundingClientRect()
     List<num> widths = _tagGroupsContainers[category].querySelectorAll('.tag__name').toList().map((e) => e.getBoundingClientRect().width).toList();
+    _tagGroupsContainers[category].style.display = ''; // clear inline display settings
     num avgGridWidth = widths.fold(0, (previousValue, width) => previousValue + width);
     avgGridWidth = avgGridWidth / widths.length;
     num colSpacing = 10;
