@@ -1244,6 +1244,7 @@ class ReplyPanelView {
 
 class TagPanelView {
   DivElement tagPanel;
+  SelectElement _tagGroups;
   DivElement _tags;
   DivElement _tagList;
   DivElement _statusPanel;
@@ -1258,17 +1259,18 @@ class TagPanelView {
       ..classes.add('tag-panel');
 
     var panelTitle = new DivElement()
-      ..classes.add('panel-title')
-      ..classes.add('panel-title--multiple-cols');
+      ..classes.add('panel-title');
     tagPanel.append(panelTitle);
+
+    _tagGroups = new SelectElement()
+      ..onChange.listen((_) => command(UIAction.updateDisplayedTagsGroup, new UpdateTagsGroupData(_tagGroups.value)));
 
     _hideTagsCheckbox = new InputElement(type: 'checkbox')
       ..checked = true
       ..onChange.listen((_) => command(UIAction.hideAgeTags, new ToggleData(_hideTagsCheckbox.checked)));
 
     panelTitle
-      ..append(
-        new DivElement()..text = TAG_PANEL_TITLE)
+      ..append(_tagGroups)
       ..append(
         new DivElement()
           ..append(_hideTagsCheckbox)
@@ -1293,6 +1295,27 @@ class TagPanelView {
       ..append(_statusText));
 
     _tagViews = [];
+  }
+
+  set selectedGroup(String group) {
+    int index = _tagGroups.children.indexWhere((Element option) => (option as OptionElement).value == group);
+    if (index == -1) {
+      showWarningStatus("Couldn't find $group in list of tag groups, using first");
+      _tagGroups.selectedIndex = 0;
+      command(UIAction.updateDisplayedTagsGroup, new UpdateTagsGroupData(_tagGroups.value));
+      return;
+    }
+    _tagGroups.selectedIndex = index;
+  }
+
+  set groups(List<String> groups) {
+    _tagGroups.children.clear();
+    for (var group in groups) {
+      _tagGroups.append(
+        new OptionElement()
+          ..value = group
+          ..text = group);
+    }
   }
 
   void addTag(ActionView action) {
