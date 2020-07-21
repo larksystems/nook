@@ -37,7 +37,7 @@ if __name__ == '__main__':
         epilog=textwrap.dedent("""
         Examples:
         python migrate_nook_watcher_data.py [CRYPRO_TOKEN_PATH] needs_reply_metrics Lark_KK-Project-2020-COVID19-KE-URBAN/needs_reply --project Lark/KK-Project-2020-COVID19-KE-URBAN
-        python migrate_nook_watcher_data.py [CRYPRO_TOKEN_PATH] system_events Lark_KK-Project-2020-COVID19-KE-URBAN/system_events --project Lark/KK-Project-2020-COVID19
+        python migrate_nook_watcher_data.py [CRYPRO_TOKEN_PATH] system_events Lark_KK-Project-2020-COVID19-KE-URBAN/system_events --project Lark/KK-Project-2020-COVID19-KE-URBAN
         python migrate_nook_watcher_data.py [CRYPRO_TOKEN_PATH] pipeline_system_metrics system_metrics/miranda
         """)
     )
