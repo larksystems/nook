@@ -11,8 +11,8 @@ def strip_project(data):
     for entry in data:
         try:
             del list(entry.values())[0]['project']
-        except Exception:
-            pass
+        except KeyError:
+            log.warning(f"project key doesn't exist in entry: {entry}")
     return data
 
 def migrate():
@@ -20,7 +20,7 @@ def migrate():
         docs = firebase_client.collection(args.source).where('project', '==', args.project).stream()
     else:
         docs = firebase_client.collection(args.source).stream()
-    data = [{doc.id: doc.to_dict()} for doc in docs][-20:]
+    data = [{doc.id: doc.to_dict()} for doc in docs]
     data = strip_project(data) if args.project else data
     log.info(f'migrating data of length {len(data)}')
     collection_path = f'{args.target}/metrics'
