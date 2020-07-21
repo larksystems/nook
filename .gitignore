@@ -14,6 +14,8 @@ doc/api/
 
 # Ignore IntelliJ project files
 *.iml
+tool/.idea/
+tool/__pycache__/
 
 # pipenv virtual environment cache
 .venv
