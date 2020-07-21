@@ -23,7 +23,7 @@ def migrate():
     data = [{doc.id: doc.to_dict()} for doc in docs]
     data = strip_project(data) if args.project else data
     log.info(f'migrating data of length {len(data)}')
-    collection_path = f'{args.target}/metrics'
+    collection_path = f'{args.target}'
     for entry in data:
         doc_label = list(entry.keys())[0]
         doc_data = list(entry.values())[0]
