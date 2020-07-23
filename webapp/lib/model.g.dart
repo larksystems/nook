@@ -46,6 +46,7 @@ class Conversation {
   String docId;
   Map<String, String> demographicsInfo;
   Set<String> tagIds;
+  Set<String> lastInTurnTagIds;
   List<Message> messages;
   String notes;
   bool unread;
@@ -58,6 +59,7 @@ class Conversation {
     return (modelObj ?? Conversation())
       ..demographicsInfo = Map_fromData<String>(data['demographicsInfo'], String_fromData)
       ..tagIds = Set_fromData<String>(data['tags'], String_fromData)
+      ..lastInTurnTagIds = Set_fromData<String>(data['lastInTurnTags'], String_fromData) ?? {}
       ..messages = List_fromData<Message>(data['messages'], Message.fromData)
       ..notes = String_fromData(data['notes'])
       ..unread = bool_fromData(data['unread']) ?? true;
@@ -71,6 +73,7 @@ class Conversation {
     return {
       if (demographicsInfo != null) 'demographicsInfo': demographicsInfo,
       if (tagIds != null) 'tags': tagIds.toList(),
+      if (lastInTurnTagIds != null) 'lastInTurnTags': tagIds.toList(),
       if (messages != null) 'messages': messages.map((elem) => elem?.toData()).toList(),
       if (notes != null) 'notes': notes,
       if (unread != null) 'unread': unread,

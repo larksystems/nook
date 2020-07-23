@@ -177,6 +177,32 @@ void _modifyTagsInFilterMenu(Map<String, List<model.Tag>> tagsByCategory) {
   }
 }
 
+
+void _removeTagsFromFilterTurnsMenu(Map<String, List<model.Tag>> tagsByCategory) {
+  for (var category in tagsByCategory.keys.toList()..sort()) {
+    for (var tag in tagsByCategory[category]) {
+      view.conversationTurnsFilter.removeMenuTag(new view.FilterMenuTurnTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)), category);
+    }
+  }
+}
+
+void _addTagsToFilterTurnsMenu(Map<String, List<model.Tag>> tagsByCategory) {
+  for (var category in tagsByCategory.keys.toList()..sort()) {
+    for (var tag in tagsByCategory[category]) {
+      view.conversationTurnsFilter.addMenuTag(new view.FilterMenuTurnTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)), category);
+    }
+  }
+}
+
+void _modifyTagsInFilterTurnsMenu(Map<String, List<model.Tag>> tagsByCategory) {
+  for (var category in tagsByCategory.keys.toList()..sort()) {
+    for (var tag in tagsByCategory[category]) {
+      view.conversationTurnsFilter.modifyMenuTag(new view.FilterMenuTurnTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)), category);
+    }
+  }
+}
+
+
 void _addDateTagToFilterMenu() {
   view.conversationFilter.addMenuTag(view.AfterDateFilterMenuTagView(), "Date");
 }
@@ -185,6 +211,13 @@ void _populateSelectedFilterTags(List<model.Tag> tags) {
   view.conversationFilter.clearSelectedTags();
   for (var tag in tags) {
     view.conversationFilter.addFilterTag(new view.FilterTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
+  }
+}
+
+void _populateSelectedFilterTurnTags(List<model.Tag> tags) {
+  view.conversationTurnsFilter.clearSelectedTags();
+  for (var tag in tags) {
+    view.conversationTurnsFilter.addFilterTag(new view.FilterTurnTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
   }
 }
 
