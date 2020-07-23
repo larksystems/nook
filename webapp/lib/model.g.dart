@@ -437,6 +437,7 @@ class UserConfiguration {
   bool tagConversationsEnabled;
   bool editTranslationsEnabled;
   bool editNotesEnabled;
+  bool conversationalTurnsEnabled;
   bool tagsPanelVisibility;
   bool repliesPanelVisibility;
 
@@ -457,6 +458,7 @@ class UserConfiguration {
       ..tagConversationsEnabled = bool_fromData(data['tag_conversations_enabled'])
       ..editTranslationsEnabled = bool_fromData(data['edit_translations_enabled'])
       ..editNotesEnabled = bool_fromData(data['edit_notes_enabled'])
+      ..conversationalTurnsEnabled = bool_fromData(data['conversational_turns_enabled'])
       ..tagsPanelVisibility = bool_fromData(data['tags_panel_visibility'])
       ..repliesPanelVisibility = bool_fromData(data['replies_panel_visibility']);
   }
@@ -476,6 +478,7 @@ class UserConfiguration {
       if (tagConversationsEnabled != null) 'tag_conversations_enabled': tagConversationsEnabled,
       if (editTranslationsEnabled != null) 'edit_translations_enabled': editTranslationsEnabled,
       if (editNotesEnabled != null) 'edit_notes_enabled': editNotesEnabled,
+      if (conversationalTurnsEnabled != null) 'conversational_turns_enabled': conversationalTurnsEnabled,
       if (tagsPanelVisibility != null) 'tags_panel_visibility': tagsPanelVisibility,
       if (repliesPanelVisibility != null) 'replies_panel_visibility': repliesPanelVisibility,
     };

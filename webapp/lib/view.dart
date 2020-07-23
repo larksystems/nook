@@ -1079,6 +1079,10 @@ class ConversationTurnsFilter extends ConversationFilter{
   ConversationTurnsFilter() : super () {
     _descriptionText.text = 'Filter by conversation turns ▹';
   }
+
+  void showFilter(bool show) {
+    this.conversationFilter.classes.toggle('hidden', !show);
+  }
 }
 
 class ConversationSummary with LazyListViewItem {

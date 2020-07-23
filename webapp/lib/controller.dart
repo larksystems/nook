@@ -554,6 +554,10 @@ void applyConfiguration(model.UserConfiguration newConfig) {
     view.replyPanelView.enableEditableNotes(newConfig.editNotesEnabled);
   }
 
+  if (currentConfig.conversationalTurnsEnabled != newConfig.conversationalTurnsEnabled) {
+    view.conversationTurnsFilter.showFilter(newConfig.conversationalTurnsEnabled);
+  }
+
   if (currentConfig.tagsPanelVisibility != newConfig.tagsPanelVisibility ||
       currentConfig.repliesPanelVisibility != newConfig.repliesPanelVisibility) {
     view.showPanels(newConfig.repliesPanelVisibility, newConfig.tagsPanelVisibility);
@@ -610,9 +614,11 @@ void conversationListSelected(String conversationListRoot) {
       filterTags = tagIdsToTags(filterTagIds, conversationTags).toList();
       _populateSelectedFilterTags(filterTags);
 
-      // Get turn filters from the url
-      filterLastInTurnTags = [];
-      _populateSelectedFilterTurnTags(filterLastInTurnTags);
+      if (currentConfig.conversationalTurnsEnabled) {
+        // Get turn filters from the url
+        filterLastInTurnTags = [];
+        _populateSelectedFilterTurnTags(filterLastInTurnTags);
+      }
 
       filteredConversations = filterConversationsByTags(conversations, filterTags, afterDateFilter);
       filteredConversations = filterConversationsByTurnTags(filteredConversations, filterLastInTurnTags);
@@ -652,6 +658,7 @@ model.UserConfiguration get baseUserConfiguration => new model.UserConfiguration
     ..tagConversationsEnabled = false
     ..editTranslationsEnabled = false
     ..editNotesEnabled = false
+    ..conversationalTurnsEnabled = false
     ..tagsPanelVisibility = false
     ..repliesPanelVisibility = false;
 
@@ -779,6 +786,7 @@ void command(UIAction action, Data data) {
       updateFilteredConversationList();
       break;
     case UIAction.addFilterTurnTag:
+      if (!currentConfig.conversationalTurnsEnabled) break;
       FilterTagData tagData = data;
       model.Tag tag = messageTags.singleWhere((tag) => tag.tagId == tagData.tagId);
       if (filterLastInTurnTags.contains(tag)) break;
@@ -814,6 +822,7 @@ void command(UIAction action, Data data) {
       updateFilteredConversationList();
       break;
     case UIAction.removeFilterTurnTag:
+      if (!currentConfig.conversationalTurnsEnabled) break;
       FilterTagData tagData = data;
       model.Tag tag = tagIdsToTags([tagData.tagId], messageTags).first;
       filterLastInTurnTags.removeWhere((t) => t.tagId == tag.tagId);
