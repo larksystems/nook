@@ -215,6 +215,16 @@ main {
     font-size: 0.8em;
 }
 
+.conversation-list__item--warning .summary-message .summary-message__id::before {
+    content: '';
+    display: inline-block;
+    background: url(assets/icon-warning.png);
+    background-size: contain;
+    width: 9px;
+    height: 9px;
+    margin-right: 4px;
+}
+
 .messages {
     flex: 1 1 auto;
     display: flex;
@@ -307,7 +317,6 @@ main {
     width: 16px;
     height: 16px;
     margin: 6px;
-    opacity: 0.7;
     cursor: pointer;
 }
 
