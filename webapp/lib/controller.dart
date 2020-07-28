@@ -934,7 +934,7 @@ void command(UIAction action, Data data) {
       if (keyPressData.key == 'Enter') {
         // Select the next conversation in the list
         bool shouldRecomputeConversationList = !filteredConversations.contains(activeConversation);
-        activeConversation = nextElement(filteredConversations, activeConversation);
+        activeConversation = nextElement(conversationsInView, activeConversation);
         if (shouldRecomputeConversationList) updateFilteredAndSelectedConversationLists();
         updateViewForConversation(activeConversation);
         return;
