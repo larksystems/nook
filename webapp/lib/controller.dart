@@ -1059,18 +1059,7 @@ void command(UIAction action, Data data) {
 void updateFilteredAndSelectedConversationLists() {
   filteredConversations = filterConversationsByTags(conversations, filterTags, afterDateFilter);
   if (!currentConfig.sendMultiMessageEnabled) {
-    Set<model.Conversation> conversationsToShow =
-      conversations
-        .where((c) => filteredConversations.contains(c) || c.docId == activeConversation?.docId)
-        .toSet();
-    activeConversation = updateViewForConversations(conversationsToShow, updateList: true);
-    conversationsToShow.forEach((conversation) {
-    if (filteredConversations.contains(conversation)) {
-      view.conversationListPanelView.clearWarning(conversation.docId);
-    } else {
-      view.conversationListPanelView.showWarning(conversation.docId);
-    }
-  });
+    activeConversation = updateViewForConversations(filteredConversations, updateList: true);
     return;
   }
   // Update the conversation objects in [selectedConversations] in case any of them were replaced
@@ -1081,7 +1070,7 @@ void updateFilteredAndSelectedConversationLists() {
   // but mark the selected conversations that don't meet the filter with a warning
   Set<model.Conversation> conversationsToShow =
     conversations
-      .where((c) => filteredConversations.contains(c) || selectedConversations.contains(c) || c.docId == activeConversation?.docId)
+      .where((c) => filteredConversations.contains(c) || selectedConversations.contains(c))
       .toSet();
   activeConversation = updateViewForConversations(conversationsToShow, updateList: true);
   view.conversationListPanelView.showCheckboxes(currentConfig.sendMultiMessageEnabled);
@@ -1155,10 +1144,11 @@ void updateViewForConversation(model.Conversation conversation, {bool updateInPl
       _populateTagPanelView(conversationTagsByGroup[selectedConversationTagsGroup], TagReceiver.Conversation);
       break;
   }
-  // Select the conversation in the list
-  view.conversationListPanelView.selectConversation(conversation.docId);
-  // Show warning if it doesn't match the filters
-  if (!filteredConversations.contains(conversation)) {
+  if (filteredConversations.contains(conversation)) {
+    // Select the conversation in the list
+    view.conversationListPanelView.selectConversation(conversation.docId);
+  } else {
+    // If it's not in the list, show warning
     view.conversationPanelView.showWarning('Conversation no longer meets filtering constraints');
   }
 }
