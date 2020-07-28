@@ -648,6 +648,13 @@ model.Conversation nextElement(Iterable<model.Conversation> conversations, model
   return conversations.first;
 }
 
+Set<model.Conversation> get conversationsInView {
+  if (currentConfig.sendMultiMessageEnabled) {
+    return conversations.where((c) => filteredConversations.contains(c) || selectedConversations.contains(c)).toSet();
+  }
+  return filteredConversations;
+}
+
 DateTime lastUserActivity = new DateTime.now();
 
 void command(UIAction action, Data data) {
@@ -1059,7 +1066,7 @@ void command(UIAction action, Data data) {
 void updateFilteredAndSelectedConversationLists() {
   filteredConversations = filterConversationsByTags(conversations, filterTags, afterDateFilter);
   if (!currentConfig.sendMultiMessageEnabled) {
-    activeConversation = updateViewForConversations(filteredConversations, updateList: true);
+    activeConversation = updateViewForConversations(conversationsInView, updateList: true);
     return;
   }
   // Update the conversation objects in [selectedConversations] in case any of them were replaced
@@ -1068,13 +1075,9 @@ void updateFilteredAndSelectedConversationLists() {
 
   // Show both filtered and selected conversations in the list,
   // but mark the selected conversations that don't meet the filter with a warning
-  Set<model.Conversation> conversationsToShow =
-    conversations
-      .where((c) => filteredConversations.contains(c) || selectedConversations.contains(c))
-      .toSet();
-  activeConversation = updateViewForConversations(conversationsToShow, updateList: true);
+  activeConversation = updateViewForConversations(conversationsInView, updateList: true);
   view.conversationListPanelView.showCheckboxes(currentConfig.sendMultiMessageEnabled);
-  conversationsToShow.forEach((conversation) {
+  conversationsInView.forEach((conversation) {
     if (selectedConversations.contains(conversation)) {
       view.conversationListPanelView.checkConversation(conversation.docId);
     }
@@ -1144,11 +1147,12 @@ void updateViewForConversation(model.Conversation conversation, {bool updateInPl
       _populateTagPanelView(conversationTagsByGroup[selectedConversationTagsGroup], TagReceiver.Conversation);
       break;
   }
-  if (filteredConversations.contains(conversation)) {
-    // Select the conversation in the list
+  if (conversationsInView.contains(conversation)) {
+    // Select the conversation in the list of conversations
     view.conversationListPanelView.selectConversation(conversation.docId);
-  } else {
-    // If it's not in the list, show warning
+  }
+  if (!filteredConversations.contains(conversation)) {
+    // If it doesn't meet the filter, show warning
     view.conversationPanelView.showWarning('Conversation no longer meets filtering constraints');
   }
 }
