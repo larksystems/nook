@@ -318,6 +318,7 @@ void initUI() {
   suggestedReplies = [];
   conversationTags = [];
   messageTags = [];
+  filterTags = [];
   selectedConversations = [];
   activeConversation = null;
   selectedSuggestedRepliesCategory = '';
@@ -503,54 +504,54 @@ void initUI() {
 /// Sets user customization flags from the data map
 /// If a flag is not set in the data map, it defaults to the existing values
 void applyConfiguration(model.UserConfiguration newConfig) {
-  if (currentConfig.repliesKeyboardShortcutsEnabled != newConfig.repliesKeyboardShortcutsEnabled) {
+  var oldConfig = currentConfig;
+  currentConfig = newConfig;
+  if (oldConfig.repliesKeyboardShortcutsEnabled != newConfig.repliesKeyboardShortcutsEnabled) {
     view.replyPanelView.showShortcuts(newConfig.repliesKeyboardShortcutsEnabled);
   }
 
-  if (currentConfig.tagsKeyboardShortcutsEnabled != newConfig.tagsKeyboardShortcutsEnabled) {
+  if (oldConfig.tagsKeyboardShortcutsEnabled != newConfig.tagsKeyboardShortcutsEnabled) {
     view.tagPanelView.showShortcuts(newConfig.tagsKeyboardShortcutsEnabled);
   }
 
-  if (currentConfig.sendMessagesEnabled != newConfig.sendMessagesEnabled) {
+  if (oldConfig.sendMessagesEnabled != newConfig.sendMessagesEnabled) {
     view.replyPanelView.showButtons(newConfig.sendMessagesEnabled);
   }
 
-  if (currentConfig.sendCustomMessagesEnabled != newConfig.sendCustomMessagesEnabled) {
+  if (oldConfig.sendCustomMessagesEnabled != newConfig.sendCustomMessagesEnabled) {
     view.conversationPanelView.showCustomMessageBox(newConfig.sendCustomMessagesEnabled);
   }
 
-  if (currentConfig.sendMultiMessageEnabled != newConfig.sendMultiMessageEnabled) {
+  if (oldConfig.sendMultiMessageEnabled != newConfig.sendMultiMessageEnabled) {
     view.conversationListPanelView.showCheckboxes(newConfig.sendMultiMessageEnabled);
     // Start off with no selected conversations
     command(UIAction.deselectAllConversations, null);
   }
 
-  if (currentConfig.tagMessagesEnabled != newConfig.tagMessagesEnabled) {
+  if (oldConfig.tagMessagesEnabled != newConfig.tagMessagesEnabled) {
     if (actionObjectState == UIActionObject.message) {
       view.tagPanelView.showButtons(newConfig.tagMessagesEnabled);
     }
   }
 
-  if (currentConfig.tagConversationsEnabled != newConfig.tagConversationsEnabled) {
+  if (oldConfig.tagConversationsEnabled != newConfig.tagConversationsEnabled) {
     if (actionObjectState == UIActionObject.conversation) {
       view.tagPanelView.showButtons(newConfig.tagConversationsEnabled);
     }
   }
 
-  if (currentConfig.editTranslationsEnabled != newConfig.editTranslationsEnabled) {
+  if (oldConfig.editTranslationsEnabled != newConfig.editTranslationsEnabled) {
     view.conversationPanelView.enableEditableTranslations(newConfig.editTranslationsEnabled);
   }
 
-  if (currentConfig.editNotesEnabled != newConfig.editNotesEnabled) {
+  if (oldConfig.editNotesEnabled != newConfig.editNotesEnabled) {
     view.replyPanelView.enableEditableNotes(newConfig.editNotesEnabled);
   }
 
-  if (currentConfig.tagsPanelVisibility != newConfig.tagsPanelVisibility ||
-      currentConfig.repliesPanelVisibility != newConfig.repliesPanelVisibility) {
+  if (oldConfig.tagsPanelVisibility != newConfig.tagsPanelVisibility ||
+      oldConfig.repliesPanelVisibility != newConfig.repliesPanelVisibility) {
     view.showPanels(newConfig.repliesPanelVisibility, newConfig.tagsPanelVisibility);
   }
-
-  currentConfig = newConfig;
   log.verbose('Updated user configuration: $currentConfig');
 }
 
@@ -1008,11 +1009,13 @@ void command(UIAction action, Data data) {
       view.conversationListPanelView.checkAllConversations();
       selectedConversations.clear();
       selectedConversations.addAll(filteredConversations);
+      updateFilteredAndSelectedConversationLists();
       break;
     case UIAction.deselectAllConversations:
       view.conversationListPanelView.uncheckSelectAllCheckbox();
       view.conversationListPanelView.uncheckAllConversations();
       selectedConversations.clear();
+      updateFilteredAndSelectedConversationLists();
       break;
     case UIAction.updateSystemMessages:
       SystemMessagesData msgData = data;
