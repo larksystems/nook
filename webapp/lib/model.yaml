@@ -10,11 +10,11 @@ Conversation:
   lastInboundTurnTags: 'set string lastInboundTurnTagIds'
   messages: 'array Message'
   notes: 'publishable string'
-  unread: 'publishable bool, true'
+  unread: 'publishable bool, default true'
 
 Message:
   firebaseDocId: 'none'
-  direction: 'MessageDirection, MessageDirection.Out'
+  direction: 'MessageDirection, default MessageDirection.Out'
   datetime: 'datetime'
   status: MessageStatus
   tags: 'array string tagIds'
@@ -50,10 +50,10 @@ SuggestedReply:
 Tag:
   firebaseDocId: 'string tagId'
   text: 'string'
-  type: 'TagType, TagType.Normal'
+  type: 'TagType, default TagType.Normal'
   shortcut: 'string'
   filterable: 'bool'
-  group: "string, ''"
+  group: "string, default ''"
 
 TagType:
   dartType: 'enum'
@@ -66,7 +66,7 @@ SystemMessage:
   firebaseCollectionName: 'systemMessages'
   firebaseDocId: 'string msgId'
   text: string
-  expired: 'bool, false'
+  expired: 'bool, default false'
 
 UserConfiguration:
   firebaseCollectionName: 'users'
