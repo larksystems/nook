@@ -614,9 +614,9 @@ void conversationListSelected(String conversationListRoot) {
       filterTags = tagIdsToTags(filterTagIds, conversationTags).toList();
       _populateSelectedFilterTags(filterTags);
 
+      filterLastInboundTurnTags = [];
       if (currentConfig.conversationalTurnsEnabled) {
         // Get turn filters from the url
-        filterLastInboundTurnTags = [];
         _populateSelectedFilterTurnTags(filterLastInboundTurnTags);
       }
 
