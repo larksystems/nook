@@ -71,7 +71,7 @@ extension MessageUtil on g.Message {
   Future<void> addTagId(g.DocPubSubUpdate pubSubClient, g.Conversation conversation, String tagId) async {
     if (tagIds.contains(tagId)) return;
     if (this.id == null) {
-      throw ArgumentError('Cannot add tag to a pending message - please try again in a few seconds');
+      throw AssertionError('Cannot add tag to a pending message - please try again in a few seconds');
     }
     tagIds.add(tagId);
     return pubSubClient.publishAddOpinion('nook_messages/add_tags', {
@@ -86,7 +86,7 @@ extension MessageUtil on g.Message {
   Future<void> removeTagId(g.DocPubSubUpdate pubSubClient, g.Conversation conversation, String tagId) async {
     if (!tagIds.contains(tagId)) return;
     if (this.id == null) {
-      throw ArgumentError('Cannot remove a tag from a pending message - please try again in a few seconds');
+      throw AssertionError('Cannot remove a tag from a pending message - please try again in a few seconds');
     }
     tagIds.remove(tagId);
     return pubSubClient.publishAddOpinion('nook_messages/remove_tags', {
@@ -99,7 +99,7 @@ extension MessageUtil on g.Message {
   Future<void> setTranslation(g.DocPubSubUpdate pubSubClient, g.Conversation conversation, String newTranslation) async {
     if (translation == newTranslation) return;
     if (this.id == null) {
-      throw ArgumentError('Cannot add translation of a pending message - please try again in a few seconds');
+      throw AssertionError('Cannot add translation of a pending message - please try again in a few seconds');
     }
     translation = newTranslation;
     return pubSubClient.publishAddOpinion('nook_messages/set_translation', {
