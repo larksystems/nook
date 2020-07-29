@@ -328,6 +328,7 @@ void initUI() {
   selectedConversationTagsGroup = '';
   selectedMessageTagsGroup = '';
   hideDemogsTags = true;
+  filterLastInboundTurnTags = [];
 
   platform.listenForConversationTags(
     (added, modified, removed) {
@@ -614,7 +615,6 @@ void conversationListSelected(String conversationListRoot) {
       filterTags = tagIdsToTags(filterTagIds, conversationTags).toList();
       _populateSelectedFilterTags(filterTags);
 
-      filterLastInboundTurnTags = [];
       if (currentConfig.conversationalTurnsEnabled) {
         // Get turn filters from the url
         _populateSelectedFilterTurnTags(filterLastInboundTurnTags);
