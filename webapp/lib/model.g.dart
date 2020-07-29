@@ -135,7 +135,7 @@ class Conversation {
     tagIds = newTagIds;
     return pubSubClient.publishAddOpinion('nook_conversations/set_tags', {
       'conversation_id': docId,
-      'tags': tagIds,
+      'tags': tagIds.toList(),
     });
   }
 
