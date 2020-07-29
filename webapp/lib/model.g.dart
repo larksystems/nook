@@ -144,12 +144,11 @@ class Conversation {
   Future<void> removeTagIds(DocPubSubUpdate pubSubClient, Iterable<String> oldTagIds) {
     var toBeRemoved = Set<String>();
     for (var elem in oldTagIds) {
-      if (tagIds.contains(elem)) {
+      if (tagIds.remove(elem)) {
         toBeRemoved.add(elem);
       }
     }
     if (toBeRemoved.isEmpty) return Future.value(null);
-    tagIds.removeAll(toBeRemoved);
     return pubSubClient.publishAddOpinion('nook_conversations/remove_tags', {
       'conversation_id': docId,
       'tags': toBeRemoved.toList(),
