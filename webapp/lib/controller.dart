@@ -808,10 +808,12 @@ void command(UIAction action, Data data) {
     case UIAction.removeMessageTag:
       MessageTagData messageTagData = data;
       var message = activeConversation.messages[messageTagData.messageIndex];
-      platform.removeMessageTag(activeConversation, message, messageTagData.tagId).catchError(showAndLogError);
-      view.conversationPanelView
-        .messageViewAtIndex(messageTagData.messageIndex)
-        .removeTag(messageTagData.tagId);
+      platform.removeMessageTag(activeConversation, message, messageTagData.tagId).then(
+        (_) {
+          view.conversationPanelView
+            .messageViewAtIndex(messageTagData.messageIndex)
+            .removeTag(messageTagData.tagId);
+        }, onError: showAndLogError);
       break;
     case UIAction.removeFilterTag:
       FilterTagData tagData = data;
@@ -933,7 +935,7 @@ void command(UIAction action, Data data) {
           "${conversation.docId}.message-${messageTranslation.messageIndex}.translation",
           messageTranslation.translationText,
           (newText) {
-            return platform.setMessageTranslation(conversation, message, newText);
+            return platform.setMessageTranslation(conversation, message, newText).catchError(showAndLogError);
           },
         );
       }
@@ -1250,10 +1252,12 @@ void setMultiConversationTag(model.Tag tag, List<model.Conversation> conversatio
 
 void setMessageTag(model.Tag tag, model.Message message, model.Conversation conversation) {
   if (!message.tagIds.contains(tag.tagId)) {
-    platform.addMessageTag(activeConversation, message, tag.tagId).catchError(showAndLogError);
-    view.conversationPanelView
-      .messageViewAtIndex(conversation.messages.indexOf(message))
-      .addTag(new view.MessageTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
+    platform.addMessageTag(activeConversation, message, tag.tagId).then(
+      (_) {
+        view.conversationPanelView
+          .messageViewAtIndex(conversation.messages.indexOf(message))
+          .addTag(new view.MessageTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
+      }, onError: showAndLogError);
   }
 }
 
