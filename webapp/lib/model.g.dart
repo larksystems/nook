@@ -46,6 +46,7 @@ class Conversation {
   String docId;
   Map<String, String> demographicsInfo;
   Set<String> tagIds;
+  Set<String> lastInboundTurnTagIds;
   List<Message> messages;
   String notes;
   bool unread;
@@ -58,6 +59,7 @@ class Conversation {
     return (modelObj ?? Conversation())
       ..demographicsInfo = Map_fromData<String>(data['demographicsInfo'], String_fromData)
       ..tagIds = Set_fromData<String>(data['tags'], String_fromData)
+      ..lastInboundTurnTagIds = Set_fromData<String>(data['lastInboundTurnTags'], String_fromData) ?? {} // it's optional
       ..messages = List_fromData<Message>(data['messages'], Message.fromData)
       ..notes = String_fromData(data['notes'])
       ..unread = bool_fromData(data['unread']) ?? true;
@@ -71,6 +73,7 @@ class Conversation {
     return {
       if (demographicsInfo != null) 'demographicsInfo': demographicsInfo,
       if (tagIds != null) 'tags': tagIds.toList(),
+      if (lastInboundTurnTagIds != null) 'lastInboundTurnTags': lastInboundTurnTagIds.toList(),
       if (messages != null) 'messages': messages.map((elem) => elem?.toData()).toList(),
       if (notes != null) 'notes': notes,
       if (unread != null) 'unread': unread,
@@ -434,6 +437,7 @@ class UserConfiguration {
   bool tagConversationsEnabled;
   bool editTranslationsEnabled;
   bool editNotesEnabled;
+  bool conversationalTurnsEnabled;
   bool tagsPanelVisibility;
   bool repliesPanelVisibility;
 
@@ -454,6 +458,7 @@ class UserConfiguration {
       ..tagConversationsEnabled = bool_fromData(data['tag_conversations_enabled'])
       ..editTranslationsEnabled = bool_fromData(data['edit_translations_enabled'])
       ..editNotesEnabled = bool_fromData(data['edit_notes_enabled'])
+      ..conversationalTurnsEnabled = bool_fromData(data['conversational_turns_enabled'])
       ..tagsPanelVisibility = bool_fromData(data['tags_panel_visibility'])
       ..repliesPanelVisibility = bool_fromData(data['replies_panel_visibility']);
   }
@@ -473,6 +478,7 @@ class UserConfiguration {
       if (tagConversationsEnabled != null) 'tag_conversations_enabled': tagConversationsEnabled,
       if (editTranslationsEnabled != null) 'edit_translations_enabled': editTranslationsEnabled,
       if (editNotesEnabled != null) 'edit_notes_enabled': editNotesEnabled,
+      if (conversationalTurnsEnabled != null) 'conversational_turns_enabled': conversationalTurnsEnabled,
       if (tagsPanelVisibility != null) 'tags_panel_visibility': tagsPanelVisibility,
       if (repliesPanelVisibility != null) 'replies_panel_visibility': repliesPanelVisibility,
     };

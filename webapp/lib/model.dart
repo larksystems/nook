@@ -18,6 +18,7 @@ extension UserConfigurationUtil on g.UserConfiguration {
       ..tagConversationsEnabled = this.tagConversationsEnabled ?? defaults.tagConversationsEnabled
       ..editTranslationsEnabled = this.editTranslationsEnabled ?? defaults.editTranslationsEnabled
       ..editNotesEnabled = this.editNotesEnabled ?? defaults.editNotesEnabled
+      ..conversationalTurnsEnabled = this.conversationalTurnsEnabled ?? defaults.conversationalTurnsEnabled
       ..tagsPanelVisibility = this.tagsPanelVisibility ?? defaults.tagsPanelVisibility
       ..repliesPanelVisibility = this.repliesPanelVisibility ?? defaults.repliesPanelVisibility;
 }

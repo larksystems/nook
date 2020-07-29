@@ -17,6 +17,7 @@ Logger log = new Logger('view.dart');
 ConversationListSelectHeader conversationListSelectView;
 ConversationListPanelView conversationListPanelView;
 ConversationFilter get conversationFilter => conversationListPanelView.conversationFilter;
+ConversationTurnsFilter get conversationTurnsFilter => conversationListPanelView.conversationTurnsFilter;
 ConversationPanelView conversationPanelView;
 ReplyPanelView replyPanelView;
 TagPanelView tagPanelView;
@@ -663,6 +664,22 @@ class FilterTagView extends TagView {
   }
 }
 
+class FilterMenuTurnTagView extends FilterMenuTagView {
+  FilterMenuTurnTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle);
+
+  void handleClicked(String tagId) {
+    command(UIAction.addFilterTurnTag, new FilterTagData(tagId));
+  }
+}
+
+class FilterTurnTagView extends FilterTagView {
+  FilterTurnTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle);
+
+  void handleClicked(String tagId) {
+    command(UIAction.removeFilterTurnTag, new FilterTagData(tagId));
+  }
+}
+
 const AFTER_DATE_TAG_ID = "after-date";
 final DateFormat _afterDateFilterFormat = DateFormat('yyyy.MM.dd HH:mm');
 
@@ -782,6 +799,7 @@ class ConversationListPanelView {
   DivElement _selectConversationListMessage;
 
   ConversationFilter conversationFilter;
+  ConversationTurnsFilter conversationTurnsFilter;
 
   Map<String, ConversationSummary> _phoneToConversations = {};
   ConversationSummary activeConversation;
@@ -829,6 +847,9 @@ class ConversationListPanelView {
 
     conversationFilter = new ConversationFilter();
     conversationListPanel.append(conversationFilter.conversationFilter);
+
+    conversationTurnsFilter = new ConversationTurnsFilter();
+    conversationListPanel.append(conversationTurnsFilter.conversationFilter);
   }
 
   void updateConversationList(Set<Conversation> conversations) {
@@ -942,6 +963,7 @@ class ConversationListPanelView {
 
 class ConversationFilter {
   DivElement conversationFilter;
+  DivElement _descriptionText;
   DivElement _tagsContainer;
   DivElement _tagsMenu;
   DivElement _tagsMenuWrapper;
@@ -952,9 +974,9 @@ class ConversationFilter {
     conversationFilter = new DivElement()
       ..classes.add('conversation-filter');
 
-    var descriptionText = new DivElement()
+    _descriptionText = new DivElement()
       ..text = 'Filter conversations ▹';
-    conversationFilter.append(descriptionText);
+    conversationFilter.append(_descriptionText);
 
     _tagsMenu = new DivElement()
       ..classes.add('tags-menu');
@@ -1050,6 +1072,16 @@ class ConversationFilter {
       _tagsMenuWrapper.firstChild.remove();
     }
     assert(_tagsMenuWrapper.children.length == 0);
+  }
+}
+
+class ConversationTurnsFilter extends ConversationFilter{
+  ConversationTurnsFilter() : super () {
+    _descriptionText.text = 'Filter by conversation turns ▹';
+  }
+
+  void showFilter(bool show) {
+    this.conversationFilter.classes.toggle('hidden', !show);
   }
 }
 
