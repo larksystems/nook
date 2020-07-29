@@ -1148,7 +1148,7 @@ class ConversationSummary with LazyListViewItem {
     if (_selectCheckbox != null) _selectCheckbox.hidden = !show;
   }
   void _showWarning(bool show) {
-    _warning = true;
+    _warning = show;
     elementOrNull?.classes?.toggle('conversation-list__item--warning', show);
   }
 }
