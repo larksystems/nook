@@ -9,6 +9,7 @@ import 'platform.dart' as platform;
 import 'pubsub.dart' show PubSubException;
 import 'view.dart' as view;
 
+part 'controller_filter_helper.dart';
 part 'controller_platform_helper.dart';
 part 'controller_view_helper.dart';
 
@@ -26,11 +27,9 @@ enum UIAction {
   sendManualMessage,
   addTag,
   addFilterTag,
-  addFilterTurnTag,
   removeConversationTag,
   removeMessageTag,
   removeFilterTag,
-  removeFilterTurnTag,
   promptAfterDateFilter,
   updateAfterDateFilter,
   showConversation,
@@ -124,19 +123,21 @@ class ConversationTagData extends Data {
 
 class FilterTagData extends Data {
   String tagId;
-  FilterTagData(this.tagId);
+  TagFilterType filterType;
+  FilterTagData(this.tagId, this.filterType);
 
   @override
-  String toString() => 'FilterTagData: {tagId: $tagId}';
+  String toString() => 'FilterTagData: {tagId: $tagId, filterType: $filterType}';
 }
 
 class AfterDateFilterData extends Data {
   String tagId;
   DateTime afterDateFilter;
-  AfterDateFilterData(this.tagId, [this.afterDateFilter]);
+  TagFilterType filterType;
+  AfterDateFilterData(this.tagId, this.filterType, [this.afterDateFilter]);
 
   @override
-  String toString() => 'AfterDateFilter: {tagId: $tagId, afterDateFilter: $afterDateFilter}';
+  String toString() => 'AfterDateFilter: {tagId: $tagId, filterType: $filterType, afterDateFilter: $afterDateFilter}';
 }
 
 class ConversationListData extends Data {
@@ -290,9 +291,7 @@ String selectedConversationTagsGroup;
 List<model.Tag> messageTags;
 Map<String, List<model.Tag>> messageTagsByGroup;
 String selectedMessageTagsGroup;
-List<model.Tag> filterTags;
-List<model.Tag> filterLastInboundTurnTags;
-DateTime afterDateFilter;
+ConversationFilter conversationFilter;
 Map<String, List<model.Tag>> filterTagsByCategory;
 Map<String, List<model.Tag>> filterLastInboundTurnTagsByCategory;
 model.Conversation activeConversation;
@@ -328,7 +327,7 @@ void initUI() {
   selectedConversationTagsGroup = '';
   selectedMessageTagsGroup = '';
   hideDemogsTags = true;
-  filterLastInboundTurnTags = [];
+  conversationFilter = new ConversationFilter();
 
   platform.listenForConversationTags(
     (added, modified, removed) {
@@ -343,9 +342,14 @@ void initUI() {
 
       // Update the filter tags by category map
       filterTagsByCategory = _groupTagsIntoCategories(conversationTags);
-      _removeTagsFromFilterMenu(_groupTagsIntoCategories(removed));
-      _addTagsToFilterMenu(_groupTagsIntoCategories(added));
-      _modifyTagsInFilterMenu(_groupTagsIntoCategories(modified));
+
+      _removeTagsFromFilterMenu(_groupTagsIntoCategories(removed), TagFilterType.include);
+      _addTagsToFilterMenu(_groupTagsIntoCategories(added), TagFilterType.include);
+      _modifyTagsInFilterMenu(_groupTagsIntoCategories(modified), TagFilterType.include);
+
+      _removeTagsFromFilterMenu(_groupTagsIntoCategories(removed), TagFilterType.exclude);
+      _addTagsToFilterMenu(_groupTagsIntoCategories(added), TagFilterType.exclude);
+      _modifyTagsInFilterMenu(_groupTagsIntoCategories(modified), TagFilterType.exclude);
 
       // Update the conversation tags by group map
       conversationTagsByGroup = _groupTagsIntoCategories(conversationTags);
@@ -373,7 +377,8 @@ void initUI() {
       }
     }
   );
-  _addDateTagToFilterMenu();
+  _addDateTagToFilterMenu(TagFilterType.include);
+  _addDateTagToFilterMenu(TagFilterType.exclude);
 
   platform.listenForMessageTags(
     (added, modified, removed) {
@@ -387,9 +392,9 @@ void initUI() {
         ..addAll(modified);
 
       filterLastInboundTurnTagsByCategory = _groupTagsIntoCategories(messageTags);
-      _removeTagsFromFilterTurnsMenu(_groupTagsIntoCategories(removed));
-      _addTagsToFilterTurnsMenu(_groupTagsIntoCategories(added));
-      _modifyTagsInFilterTurnsMenu(_groupTagsIntoCategories(modified));
+      _removeTagsFromFilterMenu(_groupTagsIntoCategories(removed), TagFilterType.lastInboundTurn);
+      _addTagsToFilterMenu(_groupTagsIntoCategories(added), TagFilterType.lastInboundTurn);
+      _modifyTagsInFilterMenu(_groupTagsIntoCategories(modified), TagFilterType.lastInboundTurn);
 
       // Update the message tags by group map
       messageTagsByGroup = _groupTagsIntoCategories(messageTags);
@@ -556,7 +561,20 @@ void applyConfiguration(model.UserConfiguration newConfig) {
   }
 
   if (currentConfig.conversationalTurnsEnabled != newConfig.conversationalTurnsEnabled) {
-    view.conversationTurnsFilter.showFilter(newConfig.conversationalTurnsEnabled);
+    view.conversationFilter[TagFilterType.lastInboundTurn].showFilter(newConfig.conversationalTurnsEnabled);
+    if (currentConfig.conversationalTurnsEnabled != null && !newConfig.conversationalTurnsEnabled) {
+      // only clear things up after we've received the config from the server
+      conversationFilter.filterTags[TagFilterType.lastInboundTurn] = [];
+      view.urlView.setPageUrlFilterTags(TagFilterType.lastInboundTurn, []);
+    }
+
+    // exclude filtering temporary sharing the flag with last inbound turns
+    view.conversationFilter[TagFilterType.exclude].showFilter(newConfig.conversationalTurnsEnabled);
+    if (currentConfig.conversationalTurnsEnabled != null && !newConfig.conversationalTurnsEnabled) {
+      // only clear things up after we've received the config from the server
+      conversationFilter.filterTags[TagFilterType.exclude] = [];
+      view.urlView.setPageUrlFilterTags(TagFilterType.exclude, []);
+    }
   }
 
   if (currentConfig.tagsPanelVisibility != newConfig.tagsPanelVisibility ||
@@ -611,17 +629,14 @@ void conversationListSelected(String conversationListRoot) {
       }
 
       // Get any filter tags from the url
-      List<String> filterTagIds = view.urlView.pageUrlFilterTags;
-      filterTags = tagIdsToTags(filterTagIds, conversationTags).toList();
-      _populateSelectedFilterTags(filterTags);
-
+      conversationFilter = new ConversationFilter.fromUrl();
+      _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.include], TagFilterType.include);
       if (currentConfig.conversationalTurnsEnabled) {
-        // Get turn filters from the url
-        _populateSelectedFilterTurnTags(filterLastInboundTurnTags);
+        _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.exclude], TagFilterType.exclude);
+        _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.lastInboundTurn], TagFilterType.lastInboundTurn);
       }
 
-      filteredConversations = filterConversationsByTags(conversations, filterTags, afterDateFilter);
-      filteredConversations = filterConversationsByTurnTags(filteredConversations, filterLastInboundTurnTags);
+      filteredConversations = conversations.where((conversation) => conversationFilter.test(conversation)).toSet();
 
       activeConversation = updateViewForConversations(filteredConversations, updateList: true);
       if (currentConfig.sendMultiMessageEnabled) {
@@ -690,7 +705,6 @@ void command(UIAction action, Data data) {
   if (activeConversation == null &&
       action != UIAction.selectConversationList &&
       action != UIAction.addFilterTag && action != UIAction.removeFilterTag &&
-      action != UIAction.addFilterTurnTag && action != UIAction.removeFilterTurnTag &&
       action != UIAction.promptAfterDateFilter && action != UIAction.updateAfterDateFilter &&
       action != UIAction.signInButtonClicked && action != UIAction.signOutButtonClicked &&
       action != UIAction.userSignedIn && action != UIAction.userSignedOut &&
@@ -763,7 +777,7 @@ void command(UIAction action, Data data) {
           model.Tag tag = conversationTags.singleWhere((tag) => tag.tagId == tagData.tagId);
           if (!currentConfig.sendMultiMessageEnabled || selectedConversations.isEmpty) {
             setConversationTag(tag, activeConversation);
-            return;
+            break;
           }
           if (!view.taggingMultiConversationsUserConfirmation(selectedConversations.length)) {
             return;
@@ -775,24 +789,15 @@ void command(UIAction action, Data data) {
           setMessageTag(tag, selectedMessage, activeConversation);
           break;
       }
+      updateFilteredConversationList();
       break;
     case UIAction.addFilterTag:
       FilterTagData tagData = data;
-      model.Tag tag = conversationTags.singleWhere((tag) => tag.tagId == tagData.tagId);
-      if (filterTags.contains(tag)) break;
-      filterTags.add(tag);
-      view.urlView.pageUrlFilterTags = filterTags.map((tag) => tag.tagId).toList();
-      view.conversationFilter.addFilterTag(new view.FilterTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
-      updateFilteredConversationList();
-      break;
-    case UIAction.addFilterTurnTag:
-      if (!currentConfig.conversationalTurnsEnabled) break;
-      FilterTagData tagData = data;
-      model.Tag tag = messageTags.singleWhere((tag) => tag.tagId == tagData.tagId);
-      if (filterLastInboundTurnTags.contains(tag)) break;
-      filterLastInboundTurnTags.add(tag);
-      // TODO: propagate to URL view
-      view.conversationTurnsFilter.addFilterTag(new view.FilterTurnTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
+      var allTagsCollection = tagData.filterType == TagFilterType.lastInboundTurn ? messageTags : conversationTags;
+      model.Tag tag = tagIdsToTags([tagData.tagId], allTagsCollection).first;
+      conversationFilter.filterTags[tagData.filterType].add(tag);
+      view.urlView.setPageUrlFilterTags(tagData.filterType, conversationFilter.filterTagIds[tagData.filterType].toList());
+      view.conversationFilter[tagData.filterType].addFilterTag(new view.FilterTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type), tagData.filterType));
       updateFilteredConversationList();
       break;
     case UIAction.removeConversationTag:
@@ -800,10 +805,7 @@ void command(UIAction action, Data data) {
       model.Tag tag = conversationTags.singleWhere((tag) => tag.tagId == conversationTagData.tagId);
       platform.removeConversationTag(activeConversation, tag.tagId).catchError(showAndLogError);
       view.conversationPanelView.removeTag(tag.tagId);
-      if (filterTags.contains(tag)) {
-        filteredConversations.remove(activeConversation);
-        view.conversationPanelView.showWarning('Conversation no longer meets filtering constraints');
-      }
+      updateFilteredConversationList();
       break;
     case UIAction.removeMessageTag:
       MessageTagData messageTagData = data;
@@ -815,31 +817,23 @@ void command(UIAction action, Data data) {
       break;
     case UIAction.removeFilterTag:
       FilterTagData tagData = data;
-      model.Tag tag = tagIdsToTags([tagData.tagId], conversationTags).first;
-      filterTags.removeWhere((t) => t.tagId == tag.tagId);
-      view.urlView.pageUrlFilterTags = filterTags.map((tag) => tag.tagId).toList();
-      view.conversationFilter.removeFilterTag(tag.tagId);
-      updateFilteredConversationList();
-      break;
-    case UIAction.removeFilterTurnTag:
-      if (!currentConfig.conversationalTurnsEnabled) break;
-      FilterTagData tagData = data;
-      model.Tag tag = tagIdsToTags([tagData.tagId], messageTags).first;
-      filterLastInboundTurnTags.removeWhere((t) => t.tagId == tag.tagId);
-      // TODO: propagate to URL view
-      view.conversationTurnsFilter.removeFilterTag(tag.tagId);
+      var allTagsCollection = tagData.filterType == TagFilterType.lastInboundTurn ? messageTags : conversationTags;
+      model.Tag tag = tagIdsToTags([tagData.tagId], allTagsCollection).first;
+      conversationFilter.filterTags[tagData.filterType].removeWhere((t) => t.tagId == tag.tagId);
+      view.urlView.setPageUrlFilterTags(tagData.filterType, conversationFilter.filterTagIds[tagData.filterType].toList());
+      view.conversationFilter[tagData.filterType].removeFilterTag(tag.tagId);
       updateFilteredConversationList();
       break;
     case UIAction.promptAfterDateFilter:
       AfterDateFilterData filterData = data;
-      view.conversationPanelView.showAfterDateFilterPrompt(filterData.afterDateFilter ?? afterDateFilter);
+      view.conversationPanelView.showAfterDateFilterPrompt(filterData.filterType, conversationFilter.afterDateFilter[filterData.filterType]);
       break;
     case UIAction.updateAfterDateFilter:
       AfterDateFilterData filterData = data;
-      afterDateFilter = filterData.afterDateFilter;
-      view.conversationFilter.removeFilterTag(filterData.tagId);
-      if (afterDateFilter != null) {
-        view.conversationFilter.addFilterTag(new view.AfterDateFilterTagView(afterDateFilter));
+      conversationFilter.afterDateFilter[filterData.filterType] = filterData.afterDateFilter;
+      view.conversationFilter[TagFilterType.include].removeFilterTag(filterData.tagId);
+      if (filterData.afterDateFilter != null) {
+        view.conversationFilter[filterData.filterType].addFilterTag(new view.AfterDateFilterTagView(filterData.afterDateFilter, filterData.filterType));
       }
       updateFilteredConversationList();
       break;
@@ -1100,8 +1094,7 @@ void command(UIAction action, Data data) {
 }
 
 void updateFilteredConversationList() {
-  filteredConversations = filterConversationsByTags(conversations, filterTags, afterDateFilter);
-  filteredConversations = filterConversationsByTurnTags(filteredConversations, filterLastInboundTurnTags);
+  filteredConversations = conversations.where((conversation) => conversationFilter.test(conversation)).toSet();
   activeConversation = updateViewForConversations(filteredConversations);
   if (currentConfig.sendMultiMessageEnabled) {
     view.conversationListPanelView.showCheckboxes(currentConfig.sendMultiMessageEnabled);
@@ -1257,35 +1250,6 @@ void setMessageTag(model.Tag tag, model.Message message, model.Conversation conv
   }
 }
 
-Set<model.Conversation> filterConversationsByTags(Set<model.Conversation> conversations, List<model.Tag> filterTags, DateTime afterDateFilter) {
-  if (filterTags.isEmpty && afterDateFilter == null) return conversations;
-
-  var filteredConversations = emptyConversationsSet;
-  var filterTagIds = filterTags.map<String>((tag) => tag.tagId).toList();
-  conversations.forEach((conversation) {
-    // Filter by the last (most recent) conversation
-    // TODO consider an option to filter by the first conversation
-    if (afterDateFilter != null && conversation.messages.last.datetime.isBefore(afterDateFilter)) return;
-    if (!conversation.tagIds.containsAll(filterTagIds)) return;
-    filteredConversations.add(conversation);
-  });
-  return filteredConversations;
-}
-
-Set<model.Conversation> filterConversationsByTurnTags(Set<model.Conversation> conversations, List<model.Tag> filterLastInboundTurnTags) {
-  if (filterLastInboundTurnTags.isEmpty) return conversations;
-
-  var filteredConversations = emptyConversationsSet;
-  var filterTagIds = filterLastInboundTurnTags.map<String>((tag) => tag.tagId).toList();
-  conversations.forEach((conversation) {
-    // Filter by the last (most recent) conversation
-    // TODO consider an option to filter by the first conversation
-    if (!conversation.lastInboundTurnTagIds.containsAll(filterTagIds)) return;
-    filteredConversations.add(conversation);
-  });
-  return filteredConversations;
-}
-
 void updateMissingTagIds(Set<model.Conversation> conversations, List<model.Tag> tags) {
   var newTagIdsWithMissingInfo = extractTagIdsWithMissingInfo(conversations, tags.toSet());
   var tagsWithMissingInfo = conversationTags.where((tag) => tag.type == model.NotFoundTagType.NotFound).toSet();
@@ -1298,14 +1262,16 @@ void updateMissingTagIds(Set<model.Conversation> conversations, List<model.Tag> 
   if (tagIdsToRemove.isNotEmpty) {
     var tagsToRemove = tagIdsToTags(tagIdsToRemove, conversationTags);
     conversationTags.removeWhere((tag) => tagsToRemove.contains(tag));
-    _removeTagsFromFilterMenu({tagsToRemove.first.group: tagsToRemove});
+    _removeTagsFromFilterMenu({tagsToRemove.first.group: tagsToRemove}, TagFilterType.include);
+    _removeTagsFromFilterMenu({tagsToRemove.first.group: tagsToRemove}, TagFilterType.exclude);
   }
   // add tags that are new
   var tagIdsToAdd = newTagIdsWithMissingInfo.difference(tagIdsWithMissingInfo);
   if (tagIdsToAdd.isEmpty) return;
   var tagsToAdd = tagIdsToTags(tagIdsToAdd, conversationTags);
   conversationTags.addAll(tagsToAdd);
-  _addTagsToFilterMenu({tagsToAdd.first.group: tagsToAdd});
+  _addTagsToFilterMenu({tagsToAdd.first.group: tagsToAdd}, TagFilterType.include);
+  _addTagsToFilterMenu({tagsToAdd.first.group: tagsToAdd}, TagFilterType.exclude);
 }
 
 Set<String> extractTagIdsWithMissingInfo(Set<model.Conversation> conversations, Set<model.Tag> tags) {
