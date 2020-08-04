@@ -689,6 +689,8 @@ DateTime DateTime_notNull(Map data, String fieldName, String className) {
   return value;
 }
 
+dynamic dynamic_fromData(data) => data;
+
 dynamic dynamic_required(Map data, String fieldName, String className) {
   var value = data[fieldName];
   if (value == null && !data.containsKey(fieldName))
@@ -776,72 +778,72 @@ num num_notNull(Map data, String fieldName, String className) {
   return value;
 }
 
-List<T> List_fromData<T>(dynamic data, T createModel(data)) =>
+List<T> List_fromData<T>(dynamic data, T Function(dynamic) createModel) =>
     (data as List)?.map<T>((elem) => createModel(elem))?.toList();
 
-List<T> List_required<T>(Map data, String fieldName, String className, T createModel(data)) {
+List<T> List_required<T>(Map data, String fieldName, String className, T Function(dynamic) createModel) {
   var value = List_fromData(data[fieldName], createModel);
   if (value == null && !data.containsKey(fieldName))
     throw ValueException("$className.$fieldName is missing");
   return value;
 }
 
-List<T> List_notNull<T>(Map data, String fieldName, String className, T createModel(data)) {
+List<T> List_notNull<T>(Map data, String fieldName, String className, T Function(dynamic) createModel) {
   var value = List_required(data, fieldName, className, createModel);
   if (value == null)
     throw ValueException("$className.$fieldName must not be null");
   return value;
 }
 
-List<T> List_notEmpty<T>(Map data, String fieldName, String className, T createModel(data)) {
+List<T> List_notEmpty<T>(Map data, String fieldName, String className, T Function(dynamic) createModel) {
   var value = List_notNull(data, fieldName, className, createModel);
   if (value.isEmpty)
     throw ValueException("$className.$fieldName must not be empty");
   return value;
 }
 
-Map<String, T> Map_fromData<T>(dynamic data, T createModel(data)) =>
+Map<String, T> Map_fromData<T>(dynamic data, T Function(dynamic) createModel) =>
     (data as Map)?.map<String, T>((key, value) => MapEntry(key.toString(), createModel(value)));
 
-Map<String, T> Map_required<T>(Map data, String fieldName, String className, T createModel(data)) {
+Map<String, T> Map_required<T>(Map data, String fieldName, String className, T Function(dynamic) createModel) {
   var value = Map_fromData(data[fieldName], createModel);
   if (value == null && !data.containsKey(fieldName))
     throw ValueException("$className.$fieldName is missing");
   return value;
 }
 
-Map<String, T> Map_notNull<T>(Map data, String fieldName, String className, T createModel(data)) {
+Map<String, T> Map_notNull<T>(Map data, String fieldName, String className, T Function(dynamic) createModel) {
   var value = Map_required(data, fieldName, className, createModel);
   if (value == null)
     throw ValueException("$className.$fieldName must not be null");
   return value;
 }
 
-Map<String, T> Map_notEmpty<T>(Map data, String fieldName, String className, T createModel(data)) {
+Map<String, T> Map_notEmpty<T>(Map data, String fieldName, String className, T Function(dynamic) createModel) {
   var value = Map_notNull(data, fieldName, className, createModel);
   if (value.isEmpty)
     throw ValueException("$className.$fieldName must not be empty");
   return value;
 }
 
-Set<T> Set_fromData<T>(dynamic data, T createModel(data)) =>
+Set<T> Set_fromData<T>(dynamic data, T Function(dynamic) createModel) =>
     (data as List)?.map<T>((elem) => createModel(elem))?.toSet();
 
-Set<T> Set_required<T>(Map data, String fieldName, String className, T createModel(data)) {
+Set<T> Set_required<T>(Map data, String fieldName, String className, T Function(dynamic) createModel) {
   var value = Set_fromData(data[fieldName], createModel);
   if (value == null && !data.containsKey(fieldName))
     throw ValueException("$className.$fieldName is missing");
   return value;
 }
 
-Set<T> Set_notNull<T>(Map data, String fieldName, String className, T createModel(data)) {
+Set<T> Set_notNull<T>(Map data, String fieldName, String className, T Function(dynamic) createModel) {
   var value = Set_required(data, fieldName, className, createModel);
   if (value == null)
     throw ValueException("$className.$fieldName must not be null");
   return value;
 }
 
-Set<T> Set_notEmpty<T>(Map data, String fieldName, String className, T createModel(data)) {
+Set<T> Set_notEmpty<T>(Map data, String fieldName, String className, T Function(dynamic) createModel) {
   var value = Set_notNull(data, fieldName, className, createModel);
   if (value.isEmpty)
     throw ValueException("$className.$fieldName must not be null");
