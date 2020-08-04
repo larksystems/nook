@@ -1,5 +1,3 @@
-import 'dart:collection';
-
 import 'model.g.dart' as g;
 export 'model.g.dart' hide
   MessageDirection_fromStringOverride,
@@ -72,7 +70,9 @@ extension MessageUtil on g.Message {
   /// Callers should catch and handle IOException.
   Future<void> addTagId(g.DocPubSubUpdate pubSubClient, g.Conversation conversation, String tagId) async {
     if (tagIds.contains(tagId)) return;
-    assert(this.id != null, "Expected non-null message identifier");
+    if (this.id == null) {
+      throw AssertionError('Cannot add tag to a pending message - please try again in a few seconds');
+    }
     tagIds.add(tagId);
     return pubSubClient.publishAddOpinion('nook_messages/add_tags', {
       "conversation_id": conversation.docId,
@@ -85,7 +85,9 @@ extension MessageUtil on g.Message {
   /// Callers should catch and handle IOException.
   Future<void> removeTagId(g.DocPubSubUpdate pubSubClient, g.Conversation conversation, String tagId) async {
     if (!tagIds.contains(tagId)) return;
-    assert(this.id != null, "Expected non-null message identifier");
+    if (this.id == null) {
+      throw AssertionError('Cannot remove a tag from a pending message - please try again in a few seconds');
+    }
     tagIds.remove(tagId);
     return pubSubClient.publishAddOpinion('nook_messages/remove_tags', {
       "conversation_id": conversation.docId,
@@ -96,7 +98,9 @@ extension MessageUtil on g.Message {
 
   Future<void> setTranslation(g.DocPubSubUpdate pubSubClient, g.Conversation conversation, String newTranslation) async {
     if (translation == newTranslation) return;
-    assert(this.id != null, "Expected non-null message identifier");
+    if (this.id == null) {
+      throw AssertionError('Cannot add translation of a pending message - please try again in a few seconds');
+    }
     translation = newTranslation;
     return pubSubClient.publishAddOpinion('nook_messages/set_translation', {
       "conversation_id": conversation.docId,
