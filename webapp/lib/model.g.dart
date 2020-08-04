@@ -207,10 +207,6 @@ class MessageDirection {
   ];
 
   static MessageDirection fromString(String text, [MessageDirection defaultValue = MessageDirection.Out]) {
-    if (MessageDirection_fromStringOverride != null) {
-      var value = MessageDirection_fromStringOverride(text);
-      if (value != null) return value;
-    }
     if (text != null) {
       const prefix = 'MessageDirection.';
       String valueName = text.startsWith(prefix) ? text.substring(prefix.length) : text;
@@ -226,7 +222,6 @@ class MessageDirection {
   const MessageDirection(this.name);
   String toString() => 'MessageDirection.$name';
 }
-MessageDirection Function(String text) MessageDirection_fromStringOverride;
 
 class MessageStatus {
   static const pending = MessageStatus('pending');
@@ -242,10 +237,6 @@ class MessageStatus {
   ];
 
   static MessageStatus fromString(String text, [MessageStatus defaultValue = MessageStatus.unknown]) {
-    if (MessageStatus_fromStringOverride != null) {
-      var value = MessageStatus_fromStringOverride(text);
-      if (value != null) return value;
-    }
     if (text != null) {
       const prefix = 'MessageStatus.';
       String valueName = text.startsWith(prefix) ? text.substring(prefix.length) : text;
@@ -262,7 +253,6 @@ class MessageStatus {
   const MessageStatus(this.name);
   String toString() => 'MessageStatus.$name';
 }
-MessageStatus Function(String text) MessageStatus_fromStringOverride;
 
 class SuggestedReply {
   static const collectionName = 'suggestedReplies';
@@ -365,10 +355,6 @@ class TagType {
   ];
 
   static TagType fromString(String text, [TagType defaultValue = TagType.Normal]) {
-    if (TagType_fromStringOverride != null) {
-      var value = TagType_fromStringOverride(text);
-      if (value != null) return value;
-    }
     if (text != null) {
       const prefix = 'TagType.';
       String valueName = text.startsWith(prefix) ? text.substring(prefix.length) : text;
@@ -384,7 +370,6 @@ class TagType {
   const TagType(this.name);
   String toString() => 'TagType.$name';
 }
-TagType Function(String text) TagType_fromStringOverride;
 
 class SystemMessage {
   static const collectionName = 'systemMessages';
