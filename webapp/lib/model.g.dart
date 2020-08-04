@@ -46,9 +46,10 @@ class ConversationListShard {
     };
   }
 
+  @override
   String toString() => 'ConversationListShard [$docId]: ${toData().toString()}';
 }
-typedef void ConversationListShardCollectionListener(
+typedef ConversationListShardCollectionListener = void Function(
   List<ConversationListShard> added,
   List<ConversationListShard> modified,
   List<ConversationListShard> removed,
@@ -181,9 +182,10 @@ class Conversation {
     });
   }
 
+  @override
   String toString() => 'Conversation [$docId]: ${toData().toString()}';
 }
-typedef void ConversationCollectionListener(
+typedef ConversationCollectionListener = void Function(
   List<Conversation> added,
   List<Conversation> modified,
   List<Conversation> removed,
@@ -236,6 +238,7 @@ class Message {
     };
   }
 
+  @override
   String toString() => 'Message: ${toData().toString()}';
 }
 
@@ -282,7 +285,10 @@ class MessageDirection {
 
   final String name;
   const MessageDirection(this.name);
+
   String toData() => 'MessageDirection.$name';
+
+  @override
   String toString() => toData();
 }
 
@@ -334,7 +340,10 @@ class MessageStatus {
 
   final String name;
   const MessageStatus(this.name);
+
   String toData() => 'MessageStatus.$name';
+
+  @override
   String toString() => toData();
 }
 
@@ -391,9 +400,10 @@ class SuggestedReply {
     };
   }
 
+  @override
   String toString() => 'SuggestedReply [$docId]: ${toData().toString()}';
 }
-typedef void SuggestedReplyCollectionListener(
+typedef SuggestedReplyCollectionListener = void Function(
   List<SuggestedReply> added,
   List<SuggestedReply> modified,
   List<SuggestedReply> removed,
@@ -449,9 +459,10 @@ class Tag {
     };
   }
 
+  @override
   String toString() => 'Tag [$docId]: ${toData().toString()}';
 }
-typedef void TagCollectionListener(
+typedef TagCollectionListener = void Function(
   List<Tag> added,
   List<Tag> modified,
   List<Tag> removed,
@@ -500,7 +511,10 @@ class TagType {
 
   final String name;
   const TagType(this.name);
+
   String toData() => 'TagType.$name';
+
+  @override
   String toString() => toData();
 }
 
@@ -548,9 +562,10 @@ class SystemMessage {
     };
   }
 
+  @override
   String toString() => 'SystemMessage [$docId]: ${toData().toString()}';
 }
-typedef void SystemMessageCollectionListener(
+typedef SystemMessageCollectionListener = void Function(
   List<SystemMessage> added,
   List<SystemMessage> modified,
   List<SystemMessage> removed,
@@ -630,9 +645,10 @@ class UserConfiguration {
     };
   }
 
+  @override
   String toString() => 'UserConfiguration [$docId]: ${toData().toString()}';
 }
-typedef void UserConfigurationCollectionListener(
+typedef UserConfigurationCollectionListener = void Function(
   List<UserConfiguration> added,
   List<UserConfiguration> modified,
   List<UserConfiguration> removed,
@@ -852,16 +868,16 @@ Set<T> Set_notEmpty<T>(Map data, String fieldName, String className, T Function(
 
 StreamSubscription<List<DocSnapshot>> listenForUpdates<T>(
     DocStorage docStorage,
-    void listener(List<T> added, List<T> modified, List<T> removed),
+    void Function(List<T> added, List<T> modified, List<T> removed) listener,
     String collectionRoot,
-    T createModel(DocSnapshot doc),
+    T Function(DocSnapshot doc) createModel,
     ) {
   log.verbose('Loading from $collectionRoot');
   log.verbose('Query root: $collectionRoot');
   return docStorage.onChange(collectionRoot).listen((List<DocSnapshot> snapshots) {
-    List<T> added = [];
-    List<T> modified = [];
-    List<T> removed = [];
+    var added = <T>[];
+    var modified = <T>[];
+    var removed = <T>[];
     log.verbose("Starting processing ${snapshots.length} changes.");
     for (var snapshot in snapshots) {
       log.verbose('Processing ${snapshot.id}');
