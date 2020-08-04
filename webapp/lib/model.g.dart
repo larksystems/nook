@@ -173,9 +173,9 @@ class Message {
   static Message fromData(data, [Message modelObj]) {
     if (data == null) return null;
     return (modelObj ?? Message())
-      ..direction = MessageDirection.fromString(data['direction'] as String) ?? MessageDirection.Out
+      ..direction = MessageDirection.fromData(data['direction']) ?? MessageDirection.Out
       ..datetime = DateTime_fromData(data['datetime'])
-      ..status = MessageStatus.fromString(data['status'] as String)
+      ..status = MessageStatus.fromData(data['status'])
       ..tagIds = List_fromData<String>(data['tags'], String_fromData)
       ..text = String_fromData(data['text'])
       ..translation = String_fromData(data['translation'])
@@ -184,9 +184,9 @@ class Message {
 
   Map<String, dynamic> toData() {
     return {
-      if (direction != null) 'direction': direction.toString(),
+      if (direction != null) 'direction': direction.toData(),
       if (datetime != null) 'datetime': datetime.toIso8601String(),
-      if (status != null) 'status': status.toString(),
+      if (status != null) 'status': status.toData(),
       if (tagIds != null) 'tags': tagIds,
       if (text != null) 'text': text,
       if (translation != null) 'translation': translation,
@@ -209,7 +209,7 @@ class MessageDirection {
   static MessageDirection fromString(String text, [MessageDirection defaultValue = MessageDirection.Out]) {
     if (text != null) {
       const prefix = 'MessageDirection.';
-      String valueName = text.startsWith(prefix) ? text.substring(prefix.length) : text;
+      var valueName = text.startsWith(prefix) ? text.substring(prefix.length) : text;
       for (var value in values) {
         if (value.name == valueName) return value;
       }
@@ -218,9 +218,16 @@ class MessageDirection {
     return defaultValue;
   }
 
+  static MessageDirection fromData(data, [MessageDirection defaultValue = MessageDirection.Out]) {
+    if (data is String || data == null) return fromString(data, defaultValue);
+    log.warning('invalid MessageDirection: ${data.runtimeType}: $data');
+    return defaultValue;
+  }
+
   final String name;
   const MessageDirection(this.name);
-  String toString() => 'MessageDirection.$name';
+  String toData() => 'MessageDirection.$name';
+  String toString() => toData();
 }
 
 class MessageStatus {
@@ -239,7 +246,7 @@ class MessageStatus {
   static MessageStatus fromString(String text, [MessageStatus defaultValue = MessageStatus.unknown]) {
     if (text != null) {
       const prefix = 'MessageStatus.';
-      String valueName = text.startsWith(prefix) ? text.substring(prefix.length) : text;
+      var valueName = text.startsWith(prefix) ? text.substring(prefix.length) : text;
       for (var value in values) {
         if (value.name == valueName) return value;
       }
@@ -249,9 +256,16 @@ class MessageStatus {
     return defaultValue;
   }
 
+  static MessageStatus fromData(data, [MessageStatus defaultValue = MessageStatus.unknown]) {
+    if (data is String || data == null) return fromString(data, defaultValue);
+    log.warning('invalid MessageStatus: ${data.runtimeType}: $data');
+    return defaultValue;
+  }
+
   final String name;
   const MessageStatus(this.name);
-  String toString() => 'MessageStatus.$name';
+  String toData() => 'MessageStatus.$name';
+  String toString() => toData();
 }
 
 class SuggestedReply {
@@ -318,7 +332,7 @@ class Tag {
     if (data == null) return null;
     return (modelObj ?? Tag())
       ..text = String_fromData(data['text'])
-      ..type = TagType.fromString(data['type'] as String) ?? TagType.Normal
+      ..type = TagType.fromData(data['type']) ?? TagType.Normal
       ..shortcut = String_fromData(data['shortcut'])
       ..filterable = bool_fromData(data['filterable'])
       ..group = String_fromData(data['group']) ?? '';
@@ -330,7 +344,7 @@ class Tag {
   Map<String, dynamic> toData() {
     return {
       if (text != null) 'text': text,
-      if (type != null) 'type': type.toString(),
+      if (type != null) 'type': type.toData(),
       if (shortcut != null) 'shortcut': shortcut,
       if (filterable != null) 'filterable': filterable,
       if (group != null) 'group': group,
@@ -357,7 +371,7 @@ class TagType {
   static TagType fromString(String text, [TagType defaultValue = TagType.Normal]) {
     if (text != null) {
       const prefix = 'TagType.';
-      String valueName = text.startsWith(prefix) ? text.substring(prefix.length) : text;
+      var valueName = text.startsWith(prefix) ? text.substring(prefix.length) : text;
       for (var value in values) {
         if (value.name == valueName) return value;
       }
@@ -366,9 +380,16 @@ class TagType {
     return defaultValue;
   }
 
+  static TagType fromData(data, [TagType defaultValue = TagType.Normal]) {
+    if (data is String || data == null) return fromString(data, defaultValue);
+    log.warning('invalid TagType: ${data.runtimeType}: $data');
+    return defaultValue;
+  }
+
   final String name;
   const TagType(this.name);
-  String toString() => 'TagType.$name';
+  String toData() => 'TagType.$name';
+  String toString() => toData();
 }
 
 class SystemMessage {
