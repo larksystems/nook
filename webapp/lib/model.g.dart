@@ -74,7 +74,7 @@ class Conversation {
     return (modelObj ?? Conversation())
       ..demographicsInfo = Map_fromData<String>(data['demographicsInfo'], String_fromData)
       ..tagIds = Set_fromData<String>(data['tags'], String_fromData)
-      ..lastInboundTurnTagIds = Set_fromData<String>(data['lastInboundTurnTags'], String_fromData) ?? {} // it's optional
+      ..lastInboundTurnTagIds = Set_fromData<String>(data['lastInboundTurnTags'], String_fromData) ?? {}
       ..messages = List_fromData<Message>(data['messages'], Message.fromData)
       ..notes = String_fromData(data['notes'])
       ..unread = bool_fromData(data['unread']) ?? true;

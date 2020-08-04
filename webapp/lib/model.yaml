@@ -7,7 +7,7 @@ Conversation:
   namespace:              'nook_conversations'
   demographicsInfo: 'map string'
   tags: 'publishable set string tagIds'
-  lastInboundTurnTags: 'set string lastInboundTurnTagIds'
+  lastInboundTurnTags: 'set string lastInboundTurnTagIds, default {}'
   messages: 'array Message'
   notes: 'publishable string'
   unread: 'publishable bool, default true'
