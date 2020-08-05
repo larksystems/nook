@@ -153,71 +153,38 @@ void _populateTagPanelView(List<model.Tag> tags, TagReceiver tagReceiver) {
   }
 }
 
-void _removeTagsFromFilterMenu(Map<String, List<model.Tag>> tagsByCategory) {
+void _removeTagsFromFilterMenu(Map<String, List<model.Tag>> tagsByCategory, TagFilterType filterType) {
   for (var category in tagsByCategory.keys.toList()..sort()) {
     for (var tag in tagsByCategory[category]) {
-      view.conversationFilter.removeMenuTag(new view.FilterMenuTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)), category);
+      view.conversationFilter[filterType].removeMenuTag(new view.FilterMenuTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type), filterType), category);
     }
   }
 }
 
-void _addTagsToFilterMenu(Map<String, List<model.Tag>> tagsByCategory) {
+void _addTagsToFilterMenu(Map<String, List<model.Tag>> tagsByCategory, TagFilterType filterType) {
   for (var category in tagsByCategory.keys.toList()..sort()) {
     for (var tag in tagsByCategory[category]) {
-      view.conversationFilter.addMenuTag(new view.FilterMenuTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)), category);
+      view.conversationFilter[filterType].addMenuTag(new view.FilterMenuTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type), filterType), category);
     }
   }
 }
 
-void _modifyTagsInFilterMenu(Map<String, List<model.Tag>> tagsByCategory) {
+void _modifyTagsInFilterMenu(Map<String, List<model.Tag>> tagsByCategory, TagFilterType filterType) {
   for (var category in tagsByCategory.keys.toList()..sort()) {
     for (var tag in tagsByCategory[category]) {
-      view.conversationFilter.modifyMenuTag(new view.FilterMenuTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)), category);
+      view.conversationFilter[filterType].modifyMenuTag(new view.FilterMenuTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type), filterType), category);
     }
   }
 }
 
-
-void _removeTagsFromFilterTurnsMenu(Map<String, List<model.Tag>> tagsByCategory) {
-  for (var category in tagsByCategory.keys.toList()..sort()) {
-    for (var tag in tagsByCategory[category]) {
-      view.conversationTurnsFilter.removeMenuTag(new view.FilterMenuTurnTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)), category);
-    }
-  }
+void _addDateTagToFilterMenu(TagFilterType filterType) {
+  view.conversationFilter[filterType].addMenuTag(view.AfterDateFilterMenuTagView(filterType), "Date");
 }
 
-void _addTagsToFilterTurnsMenu(Map<String, List<model.Tag>> tagsByCategory) {
-  for (var category in tagsByCategory.keys.toList()..sort()) {
-    for (var tag in tagsByCategory[category]) {
-      view.conversationTurnsFilter.addMenuTag(new view.FilterMenuTurnTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)), category);
-    }
-  }
-}
-
-void _modifyTagsInFilterTurnsMenu(Map<String, List<model.Tag>> tagsByCategory) {
-  for (var category in tagsByCategory.keys.toList()..sort()) {
-    for (var tag in tagsByCategory[category]) {
-      view.conversationTurnsFilter.modifyMenuTag(new view.FilterMenuTurnTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)), category);
-    }
-  }
-}
-
-
-void _addDateTagToFilterMenu() {
-  view.conversationFilter.addMenuTag(view.AfterDateFilterMenuTagView(), "Date");
-}
-
-void _populateSelectedFilterTags(List<model.Tag> tags) {
-  view.conversationFilter.clearSelectedTags();
+void _populateSelectedFilterTags(List<model.Tag> tags, TagFilterType filterType) {
+  view.conversationFilter[filterType].clearSelectedTags();
   for (var tag in tags) {
-    view.conversationFilter.addFilterTag(new view.FilterTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
-  }
-}
-
-void _populateSelectedFilterTurnTags(List<model.Tag> tags) {
-  view.conversationTurnsFilter.clearSelectedTags();
-  for (var tag in tags) {
-    view.conversationTurnsFilter.addFilterTag(new view.FilterTurnTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
+    view.conversationFilter[filterType].addFilterTag(new view.FilterTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type), filterType));
   }
 }
 
