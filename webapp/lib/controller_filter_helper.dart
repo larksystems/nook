@@ -46,10 +46,6 @@ class ConversationFilter {
     afterDateFilter[TagFilterType.exclude] = view.urlView.getPageUrlFilterAfterDate(TagFilterType.exclude);
   }
 
-  // bool contains(model.Tag tag) {
-  //   return includeTags.contains(tag) || excludeTags.contains(tag);
-  // }
-
   bool get isEmpty => filterTags[TagFilterType.include].isEmpty
                    && filterTags[TagFilterType.exclude].isEmpty
                    && filterTags[TagFilterType.lastInboundTurn].isEmpty
