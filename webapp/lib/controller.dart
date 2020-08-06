@@ -474,6 +474,19 @@ void initUI() {
         ..addAll(added)
         ..addAll(modified);
       view.conversationListSelectView.updateConversationLists(shards);
+
+      // Read any conversation shards from the URL
+      String urlConversationListRoot = view.urlView.getPageUrlConversationList();
+      String conversationListRoot = urlConversationListRoot;
+      if (urlConversationListRoot == null) {
+        conversationListRoot = ConversationListData.NONE;
+      } else if (shards.where((shard) => shard.conversationListRoot == urlConversationListRoot).isEmpty) {
+        log.warning("Attempting to select shard ${conversationListRoot} that doesn't exist");
+        conversationListRoot = ConversationListData.NONE;
+      }
+      view.urlView.setPageUrlConversationList(urlConversationListRoot);
+      view.conversationListSelectView.selectShard(conversationListRoot);
+      command(UIAction.selectConversationList, ConversationListData(conversationListRoot));
     }
   );
 
@@ -590,7 +603,11 @@ void conversationListSelected(String conversationListRoot) {
   command(UIAction.deselectAllConversations, null);
   conversationListSubscription?.cancel();
   conversationListSubscription = null;
-  if (conversationListRoot == ConversationListData.NONE) return;
+  if (conversationListRoot == ConversationListData.NONE) {
+    view.urlView.setPageUrlConversationList(null);
+    return;
+  }
+  view.urlView.setPageUrlConversationList(conversationListRoot);
   conversationListSubscription = platform.listenForConversations(
     (added, modified, removed) {
       if (added.length > 0) {
