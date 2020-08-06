@@ -22,6 +22,20 @@ class ConversationListShard {
       ..name = String_fromData(data['name']);
   }
 
+  static ConversationListShard required(Map data, String fieldName, String className) {
+    var value = fromData(data[fieldName]);
+    if (value == null && !data.containsKey(fieldName))
+      throw ValueException("$className.$fieldName is missing");
+    return value;
+  }
+
+  static ConversationListShard notNull(Map data, String fieldName, String className) {
+    var value = required(data, fieldName, className);
+    if (value == null)
+      throw ValueException("$className.$fieldName must not be null");
+    return value;
+  }
+
   static StreamSubscription listen(DocStorage docStorage, ConversationListShardCollectionListener listener,
           {String collectionRoot = '/$collectionName'}) =>
       listenForUpdates<ConversationListShard>(docStorage, listener, collectionRoot, ConversationListShard.fromSnapshot);
@@ -32,9 +46,10 @@ class ConversationListShard {
     };
   }
 
+  @override
   String toString() => 'ConversationListShard [$docId]: ${toData().toString()}';
 }
-typedef void ConversationListShardCollectionListener(
+typedef ConversationListShardCollectionListener = void Function(
   List<ConversationListShard> added,
   List<ConversationListShard> modified,
   List<ConversationListShard> removed,
@@ -63,6 +78,20 @@ class Conversation {
       ..messages = List_fromData<Message>(data['messages'], Message.fromData)
       ..notes = String_fromData(data['notes'])
       ..unread = bool_fromData(data['unread']) ?? true;
+  }
+
+  static Conversation required(Map data, String fieldName, String className) {
+    var value = fromData(data[fieldName]);
+    if (value == null && !data.containsKey(fieldName))
+      throw ValueException("$className.$fieldName is missing");
+    return value;
+  }
+
+  static Conversation notNull(Map data, String fieldName, String className) {
+    var value = required(data, fieldName, className);
+    if (value == null)
+      throw ValueException("$className.$fieldName must not be null");
+    return value;
   }
 
   static StreamSubscription listen(DocStorage docStorage, ConversationCollectionListener listener,
@@ -153,9 +182,10 @@ class Conversation {
     });
   }
 
+  @override
   String toString() => 'Conversation [$docId]: ${toData().toString()}';
 }
-typedef void ConversationCollectionListener(
+typedef ConversationCollectionListener = void Function(
   List<Conversation> added,
   List<Conversation> modified,
   List<Conversation> removed,
@@ -182,6 +212,20 @@ class Message {
       ..id = String_fromData(data['id']);
   }
 
+  static Message required(Map data, String fieldName, String className) {
+    var value = fromData(data[fieldName]);
+    if (value == null && !data.containsKey(fieldName))
+      throw ValueException("$className.$fieldName is missing");
+    return value;
+  }
+
+  static Message notNull(Map data, String fieldName, String className) {
+    var value = required(data, fieldName, className);
+    if (value == null)
+      throw ValueException("$className.$fieldName must not be null");
+    return value;
+  }
+
   Map<String, dynamic> toData() {
     return {
       if (direction != null) 'direction': direction.toData(),
@@ -194,6 +238,7 @@ class Message {
     };
   }
 
+  @override
   String toString() => 'Message: ${toData().toString()}';
 }
 
@@ -224,9 +269,26 @@ class MessageDirection {
     return defaultValue;
   }
 
+  static MessageDirection required(Map data, String fieldName, String className) {
+    var value = fromData(data[fieldName]);
+    if (value == null && !data.containsKey(fieldName))
+      throw ValueException("$className.$fieldName is missing");
+    return value;
+  }
+
+  static MessageDirection notNull(Map data, String fieldName, String className) {
+    var value = required(data, fieldName, className);
+    if (value == null)
+      throw ValueException("$className.$fieldName must not be null");
+    return value;
+  }
+
   final String name;
   const MessageDirection(this.name);
+
   String toData() => 'MessageDirection.$name';
+
+  @override
   String toString() => toData();
 }
 
@@ -262,9 +324,26 @@ class MessageStatus {
     return defaultValue;
   }
 
+  static MessageStatus required(Map data, String fieldName, String className) {
+    var value = fromData(data[fieldName]);
+    if (value == null && !data.containsKey(fieldName))
+      throw ValueException("$className.$fieldName is missing");
+    return value;
+  }
+
+  static MessageStatus notNull(Map data, String fieldName, String className) {
+    var value = required(data, fieldName, className);
+    if (value == null)
+      throw ValueException("$className.$fieldName must not be null");
+    return value;
+  }
+
   final String name;
   const MessageStatus(this.name);
+
   String toData() => 'MessageStatus.$name';
+
+  @override
   String toString() => toData();
 }
 
@@ -293,6 +372,20 @@ class SuggestedReply {
       ..category = String_fromData(data['category']);
   }
 
+  static SuggestedReply required(Map data, String fieldName, String className) {
+    var value = fromData(data[fieldName]);
+    if (value == null && !data.containsKey(fieldName))
+      throw ValueException("$className.$fieldName is missing");
+    return value;
+  }
+
+  static SuggestedReply notNull(Map data, String fieldName, String className) {
+    var value = required(data, fieldName, className);
+    if (value == null)
+      throw ValueException("$className.$fieldName must not be null");
+    return value;
+  }
+
   static StreamSubscription listen(DocStorage docStorage, SuggestedReplyCollectionListener listener,
           {String collectionRoot = '/$collectionName'}) =>
       listenForUpdates<SuggestedReply>(docStorage, listener, collectionRoot, SuggestedReply.fromSnapshot);
@@ -307,9 +400,10 @@ class SuggestedReply {
     };
   }
 
+  @override
   String toString() => 'SuggestedReply [$docId]: ${toData().toString()}';
 }
-typedef void SuggestedReplyCollectionListener(
+typedef SuggestedReplyCollectionListener = void Function(
   List<SuggestedReply> added,
   List<SuggestedReply> modified,
   List<SuggestedReply> removed,
@@ -338,6 +432,20 @@ class Tag {
       ..group = String_fromData(data['group']) ?? '';
   }
 
+  static Tag required(Map data, String fieldName, String className) {
+    var value = fromData(data[fieldName]);
+    if (value == null && !data.containsKey(fieldName))
+      throw ValueException("$className.$fieldName is missing");
+    return value;
+  }
+
+  static Tag notNull(Map data, String fieldName, String className) {
+    var value = required(data, fieldName, className);
+    if (value == null)
+      throw ValueException("$className.$fieldName must not be null");
+    return value;
+  }
+
   static void listen(DocStorage docStorage, TagCollectionListener listener, String collectionRoot) =>
       listenForUpdates<Tag>(docStorage, listener, collectionRoot, Tag.fromSnapshot);
 
@@ -351,9 +459,10 @@ class Tag {
     };
   }
 
+  @override
   String toString() => 'Tag [$docId]: ${toData().toString()}';
 }
-typedef void TagCollectionListener(
+typedef TagCollectionListener = void Function(
   List<Tag> added,
   List<Tag> modified,
   List<Tag> removed,
@@ -386,9 +495,26 @@ class TagType {
     return defaultValue;
   }
 
+  static TagType required(Map data, String fieldName, String className) {
+    var value = fromData(data[fieldName]);
+    if (value == null && !data.containsKey(fieldName))
+      throw ValueException("$className.$fieldName is missing");
+    return value;
+  }
+
+  static TagType notNull(Map data, String fieldName, String className) {
+    var value = required(data, fieldName, className);
+    if (value == null)
+      throw ValueException("$className.$fieldName must not be null");
+    return value;
+  }
+
   final String name;
   const TagType(this.name);
+
   String toData() => 'TagType.$name';
+
+  @override
   String toString() => toData();
 }
 
@@ -411,6 +537,20 @@ class SystemMessage {
       ..expired = bool_fromData(data['expired']) ?? false;
   }
 
+  static SystemMessage required(Map data, String fieldName, String className) {
+    var value = fromData(data[fieldName]);
+    if (value == null && !data.containsKey(fieldName))
+      throw ValueException("$className.$fieldName is missing");
+    return value;
+  }
+
+  static SystemMessage notNull(Map data, String fieldName, String className) {
+    var value = required(data, fieldName, className);
+    if (value == null)
+      throw ValueException("$className.$fieldName must not be null");
+    return value;
+  }
+
   static StreamSubscription listen(DocStorage docStorage, SystemMessageCollectionListener listener,
           {String collectionRoot = '/$collectionName'}) =>
       listenForUpdates<SystemMessage>(docStorage, listener, collectionRoot, SystemMessage.fromSnapshot);
@@ -422,9 +562,10 @@ class SystemMessage {
     };
   }
 
+  @override
   String toString() => 'SystemMessage [$docId]: ${toData().toString()}';
 }
-typedef void SystemMessageCollectionListener(
+typedef SystemMessageCollectionListener = void Function(
   List<SystemMessage> added,
   List<SystemMessage> modified,
   List<SystemMessage> removed,
@@ -469,6 +610,20 @@ class UserConfiguration {
       ..repliesPanelVisibility = bool_fromData(data['replies_panel_visibility']);
   }
 
+  static UserConfiguration required(Map data, String fieldName, String className) {
+    var value = fromData(data[fieldName]);
+    if (value == null && !data.containsKey(fieldName))
+      throw ValueException("$className.$fieldName is missing");
+    return value;
+  }
+
+  static UserConfiguration notNull(Map data, String fieldName, String className) {
+    var value = required(data, fieldName, className);
+    if (value == null)
+      throw ValueException("$className.$fieldName must not be null");
+    return value;
+  }
+
   static StreamSubscription listen(DocStorage docStorage, UserConfigurationCollectionListener listener,
           {String collectionRoot = '/$collectionName'}) =>
       listenForUpdates<UserConfiguration>(docStorage, listener, collectionRoot, UserConfiguration.fromSnapshot);
@@ -490,9 +645,10 @@ class UserConfiguration {
     };
   }
 
+  @override
   String toString() => 'UserConfiguration [$docId]: ${toData().toString()}';
 }
-typedef void UserConfigurationCollectionListener(
+typedef UserConfigurationCollectionListener = void Function(
   List<UserConfiguration> added,
   List<UserConfiguration> modified,
   List<UserConfiguration> removed,
@@ -513,12 +669,56 @@ bool bool_fromData(data) {
   return null;
 }
 
+bool bool_required(Map data, String fieldName, String className) {
+  var value = bool_fromData(data[fieldName]);
+  if (value == null && !data.containsKey(fieldName))
+    throw ValueException("$className.$fieldName is missing");
+  return value;
+}
+
+bool bool_notNull(Map data, String fieldName, String className) {
+  var value = bool_required(data, fieldName, className);
+  if (value == null)
+    throw ValueException("$className.$fieldName must not be null");
+  return value;
+}
+
 DateTime DateTime_fromData(data) {
   if (data == null) return null;
   var datetime = DateTime.tryParse(data);
   if (datetime != null) return datetime;
   log.warning('unknown DateTime value: ${data?.toString()}');
   return null;
+}
+
+DateTime DateTime_required(Map data, String fieldName, String className) {
+  var value = DateTime_fromData(data[fieldName]);
+  if (value == null && !data.containsKey(fieldName))
+    throw ValueException("$className.$fieldName is missing");
+  return value;
+}
+
+DateTime DateTime_notNull(Map data, String fieldName, String className) {
+  var value = DateTime_required(data, fieldName, className);
+  if (value == null)
+    throw ValueException("$className.$fieldName must not be null");
+  return value;
+}
+
+dynamic dynamic_fromData(data) => data;
+
+dynamic dynamic_required(Map data, String fieldName, String className) {
+  var value = data[fieldName];
+  if (value == null && !data.containsKey(fieldName))
+    throw ValueException("$className.$fieldName is missing");
+  return value;
+}
+
+dynamic dynamic_notNull(Map data, String fieldName, String className) {
+  var value = dynamic_required(data, fieldName, className);
+  if (value == null)
+    throw ValueException("$className.$fieldName must not be null");
+  return value;
 }
 
 int int_fromData(data) {
@@ -532,29 +732,152 @@ int int_fromData(data) {
   return null;
 }
 
+int int_required(Map data, String fieldName, String className) {
+  var value = int_fromData(data[fieldName]);
+  if (value == null && !data.containsKey(fieldName))
+    throw ValueException("$className.$fieldName is missing");
+  return value;
+}
+
+int int_notNull(Map data, String fieldName, String className) {
+  var value = int_required(data, fieldName, className);
+  if (value == null)
+    throw ValueException("$className.$fieldName must not be null");
+  return value;
+}
+
 String String_fromData(data) => data?.toString();
 
-List<T> List_fromData<T>(dynamic data, T createModel(data)) =>
+String String_required(Map data, String fieldName, String className) {
+  var value = String_fromData(data[fieldName]);
+  if (value == null && !data.containsKey(fieldName))
+    throw ValueException("$className.$fieldName is missing");
+  return value;
+}
+
+String String_notNull(Map data, String fieldName, String className) {
+  var value = String_required(data, fieldName, className);
+  if (value == null)
+    throw ValueException("$className.$fieldName must not be null");
+  return value;
+}
+
+String String_notEmpty(Map data, String fieldName, String className) {
+  var value = String_notNull(data, fieldName, className);
+  if (value.isEmpty)
+    throw ValueException("$className.$fieldName must not be empty");
+  return value;
+}
+
+num num_fromData(data) {
+  if (data == null) return null;
+  if (data is num) return data;
+  if (data is String) {
+    var result = num.tryParse(data);
+    if (result is num) return result;
+  }
+  log.warning('unknown num value: ${data?.toString()}');
+  return null;
+}
+
+num num_required(Map data, String fieldName, String className) {
+  var value = num_fromData(data[fieldName]);
+  if (value == null && !data.containsKey(fieldName))
+    throw ValueException("$className.$fieldName is missing");
+  return value;
+}
+
+num num_notNull(Map data, String fieldName, String className) {
+  var value = num_required(data, fieldName, className);
+  if (value == null)
+    throw ValueException("$className.$fieldName must not be null");
+  return value;
+}
+
+List<T> List_fromData<T>(dynamic data, T Function(dynamic) createModel) =>
     (data as List)?.map<T>((elem) => createModel(elem))?.toList();
 
-Map<String, T> Map_fromData<T>(dynamic data, T createModel(data)) =>
+List<T> List_required<T>(Map data, String fieldName, String className, T Function(dynamic) createModel) {
+  var value = List_fromData(data[fieldName], createModel);
+  if (value == null && !data.containsKey(fieldName))
+    throw ValueException("$className.$fieldName is missing");
+  return value;
+}
+
+List<T> List_notNull<T>(Map data, String fieldName, String className, T Function(dynamic) createModel) {
+  var value = List_required(data, fieldName, className, createModel);
+  if (value == null)
+    throw ValueException("$className.$fieldName must not be null");
+  return value;
+}
+
+List<T> List_notEmpty<T>(Map data, String fieldName, String className, T Function(dynamic) createModel) {
+  var value = List_notNull(data, fieldName, className, createModel);
+  if (value.isEmpty)
+    throw ValueException("$className.$fieldName must not be empty");
+  return value;
+}
+
+Map<String, T> Map_fromData<T>(dynamic data, T Function(dynamic) createModel) =>
     (data as Map)?.map<String, T>((key, value) => MapEntry(key.toString(), createModel(value)));
 
-Set<T> Set_fromData<T>(dynamic data, T createModel(data)) =>
+Map<String, T> Map_required<T>(Map data, String fieldName, String className, T Function(dynamic) createModel) {
+  var value = Map_fromData(data[fieldName], createModel);
+  if (value == null && !data.containsKey(fieldName))
+    throw ValueException("$className.$fieldName is missing");
+  return value;
+}
+
+Map<String, T> Map_notNull<T>(Map data, String fieldName, String className, T Function(dynamic) createModel) {
+  var value = Map_required(data, fieldName, className, createModel);
+  if (value == null)
+    throw ValueException("$className.$fieldName must not be null");
+  return value;
+}
+
+Map<String, T> Map_notEmpty<T>(Map data, String fieldName, String className, T Function(dynamic) createModel) {
+  var value = Map_notNull(data, fieldName, className, createModel);
+  if (value.isEmpty)
+    throw ValueException("$className.$fieldName must not be empty");
+  return value;
+}
+
+Set<T> Set_fromData<T>(dynamic data, T Function(dynamic) createModel) =>
     (data as List)?.map<T>((elem) => createModel(elem))?.toSet();
+
+Set<T> Set_required<T>(Map data, String fieldName, String className, T Function(dynamic) createModel) {
+  var value = Set_fromData(data[fieldName], createModel);
+  if (value == null && !data.containsKey(fieldName))
+    throw ValueException("$className.$fieldName is missing");
+  return value;
+}
+
+Set<T> Set_notNull<T>(Map data, String fieldName, String className, T Function(dynamic) createModel) {
+  var value = Set_required(data, fieldName, className, createModel);
+  if (value == null)
+    throw ValueException("$className.$fieldName must not be null");
+  return value;
+}
+
+Set<T> Set_notEmpty<T>(Map data, String fieldName, String className, T Function(dynamic) createModel) {
+  var value = Set_notNull(data, fieldName, className, createModel);
+  if (value.isEmpty)
+    throw ValueException("$className.$fieldName must not be null");
+  return value;
+}
 
 StreamSubscription<List<DocSnapshot>> listenForUpdates<T>(
     DocStorage docStorage,
-    void listener(List<T> added, List<T> modified, List<T> removed),
+    void Function(List<T> added, List<T> modified, List<T> removed) listener,
     String collectionRoot,
-    T createModel(DocSnapshot doc),
+    T Function(DocSnapshot doc) createModel,
     ) {
   log.verbose('Loading from $collectionRoot');
   log.verbose('Query root: $collectionRoot');
   return docStorage.onChange(collectionRoot).listen((List<DocSnapshot> snapshots) {
-    List<T> added = [];
-    List<T> modified = [];
-    List<T> removed = [];
+    var added = <T>[];
+    var modified = <T>[];
+    var removed = <T>[];
     log.verbose("Starting processing ${snapshots.length} changes.");
     for (var snapshot in snapshots) {
       log.verbose('Processing ${snapshot.id}');
@@ -622,4 +945,13 @@ abstract class DocBatchUpdate {
 abstract class DocPubSubUpdate {
   /// Publish the given opinion for the given namespace.
   Future<void> publishAddOpinion(String namespace, Map<String, dynamic> opinion);
+}
+
+class ValueException implements Exception {
+  String message;
+
+  ValueException(this.message);
+
+  @override
+  String toString() => 'ValueException: $message';
 }
