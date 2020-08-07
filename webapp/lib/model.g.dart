@@ -74,7 +74,7 @@ class Conversation {
     return (modelObj ?? Conversation())
       ..demographicsInfo = Map_fromData<String>(data['demographicsInfo'], String_fromData)
       ..tagIds = Set_fromData<String>(data['tags'], String_fromData)
-      ..lastInboundTurnTagIds = Set_fromData<String>(data['lastInboundTurnTags'], String_fromData) ?? {} // it's optional
+      ..lastInboundTurnTagIds = Set_fromData<String>(data['lastInboundTurnTags'], String_fromData) ?? {}
       ..messages = List_fromData<Message>(data['messages'], Message.fromData)
       ..notes = String_fromData(data['notes'])
       ..unread = bool_fromData(data['unread']) ?? true;
@@ -135,7 +135,7 @@ class Conversation {
     tagIds = newTagIds;
     return pubSubClient.publishAddOpinion('nook_conversations/set_tags', {
       'conversation_id': docId,
-      'tags': tagIds,
+      'tags': tagIds.toList(),
     });
   }
 
@@ -144,12 +144,11 @@ class Conversation {
   Future<void> removeTagIds(DocPubSubUpdate pubSubClient, Iterable<String> oldTagIds) {
     var toBeRemoved = Set<String>();
     for (var elem in oldTagIds) {
-      if (tagIds.contains(elem)) {
+      if (tagIds.remove(elem)) {
         toBeRemoved.add(elem);
       }
     }
     if (toBeRemoved.isEmpty) return Future.value(null);
-    tagIds.removeAll(toBeRemoved);
     return pubSubClient.publishAddOpinion('nook_conversations/remove_tags', {
       'conversation_id': docId,
       'tags': toBeRemoved.toList(),
