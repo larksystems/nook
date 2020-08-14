@@ -1179,7 +1179,8 @@ void sendReply(model.SuggestedReply reply, model.Conversation conversation) {
     ..datetime = new DateTime.now()
     ..direction = model.MessageDirection.Out
     ..translation = reply.translation
-    ..tagIds = [];
+    ..tagIds = []
+    ..status = model.MessageStatus.pending;
   log.verbose('Adding reply "${reply.text}" to conversation ${conversation.docId}');
   conversation.messages.add(newMessage);
   view.conversationPanelView.addMessage(_generateMessageView(newMessage, conversation));

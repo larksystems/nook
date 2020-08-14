@@ -536,6 +536,12 @@ class MessageView {
 
   void setStatus(MessageStatus status) {
     // TODO handle more types of status
+
+    if (status == MessageStatus.pending)
+      message.classes.add('message--pending');
+    else
+      message.classes.remove('message--pending');
+
     if (status == MessageStatus.failed)
       message.classes.add('message--failed');
     else
