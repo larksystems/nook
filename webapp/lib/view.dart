@@ -146,7 +146,7 @@ void showWarningStatus(String text) {
 void makeEditable(Element element, {void onChange(), void onEnter()}) {
   element
     ..contentEditable = 'true'
-    ..onInput.listen((e) {
+    ..onBlur.listen((e) {
       if (onChange != null) onChange();
       e.stopPropagation();
     })
