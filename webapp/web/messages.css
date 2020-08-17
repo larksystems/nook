@@ -44,6 +44,12 @@
   text-decoration: line-through red;
 }
 
+.message.message--pending .message__bubble {
+  font-style: italic;
+  color: #666666;
+}
+
+
 .message__datetime {
   font-size: .8em;
   color: #666;

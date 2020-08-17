@@ -23,7 +23,7 @@ def migrate():
     data = [{doc.id: doc.to_dict()} for doc in docs]
     data = strip_project(data) if args.project else data
     log.info(f'migrating data of length {len(data)}')
-    collection_path = f'{args.target}/metrics'
+    collection_path = f'{args.target}'
     for entry in data:
         doc_label = list(entry.keys())[0]
         doc_data = list(entry.values())[0]
@@ -36,9 +36,9 @@ if __name__ == '__main__':
         formatter_class=argparse.RawTextHelpFormatter,
         epilog=textwrap.dedent("""
         Examples:
-        python migrate_nook_watcher_data.py [CRYPRO_TOKEN_PATH] needs_reply_metrics Lark_KK-Project-2020-COVID19-KE-URBAN/needs_reply --project Lark/KK-Project-2020-COVID19-KE-URBAN
-        python migrate_nook_watcher_data.py [CRYPRO_TOKEN_PATH] system_events Lark_KK-Project-2020-COVID19-KE-URBAN/system_events --project Lark/KK-Project-2020-COVID19-KE-URBAN
-        python migrate_nook_watcher_data.py [CRYPRO_TOKEN_PATH] pipeline_system_metrics system_metrics/miranda
+        python migrate_nook_watcher_data.py [CRYPRO_TOKEN_PATH] needs_reply_metrics projects/Lark_KK-Project-2020-COVID19-KE-URBAN/needs_reply_metrics --project Lark/KK-Project-2020-COVID19-KE-URBAN
+        python migrate_nook_watcher_data.py [CRYPRO_TOKEN_PATH] system_events projects/Lark_KK-Project-2020-COVID19-KE-URBAN/system_events --project Lark/KK-Project-2020-COVID19-KE-URBAN
+        python migrate_nook_watcher_data.py [CRYPRO_TOKEN_PATH] pipeline_system_metrics systems/miranda/metrics
         """)
     )
     parser.add_argument('crypto_token', help='crypto token path')

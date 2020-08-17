@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:html';
 import 'dart:convert';
 import 'dart:math' as math;
+import 'dart:svg' as svg;
 
 import 'package:intl/intl.dart';
 
@@ -16,7 +17,7 @@ Logger log = new Logger('view.dart');
 
 ConversationListSelectHeader conversationListSelectView;
 ConversationListPanelView conversationListPanelView;
-ConversationFilter get conversationFilter => conversationListPanelView.conversationFilter;
+Map<TagFilterType, ConversationFilter> conversationFilter;
 ConversationPanelView conversationPanelView;
 ReplyPanelView replyPanelView;
 TagPanelView tagPanelView;
@@ -37,6 +38,12 @@ void init() {
   urlView = new UrlView();
   snackbarView = new SnackbarView();
   bannerView = new BannerView();
+
+  conversationFilter = {
+    TagFilterType.include: conversationListPanelView.conversationIncludeFilter,
+    TagFilterType.exclude: conversationListPanelView.conversationExcludeFilter,
+    TagFilterType.lastInboundTurn: conversationListPanelView.conversationTurnsFilter
+  };
 
   querySelector('header')
       ..insertAdjacentElement('beforeBegin', bannerView.bannerElement)
@@ -139,7 +146,7 @@ void showWarningStatus(String text) {
 void makeEditable(Element element, {void onChange(), void onEnter()}) {
   element
     ..contentEditable = 'true'
-    ..onInput.listen((e) {
+    ..onBlur.listen((e) {
       if (onChange != null) onChange();
       e.stopPropagation();
     })
@@ -344,8 +351,8 @@ class ConversationPanelView {
     }
   }
 
-  void showAfterDateFilterPrompt(DateTime dateTime) {
-    _afterDateFilterView.showPrompt(dateTime);
+  void showAfterDateFilterPrompt(TagFilterType filterType, DateTime dateTime) {
+    _afterDateFilterView.showPrompt(filterType, dateTime);
   }
 
   void showWarning(String explanation) {
@@ -362,6 +369,8 @@ class ConversationPanelView {
 class AfterDateFilterView {
   DivElement panel;
   TextAreaElement _textArea;
+
+  TagFilterType _currentFilterType;
 
   AfterDateFilterView() {
     _textArea = new TextAreaElement()
@@ -386,7 +395,8 @@ class AfterDateFilterView {
         ..text = text);
   }
 
-  void showPrompt(DateTime dateTime) {
+  void showPrompt(TagFilterType filterType, DateTime dateTime) {
+    _currentFilterType = filterType;
     dateTime ??= DateTime.now();
     // TODO populate the fields with dateTime
     panel.classes.add('after-date-prompt__visible');
@@ -404,12 +414,13 @@ class AfterDateFilterView {
       command(UIAction.showSnackbar, new SnackbarData("Invalid date/time format: ${e.message}", SnackbarNotificationType.error));
       return;
     }
-    command(UIAction.updateAfterDateFilter, new AfterDateFilterData(AFTER_DATE_TAG_ID, dateTime));
+    command(UIAction.updateAfterDateFilter, new AfterDateFilterData(AFTER_DATE_TAG_ID, _currentFilterType, dateTime));
     hidePrompt();
   }
 
   void hidePrompt([_]) {
     panel.classes.remove('after-date-prompt__visible');
+    _currentFilterType = null;
   }
 
   DateTime parseAfterDateFilterText(String text) {
@@ -525,6 +536,12 @@ class MessageView {
 
   void setStatus(MessageStatus status) {
     // TODO handle more types of status
+
+    if (status == MessageStatus.pending)
+      message.classes.add('message--pending');
+    else
+      message.classes.remove('message--pending');
+
     if (status == MessageStatus.failed)
       message.classes.add('message--failed');
     else
@@ -639,27 +656,31 @@ class ConversationTagView extends TagView {
 }
 
 class FilterMenuTagView extends TagView {
-  FilterMenuTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle) {
+  TagFilterType _filterType;
+  FilterMenuTagView(String text, String tagId, TagStyle tagStyle, TagFilterType filterType) : super(text, tagId, tagStyle) {
     _removeButton.remove();
     _tagText
       ..classes.add('clickable')
       ..onClick.listen((_) {
         handleClicked(tagId);
       });
+    _filterType = filterType;
   }
 
   void handleClicked(String tagId) {
-    command(UIAction.addFilterTag, new FilterTagData(tagId));
+    command(UIAction.addFilterTag, new FilterTagData(tagId, _filterType));
   }
 }
 
 class FilterTagView extends TagView {
-  FilterTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle) {
+  TagFilterType _filterType;
+  FilterTagView(String text, String tagId, TagStyle tagStyle, TagFilterType filterType) : super(text, tagId, tagStyle) {
     _removeButton.onClick.listen((_) => handleClicked(tagId));
+    _filterType = filterType;
   }
 
   void handleClicked(String tagId) {
-    command(UIAction.removeFilterTag, new FilterTagData(tagId));
+    command(UIAction.removeFilterTag, new FilterTagData(tagId, _filterType));
   }
 }
 
@@ -667,16 +688,16 @@ const AFTER_DATE_TAG_ID = "after-date";
 final DateFormat _afterDateFilterFormat = DateFormat('yyyy.MM.dd HH:mm');
 
 class AfterDateFilterMenuTagView extends FilterMenuTagView {
-  AfterDateFilterMenuTagView() : super("after date", AFTER_DATE_TAG_ID, TagStyle.None);
+  AfterDateFilterMenuTagView(TagFilterType filterType) : super("after date", AFTER_DATE_TAG_ID, TagStyle.None, filterType);
 
   @override
   void handleClicked(String tagId) {
-    command(UIAction.promptAfterDateFilter, new AfterDateFilterData(tagId));
+    command(UIAction.promptAfterDateFilter, new AfterDateFilterData(tagId, _filterType));
   }
 }
 
 class AfterDateFilterTagView extends FilterTagView {
-  AfterDateFilterTagView(DateTime dateTime) : super(filterText(dateTime), AFTER_DATE_TAG_ID, TagStyle.None);
+  AfterDateFilterTagView(DateTime dateTime, TagFilterType filterType) : super(filterText(dateTime), AFTER_DATE_TAG_ID, TagStyle.None, filterType);
 
   static String filterText(DateTime dateTime) {
     return "after date ${_afterDateFilterFormat.format(dateTime)}";
@@ -684,7 +705,7 @@ class AfterDateFilterTagView extends FilterTagView {
 
   @override
   void handleClicked(String tagId) {
-    command(UIAction.updateAfterDateFilter, new AfterDateFilterData(tagId, null));
+    command(UIAction.updateAfterDateFilter, new AfterDateFilterData(tagId, _filterType, null));
   }
 }
 
@@ -781,7 +802,9 @@ class ConversationListPanelView {
   DivElement _loadSpinner;
   DivElement _selectConversationListMessage;
 
-  ConversationFilter conversationFilter;
+  ConversationIncludeFilter conversationIncludeFilter;
+  ConversationExcludeFilter conversationExcludeFilter;
+  ConversationTurnsFilter conversationTurnsFilter;
 
   Map<String, ConversationSummary> _phoneToConversations = {};
   ConversationSummary activeConversation;
@@ -827,8 +850,14 @@ class ConversationListPanelView {
     _conversationList = new LazyListViewModel(conversationListElement);
     conversationListPanel.append(conversationListElement);
 
-    conversationFilter = new ConversationFilter();
-    conversationListPanel.append(conversationFilter.conversationFilter);
+    conversationIncludeFilter = new ConversationIncludeFilter();
+    conversationListPanel.append(conversationIncludeFilter.conversationFilter);
+
+    conversationExcludeFilter = new ConversationExcludeFilter();
+    conversationListPanel.append(conversationExcludeFilter.conversationFilter);
+
+    conversationTurnsFilter = new ConversationTurnsFilter();
+    conversationListPanel.append(conversationTurnsFilter.conversationFilter);
   }
 
   void updateConversationList(Set<Conversation> conversations) {
@@ -950,6 +979,7 @@ class ConversationListPanelView {
 
 class ConversationFilter {
   DivElement conversationFilter;
+  DivElement _descriptionText;
   DivElement _tagsContainer;
   DivElement _tagsMenu;
   DivElement _tagsMenuWrapper;
@@ -960,9 +990,9 @@ class ConversationFilter {
     conversationFilter = new DivElement()
       ..classes.add('conversation-filter');
 
-    var descriptionText = new DivElement()
+    _descriptionText = new DivElement()
       ..text = 'Filter conversations ▹';
-    conversationFilter.append(descriptionText);
+    conversationFilter.append(_descriptionText);
 
     _tagsMenu = new DivElement()
       ..classes.add('tags-menu');
@@ -971,6 +1001,13 @@ class ConversationFilter {
     var tagsMenuBox = new DivElement()
       ..classes.add('tags-menu__box');
     _tagsMenu.append(tagsMenuBox);
+
+    var hoverButtress = new svg.SvgElement.svg(
+      '<svg x="0px" y="0px" viewBox="0 0 50 120"><path d="M0,120 C15,120 50,10 50,0 L50,120Z" fill="white" stroke="white"/></svg>',
+      validator: new NodeValidatorBuilder()..allowSvg()
+    );
+    hoverButtress.classes.add('tags-menu__buttress');
+    tagsMenuBox.append(hoverButtress);
 
     _tagsMenuWrapper = new DivElement()
       ..classes.add('tags-menu__wrapper');
@@ -1058,6 +1095,28 @@ class ConversationFilter {
       _tagsMenuWrapper.firstChild.remove();
     }
     assert(_tagsMenuWrapper.children.length == 0);
+  }
+
+  void showFilter(bool show) {
+    this.conversationFilter.classes.toggle('hidden', !show);
+  }
+}
+
+class ConversationIncludeFilter extends ConversationFilter {
+  ConversationIncludeFilter() {
+    _descriptionText.text = 'Show conversations with all these tags ▹';
+  }
+}
+
+class ConversationExcludeFilter extends ConversationFilter {
+  ConversationExcludeFilter() {
+    _descriptionText.text = 'Hide conversations with any of these tags ▹';
+  }
+}
+
+class ConversationTurnsFilter extends ConversationFilter{
+  ConversationTurnsFilter() : super () {
+    _descriptionText.text = 'Show conversations with all these last inbound turn tags ▹';
   }
 }
 
@@ -1693,10 +1752,33 @@ class AuthMainView {
 
 class UrlView {
 
-  static const String queryFilterKey = 'filter';
   static const String queryDisableRepliesKey = 'disableReplies';
 
-  List<String> get pageUrlFilterTags {
+  String getQueryTagFilterKey(TagFilterType type) {
+    switch (type) {
+      case TagFilterType.include:
+        return 'filter'; // TODO(mariana): this should be updated to 'include-filter' but we keep it 'filter for backwards compatibility
+      case TagFilterType.exclude:
+        return 'exclude-filter';
+      case TagFilterType.lastInboundTurn:
+        return 'last-inbound-turn-filter';
+    }
+    throw 'Trying to read an unknown filter type: $type';
+  }
+
+  String getQueryAfterDateFilterKey(TagFilterType type) {
+    switch (type) {
+      case TagFilterType.include:
+        return 'include-after-date';
+      case TagFilterType.exclude:
+        return 'exclude-after-date';
+      default:
+        throw 'Trying to read an unknown filter type: $type';
+    }
+  }
+
+  List<String> getPageUrlFilterTags(TagFilterType type) {
+    var queryFilterKey = getQueryTagFilterKey(type);
     var uri = Uri.parse(window.location.href);
     if (uri.queryParameters.containsKey(queryFilterKey)) {
       List<String> filterTags = uri.queryParameters[queryFilterKey].split(' ');
@@ -1706,10 +1788,43 @@ class UrlView {
     return [];
   }
 
-  set pageUrlFilterTags(List<String> filterTags) {
+  void setPageUrlFilterTags(TagFilterType type, List<String> filterTags) {
+    var queryFilterKey = getQueryTagFilterKey(type);
     var uri = Uri.parse(window.location.href);
     Map<String, String> queryParameters = new Map.from(uri.queryParameters);
-    queryParameters['filter'] = filterTags.join(' ');
+    if (filterTags == null || filterTags.isEmpty) {
+      queryParameters.remove(queryFilterKey);
+    } else {
+      queryParameters[queryFilterKey] = filterTags.join(' ');
+    }
+    uri = uri.replace(queryParameters: queryParameters);
+    window.history.pushState('', '', uri.toString());
+  }
+
+  DateTime getPageUrlFilterAfterDate(TagFilterType type) {
+    var queryFilterKey = getQueryAfterDateFilterKey(type);
+    var uri = Uri.parse(window.location.href);
+    if (uri.queryParameters.containsKey(queryFilterKey)) {
+      String afterDateFilter = uri.queryParameters[queryFilterKey];
+      try {
+        return _afterDateFilterFormat.parse(afterDateFilter);
+      } on FormatException catch (e) {
+        command(UIAction.showSnackbar, new SnackbarData("Invalid date/time format for filter in URL: ${e.message}", SnackbarNotificationType.error));
+        return null;
+      }
+    }
+    return null;
+  }
+
+  void setPageUrlFilterAfterDate(TagFilterType type, DateTime afterDateFilter) {
+    var queryFilterKey = getQueryAfterDateFilterKey(type);
+    var uri = Uri.parse(window.location.href);
+    Map<String, String> queryParameters = new Map.from(uri.queryParameters);
+    if (afterDateFilter == null) {
+      queryParameters.remove(queryFilterKey);
+    } else {
+      queryParameters[queryFilterKey] = _afterDateFilterFormat.format(afterDateFilter);
+    }
     uri = uri.replace(queryParameters: queryParameters);
     window.history.pushState('', '', uri.toString());
   }

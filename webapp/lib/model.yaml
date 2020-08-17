@@ -7,13 +7,14 @@ Conversation:
   namespace:              'nook_conversations'
   demographicsInfo: 'map string'
   tags: 'publishable set string tagIds'
+  lastInboundTurnTags: 'set string lastInboundTurnTagIds, default {}'
   messages: 'array Message'
   notes: 'publishable string'
-  unread: 'publishable bool, true'
+  unread: 'publishable bool, default true'
 
 Message:
   firebaseDocId: 'none'
-  direction: 'MessageDirection, MessageDirection.Out'
+  direction: 'MessageDirection, default MessageDirection.Out'
   datetime: 'datetime'
   status: MessageStatus
   tags: 'array string tagIds'
@@ -49,10 +50,10 @@ SuggestedReply:
 Tag:
   firebaseDocId: 'string tagId'
   text: 'string'
-  type: 'TagType, TagType.Normal'
+  type: 'TagType, default TagType.Normal'
   shortcut: 'string'
   filterable: 'bool'
-  group: "string, ''"
+  group: "string, default ''"
 
 TagType:
   dartType: 'enum'
@@ -65,7 +66,7 @@ SystemMessage:
   firebaseCollectionName: 'systemMessages'
   firebaseDocId: 'string msgId'
   text: string
-  expired: 'bool, false'
+  expired: 'bool, default false'
 
 UserConfiguration:
   firebaseCollectionName: 'users'
@@ -79,5 +80,6 @@ UserConfiguration:
   tag_conversations_enabled: 'bool tagConversationsEnabled'
   edit_translations_enabled: 'bool editTranslationsEnabled'
   edit_notes_enabled: 'bool editNotesEnabled'
+  conversational_turns_enabled: 'bool conversationalTurnsEnabled'
   tags_panel_visibility: 'bool tagsPanelVisibility'
   replies_panel_visibility: 'bool repliesPanelVisibility'
