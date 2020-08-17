@@ -1179,7 +1179,8 @@ void sendReply(model.SuggestedReply reply, model.Conversation conversation) {
     ..datetime = new DateTime.now()
     ..direction = model.MessageDirection.Out
     ..translation = reply.translation
-    ..tagIds = [];
+    ..tagIds = []
+    ..status = model.MessageStatus.pending;
   log.verbose('Adding reply "${reply.text}" to conversation ${conversation.docId}');
   conversation.messages.add(newMessage);
   view.conversationPanelView.addMessage(_generateMessageView(newMessage, conversation));
@@ -1205,7 +1206,8 @@ void sendMultiReply(model.SuggestedReply reply, List<model.Conversation> convers
     ..datetime = new DateTime.now()
     ..direction = model.MessageDirection.Out
     ..translation = reply.translation
-    ..tagIds = [];
+    ..tagIds = []
+    ..status = model.MessageStatus.pending;
   log.verbose('Adding reply "${reply.text}" to conversations ${conversationIds}');
   conversations.forEach((conversation) => conversation.messages.add(newMessage));
   if (conversations.contains(activeConversation)) {
@@ -1326,7 +1328,7 @@ class SaveTextAction {
     _newText = newText;
     view.showNormalStatus('saving...');
     _timer?.cancel();
-    _timer = new Timer(const Duration(seconds: 3), _updateField);
+    _timer = new Timer(const Duration(milliseconds: 500), _updateField);
   }
 
   void _updateField() async {
