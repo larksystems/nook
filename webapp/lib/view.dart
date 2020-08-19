@@ -917,6 +917,14 @@ class ConversationListPanelView {
     command(UIAction.markConversationRead, ConversationData(deidentifiedPhoneNumber));
   }
 
+  void showWarning(String deidentifiedPhoneNumber) {
+    _phoneToConversations[deidentifiedPhoneNumber]?._showWarning(true);
+  }
+
+  void clearWarning(String deidentifiedPhoneNumber) {
+    _phoneToConversations[deidentifiedPhoneNumber]?._showWarning(false);
+  }
+
   void clearConversationList() {
     _conversationList.clearItems();
     _phoneToConversations.clear();
@@ -1121,6 +1129,7 @@ class ConversationSummary with LazyListViewItem {
   bool _checked = false;
   bool _selected = false;
   bool _checkboxHidden = true;
+  bool _warning = false;
 
   ConversationSummary(this.deidentifiedPhoneNumber, this._text, this._unread);
 
@@ -1143,6 +1152,7 @@ class ConversationSummary with LazyListViewItem {
       ..onClick.listen((_) => command(UIAction.showConversation, new ConversationData(deidentifiedPhoneNumber)));
     if (_selected) conversationSummary.classes.add('conversation-list__item--selected');
     if (_unread) conversationSummary.classes.add('conversation-list__item--unread');
+    if (_warning) conversationSummary.classes.add('conversation-list__item--warning');
     summaryMessage
       ..append(
         new DivElement()
@@ -1195,6 +1205,10 @@ class ConversationSummary with LazyListViewItem {
   void _showCheckbox(bool show) {
     _checkboxHidden = !show;
     if (_selectCheckbox != null) _selectCheckbox.hidden = !show;
+  }
+  void _showWarning(bool show) {
+    _warning = show;
+    elementOrNull?.classes?.toggle('conversation-list__item--warning', show);
   }
 }
 

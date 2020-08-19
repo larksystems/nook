@@ -518,51 +518,53 @@ void initUI() {
 /// Sets user customization flags from the data map
 /// If a flag is not set in the data map, it defaults to the existing values
 void applyConfiguration(model.UserConfiguration newConfig) {
-  if (currentConfig.repliesKeyboardShortcutsEnabled != newConfig.repliesKeyboardShortcutsEnabled) {
+  var oldConfig = currentConfig;
+  currentConfig = newConfig;
+  if (oldConfig.repliesKeyboardShortcutsEnabled != newConfig.repliesKeyboardShortcutsEnabled) {
     view.replyPanelView.showShortcuts(newConfig.repliesKeyboardShortcutsEnabled);
   }
 
-  if (currentConfig.tagsKeyboardShortcutsEnabled != newConfig.tagsKeyboardShortcutsEnabled) {
+  if (oldConfig.tagsKeyboardShortcutsEnabled != newConfig.tagsKeyboardShortcutsEnabled) {
     view.tagPanelView.showShortcuts(newConfig.tagsKeyboardShortcutsEnabled);
   }
 
-  if (currentConfig.sendMessagesEnabled != newConfig.sendMessagesEnabled) {
+  if (oldConfig.sendMessagesEnabled != newConfig.sendMessagesEnabled) {
     view.replyPanelView.showButtons(newConfig.sendMessagesEnabled);
   }
 
-  if (currentConfig.sendCustomMessagesEnabled != newConfig.sendCustomMessagesEnabled) {
+  if (oldConfig.sendCustomMessagesEnabled != newConfig.sendCustomMessagesEnabled) {
     view.conversationPanelView.showCustomMessageBox(newConfig.sendCustomMessagesEnabled);
   }
 
-  if (currentConfig.sendMultiMessageEnabled != newConfig.sendMultiMessageEnabled) {
+  if (oldConfig.sendMultiMessageEnabled != newConfig.sendMultiMessageEnabled) {
     view.conversationListPanelView.showCheckboxes(newConfig.sendMultiMessageEnabled);
     // Start off with no selected conversations
     command(UIAction.deselectAllConversations, null);
   }
 
-  if (currentConfig.tagMessagesEnabled != newConfig.tagMessagesEnabled) {
+  if (oldConfig.tagMessagesEnabled != newConfig.tagMessagesEnabled) {
     if (actionObjectState == UIActionObject.message) {
       view.tagPanelView.showButtons(newConfig.tagMessagesEnabled);
     }
   }
 
-  if (currentConfig.tagConversationsEnabled != newConfig.tagConversationsEnabled) {
+  if (oldConfig.tagConversationsEnabled != newConfig.tagConversationsEnabled) {
     if (actionObjectState == UIActionObject.conversation) {
       view.tagPanelView.showButtons(newConfig.tagConversationsEnabled);
     }
   }
 
-  if (currentConfig.editTranslationsEnabled != newConfig.editTranslationsEnabled) {
+  if (oldConfig.editTranslationsEnabled != newConfig.editTranslationsEnabled) {
     view.conversationPanelView.enableEditableTranslations(newConfig.editTranslationsEnabled);
   }
 
-  if (currentConfig.editNotesEnabled != newConfig.editNotesEnabled) {
+  if (oldConfig.editNotesEnabled != newConfig.editNotesEnabled) {
     view.replyPanelView.enableEditableNotes(newConfig.editNotesEnabled);
   }
 
-  if (currentConfig.conversationalTurnsEnabled != newConfig.conversationalTurnsEnabled) {
+  if (oldConfig.conversationalTurnsEnabled != newConfig.conversationalTurnsEnabled) {
     view.conversationFilter[TagFilterType.lastInboundTurn].showFilter(newConfig.conversationalTurnsEnabled);
-    if (currentConfig.conversationalTurnsEnabled != null && !newConfig.conversationalTurnsEnabled) {
+    if (oldConfig.conversationalTurnsEnabled != null && !newConfig.conversationalTurnsEnabled) {
       // only clear things up after we've received the config from the server
       conversationFilter.filterTags[TagFilterType.lastInboundTurn] = [];
       view.urlView.setPageUrlFilterTags(TagFilterType.lastInboundTurn, []);
@@ -570,19 +572,17 @@ void applyConfiguration(model.UserConfiguration newConfig) {
 
     // exclude filtering temporary sharing the flag with last inbound turns
     view.conversationFilter[TagFilterType.exclude].showFilter(newConfig.conversationalTurnsEnabled);
-    if (currentConfig.conversationalTurnsEnabled != null && !newConfig.conversationalTurnsEnabled) {
+    if (oldConfig.conversationalTurnsEnabled != null && !newConfig.conversationalTurnsEnabled) {
       // only clear things up after we've received the config from the server
       conversationFilter.filterTags[TagFilterType.exclude] = [];
       view.urlView.setPageUrlFilterTags(TagFilterType.exclude, []);
     }
   }
 
-  if (currentConfig.tagsPanelVisibility != newConfig.tagsPanelVisibility ||
-      currentConfig.repliesPanelVisibility != newConfig.repliesPanelVisibility) {
+  if (oldConfig.tagsPanelVisibility != newConfig.tagsPanelVisibility ||
+      oldConfig.repliesPanelVisibility != newConfig.repliesPanelVisibility) {
     view.showPanels(newConfig.repliesPanelVisibility, newConfig.tagsPanelVisibility);
   }
-
-  currentConfig = newConfig;
   log.verbose('Updated user configuration: $currentConfig');
 }
 
@@ -631,22 +631,14 @@ void conversationListSelected(String conversationListRoot) {
       // Get any filter tags from the url
       conversationFilter = new ConversationFilter.fromUrl();
       _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.include], TagFilterType.include);
+
       if (currentConfig.conversationalTurnsEnabled) {
         _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.exclude], TagFilterType.exclude);
         _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.lastInboundTurn], TagFilterType.lastInboundTurn);
       }
 
-      filteredConversations = conversations.where((conversation) => conversationFilter.test(conversation)).toSet();
+      updateFilteredAndSelectedConversationLists();
 
-      activeConversation = updateViewForConversations(filteredConversations, updateList: true);
-      if (currentConfig.sendMultiMessageEnabled) {
-        view.conversationListPanelView.showCheckboxes(currentConfig.sendMultiMessageEnabled);
-        Set selectedConversationsIds = selectedConversations.map((c) => c.docId).toSet();
-        Set filteredConversationsIds = filteredConversations.map((c) => c.docId).toSet();
-        Set updatedSelectedConversationsIds = selectedConversationsIds.intersection(filteredConversationsIds);
-        selectedConversations = filteredConversations.where((c) => updatedSelectedConversationsIds.contains(c.docId)).toList();
-        selectedConversations.forEach((conversation) => view.conversationListPanelView.checkConversation(conversation.docId));
-      }
       if (activeConversation == null) return;
 
       // Update the active conversation view as needed
@@ -693,12 +685,20 @@ model.Conversation nextElement(Iterable<model.Conversation> conversations, model
   return conversations.first;
 }
 
+Set<model.Conversation> get conversationsInView {
+  if (currentConfig.sendMultiMessageEnabled) {
+    return conversations.where((c) => filteredConversations.contains(c) || selectedConversations.contains(c)).toSet();
+  }
+  return filteredConversations;
+}
+
 DateTime lastUserActivity = new DateTime.now();
 
 void command(UIAction action, Data data) {
   log.verbose('Executing UI command: $actionObjectState - $action - $data');
   log.verbose('Active conversation: ${activeConversation?.docId}');
   log.verbose('Selected conversations: ${selectedConversations?.map((c) => c.docId)?.toList()}');
+  log.verbose('Filtered conversations: ${filteredConversations?.map((c) => c.docId)?.toList()}');
 
   // For most actions, a conversation needs to be active.
   // Early exist if it's not one of the actions valid without an active conversation.
@@ -789,7 +789,7 @@ void command(UIAction action, Data data) {
           setMessageTag(tag, selectedMessage, activeConversation);
           break;
       }
-      updateFilteredConversationList();
+      updateFilteredAndSelectedConversationLists();
       break;
     case UIAction.addFilterTag:
       FilterTagData tagData = data;
@@ -798,14 +798,14 @@ void command(UIAction action, Data data) {
       conversationFilter.filterTags[tagData.filterType].add(tag);
       view.urlView.setPageUrlFilterTags(tagData.filterType, conversationFilter.filterTagIds[tagData.filterType].toList());
       view.conversationFilter[tagData.filterType].addFilterTag(new view.FilterTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type), tagData.filterType));
-      updateFilteredConversationList();
+      updateFilteredAndSelectedConversationLists();
       break;
     case UIAction.removeConversationTag:
       ConversationTagData conversationTagData = data;
       model.Tag tag = conversationTags.singleWhere((tag) => tag.tagId == conversationTagData.tagId);
       platform.removeConversationTag(activeConversation, tag.tagId).catchError(showAndLogError);
       view.conversationPanelView.removeTag(tag.tagId);
-      updateFilteredConversationList();
+      updateFilteredAndSelectedConversationLists();
       break;
     case UIAction.removeMessageTag:
       MessageTagData messageTagData = data;
@@ -824,7 +824,7 @@ void command(UIAction action, Data data) {
       conversationFilter.filterTags[tagData.filterType].removeWhere((t) => t.tagId == tag.tagId);
       view.urlView.setPageUrlFilterTags(tagData.filterType, conversationFilter.filterTagIds[tagData.filterType].toList());
       view.conversationFilter[tagData.filterType].removeFilterTag(tag.tagId);
-      updateFilteredConversationList();
+      updateFilteredAndSelectedConversationLists();
       break;
     case UIAction.promptAfterDateFilter:
       AfterDateFilterData filterData = data;
@@ -837,7 +837,7 @@ void command(UIAction action, Data data) {
       if (filterData.afterDateFilter != null) {
         view.conversationFilter[filterData.filterType].addFilterTag(new view.AfterDateFilterTagView(filterData.afterDateFilter, filterData.filterType));
       }
-      updateFilteredConversationList();
+      updateFilteredAndSelectedConversationLists();
       break;
     case UIAction.selectMessage:
       MessageData messageData = data;
@@ -890,7 +890,9 @@ void command(UIAction action, Data data) {
     case UIAction.showConversation:
       ConversationData conversationData = data;
       if (conversationData.deidentifiedPhoneNumber == activeConversation.docId) break;
-      activeConversation = filteredConversations.singleWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
+      bool shouldRecomputeConversationList = !filteredConversations.contains(activeConversation);
+      activeConversation = conversations.singleWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
+      if (shouldRecomputeConversationList) updateFilteredAndSelectedConversationLists();
       updateViewForConversation(activeConversation);
       break;
     case UIAction.selectConversationList:
@@ -912,13 +914,14 @@ void command(UIAction action, Data data) {
       break;
     case UIAction.selectConversation:
       ConversationData conversationData = data;
-      model.Conversation conversation = filteredConversations.singleWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
+      model.Conversation conversation = conversations.singleWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
       selectedConversations.add(conversation);
       break;
     case UIAction.deselectConversation:
       ConversationData conversationData = data;
-      model.Conversation conversation = filteredConversations.singleWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
+      model.Conversation conversation = conversations.singleWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
       selectedConversations.remove(conversation);
+      updateFilteredAndSelectedConversationLists();
       break;
     case UIAction.updateTranslation:
       if (data is TranslationData) {
@@ -967,7 +970,9 @@ void command(UIAction action, Data data) {
       KeyPressData keyPressData = data;
       if (keyPressData.key == 'Enter') {
         // Select the next conversation in the list
-        activeConversation = nextElement(filteredConversations, activeConversation);
+        bool shouldRecomputeConversationList = !filteredConversations.contains(activeConversation);
+        activeConversation = nextElement(conversationsInView, activeConversation);
+        if (shouldRecomputeConversationList) updateFilteredAndSelectedConversationLists();
         updateViewForConversation(activeConversation);
         return;
       }
@@ -1040,11 +1045,13 @@ void command(UIAction action, Data data) {
       view.conversationListPanelView.checkAllConversations();
       selectedConversations.clear();
       selectedConversations.addAll(filteredConversations);
+      updateFilteredAndSelectedConversationLists();
       break;
     case UIAction.deselectAllConversations:
       view.conversationListPanelView.uncheckSelectAllCheckbox();
       view.conversationListPanelView.uncheckAllConversations();
       selectedConversations.clear();
+      updateFilteredAndSelectedConversationLists();
       break;
     case UIAction.updateSystemMessages:
       SystemMessagesData msgData = data;
@@ -1095,14 +1102,30 @@ void command(UIAction action, Data data) {
   }
 }
 
-void updateFilteredConversationList() {
+void updateFilteredAndSelectedConversationLists() {
   filteredConversations = conversations.where((conversation) => conversationFilter.test(conversation)).toSet();
-  activeConversation = updateViewForConversations(filteredConversations);
-  if (currentConfig.sendMultiMessageEnabled) {
-    view.conversationListPanelView.showCheckboxes(currentConfig.sendMultiMessageEnabled);
-    selectedConversations = selectedConversations.toSet().intersection(filteredConversations.toSet()).toList();
-    selectedConversations.forEach((conversation) => view.conversationListPanelView.checkConversation(conversation.docId));
+  if (!currentConfig.sendMultiMessageEnabled) {
+    activeConversation = updateViewForConversations(conversationsInView, updateList: true);
+    return;
   }
+  // Update the conversation objects in [selectedConversations] in case any of them were replaced
+  Set selectedConversationsIds = selectedConversations.map((c) => c.docId).toSet();
+  selectedConversations = conversations.where((c) => selectedConversationsIds.contains(c.docId)).toList();
+
+  // Show both filtered and selected conversations in the list,
+  // but mark the selected conversations that don't meet the filter with a warning
+  activeConversation = updateViewForConversations(conversationsInView, updateList: true);
+  view.conversationListPanelView.showCheckboxes(currentConfig.sendMultiMessageEnabled);
+  conversationsInView.forEach((conversation) {
+    if (selectedConversations.contains(conversation)) {
+      view.conversationListPanelView.checkConversation(conversation.docId);
+    }
+    if (filteredConversations.contains(conversation)) {
+      view.conversationListPanelView.clearWarning(conversation.docId);
+    } else {
+      view.conversationListPanelView.showWarning(conversation.docId);
+    }
+  });
 }
 
 /// Shows the list of [conversations] and selects the first conversation
@@ -1163,11 +1186,12 @@ void updateViewForConversation(model.Conversation conversation, {bool updateInPl
       _populateTagPanelView(conversationTagsByGroup[selectedConversationTagsGroup], TagReceiver.Conversation);
       break;
   }
-  if (filteredConversations.contains(conversation)) {
-    // Select the conversation in the list
+  if (conversationsInView.contains(conversation)) {
+    // Select the conversation in the list of conversations
     view.conversationListPanelView.selectConversation(conversation.docId);
-  } else {
-    // If it's not in the list, show warning
+  }
+  if (!filteredConversations.contains(conversation)) {
+    // If it doesn't meet the filter, show warning
     view.conversationPanelView.showWarning('Conversation no longer meets filtering constraints');
   }
 }
