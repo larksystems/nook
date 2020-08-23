@@ -84,7 +84,11 @@ class LazyListViewModel {
   }
 
   void removeItem(LazyListViewItem item) {
+    int position = _items.indexOf(item);
     _items.remove(item);
+    if (position < _listView.children.length - 1) {
+      _scrollLength -= item.element.clientHeight;
+    }
     item.disposeElement();
     _scrollPad.remove();
     _updateScrollPad();
@@ -121,7 +125,7 @@ class LazyListViewModel {
   void _updateScrollPad() {
     _scrollPad.remove();
     int padHeight;
-    if (_listView.children.length < _items.length) {
+    if (_listView.children.length < _items.length && _listView.children.length != 0) {
       // Add a DOM element to pad the height of the scroll list
       // so that scrolling approximates the list size
       // without adding all of the individual DOM elements
