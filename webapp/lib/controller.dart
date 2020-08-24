@@ -18,6 +18,7 @@ Logger log = new Logger('controller.dart');
 enum UIActionObject {
   conversation,
   message,
+  loadingConversations,
 }
 
 enum UIAction {
@@ -277,7 +278,7 @@ class SnackbarData extends Data {
 
 List<model.SystemMessage> systemMessages;
 
-UIActionObject actionObjectState = UIActionObject.conversation;
+UIActionObject actionObjectState = UIActionObject.loadingConversations;
 
 StreamSubscription conversationListSubscription;
 Set<model.Conversation> conversations;
@@ -371,7 +372,7 @@ void initUI() {
         selectedConversationTagsGroup = groups.first;
       }
 
-      if (actionObjectState == UIActionObject.conversation) {
+      if (actionObjectState == UIActionObject.conversation || actionObjectState == UIActionObject.loadingConversations) {
         view.tagPanelView.selectedGroup = selectedConversationTagsGroup;
         _populateTagPanelView(conversationTagsByGroup[selectedConversationTagsGroup], TagReceiver.Conversation);
       }
@@ -620,6 +621,12 @@ void conversationListSelected(String conversationListRoot) {
 
       updateMissingTagIds(conversations, conversationTags);
 
+      if (actionObjectState == UIActionObject.loadingConversations) {
+        actionObjectState = UIActionObject.conversation;
+        view.tagPanelView.selectedGroup = selectedConversationTagsGroup;
+        _populateTagPanelView(conversationTagsByGroup[selectedConversationTagsGroup], TagReceiver.Conversation);
+      }
+
       // TODO even though they are unlikely to happen, we should also handle the removals in the UI for consistency
 
       // Determine if the active conversation data needs to be replaced
@@ -788,6 +795,8 @@ void command(UIAction action, Data data) {
           model.Tag tag = messageTags.singleWhere((tag) => tag.tagId == tagData.tagId);
           setMessageTag(tag, selectedMessage, activeConversation);
           break;
+        case UIActionObject.loadingConversations:
+          break;
       }
       updateFilteredAndSelectedConversationLists();
       break;
@@ -851,6 +860,8 @@ void command(UIAction action, Data data) {
           break;
         case UIActionObject.message:
           break;
+        case UIActionObject.loadingConversations:
+          break;
       }
       break;
     case UIAction.deselectMessage:
@@ -863,6 +874,8 @@ void command(UIAction action, Data data) {
           view.tagPanelView.selectedGroup = selectedConversationTagsGroup;
           _populateTagPanelView(conversationTagsByGroup[selectedConversationTagsGroup], TagReceiver.Conversation);
           actionObjectState = UIActionObject.conversation;
+          break;
+        case UIActionObject.loadingConversations:
           break;
       }
       break;
@@ -901,6 +914,7 @@ void command(UIAction action, Data data) {
       filteredConversations = emptyConversationsSet;
       selectedConversations.clear();
       activeConversation = null;
+      actionObjectState = UIActionObject.loadingConversations;
       view.conversationListPanelView.clearConversationList();
       view.conversationPanelView.clear();
       view.replyPanelView.noteText = '';
@@ -1030,6 +1044,8 @@ void command(UIAction action, Data data) {
           assert (selectedTag.length == 1);
           setMessageTag(selectedTag.first, selectedMessage, activeConversation);
           return;
+        case UIActionObject.loadingConversations:
+          break;
       }
       // There is no matching shortcut in either replies or tags, ignore
       break;
@@ -1051,7 +1067,9 @@ void command(UIAction action, Data data) {
       view.conversationListPanelView.uncheckSelectAllCheckbox();
       view.conversationListPanelView.uncheckAllConversations();
       selectedConversations.clear();
-      updateFilteredAndSelectedConversationLists();
+      if (actionObjectState != UIActionObject.loadingConversations) {
+        updateFilteredAndSelectedConversationLists();
+      }
       break;
     case UIAction.updateSystemMessages:
       SystemMessagesData msgData = data;
@@ -1078,6 +1096,8 @@ void command(UIAction action, Data data) {
           selectedMessageTagsGroup = updateGroupData.group;
           _populateTagPanelView(messageTagsByGroup[selectedMessageTagsGroup], TagReceiver.Message);
           break;
+        case UIActionObject.loadingConversations:
+          break;
       }
       break;
     case UIAction.hideAgeTags:
@@ -1091,6 +1111,8 @@ void command(UIAction action, Data data) {
         case UIActionObject.message:
           view.tagPanelView.selectedGroup = selectedMessageTagsGroup;
           _populateTagPanelView(messageTagsByGroup[selectedMessageTagsGroup], TagReceiver.Message);
+          break;
+        case UIActionObject.loadingConversations:
           break;
       }
       break;
@@ -1184,6 +1206,8 @@ void updateViewForConversation(model.Conversation conversation, {bool updateInPl
       view.conversationPanelView.deselectMessage();
       view.tagPanelView.selectedGroup = selectedConversationTagsGroup;
       _populateTagPanelView(conversationTagsByGroup[selectedConversationTagsGroup], TagReceiver.Conversation);
+      break;
+    case UIActionObject.loadingConversations:
       break;
   }
   if (conversationsInView.contains(conversation)) {
