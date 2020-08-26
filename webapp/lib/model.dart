@@ -63,6 +63,10 @@ extension ConversationUtil on g.Conversation {
     var result = m2.datetime.compareTo(m1.datetime);
     return result != 0 ? result : c2.hashCode.compareTo(c1.hashCode);
   }
+
+  static int compareConversationId(g.Conversation c1, g.Conversation c2) {
+    return c1.docId.compareTo(c2.docId);
+  }
 }
 
 extension MessageUtil on g.Message {

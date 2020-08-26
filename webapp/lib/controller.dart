@@ -660,7 +660,7 @@ void conversationListSelected(String conversationListRoot) {
 }
 
 SplayTreeSet<model.Conversation> get emptyConversationsSet =>
-    SplayTreeSet(model.ConversationUtil.mostRecentInboundFirst);
+    SplayTreeSet(model.ConversationUtil.compareConversationId);
 
 model.UserConfiguration get baseUserConfiguration => new model.UserConfiguration()
     ..repliesKeyboardShortcutsEnabled = false
