@@ -1,23 +1,49 @@
 # Exit immediately if a command exits with a non-zero status
 set -e
-if [ $# -lt 2 ] || [ $# -gt 3 ]; then
-    echo "Usage: $0 [--skip-cloud-functions] path/to/firebase/deployment/constants.json path/to/crypto/token/file"
-    exit 1
-fi
 
 WORK_DIR="$(pwd)"
 
-########## validate argument(s)
+########## parse and validate argument(s)
 
-if [ "$1" = "--skip-cloud-functions" ]; then
-  SKIP_CLOUD_FUNCTIONS=true
-  shift
+usage_and_exit() {
+  echo "Usage: $0 [--skip-cloud-functions] [--only hosting|database|firestore] path/to/firebase/deployment/constants.json path/to/crypto/token/file"
+  exit 1
+}
+
+FIREBASE_DEPLOY_ARGS=()
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --skip-cloud-functions)
+      SKIP_CLOUD_FUNCTIONS=true
+      shift
+      ;;
+    --only)
+      shift
+      FIREBASE_DEPLOY_ARGS[0]="--only"
+      if [ -z "$1" ]; then
+        echo "expected a specific firebase service to deploy"
+        usage_and_exit
+      fi
+      FIREBASE_DEPLOY_ARGS[1]="$1"
+      shift
+      ;;
+    *)
+      # Don't process any other arguments after the optional ones
+      break
+      ;;
+  esac
+done
+
+if [ $# -ne 2 ]; then
+  echo "expected 2 required arguments"
+  usage_and_exit
 fi
 
 FIREBASE_CONSTANTS="$1"
 if [ ! -f "$FIREBASE_CONSTANTS" ]; then
   echo "could not find FIREBASE_CONSTANTS: $FIREBASE_CONSTANTS"
-  exit 1
+  usage_and_exit
 fi
 
 cd "$(dirname "$FIREBASE_CONSTANTS")"
@@ -27,10 +53,11 @@ FIREBASE_CONSTANTS_FILE="$FIREBASE_CONSTANTS_DIR/$FIREBASE_CONSTANTS_FILENAME"
 
 cd "$WORK_DIR"
 
+
 CRYPTO_TOKEN="$2"
 if [ ! -f "$CRYPTO_TOKEN" ]; then
   echo "could not find CRYPTO_TOKEN: $CRYPTO_TOKEN"
-  exit 1
+  usage_and_exit
 fi
 
 cd "$(dirname "$CRYPTO_TOKEN")"
@@ -54,7 +81,7 @@ echo "project id: $CRYPTO_TOKEN_PROJECT_ID"
 
 if [ "$FIREBASE_CONSTANTS_PROJECT_ID" != "$CRYPTO_TOKEN_PROJECT_ID" ]; then
   echo "the two project ids must match, check that you're deploying to the correct project"
-  exit 1
+  usage_and_exit
 fi
 
 ########## cd to the nook project directory and get the absolute path
@@ -102,7 +129,8 @@ echo "{\"metadata\": [ {$DEPLOY_DATA} ] }" > public_metadata_nook_app.json
 echo "deploying to $FIREBASE_CONSTANTS_PROJECT_ID firebase..."
 firebase deploy \
   --project $FIREBASE_CONSTANTS_PROJECT_ID \
-  --public public
+  --public public \
+  "${FIREBASE_DEPLOY_ARGS[@]}"
 echo "firebase deploy result: $?"
 
 # Deploy cloud functions if SKIP_CLOUD_FUNCTIONS is unset
