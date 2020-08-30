@@ -637,6 +637,7 @@ void conversationListSelected(String conversationListRoot) {
   conversationListSubscription = null;
   if (conversationListRoot == ConversationListData.NONE) {
     view.urlView.setPageUrlConversationList(null);
+    view.conversationListPanelView.totalConversations = 0;
     return;
   }
   view.urlView.setPageUrlConversationList(conversationListRoot);
@@ -666,6 +667,8 @@ void conversationListSelected(String conversationListRoot) {
       log.debug('New conversations, added: $added');
       log.debug('New conversations, modified: $modified');
       log.debug('New conversations, removed: $removed');
+
+      view.conversationListPanelView.totalConversations = conversations.length;
 
       updateMissingTagIds(conversations, conversationTags);
 
