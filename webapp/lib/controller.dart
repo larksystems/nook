@@ -484,6 +484,8 @@ void initUI() {
         log.warning("Attempting to select shard ${conversationListRoot} that doesn't exist");
         conversationListRoot = ConversationListData.NONE;
       }
+      // If we try to access a list that hasn't loaded yet, keep it in the URL
+      // so it can be picked up on the next data snapshot from firebase.
       view.urlView.setPageUrlConversationList(urlConversationListRoot);
       view.conversationListSelectView.selectShard(conversationListRoot);
       command(UIAction.selectConversationList, ConversationListData(conversationListRoot));
