@@ -757,7 +757,6 @@ class ConversationListSelectHeader {
       if (_shards.length > 1) {
         conversationListSelectView.panel.style.visibility = 'visible';
       }
-      shardSelected();
     } else {
       bool shardingHasChanged = false;
       for (var newShard in shards) {
@@ -790,6 +789,10 @@ class ConversationListSelectHeader {
 
   void shardSelected([Event event]) {
     command(UIAction.selectConversationList, ConversationListData(_selectElement.value));
+  }
+
+  void selectShard(String shard) {
+    _selectElement.value = shard;
   }
 }
 
@@ -1753,6 +1756,7 @@ class AuthMainView {
 class UrlView {
 
   static const String queryDisableRepliesKey = 'disableReplies';
+  static const String queryConversationListKey = 'conversation-list';
 
   String getQueryTagFilterKey(TagFilterType type) {
     switch (type) {
@@ -1796,6 +1800,26 @@ class UrlView {
       queryParameters.remove(queryFilterKey);
     } else {
       queryParameters[queryFilterKey] = filterTags.join(' ');
+    }
+    uri = uri.replace(queryParameters: queryParameters);
+    window.history.pushState('', '', uri.toString());
+  }
+
+  String getPageUrlConversationList() {
+    var uri = Uri.parse(window.location.href);
+    if (uri.queryParameters.containsKey(queryConversationListKey)) {
+      return uri.queryParameters[queryConversationListKey];
+    }
+    return null;
+  }
+
+  void setPageUrlConversationList(String conversationListId) {
+    var uri = Uri.parse(window.location.href);
+    Map<String, String> queryParameters = new Map.from(uri.queryParameters);
+    if (conversationListId == null) {
+      queryParameters.remove(queryConversationListKey);
+    } else {
+      queryParameters[queryConversationListKey] = conversationListId;
     }
     uri = uri.replace(queryParameters: queryParameters);
     window.history.pushState('', '', uri.toString());
