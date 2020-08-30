@@ -54,7 +54,8 @@ enum UIAction {
   updateSuggestedRepliesCategory,
   updateDisplayedTagsGroup,
   hideAgeTags,
-  showSnackbar
+  showSnackbar,
+  updateConversationIdFilter,
 }
 
 class Data {}
@@ -172,7 +173,14 @@ class NoteData extends Data {
 
   @override
   String toString() => 'NoteData: {noteText: $noteText}';
+}
 
+class ConversationIdFilterData extends Data {
+  String idFilter;
+  ConversationIdFilterData(this.idFilter);
+
+  @override
+  String toString() => 'ConversationIdFilterData: {idFilter: $idFilter}';
 }
 
 class UserData extends Data {
@@ -680,6 +688,7 @@ void conversationListSelected(String conversationListRoot) {
       // Get any filter tags from the url
       conversationFilter = new ConversationFilter.fromUrl();
       _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.include], TagFilterType.include);
+      view.conversationIdFilter.filter = conversationFilter.conversationIdFilter;
 
       if (currentConfig.conversationalTurnsEnabled) {
         _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.exclude], TagFilterType.exclude);
@@ -760,7 +769,7 @@ void command(UIAction action, Data data) {
       action != UIAction.updateSuggestedRepliesCategory &&
       action != UIAction.updateDisplayedTagsGroup && action != UIAction.hideAgeTags &&
       action != UIAction.selectAllConversations && action != UIAction.deselectAllConversations &&
-      action != UIAction.showSnackbar) {
+      action != UIAction.showSnackbar && action != UIAction.updateConversationIdFilter) {
     return;
   }
 
@@ -888,6 +897,13 @@ void command(UIAction action, Data data) {
       if (filterData.afterDateFilter != null) {
         view.conversationFilter[filterData.filterType].addFilterTag(new view.AfterDateFilterTagView(filterData.afterDateFilter, filterData.filterType));
       }
+      updateFilteredAndSelectedConversationLists();
+      break;
+    case UIAction.updateConversationIdFilter:
+      ConversationIdFilterData filterData = data;
+      conversationFilter.conversationIdFilter = filterData.idFilter;
+      view.urlView.setPageUrlFilterConversationId(filterData.idFilter.isEmpty ? null : filterData.idFilter);
+      if (actionObjectState == UIActionObject.loadingConversations) return;
       updateFilteredAndSelectedConversationLists();
       break;
     case UIAction.selectMessage:

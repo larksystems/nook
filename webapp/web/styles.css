@@ -75,6 +75,29 @@ main {
     visibility: visible;
 }
 
+.conversation-filter.conversation-filter--id-filter {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.conversation-filter.conversation-filter--id-filter .conversation-filter__description {
+    flex: 0 0 auto;
+    margin-right: 7px;
+}
+.conversation-filter.conversation-filter--id-filter .conversation-filter__input {
+    resize: none;
+    border: 1px solid #ddd;
+    background: #ffffff;
+    padding: 0 4px;
+    height: 24px;
+    overflow: scroll;
+    color: #555;
+    font-size: 12px;
+    flex: 1 1 auto;
+    min-width: 80px;
+}
+
 .tags-menu__box {
     position: absolute;
     top: auto;
