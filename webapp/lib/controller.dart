@@ -605,6 +605,10 @@ void applyConfiguration(model.UserConfiguration newConfig) {
 void conversationListSelected(String conversationListRoot) {
   command(UIAction.deselectAllConversations, null);
   conversationListSubscription?.cancel();
+  if (conversationListSubscription != null) {
+    // Only clear up the conversation id after the initial page loading
+    view.urlView.setPageUrlConversationId(null);
+  }
   conversationListSubscription = null;
   if (conversationListRoot == ConversationListData.NONE) {
     view.urlView.setPageUrlConversationList(null);
@@ -647,6 +651,25 @@ void conversationListSelected(String conversationListRoot) {
       }
 
       // TODO even though they are unlikely to happen, we should also handle the removals in the UI for consistency
+
+      // Determine if we need to display the conversation from the url
+      String urlConversationId = view.urlView.getPageUrlConversationId();
+      if (activeConversation == null && urlConversationId != null) {
+        var matches = conversations.where((c) => c.docId == urlConversationId).toList();
+        if (matches.length == 0) {
+          activeConversation = new model.Conversation()
+            ..docId = urlConversationId
+            ..demographicsInfo = {"": "conversation not found"}
+            ..tagIds = Set()
+            ..lastInboundTurnTagIds = Set()
+            ..notes = ""
+            ..messages = []
+            ..unread = false;
+        } else {
+          activeConversation = matches.first;
+        }
+        updateViewForConversation(activeConversation, updateInPlace: true);
+      }
 
       // Determine if the active conversation data needs to be replaced
       String activeConversationId = activeConversation?.docId;
@@ -1190,7 +1213,7 @@ model.Conversation updateViewForConversations(Set<model.Conversation> conversati
 
   if (activeConversation == null) {
     model.Conversation conversationToSelect = conversations.first;
-    view.conversationListPanelView.selectConversation(conversationToSelect.docId);
+    _selectConversationInView(conversationToSelect);
     _populateConversationPanelView(conversationToSelect);
     view.replyPanelView.noteText = conversationToSelect.notes;
     actionObjectState = UIActionObject.conversation;
@@ -1206,7 +1229,7 @@ model.Conversation updateViewForConversations(Set<model.Conversation> conversati
   if (matches.length > 1) {
     log.warning('Two conversations seem to have the same deidentified phone number: ${activeConversation.docId}');
   }
-  view.conversationListPanelView.selectConversation(activeConversation.docId);
+  _selectConversationInView(activeConversation);
   view.conversationPanelView.clearWarning();
   return activeConversation;
 }
@@ -1229,13 +1252,18 @@ void updateViewForConversation(model.Conversation conversation, {bool updateInPl
     case UIActionObject.loadingConversations:
       break;
   }
-  if (conversationsInView.contains(conversation)) {
-    // Select the conversation in the list of conversations
-    view.conversationListPanelView.selectConversation(conversation.docId);
-  }
+  _selectConversationInView(conversation);
   if (!filteredConversations.contains(conversation)) {
     // If it doesn't meet the filter, show warning
     view.conversationPanelView.showWarning('Conversation no longer meets filtering constraints');
+  }
+}
+
+void _selectConversationInView(model.Conversation conversation) {
+  view.urlView.setPageUrlConversationId(conversation.docId);
+  if (conversationsInView.contains(conversation)) {
+    // Select the conversation in the list of conversations
+    view.conversationListPanelView.selectConversation(conversation.docId);
   }
 }
 
