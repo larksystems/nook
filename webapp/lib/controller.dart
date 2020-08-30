@@ -392,9 +392,11 @@ void initUI() {
       // Re-read the conversation filter from the URL since we now have the names of the tags
       conversationFilter = new ConversationFilter.fromUrl();
       _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.include], TagFilterType.include);
+      _populateSelectedAfterDateFilterTag(conversationFilter.afterDateFilter[TagFilterType.include], TagFilterType.include);
 
       if (currentConfig.conversationalTurnsEnabled) {
         _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.exclude], TagFilterType.exclude);
+        _populateSelectedAfterDateFilterTag(conversationFilter.afterDateFilter[TagFilterType.exclude], TagFilterType.exclude);
         _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.lastInboundTurn], TagFilterType.lastInboundTurn);
       }
     }
@@ -617,6 +619,7 @@ void applyConfiguration(model.UserConfiguration newConfig) {
       view.urlView.setPageUrlFilterTags(TagFilterType.exclude, []);
     } else {
       _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.exclude], TagFilterType.exclude);
+      _populateSelectedAfterDateFilterTag(conversationFilter.afterDateFilter[TagFilterType.exclude], TagFilterType.exclude);
     }
   }
 
