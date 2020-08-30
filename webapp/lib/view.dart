@@ -1757,6 +1757,7 @@ class UrlView {
 
   static const String queryDisableRepliesKey = 'disableReplies';
   static const String queryConversationListKey = 'conversation-list';
+  static const String queryConversationIdKey = 'conversation-id';
 
   String getQueryTagFilterKey(TagFilterType type) {
     switch (type) {
@@ -1820,6 +1821,26 @@ class UrlView {
       queryParameters.remove(queryConversationListKey);
     } else {
       queryParameters[queryConversationListKey] = conversationListId;
+    }
+    uri = uri.replace(queryParameters: queryParameters);
+    window.history.pushState('', '', uri.toString());
+  }
+
+  String getPageUrlConversationId() {
+    var uri = Uri.parse(window.location.href);
+    if (uri.queryParameters.containsKey(queryConversationIdKey)) {
+      return uri.queryParameters[queryConversationIdKey];
+    }
+    return null;
+  }
+
+  void setPageUrlConversationId(String conversationId) {
+    var uri = Uri.parse(window.location.href);
+    Map<String, String> queryParameters = new Map.from(uri.queryParameters);
+    if (conversationId == null) {
+      queryParameters.remove(queryConversationIdKey);
+    } else {
+      queryParameters[queryConversationIdKey] = conversationId;
     }
     uri = uri.replace(queryParameters: queryParameters);
     window.history.pushState('', '', uri.toString());
