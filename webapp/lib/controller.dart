@@ -1300,6 +1300,9 @@ void setMessageTag(model.Tag tag, model.Message message, model.Conversation conv
         view.conversationPanelView
           .messageViewAtIndex(conversation.messages.indexOf(message))
           .addTag(new view.MessageTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
+        if (conversation.messages.indexOf(message) == conversation.messages.length - 1) {
+          view.conversationPanelView.scrollToLatest();
+        }
       }, onError: showAndLogError);
   }
 }

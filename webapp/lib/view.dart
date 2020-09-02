@@ -364,6 +364,10 @@ class ConversationPanelView {
     _conversationWarning.title = '';
     _conversationWarning.classes.add('hidden');
   }
+
+  void scrollToLatest() {
+    _messages.scrollTop = _messages.scrollHeight;
+  }
 }
 
 class AfterDateFilterView {
