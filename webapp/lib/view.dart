@@ -815,8 +815,8 @@ class ConversationListPanelView {
   Map<String, ConversationSummary> _phoneToConversations = {};
   ConversationSummary activeConversation;
 
-  num _totalConversations = 0;
-  void set totalConversations(num v) {
+  int _totalConversations = 0;
+  void set totalConversations(int v) {
     _totalConversations = v;
     _conversationPanelTitle.text = _conversationPanelTitleText;
   }
