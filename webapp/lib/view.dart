@@ -17,6 +17,7 @@ Logger log = new Logger('view.dart');
 
 ConversationListSelectHeader conversationListSelectView;
 ConversationListPanelView conversationListPanelView;
+ConversationIdFilter conversationIdFilter;
 Map<TagFilterType, ConversationFilter> conversationFilter;
 ConversationPanelView conversationPanelView;
 ReplyPanelView replyPanelView;
@@ -44,6 +45,7 @@ void init() {
     TagFilterType.exclude: conversationListPanelView.conversationExcludeFilter,
     TagFilterType.lastInboundTurn: conversationListPanelView.conversationTurnsFilter
   };
+  conversationIdFilter = conversationListPanelView.conversationIdFilter;
 
   querySelector('header')
       ..insertAdjacentElement('beforeBegin', bannerView.bannerElement)
@@ -805,6 +807,7 @@ class ConversationListPanelView {
   DivElement _loadSpinner;
   DivElement _selectConversationListMessage;
 
+  ConversationIdFilter conversationIdFilter;
   ConversationIncludeFilter conversationIncludeFilter;
   ConversationExcludeFilter conversationExcludeFilter;
   ConversationTurnsFilter conversationTurnsFilter;
@@ -852,6 +855,9 @@ class ConversationListPanelView {
       ..classes.add('conversation-list');
     _conversationList = new LazyListViewModel(conversationListElement);
     conversationListPanel.append(conversationListElement);
+
+    conversationIdFilter = new ConversationIdFilter();
+    conversationListPanel.append(conversationIdFilter.conversationFilter);
 
     conversationIncludeFilter = new ConversationIncludeFilter();
     conversationListPanel.append(conversationIncludeFilter.conversationFilter);
@@ -1120,6 +1126,37 @@ class ConversationExcludeFilter extends ConversationFilter {
 class ConversationTurnsFilter extends ConversationFilter{
   ConversationTurnsFilter() : super () {
     _descriptionText.text = 'Show conversations with all these last inbound turn tags ▹';
+  }
+}
+
+class ConversationIdFilter {
+  DivElement conversationFilter;
+  DivElement _descriptionText;
+  TextInputElement _idInput;
+
+  ConversationIdFilter() {
+    conversationFilter = new DivElement()
+      ..classes.add('conversation-filter')
+      ..classes.add('conversation-filter--id-filter');
+
+    _descriptionText = new DivElement()
+      ..classes.add('conversation-filter__description')
+      ..text = 'Filter by ID:';
+    conversationFilter.append(_descriptionText);
+
+    _idInput = new TextInputElement()
+      ..classes.add('conversation-filter__input')
+      ..placeholder = 'Enter conversation ID';
+    makeEditable(_idInput, onChange: () {
+      command(UIAction.updateConversationIdFilter, new ConversationIdFilterData(_idInput.value));
+    });
+    conversationFilter.append(_idInput);
+  }
+
+  set filter(String text) => _idInput.value = text;
+
+  void showFilter(bool show) {
+    this.conversationFilter.classes.toggle('hidden', !show);
   }
 }
 
@@ -1758,6 +1795,7 @@ class UrlView {
   static const String queryDisableRepliesKey = 'disableReplies';
   static const String queryConversationListKey = 'conversation-list';
   static const String queryConversationIdKey = 'conversation-id';
+  static const String queryConversationIdFilterKey = 'conversation-id-filter';
 
   String getQueryTagFilterKey(TagFilterType type) {
     switch (type) {
@@ -1881,6 +1919,27 @@ class UrlView {
     }
     return false;
   }
+
+  String getPageUrlFilterConversationId() {
+    var uri = Uri.parse(window.location.href);
+    if (uri.queryParameters.containsKey(queryConversationIdFilterKey)) {
+      return uri.queryParameters[queryConversationIdFilterKey];
+    }
+    return null;
+  }
+
+  void setPageUrlFilterConversationId(String conversationIdFilter) {
+    var uri = Uri.parse(window.location.href);
+    Map<String, String> queryParameters = new Map.from(uri.queryParameters);
+    if (conversationIdFilter == null) {
+      queryParameters.remove(queryConversationIdFilterKey);
+    } else {
+      queryParameters[queryConversationIdFilterKey] = conversationIdFilter;
+    }
+    uri = uri.replace(queryParameters: queryParameters);
+    window.history.pushState('', '', uri.toString());
+  }
+
 }
 
 class SnackbarView {
