@@ -815,6 +815,13 @@ class ConversationListPanelView {
   Map<String, ConversationSummary> _phoneToConversations = {};
   ConversationSummary activeConversation;
 
+  int _totalConversations = 0;
+  void set totalConversations(int v) {
+    _totalConversations = v;
+    _conversationPanelTitle.text = _conversationPanelTitleText;
+  }
+  String get _conversationPanelTitleText => '${_phoneToConversations.length}/${_totalConversations} conversations';
+
   ConversationListPanelView() {
     conversationListPanel = new DivElement()
       ..classes.add('conversation-list-panel');
@@ -833,7 +840,7 @@ class ConversationListPanelView {
     _conversationPanelTitle = new DivElement()
       ..classes.add('panel-title')
       ..classes.add('conversation-list-header__title')
-      ..text = '0 conversations';
+      ..text = _conversationPanelTitleText;
     panelHeader.append(_conversationPanelTitle);
 
     _markUnread = MarkUnreadActionView();
@@ -896,7 +903,7 @@ class ConversationListPanelView {
     for (var conversation in conversationsToAdd) {
       _phoneToConversations[conversation.deidentifiedPhoneNumber] = conversation;
     }
-    _conversationPanelTitle.text = '${_phoneToConversations.length} conversations';
+    _conversationPanelTitle.text = _conversationPanelTitleText;
   }
 
   void addOrUpdateConversation(Conversation conversation) {
@@ -911,7 +918,7 @@ class ConversationListPanelView {
         conversation.unread);
     _conversationList.addItem(summary, null);
     _phoneToConversations[summary.deidentifiedPhoneNumber] = summary;
-    _conversationPanelTitle.text = '${_phoneToConversations.length} conversations';
+    _conversationPanelTitle.text = _conversationPanelTitleText;
   }
 
   void updateConversationSummary(ConversationSummary summary, Conversation conversation) {
@@ -937,7 +944,7 @@ class ConversationListPanelView {
   void clearConversationList() {
     _conversationList.clearItems();
     _phoneToConversations.clear();
-    _conversationPanelTitle.text = '${_phoneToConversations.length} conversations';
+    _conversationPanelTitle.text = _conversationPanelTitleText;
   }
 
   void markConversationRead(String deidentifiedPhoneNumber) {

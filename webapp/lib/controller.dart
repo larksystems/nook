@@ -336,7 +336,11 @@ void initUI() {
   selectedConversationTagsGroup = '';
   selectedMessageTagsGroup = '';
   hideDemogsTags = true;
-  conversationFilter = new ConversationFilter();
+
+  // Get any filter tags from the url
+  conversationFilter = new ConversationFilter.fromUrl();
+  _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.include], TagFilterType.include);
+  view.conversationIdFilter.filter = conversationFilter.conversationIdFilter;
 
   platform.listenForConversationTags(
     (added, modified, removed) {
@@ -383,6 +387,17 @@ void initUI() {
       if (actionObjectState == UIActionObject.conversation || actionObjectState == UIActionObject.loadingConversations) {
         view.tagPanelView.selectedGroup = selectedConversationTagsGroup;
         _populateTagPanelView(conversationTagsByGroup[selectedConversationTagsGroup], TagReceiver.Conversation);
+      }
+
+      // Re-read the conversation filter from the URL since we now have the names of the tags
+      conversationFilter = new ConversationFilter.fromUrl();
+      _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.include], TagFilterType.include);
+      _populateSelectedAfterDateFilterTag(conversationFilter.afterDateFilter[TagFilterType.include], TagFilterType.include);
+
+      if (currentConfig.conversationalTurnsEnabled) {
+        _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.exclude], TagFilterType.exclude);
+        _populateSelectedAfterDateFilterTag(conversationFilter.afterDateFilter[TagFilterType.exclude], TagFilterType.exclude);
+        _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.lastInboundTurn], TagFilterType.lastInboundTurn);
       }
     }
   );
@@ -592,14 +607,19 @@ void applyConfiguration(model.UserConfiguration newConfig) {
       // only clear things up after we've received the config from the server
       conversationFilter.filterTags[TagFilterType.lastInboundTurn] = [];
       view.urlView.setPageUrlFilterTags(TagFilterType.lastInboundTurn, []);
+    } else {
+      _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.lastInboundTurn], TagFilterType.lastInboundTurn);
     }
 
-    // exclude filtering temporary sharing the flag with last inbound turns
+    // exclude filtering is temporary sharing the flag with last inbound turns
     view.conversationFilter[TagFilterType.exclude].showFilter(newConfig.conversationalTurnsEnabled);
     if (oldConfig.conversationalTurnsEnabled != null && !newConfig.conversationalTurnsEnabled) {
       // only clear things up after we've received the config from the server
       conversationFilter.filterTags[TagFilterType.exclude] = [];
       view.urlView.setPageUrlFilterTags(TagFilterType.exclude, []);
+    } else {
+      _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.exclude], TagFilterType.exclude);
+      _populateSelectedAfterDateFilterTag(conversationFilter.afterDateFilter[TagFilterType.exclude], TagFilterType.exclude);
     }
   }
 
@@ -620,6 +640,7 @@ void conversationListSelected(String conversationListRoot) {
   conversationListSubscription = null;
   if (conversationListRoot == ConversationListData.NONE) {
     view.urlView.setPageUrlConversationList(null);
+    view.conversationListPanelView.totalConversations = 0;
     return;
   }
   view.urlView.setPageUrlConversationList(conversationListRoot);
@@ -649,6 +670,8 @@ void conversationListSelected(String conversationListRoot) {
       log.debug('New conversations, added: $added');
       log.debug('New conversations, modified: $modified');
       log.debug('New conversations, removed: $removed');
+
+      view.conversationListPanelView.totalConversations = conversations.length;
 
       updateMissingTagIds(conversations, conversationTags);
 
@@ -683,16 +706,6 @@ void conversationListSelected(String conversationListRoot) {
       String activeConversationId = activeConversation?.docId;
       if (updatedIds.contains(activeConversationId)) {
         activeConversation = conversations.firstWhere((c) => c.docId == activeConversationId);
-      }
-
-      // Get any filter tags from the url
-      conversationFilter = new ConversationFilter.fromUrl();
-      _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.include], TagFilterType.include);
-      view.conversationIdFilter.filter = conversationFilter.conversationIdFilter;
-
-      if (currentConfig.conversationalTurnsEnabled) {
-        _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.exclude], TagFilterType.exclude);
-        _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.lastInboundTurn], TagFilterType.lastInboundTurn);
       }
 
       updateFilteredAndSelectedConversationLists();
@@ -858,6 +871,7 @@ void command(UIAction action, Data data) {
       conversationFilter.filterTags[tagData.filterType].add(tag);
       view.urlView.setPageUrlFilterTags(tagData.filterType, conversationFilter.filterTagIds[tagData.filterType].toList());
       view.conversationFilter[tagData.filterType].addFilterTag(new view.FilterTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type), tagData.filterType));
+      if (actionObjectState == UIActionObject.loadingConversations) return;
       updateFilteredAndSelectedConversationLists();
       break;
     case UIAction.removeConversationTag:
@@ -884,6 +898,7 @@ void command(UIAction action, Data data) {
       conversationFilter.filterTags[tagData.filterType].removeWhere((t) => t.tagId == tag.tagId);
       view.urlView.setPageUrlFilterTags(tagData.filterType, conversationFilter.filterTagIds[tagData.filterType].toList());
       view.conversationFilter[tagData.filterType].removeFilterTag(tag.tagId);
+      if (actionObjectState == UIActionObject.loadingConversations) return;
       updateFilteredAndSelectedConversationLists();
       break;
     case UIAction.promptAfterDateFilter:
@@ -893,10 +908,12 @@ void command(UIAction action, Data data) {
     case UIAction.updateAfterDateFilter:
       AfterDateFilterData filterData = data;
       conversationFilter.afterDateFilter[filterData.filterType] = filterData.afterDateFilter;
-      view.conversationFilter[TagFilterType.include].removeFilterTag(filterData.tagId);
+      view.conversationFilter[filterData.filterType].removeFilterTag(filterData.tagId);
       if (filterData.afterDateFilter != null) {
         view.conversationFilter[filterData.filterType].addFilterTag(new view.AfterDateFilterTagView(filterData.afterDateFilter, filterData.filterType));
       }
+      view.urlView.setPageUrlFilterAfterDate(filterData.filterType, filterData.afterDateFilter);
+      if (actionObjectState == UIActionObject.loadingConversations) return;
       updateFilteredAndSelectedConversationLists();
       break;
     case UIAction.updateConversationIdFilter:
