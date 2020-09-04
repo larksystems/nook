@@ -224,29 +224,29 @@ Future<void> sendMultiMessage(List<String> ids, String message, {onError(dynamic
   }
 }
 
-void listenForUserConfigurations(UserConfigurationCollectionListener listener) {
-  UserConfiguration.listen(_docStorage, listener);
+void listenForUserConfigurations(UserConfigurationCollectionListener listener, [OnErrorListener onErrorListener]) {
+  UserConfiguration.listen(_docStorage, listener, onErrorListener: onErrorListener);
 }
 
-void listenForSystemMessages(SystemMessageCollectionListener listener) =>
-    SystemMessage.listen(_docStorage, listener);
+void listenForSystemMessages(SystemMessageCollectionListener listener, [OnErrorListener onErrorListener]) =>
+    SystemMessage.listen(_docStorage, listener, onErrorListener: onErrorListener);
 
-void listenForConversationListShards(ConversationListShardCollectionListener listener) {
-  ConversationListShard.listen(_docStorage, listener);
+void listenForConversationListShards(ConversationListShardCollectionListener listener, [OnErrorListener onErrorListener]) {
+  ConversationListShard.listen(_docStorage, listener, onErrorListener: onErrorListener);
 }
 
-StreamSubscription listenForConversations(ConversationCollectionListener listener, String conversationListRoot) {
-  return Conversation.listen(_docStorage, listener, collectionRoot: conversationListRoot);
+StreamSubscription listenForConversations(ConversationCollectionListener listener, String conversationListRoot, [OnErrorListener onErrorListener]) {
+  return Conversation.listen(_docStorage, listener, collectionRoot: conversationListRoot, onErrorListener: onErrorListener);
 }
 
-void listenForConversationTags(TagCollectionListener listener) =>
-    Tag.listen(_docStorage, listener, "/conversationTags");
+void listenForConversationTags(TagCollectionListener listener, [OnErrorListener onErrorListener]) =>
+    Tag.listen(_docStorage, listener, "/conversationTags", onErrorListener: onErrorListener);
 
-void listenForMessageTags(TagCollectionListener listener) =>
-    Tag.listen(_docStorage, listener, "/messageTags");
+void listenForMessageTags(TagCollectionListener listener, [OnErrorListener onErrorListener]) =>
+    Tag.listen(_docStorage, listener, "/messageTags", onErrorListener: onErrorListener);
 
-void listenForSuggestedReplies(SuggestedReplyCollectionListener listener) =>
-    SuggestedReply.listen(_docStorage, listener);
+void listenForSuggestedReplies(SuggestedReplyCollectionListener listener, [OnErrorListener onErrorListener]) =>
+    SuggestedReply.listen(_docStorage, listener, onErrorListener: onErrorListener);
 
 Future<void> addMessageTag(Conversation conversation, Message message, String tagId) {
   log.verbose("Adding tag $tagId to message in conversation ${conversation.docId}");
