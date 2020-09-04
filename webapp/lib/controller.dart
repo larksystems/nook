@@ -1481,6 +1481,7 @@ void showAndLogError(error, trace) {
     errMsg = "An internal error occurred: ${error.runtimeType}";
   } else if (error is FirebaseError){
     errMsg = "An firestore error occured: ${error.code} [${error.message}]";
+    view.bannerView.showBanner("You don't have access to any dataset. Please contact your project administrator");
   } else {
     errMsg = "$error";
   }
