@@ -1480,7 +1480,7 @@ void showAndLogError(error, trace) {
   } else if (error is Exception) {
     errMsg = "An internal error occurred: ${error.runtimeType}";
   } else if (error is FirebaseError){
-    errMsg = "An firestore error occured: ${error.code} : ${error.message}";
+    errMsg = "An firestore error occured: ${error.code} [${error.message}]";
   } else {
     errMsg = "$error";
   }
