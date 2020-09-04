@@ -3,6 +3,8 @@ library controller;
 import 'dart:async';
 import 'dart:collection';
 
+import 'package:firebase/firebase.dart';
+
 import 'logger.dart';
 import 'model.dart' as model;
 import 'platform.dart' as platform;
@@ -376,6 +378,10 @@ void initUI() {
         view.tagPanelView.selectedGroup = selectedConversationTagsGroup;
         _populateTagPanelView(conversationTagsByGroup[selectedConversationTagsGroup], TagReceiver.Conversation);
       }
+    }, (Object error) {
+      if (error is FirebaseError) {
+        showAndLogError(error, null);
+      }
     }
   );
   _addDateTagToFilterMenu(TagFilterType.include);
@@ -421,6 +427,10 @@ void initUI() {
         view.tagPanelView.selectedGroup = selectedMessageTagsGroup;
         _populateTagPanelView(messageTagsByGroup[selectedMessageTagsGroup], TagReceiver.Message);
       }
+    }, (Object error) {
+      if (error is FirebaseError) {
+        showAndLogError(error, null);
+      }
     }
   );
 
@@ -464,6 +474,10 @@ void initUI() {
         // Select the selected category in the UI and add the suggested replies for it
         view.replyPanelView.selectedCategory = selectedSuggestedRepliesCategory;
         _populateReplyPanelView(suggestedRepliesByCategory[selectedSuggestedRepliesCategory]);
+      }, (Object error) {
+        if (error is FirebaseError) {
+          showAndLogError(error, null);
+        }
       }
     );
   }
@@ -475,6 +489,10 @@ void initUI() {
         ..addAll(added)
         ..addAll(modified);
       view.conversationListSelectView.updateConversationLists(shards);
+    }, (Object error) {
+      if (error is FirebaseError) {
+        showAndLogError(error, null);
+      }
     }
   );
 
@@ -489,6 +507,10 @@ void initUI() {
         ..addAll(added.where((m) => !m.expired))
         ..addAll(modified.where((m) => !m.expired));
       command(UIAction.updateSystemMessages, SystemMessagesData(systemMessages));
+    }, (Object error) {
+      if (error is FirebaseError) {
+        showAndLogError(error, null);
+      }
     }
   );
 
@@ -509,6 +531,10 @@ void initUI() {
       currentUserConfig = userConfig ?? currentUserConfig;
       var newConfig = currentUserConfig.applyDefaults(defaultUserConfig);
       applyConfiguration(newConfig);
+    }, (Object error) {
+      if (error is FirebaseError) {
+        showAndLogError(error, null);
+      }
     }
   );
   // Apply the default configuration before loading any new configs.
@@ -656,7 +682,12 @@ void conversationListSelected(String conversationListRoot) {
         }
       }
     },
-    conversationListRoot);
+    conversationListRoot,
+    (Object error) {
+      if (error is FirebaseError) {
+        showAndLogError(error, null);
+      }
+    });
 }
 
 SplayTreeSet<model.Conversation> get emptyConversationsSet =>
@@ -1448,6 +1479,8 @@ void showAndLogError(error, trace) {
     errMsg = "A network problem occurred: ${error.message}";
   } else if (error is Exception) {
     errMsg = "An internal error occurred: ${error.runtimeType}";
+  } else if (error is FirebaseError){
+    errMsg = "An firestore error occured: ${error.code} : ${error.message}";
   } else {
     errMsg = "$error";
   }

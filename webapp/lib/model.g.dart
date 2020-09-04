@@ -3,7 +3,6 @@
 
 import 'dart:async';
 
-import 'package:firebase/firebase.dart';
 
 import 'logger.dart';
 
