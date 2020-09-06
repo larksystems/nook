@@ -414,7 +414,11 @@ class Tag {
   TagType type;
   String shortcut;
   bool filterable;
-  String group;
+  List<String> groups;
+  bool visible;
+  bool isUnifier;
+  String unifierTagId;
+  List<String> unifiesTagIds;
 
   String get tagId => docId;
 
@@ -428,7 +432,11 @@ class Tag {
       ..type = TagType.fromData(data['type']) ?? TagType.Normal
       ..shortcut = String_fromData(data['shortcut'])
       ..filterable = bool_fromData(data['filterable'])
-      ..group = String_fromData(data['group']) ?? '';
+      ..groups = List_fromData<String>(data['groups'], String_fromData) ?? []
+      ..visible = bool_fromData(data['visible']) ?? true
+      ..isUnifier = bool_fromData(data['isUnifier']) ?? false
+      ..unifierTagId = String_fromData(data['unifierTagId'])
+      ..unifiesTagIds = List_fromData<String>(data['unifiesTagIds'], String_fromData);
   }
 
   static Tag required(Map data, String fieldName, String className) {
@@ -454,7 +462,11 @@ class Tag {
       if (type != null) 'type': type.toData(),
       if (shortcut != null) 'shortcut': shortcut,
       if (filterable != null) 'filterable': filterable,
-      if (group != null) 'group': group,
+      if (groups != null) 'groups': groups,
+      if (visible != null) 'visible': visible,
+      if (isUnifier != null) 'isUnifier': isUnifier,
+      if (unifierTagId != null) 'unifierTagId': unifierTagId,
+      if (unifiesTagIds != null) 'unifiesTagIds': unifiesTagIds,
     };
   }
 

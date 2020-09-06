@@ -1827,18 +1827,18 @@ class UrlView {
     }
   }
 
-  List<String> getPageUrlFilterTags(TagFilterType type) {
+  Set<String> getPageUrlFilterTags(TagFilterType type) {
     var queryFilterKey = getQueryTagFilterKey(type);
     var uri = Uri.parse(window.location.href);
     if (uri.queryParameters.containsKey(queryFilterKey)) {
       List<String> filterTags = uri.queryParameters[queryFilterKey].split(' ');
       filterTags.removeWhere((tag) => tag == "");
-      return filterTags;
+      return filterTags.toSet();
     }
-    return [];
+    return Set();
   }
 
-  void setPageUrlFilterTags(TagFilterType type, List<String> filterTags) {
+  void setPageUrlFilterTags(TagFilterType type, Set<String> filterTags) {
     var queryFilterKey = getQueryTagFilterKey(type);
     var uri = Uri.parse(window.location.href);
     Map<String, String> queryParameters = new Map.from(uri.queryParameters);

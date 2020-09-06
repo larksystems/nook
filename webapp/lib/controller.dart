@@ -296,9 +296,11 @@ Map<String, List<model.SuggestedReply>> suggestedRepliesByCategory;
 String selectedSuggestedRepliesCategory;
 List<model.Tag> conversationTags;
 Map<String, List<model.Tag>> conversationTagsByGroup;
+Map<String, model.Tag> conversationTagIdsToTags;
 String selectedConversationTagsGroup;
 List<model.Tag> messageTags;
 Map<String, List<model.Tag>> messageTagsByGroup;
+Map<String, model.Tag> messageTagIdsToTags;
 String selectedMessageTagsGroup;
 ConversationFilter conversationFilter;
 Map<String, List<model.Tag>> filterTagsByCategory;
@@ -329,7 +331,9 @@ void initUI() {
   filteredConversations = emptyConversationsSet;
   suggestedReplies = [];
   conversationTags = [];
+  conversationTagIdsToTags = {};
   messageTags = [];
+  messageTagIdsToTags = {};
   selectedConversations = [];
   activeConversation = null;
   selectedSuggestedRepliesCategory = '';
@@ -353,6 +357,8 @@ void initUI() {
         ..addAll(added)
         ..addAll(modified);
 
+      conversationTagIdsToTags = Map.fromEntries(conversationTags.map((t) => MapEntry(t.tagId, t)));
+
       // Update the filter tags by category map
       filterTagsByCategory = _groupTagsIntoCategories(conversationTags);
 
@@ -370,12 +376,8 @@ void initUI() {
       if (conversationTagsByGroup.isEmpty) {
         conversationTagsByGroup[''] = [];
       }
-      // Sort tags alphabetically
-      for (var tags in conversationTagsByGroup.values) {
-        tags.sort((t1, t2) => t1.text.compareTo(t2.text));
-      }
       List<String> groups = conversationTagsByGroup.keys.toList();
-      groups.sort((c1, c2) => c1.compareTo(c2));
+      groups.sort();
       // Replace list of groups in the UI selector
       view.tagPanelView.groups = groups;
       // If the groups have changed under us and the selected one no longer exists,
@@ -414,6 +416,8 @@ void initUI() {
       messageTags
         ..addAll(added)
         ..addAll(modified);
+
+      messageTagIdsToTags = Map.fromEntries(messageTags.map((t) => MapEntry(t.tagId, t)));
 
       filterLastInboundTurnTagsByCategory = _groupTagsIntoCategories(messageTags);
       _removeTagsFromFilterMenu(_groupTagsIntoCategories(removed), TagFilterType.lastInboundTurn);
@@ -605,8 +609,8 @@ void applyConfiguration(model.UserConfiguration newConfig) {
     view.conversationFilter[TagFilterType.lastInboundTurn].showFilter(newConfig.conversationalTurnsEnabled);
     if (oldConfig.conversationalTurnsEnabled != null && !newConfig.conversationalTurnsEnabled) {
       // only clear things up after we've received the config from the server
-      conversationFilter.filterTags[TagFilterType.lastInboundTurn] = [];
-      view.urlView.setPageUrlFilterTags(TagFilterType.lastInboundTurn, []);
+      conversationFilter.filterTags[TagFilterType.lastInboundTurn].clear();
+      view.urlView.setPageUrlFilterTags(TagFilterType.lastInboundTurn, conversationFilter.filterTagIds[TagFilterType.lastInboundTurn]);
     } else {
       _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.lastInboundTurn], TagFilterType.lastInboundTurn);
     }
@@ -615,8 +619,8 @@ void applyConfiguration(model.UserConfiguration newConfig) {
     view.conversationFilter[TagFilterType.exclude].showFilter(newConfig.conversationalTurnsEnabled);
     if (oldConfig.conversationalTurnsEnabled != null && !newConfig.conversationalTurnsEnabled) {
       // only clear things up after we've received the config from the server
-      conversationFilter.filterTags[TagFilterType.exclude] = [];
-      view.urlView.setPageUrlFilterTags(TagFilterType.exclude, []);
+      conversationFilter.filterTags[TagFilterType.exclude].clear();
+      view.urlView.setPageUrlFilterTags(TagFilterType.exclude, conversationFilter.filterTagIds[TagFilterType.exclude]);
     } else {
       _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.exclude], TagFilterType.exclude);
       _populateSelectedAfterDateFilterTag(conversationFilter.afterDateFilter[TagFilterType.exclude], TagFilterType.exclude);
@@ -673,7 +677,8 @@ void conversationListSelected(String conversationListRoot) {
 
       view.conversationListPanelView.totalConversations = conversations.length;
 
-      updateMissingTagIds(conversations, conversationTags);
+      updateMissingTagIds(conversations, conversationTags, [TagFilterType.include, TagFilterType.exclude]);
+      updateMissingTagIds(conversations, messageTags, [TagFilterType.lastInboundTurn]);
 
       if (actionObjectState == UIActionObject.loadingConversations) {
         actionObjectState = UIActionObject.conversation;
@@ -866,11 +871,13 @@ void command(UIAction action, Data data) {
       break;
     case UIAction.addFilterTag:
       FilterTagData tagData = data;
-      var allTagsCollection = tagData.filterType == TagFilterType.lastInboundTurn ? messageTags : conversationTags;
-      model.Tag tag = tagIdsToTags([tagData.tagId], allTagsCollection).first;
-      conversationFilter.filterTags[tagData.filterType].add(tag);
-      view.urlView.setPageUrlFilterTags(tagData.filterType, conversationFilter.filterTagIds[tagData.filterType].toList());
-      view.conversationFilter[tagData.filterType].addFilterTag(new view.FilterTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type), tagData.filterType));
+      var allTagsCollection = tagData.filterType == TagFilterType.lastInboundTurn ? messageTagIdsToTags : conversationTagIdsToTags;
+      model.Tag tag = tagIdToTag(tagData.tagId, allTagsCollection);
+      model.Tag unifierTag = unifierTagForTag(tag, allTagsCollection);
+      var added = conversationFilter.filterTags[tagData.filterType].add(unifierTag);
+      if (!added) return; // Trying to add an existing tag, nothing to do here
+      view.urlView.setPageUrlFilterTags(tagData.filterType, conversationFilter.filterTagIds[tagData.filterType]);
+      view.conversationFilter[tagData.filterType].addFilterTag(new view.FilterTagView(unifierTag.text, unifierTag.tagId, tagTypeToStyle(unifierTag.type), tagData.filterType));
       if (actionObjectState == UIActionObject.loadingConversations) return;
       updateFilteredAndSelectedConversationLists();
       break;
@@ -893,10 +900,10 @@ void command(UIAction action, Data data) {
       break;
     case UIAction.removeFilterTag:
       FilterTagData tagData = data;
-      var allTagsCollection = tagData.filterType == TagFilterType.lastInboundTurn ? messageTags : conversationTags;
-      model.Tag tag = tagIdsToTags([tagData.tagId], allTagsCollection).first;
+      var allTagsCollection = tagData.filterType == TagFilterType.lastInboundTurn ? messageTagIdsToTags : conversationTagIdsToTags;
+      model.Tag tag = tagIdToTag(tagData.tagId, allTagsCollection);
       conversationFilter.filterTags[tagData.filterType].removeWhere((t) => t.tagId == tag.tagId);
-      view.urlView.setPageUrlFilterTags(tagData.filterType, conversationFilter.filterTagIds[tagData.filterType].toList());
+      view.urlView.setPageUrlFilterTags(tagData.filterType, conversationFilter.filterTagIds[tagData.filterType]);
       view.conversationFilter[tagData.filterType].removeFilterTag(tag.tagId);
       if (actionObjectState == UIActionObject.loadingConversations) return;
       updateFilteredAndSelectedConversationLists();
@@ -1384,28 +1391,44 @@ void setMessageTag(model.Tag tag, model.Message message, model.Conversation conv
   }
 }
 
-void updateMissingTagIds(Set<model.Conversation> conversations, List<model.Tag> tags) {
+void updateMissingTagIds(Set<model.Conversation> conversations, List<model.Tag> tags, List<TagFilterType> filterTypes) {
   var newTagIdsWithMissingInfo = extractTagIdsWithMissingInfo(conversations, tags.toSet());
-  var tagsWithMissingInfo = conversationTags.where((tag) => tag.type == model.NotFoundTagType.NotFound).toSet();
+  var tagsWithMissingInfo = tags.where((tag) => tag.type == model.NotFoundTagType.NotFound).toSet();
   if (newTagIdsWithMissingInfo.isEmpty) {
-    conversationTags.removeWhere((tag) => tag.type == model.NotFoundTagType.NotFound);
+    tags.removeWhere((tag) => tag.type == model.NotFoundTagType.NotFound);
   }
   var tagIdsWithMissingInfo = tagsWithMissingInfo.map((tag) => tag.docId).toSet();
   // remove tags that are no longer missing their info
   var tagIdsToRemove = tagIdsWithMissingInfo.difference(newTagIdsWithMissingInfo);
   if (tagIdsToRemove.isNotEmpty) {
-    var tagsToRemove = tagIdsToTags(tagIdsToRemove, conversationTags);
-    conversationTags.removeWhere((tag) => tagsToRemove.contains(tag));
-    _removeTagsFromFilterMenu({tagsToRemove.first.group: tagsToRemove}, TagFilterType.include);
-    _removeTagsFromFilterMenu({tagsToRemove.first.group: tagsToRemove}, TagFilterType.exclude);
+    var tagsToRemove = tagIdsToTags(tagIdsToRemove, Map.fromEntries(tags.map((t) => MapEntry(t.tagId, t))));
+    tags.removeWhere((tag) => tagsToRemove.contains(tag));
+    var groupsToUpdate = Set();
+    for (var tag in tagsToRemove) {
+      groupsToUpdate.addAll(tag.groups);
+    }
+    for (var group in groupsToUpdate) {
+      var tagsToRemoveForGroup = tagsToRemove.where((t) => t.groups.contains(group)).toList();
+      for (var filterType in filterTypes) {
+        _removeTagsFromFilterMenu({group: tagsToRemoveForGroup}, filterType);
+      }
+    }
   }
   // add tags that are new
   var tagIdsToAdd = newTagIdsWithMissingInfo.difference(tagIdsWithMissingInfo);
   if (tagIdsToAdd.isEmpty) return;
-  var tagsToAdd = tagIdsToTags(tagIdsToAdd, conversationTags);
-  conversationTags.addAll(tagsToAdd);
-  _addTagsToFilterMenu({tagsToAdd.first.group: tagsToAdd}, TagFilterType.include);
-  _addTagsToFilterMenu({tagsToAdd.first.group: tagsToAdd}, TagFilterType.exclude);
+  var tagsToAdd = tagIdsToTags(tagIdsToAdd, Map.fromEntries(tags.map((t) => MapEntry(t.tagId, t))));
+  tags.addAll(tagsToAdd);
+  var groupsToUpdate = Set();
+  for (var tag in tagsToAdd) {
+    groupsToUpdate.addAll(tag.groups);
+  }
+  for (var group in groupsToUpdate) {
+    var tagsToAddForGroup = tagsToAdd.where((t) => t.groups.contains(group)).toList();
+    for (var filterType in filterTypes) {
+      _addTagsToFilterMenu({group: tagsToAddForGroup}, filterType);
+    }
+  }
 }
 
 Set<String> extractTagIdsWithMissingInfo(Set<model.Conversation> conversations, Set<model.Tag> tags) {
@@ -1477,22 +1500,36 @@ class SaveTextAction {
 
 Map<String, model.Tag> _notFoundTagIds = {};
 
-UnmodifiableListView<model.Tag> tagIdsToTags(Iterable<String> tagIds, Iterable<model.Tag> allTags) {
+UnmodifiableListView<model.Tag> tagIdsToTags(Iterable<String> tagIds, Map<String, model.Tag> allTags) {
   var tags = <model.Tag>[];
   for (var id in tagIds) {
-    var tag = allTags.firstWhere((tag) => tag.tagId == id, orElse: () {
-      log.warning('failed to find tag with id: $id');
-      _notFoundTagIds.putIfAbsent(id, () => new model.Tag()
-          ..docId = id
-          ..text = id
-          ..type = model.NotFoundTagType.NotFound
-          ..filterable = true
-          ..group = 'not found');
-      return _notFoundTagIds[id];
-    });
-    tags.add(tag);
+    tags.add(tagIdToTag(id, allTags));
   }
   return UnmodifiableListView(tags);
+}
+
+UnmodifiableListView<String> tagsToTagIds(Iterable<model.Tag> tags) =>
+    UnmodifiableListView(tags.map((t) => t.tagId));
+
+model.Tag tagIdToTag(String tagId, Map<String, model.Tag> tags) {
+  if (tags.containsKey(tagId))
+    return tags[tagId];
+
+  _notFoundTagIds.putIfAbsent(tagId, () =>
+    new model.Tag()
+      ..docId = tagId
+      ..text = tagId
+      ..type = model.NotFoundTagType.NotFound
+      ..filterable = true
+      ..groups = ['not found']
+      ..isUnifier = false);
+  return _notFoundTagIds[tagId];
+}
+
+model.Tag unifierTagForTag(model.Tag tag, Map<String, model.Tag> allTags) {
+  if (tag.isUnifier) return tag;
+  if (tag.unifierTagId == null) return tag;
+  return tagIdToTag(tag.unifierTagId, allTags);
 }
 
 List<model.Tag> _filterDemogsTagsIfNeeded(List<model.Tag> tagList) {

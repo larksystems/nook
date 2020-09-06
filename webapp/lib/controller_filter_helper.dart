@@ -7,15 +7,15 @@ enum TagFilterType {
 }
 
 class ConversationFilter {
-  Map<TagFilterType, List<model.Tag>> filterTags;
+  Map<TagFilterType, Set<model.Tag>> filterTags;
   Map<TagFilterType, DateTime> afterDateFilter;
   String conversationIdFilter;
 
   ConversationFilter() {
     filterTags = {
-      TagFilterType.include: [],
-      TagFilterType.exclude: [],
-      TagFilterType.lastInboundTurn: []
+      TagFilterType.include: Set(),
+      TagFilterType.exclude: Set(),
+      TagFilterType.lastInboundTurn: Set()
     };
     afterDateFilter = {
       TagFilterType.include: null,
@@ -25,27 +25,18 @@ class ConversationFilter {
   }
 
   ConversationFilter.fromUrl() {
-    filterTags = {};
-    afterDateFilter = {};
+    filterTags = {
+      TagFilterType.include: _getTagsFromUrl(TagFilterType.include, conversationTagIdsToTags),
+      TagFilterType.exclude: _getTagsFromUrl(TagFilterType.exclude, conversationTagIdsToTags),
+      TagFilterType.lastInboundTurn: _getTagsFromUrl(TagFilterType.lastInboundTurn, messageTagIdsToTags),
+    };
 
-    // include filter
-    List<String> filterTagIds = view.urlView.getPageUrlFilterTags(TagFilterType.include);
-    filterTags[TagFilterType.include] = tagIdsToTags(filterTagIds, conversationTags).toList();
+    afterDateFilter = {
+      TagFilterType.include: view.urlView.getPageUrlFilterAfterDate(TagFilterType.include),
+      TagFilterType.exclude: view.urlView.getPageUrlFilterAfterDate(TagFilterType.exclude),
+    };
 
-    // exclude filter
-    filterTagIds = view.urlView.getPageUrlFilterTags(TagFilterType.exclude);
-    filterTags[TagFilterType.exclude] = tagIdsToTags(filterTagIds, conversationTags).toList();
-
-    // last inbound tags
-    filterTagIds = view.urlView.getPageUrlFilterTags(TagFilterType.lastInboundTurn);
-    filterTags[TagFilterType.lastInboundTurn] = tagIdsToTags(filterTagIds, messageTags).toList();
-
-    // after date filter
-    afterDateFilter[TagFilterType.include] = view.urlView.getPageUrlFilterAfterDate(TagFilterType.include);
-    afterDateFilter[TagFilterType.exclude] = view.urlView.getPageUrlFilterAfterDate(TagFilterType.exclude);
-
-    conversationIdFilter = view.urlView.getPageUrlFilterConversationId();
-    conversationIdFilter ??= "";
+    conversationIdFilter = view.urlView.getPageUrlFilterConversationId() ?? "";
   }
 
   bool get isEmpty => filterTags[TagFilterType.include].isEmpty
@@ -55,13 +46,10 @@ class ConversationFilter {
                    && afterDateFilter[TagFilterType.exclude] == null
                    && conversationIdFilter == "";
 
-  Set<String> get includeFilterTagIds => filterTags[TagFilterType.include].map<String>((tag) => tag.tagId).toSet();
-  Set<String> get excludeFilterTagIds => filterTags[TagFilterType.exclude].map<String>((tag) => tag.tagId).toSet();
-  Set<String> get lastInboundTurnFilterTagIds => filterTags[TagFilterType.lastInboundTurn].map<String>((tag) => tag.tagId).toSet();
   Map<TagFilterType, Set<String>> get filterTagIds => {
-    TagFilterType.include: includeFilterTagIds,
-    TagFilterType.exclude: excludeFilterTagIds,
-    TagFilterType.lastInboundTurn: lastInboundTurnFilterTagIds
+    TagFilterType.include: tagsToTagIds(filterTags[TagFilterType.include]).toSet(),
+    TagFilterType.exclude: tagsToTagIds(filterTags[TagFilterType.exclude]).toSet(),
+    TagFilterType.lastInboundTurn: tagsToTagIds(filterTags[TagFilterType.lastInboundTurn]).toSet()
   };
 
   bool test(model.Conversation conversation) {
@@ -70,12 +58,29 @@ class ConversationFilter {
     if (afterDateFilter[TagFilterType.include] != null && conversation.messages.last.datetime.isBefore(afterDateFilter[TagFilterType.include])) return false;
     if (afterDateFilter[TagFilterType.exclude] != null && conversation.messages.last.datetime.isAfter(afterDateFilter[TagFilterType.exclude])) return false;
 
-    if (!conversation.tagIds.containsAll(includeFilterTagIds)) return false;
-    if (conversation.tagIds.intersection(excludeFilterTagIds).isNotEmpty) return false;
-    if (!conversation.lastInboundTurnTagIds.containsAll(lastInboundTurnFilterTagIds)) return false;
+    var tags = tagIdsToTags(conversation.tagIds, conversationTagIdsToTags);
+    var unifierTags = tags.map((t) => unifierTagForTag(t, conversationTagIdsToTags));
+    var unifierTagIds = tagsToTagIds(unifierTags).toSet();
+    if (!unifierTagIds.containsAll(filterTagIds[TagFilterType.include])) return false;
+    if (unifierTagIds.intersection(filterTagIds[TagFilterType.exclude]).isNotEmpty) return false;
+
+    tags = tagIdsToTags(conversation.lastInboundTurnTagIds, messageTagIdsToTags);
+    unifierTags = tags.map((t) => unifierTagForTag(t, messageTagIdsToTags));
+    unifierTagIds = tagsToTagIds(unifierTags).toSet();
+    if (!unifierTagIds.containsAll(filterTagIds[TagFilterType.lastInboundTurn])) return false;
 
     if (!conversation.docId.startsWith(conversationIdFilter) && !conversation.shortDeidentifiedPhoneNumber.startsWith(conversationIdFilter)) return false;
 
     return true;
+  }
+
+  Set<model.Tag> _getTagsFromUrl(TagFilterType type, Map<String, model.Tag> tags) {
+    Set<String> filterTagIds = view.urlView.getPageUrlFilterTags(type);
+    var filterTags = tagIdsToTags(filterTagIds, tags);
+    var unifierFilterTags = filterTags.map((t) => unifierTagForTag(t, tags));
+    // Reset the URL to make sure it uses the unifier tags
+    // This will be unnecessary after we have moved everyone to using the new unifier tags
+    view.urlView.setPageUrlFilterTags(type, tagsToTagIds(filterTags).toSet());
+    return unifierFilterTags.toSet();
   }
 }
