@@ -1405,10 +1405,14 @@ void updateMissingTagIds(Set<model.Conversation> conversations, List<model.Tag> 
     tags.removeWhere((tag) => tagsToRemove.contains(tag));
     var groupsToUpdate = Set();
     for (var tag in tagsToRemove) {
+      if (tag.groups.isEmpty) {
+        groupsToUpdate.add(tag.group);
+        continue;
+      }
       groupsToUpdate.addAll(tag.groups);
     }
     for (var group in groupsToUpdate) {
-      var tagsToRemoveForGroup = tagsToRemove.where((t) => t.groups.contains(group)).toList();
+      var tagsToRemoveForGroup = tagsToRemove.where((t) => t.groups.contains(group) || t.group == group).toList();
       for (var filterType in filterTypes) {
         _removeTagsFromFilterMenu({group: tagsToRemoveForGroup}, filterType);
       }
@@ -1421,10 +1425,14 @@ void updateMissingTagIds(Set<model.Conversation> conversations, List<model.Tag> 
   tags.addAll(tagsToAdd);
   var groupsToUpdate = Set();
   for (var tag in tagsToAdd) {
+    if (tag.groups.isEmpty) {
+      groupsToUpdate.add(tag.group);
+      continue;
+    }
     groupsToUpdate.addAll(tag.groups);
   }
   for (var group in groupsToUpdate) {
-    var tagsToAddForGroup = tagsToAdd.where((t) => t.groups.contains(group)).toList();
+    var tagsToAddForGroup = tagsToAdd.where((t) => t.groups.contains(group) || t.group == group).toList();
     for (var filterType in filterTypes) {
       _addTagsToFilterMenu({group: tagsToAddForGroup}, filterType);
     }
