@@ -4,7 +4,8 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-katikati-pylib = {git = "git@github.com/larksystems/Katikati-PyLib.git", editable = true, ref = "12be4e4869eb46195aaa6799f361511c122cefa9"}
+katikati-pylib = {git = "git@github.com/larksystems/Katikati-PyLib.git", editable = true, ref = "47973a22827e9e4ec05e5f72a68b9cbed7440f72"}
+engine-pylib = {git = "git@github.com/larksystems/Engine-PyLib.git", editable = true, ref = "6d0db47984405b485cda058b6d2b4973727abcff"}
 CoreDataModules = {git = "https://www.github.com/AfricasVoices/CoreDataModules", editable = true}
 google-cloud-storage = "*"
 google-cloud-firestore = ">=1.6.0"
