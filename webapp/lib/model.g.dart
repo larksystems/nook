@@ -901,7 +901,7 @@ StreamSubscription<List<DocSnapshot>> listenForUpdates<T>(
     }
     listener(added, modified, removed);
   }, onError: (Object error) {
-    onErrorListener(error);
+    if (onErrorListener != null) onErrorListener(error);
     });
 }
 
