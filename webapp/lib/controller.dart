@@ -3,7 +3,7 @@ library controller;
 import 'dart:async';
 import 'dart:collection';
 
-import 'package:firebase/firebase.dart';
+import 'package:firebase/firebase.dart' show FirebaseError;
 
 import 'logger.dart';
 import 'model.dart' as model;
