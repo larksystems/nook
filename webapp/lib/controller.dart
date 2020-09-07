@@ -1403,7 +1403,7 @@ void updateMissingTagIds(Set<model.Conversation> conversations, List<model.Tag> 
   if (tagIdsToRemove.isNotEmpty) {
     var tagsToRemove = tagIdsToTags(tagIdsToRemove, Map.fromEntries(tags.map((t) => MapEntry(t.tagId, t))));
     tags.removeWhere((tag) => tagsToRemove.contains(tag));
-    var groupsToUpdate = Set();
+    var groupsToUpdate = <String>{};
     for (var tag in tagsToRemove) {
       if (tag.groups.isEmpty) {
         groupsToUpdate.add(tag.group);
@@ -1423,7 +1423,7 @@ void updateMissingTagIds(Set<model.Conversation> conversations, List<model.Tag> 
   if (tagIdsToAdd.isEmpty) return;
   var tagsToAdd = tagIdsToTags(tagIdsToAdd, Map.fromEntries(tags.map((t) => MapEntry(t.tagId, t))));
   tags.addAll(tagsToAdd);
-  var groupsToUpdate = Set();
+  var groupsToUpdate = <String>{};
   for (var tag in tagsToAdd) {
     if (tag.groups.isEmpty) {
       groupsToUpdate.add(tag.group);
