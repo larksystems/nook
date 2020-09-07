@@ -378,12 +378,7 @@ void initUI() {
         view.tagPanelView.selectedGroup = selectedConversationTagsGroup;
         _populateTagPanelView(conversationTagsByGroup[selectedConversationTagsGroup], TagReceiver.Conversation);
       }
-    }, (Object error) {
-      if (error is FirebaseError) {
-        showAndLogError(error, null);
-      }
-    }
-  );
+    }, showAndLogError);
   _addDateTagToFilterMenu(TagFilterType.include);
   _addDateTagToFilterMenu(TagFilterType.exclude);
 
@@ -427,12 +422,7 @@ void initUI() {
         view.tagPanelView.selectedGroup = selectedMessageTagsGroup;
         _populateTagPanelView(messageTagsByGroup[selectedMessageTagsGroup], TagReceiver.Message);
       }
-    }, (Object error) {
-      if (error is FirebaseError) {
-        showAndLogError(error, null);
-      }
-    }
-  );
+    }, showAndLogError);
 
   if (view.urlView.shouldDisableReplies) {
     view.replyPanelView.disableReplies();
@@ -474,12 +464,7 @@ void initUI() {
         // Select the selected category in the UI and add the suggested replies for it
         view.replyPanelView.selectedCategory = selectedSuggestedRepliesCategory;
         _populateReplyPanelView(suggestedRepliesByCategory[selectedSuggestedRepliesCategory]);
-      }, (Object error) {
-        if (error is FirebaseError) {
-          showAndLogError(error, null);
-        }
-      }
-    );
+      }, showAndLogError);
   }
 
   platform.listenForConversationListShards(
@@ -489,12 +474,7 @@ void initUI() {
         ..addAll(added)
         ..addAll(modified);
       view.conversationListSelectView.updateConversationLists(shards);
-    }, (Object error) {
-      if (error is FirebaseError) {
-        showAndLogError(error, null);
-      }
-    }
-  );
+    }, showAndLogError);
 
   platform.listenForSystemMessages(
     (added, modified, removed) {
@@ -507,12 +487,7 @@ void initUI() {
         ..addAll(added.where((m) => !m.expired))
         ..addAll(modified.where((m) => !m.expired));
       command(UIAction.updateSystemMessages, SystemMessagesData(systemMessages));
-    }, (Object error) {
-      if (error is FirebaseError) {
-        showAndLogError(error, null);
-      }
-    }
-  );
+    }, showAndLogError);
 
   platform.listenForUserConfigurations(
     (added, modified, removed) {
@@ -531,12 +506,7 @@ void initUI() {
       currentUserConfig = userConfig ?? currentUserConfig;
       var newConfig = currentUserConfig.applyDefaults(defaultUserConfig);
       applyConfiguration(newConfig);
-    }, (Object error) {
-      if (error is FirebaseError) {
-        showAndLogError(error, null);
-      }
-    }
-  );
+    }, showAndLogError);
   // Apply the default configuration before loading any new configs.
   applyConfiguration(defaultUserConfig);
 }
@@ -683,11 +653,7 @@ void conversationListSelected(String conversationListRoot) {
       }
     },
     conversationListRoot,
-    (Object error) {
-      if (error is FirebaseError) {
-        showAndLogError(error, null);
-      }
-    });
+    showAndLogError);
 }
 
 SplayTreeSet<model.Conversation> get emptyConversationsSet =>

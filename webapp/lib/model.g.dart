@@ -900,9 +900,7 @@ StreamSubscription<List<DocSnapshot>> listenForUpdates<T>(
       }
     }
     listener(added, modified, removed);
-  }, onError: (Object error) {
-    if (onErrorListener != null) onErrorListener(error);
-    });
+  }, onError: onErrorListener);
 }
 
 /// Document storage interface.
