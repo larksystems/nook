@@ -509,10 +509,11 @@ class MessageView {
 
   set translation(String translation) => _messageTranslation.text = translation;
 
-  void addTag(TagView tag, [int position]) {
+  void addTag(TagView tag, {int position, bool isLastMessage = false}) {
     if (position == null || position >= _messageTags.children.length) {
       // Add at the end
       _messageTags.append(tag.tag);
+      if (isLastMessage) conversationPanelView.scrollToLatest();
       return;
     }
     // Add before an existing tag

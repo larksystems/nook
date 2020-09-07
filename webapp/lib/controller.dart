@@ -1297,12 +1297,10 @@ void setMessageTag(model.Tag tag, model.Message message, model.Conversation conv
   if (!message.tagIds.contains(tag.tagId)) {
     platform.addMessageTag(activeConversation, message, tag.tagId).then(
       (_) {
+        bool isLastMessage = conversation.messages.indexOf(message) == conversation.messages.length - 1;
         view.conversationPanelView
           .messageViewAtIndex(conversation.messages.indexOf(message))
-          .addTag(new view.MessageTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
-        if (conversation.messages.indexOf(message) == conversation.messages.length - 1) {
-          view.conversationPanelView.scrollToLatest();
-        }
+          .addTag(new view.MessageTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)), isLastMessage: isLastMessage);
       }, onError: showAndLogError);
   }
 }
