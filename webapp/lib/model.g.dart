@@ -656,6 +656,7 @@ typedef UserConfigurationCollectionListener = void Function(
 
 typedef OnErrorListener = void Function(
   Object error,
+  StackTrace stackTrace
 );
 
 // ======================================================================
