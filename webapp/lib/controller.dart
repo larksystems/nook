@@ -1179,6 +1179,8 @@ void command(UIAction action, Data data) {
           _populateTagPanelView(messageTagsByGroup[selectedMessageTagsGroup], TagReceiver.Message);
           break;
         case UIActionObject.loadingConversations:
+          selectedConversationTagsGroup = updateGroupData.group;
+          _populateTagPanelView(conversationTagsByGroup[selectedConversationTagsGroup], TagReceiver.Conversation);
           break;
       }
       break;
