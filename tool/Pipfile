@@ -4,19 +4,14 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-katikati-pylib = {git = "git@github.com/larksystems/Katikati-PyLib.git", editable = true, ref = "ecb8731c870623d3e13a19c78b0e52620d5d62cb"}
-RapidProTools = {editable = true,git = "https://www.github.com/AfricasVoices/RapidProTools"}
+katikati-pylib = {git = "git@github.com/larksystems/Katikati-PyLib.git", editable = true, ref = "47973a22827e9e4ec05e5f72a68b9cbed7440f72"}
+engine-pylib = {git = "git@github.com/larksystems/Engine-PyLib.git", editable = true, ref = "6d0db47984405b485cda058b6d2b4973727abcff"}
 CoreDataModules = {git = "https://www.github.com/AfricasVoices/CoreDataModules", editable = true}
-PipelineInfrastructure = {git = "https://www.github.com/AfricasVoices/PipelineInfrastructure", editable = true}
-pytz = "*"
-python-dateutil = ">=2.8.0"  # Need this minimum so that isoparse handles T24:00:00 correctly.
 google-cloud-storage = "*"
 google-cloud-firestore = ">=1.6.0"
 google-cloud-pubsub = "*"
 google-cloud = "*"
 firebase_admin = "*"
-grpcio = "*"
-google-cloud-translate = "*"
 psutil = "*"
 
 [dev-packages]

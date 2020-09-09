@@ -188,6 +188,13 @@ void _populateSelectedFilterTags(List<model.Tag> tags, TagFilterType filterType)
   }
 }
 
+void _populateSelectedAfterDateFilterTag(DateTime afterDateFilter, TagFilterType filterType) {
+  view.conversationFilter[filterType].removeFilterTag(view.AFTER_DATE_TAG_ID);
+  if (afterDateFilter != null) {
+    view.conversationFilter[filterType].addFilterTag(new view.AfterDateFilterTagView(afterDateFilter, filterType));
+  }
+}
+
 view.TagStyle tagTypeToStyle(model.TagType tagType) {
   switch (tagType) {
     case model.TagType.Important:

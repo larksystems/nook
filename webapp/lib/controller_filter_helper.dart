@@ -9,6 +9,7 @@ enum TagFilterType {
 class ConversationFilter {
   Map<TagFilterType, List<model.Tag>> filterTags;
   Map<TagFilterType, DateTime> afterDateFilter;
+  String conversationIdFilter;
 
   ConversationFilter() {
     filterTags = {
@@ -20,6 +21,7 @@ class ConversationFilter {
       TagFilterType.include: null,
       TagFilterType.exclude: null,
     };
+    conversationIdFilter = "";
   }
 
   ConversationFilter.fromUrl() {
@@ -28,29 +30,30 @@ class ConversationFilter {
 
     // include filter
     List<String> filterTagIds = view.urlView.getPageUrlFilterTags(TagFilterType.include);
-    print(filterTagIds);
     filterTags[TagFilterType.include] = tagIdsToTags(filterTagIds, conversationTags).toList();
 
     // exclude filter
     filterTagIds = view.urlView.getPageUrlFilterTags(TagFilterType.exclude);
-    print(filterTagIds);
     filterTags[TagFilterType.exclude] = tagIdsToTags(filterTagIds, conversationTags).toList();
 
     // last inbound tags
     filterTagIds = view.urlView.getPageUrlFilterTags(TagFilterType.lastInboundTurn);
-    print(filterTagIds);
     filterTags[TagFilterType.lastInboundTurn] = tagIdsToTags(filterTagIds, messageTags).toList();
 
     // after date filter
     afterDateFilter[TagFilterType.include] = view.urlView.getPageUrlFilterAfterDate(TagFilterType.include);
     afterDateFilter[TagFilterType.exclude] = view.urlView.getPageUrlFilterAfterDate(TagFilterType.exclude);
+
+    conversationIdFilter = view.urlView.getPageUrlFilterConversationId();
+    conversationIdFilter ??= "";
   }
 
   bool get isEmpty => filterTags[TagFilterType.include].isEmpty
                    && filterTags[TagFilterType.exclude].isEmpty
                    && filterTags[TagFilterType.lastInboundTurn].isEmpty
                    && afterDateFilter[TagFilterType.include] == null
-                   && afterDateFilter[TagFilterType.exclude] == null;
+                   && afterDateFilter[TagFilterType.exclude] == null
+                   && conversationIdFilter == "";
 
   Set<String> get includeFilterTagIds => filterTags[TagFilterType.include].map<String>((tag) => tag.tagId).toSet();
   Set<String> get excludeFilterTagIds => filterTags[TagFilterType.exclude].map<String>((tag) => tag.tagId).toSet();
@@ -70,6 +73,8 @@ class ConversationFilter {
     if (!conversation.tagIds.containsAll(includeFilterTagIds)) return false;
     if (conversation.tagIds.intersection(excludeFilterTagIds).isNotEmpty) return false;
     if (!conversation.lastInboundTurnTagIds.containsAll(lastInboundTurnFilterTagIds)) return false;
+
+    if (!conversation.docId.startsWith(conversationIdFilter) && !conversation.shortDeidentifiedPhoneNumber.startsWith(conversationIdFilter)) return false;
 
     return true;
   }

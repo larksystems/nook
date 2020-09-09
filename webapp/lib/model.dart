@@ -30,7 +30,13 @@ extension ConversationListShardUtil on g.ConversationListShard {
 }
 
 extension ConversationUtil on g.Conversation {
-  String get shortDeidentifiedPhoneNumber => docId.split('uuid-')[1].split('-')[0];
+  String get shortDeidentifiedPhoneNumber {
+    try {
+      return docId.split('uuid-')[1].split('-')[0];
+    } catch (e) {
+      return docId;
+    }
+  }
 
   /// Return the most recent inbound message, or `null`
   g.Message get mostRecentMessageInbound {
