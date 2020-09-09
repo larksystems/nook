@@ -1446,12 +1446,12 @@ void showAndLogError(error, trace) {
   String errMsg;
   if (error is PubSubException) {
     errMsg = "A network problem occurred: ${error.message}";
-  } else if (error is Exception) {
-    errMsg = "An internal error occurred: ${error.runtimeType}";
   } else if (error is FirebaseError) {
     errMsg = "An firestore error occured: ${error.code} [${error.message}]";
     view.bannerView.showBanner("You don't have access to this dataset. Please contact your project administrator");
-  } else {
+  } else if (error is Exception) {
+    errMsg = "An internal error occurred: ${error.runtimeType}";
+  }  else {
     errMsg = "$error";
   }
   command(UIAction.showSnackbar, new SnackbarData(errMsg, SnackbarNotificationType.error));

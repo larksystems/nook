@@ -3,7 +3,6 @@
 
 import 'dart:async';
 
-
 import 'logger.dart';
 
 Logger log = Logger('model.g.dart');
