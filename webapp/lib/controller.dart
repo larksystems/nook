@@ -3,6 +3,8 @@ library controller;
 import 'dart:async';
 import 'dart:collection';
 
+import 'package:firebase/firebase.dart' show FirebaseError;
+
 import 'logger.dart';
 import 'model.dart' as model;
 import 'platform.dart' as platform;
@@ -399,8 +401,8 @@ void initUI() {
         _populateSelectedAfterDateFilterTag(conversationFilter.afterDateFilter[TagFilterType.exclude], TagFilterType.exclude);
         _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.lastInboundTurn], TagFilterType.lastInboundTurn);
       }
-    }
-  );
+    }, showAndLogError);
+
   _addDateTagToFilterMenu(TagFilterType.include);
   _addDateTagToFilterMenu(TagFilterType.exclude);
 
@@ -444,8 +446,7 @@ void initUI() {
         view.tagPanelView.selectedGroup = selectedMessageTagsGroup;
         _populateTagPanelView(messageTagsByGroup[selectedMessageTagsGroup], TagReceiver.Message);
       }
-    }
-  );
+    }, showAndLogError);
 
   if (view.urlView.shouldDisableReplies) {
     view.replyPanelView.disableReplies();
@@ -487,8 +488,7 @@ void initUI() {
         // Select the selected category in the UI and add the suggested replies for it
         view.replyPanelView.selectedCategory = selectedSuggestedRepliesCategory;
         _populateReplyPanelView(suggestedRepliesByCategory[selectedSuggestedRepliesCategory]);
-      }
-    );
+      }, showAndLogError);
   }
 
   platform.listenForConversationListShards(
@@ -513,8 +513,10 @@ void initUI() {
       view.urlView.setPageUrlConversationList(urlConversationListRoot);
       view.conversationListSelectView.selectShard(conversationListRoot);
       command(UIAction.selectConversationList, ConversationListData(conversationListRoot));
-    }
-  );
+    }, (error, stacktrace) {
+      view.conversationListPanelView.hideLoadSpinner();
+      showAndLogError(error, stacktrace);
+    });
 
   platform.listenForSystemMessages(
     (added, modified, removed) {
@@ -527,8 +529,7 @@ void initUI() {
         ..addAll(added.where((m) => !m.expired))
         ..addAll(modified.where((m) => !m.expired));
       command(UIAction.updateSystemMessages, SystemMessagesData(systemMessages));
-    }
-  );
+    }, showAndLogError);
 
   platform.listenForUserConfigurations(
     (added, modified, removed) {
@@ -547,8 +548,7 @@ void initUI() {
       currentUserConfig = userConfig ?? currentUserConfig;
       var newConfig = currentUserConfig.applyDefaults(defaultUserConfig);
       applyConfiguration(newConfig);
-    }
-  );
+    }, showAndLogError);
   // Apply the default configuration before loading any new configs.
   applyConfiguration(defaultUserConfig);
 }
@@ -720,7 +720,8 @@ void conversationListSelected(String conversationListRoot) {
         }
       }
     },
-    conversationListRoot);
+    conversationListRoot,
+    showAndLogError);
 }
 
 SplayTreeSet<model.Conversation> get emptyConversationsSet =>
@@ -1526,9 +1527,12 @@ void showAndLogError(error, trace) {
   String errMsg;
   if (error is PubSubException) {
     errMsg = "A network problem occurred: ${error.message}";
+  } else if (error is FirebaseError) {
+    errMsg = "An firestore error occured: ${error.code} [${error.message}]";
+    view.bannerView.showBanner("You don't have access to this dataset. Please contact your project administrator");
   } else if (error is Exception) {
     errMsg = "An internal error occurred: ${error.runtimeType}";
-  } else {
+  }  else {
     errMsg = "$error";
   }
   command(UIAction.showSnackbar, new SnackbarData(errMsg, SnackbarNotificationType.error));

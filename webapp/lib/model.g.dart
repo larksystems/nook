@@ -37,8 +37,8 @@ class ConversationListShard {
   }
 
   static StreamSubscription listen(DocStorage docStorage, ConversationListShardCollectionListener listener,
-          {String collectionRoot = '/$collectionName'}) =>
-      listenForUpdates<ConversationListShard>(docStorage, listener, collectionRoot, ConversationListShard.fromSnapshot);
+          {String collectionRoot = '/$collectionName', OnErrorListener onErrorListener}) =>
+      listenForUpdates<ConversationListShard>(docStorage, listener, collectionRoot, ConversationListShard.fromSnapshot, onErrorListener);
 
   Map<String, dynamic> toData() {
     return {
@@ -95,8 +95,8 @@ class Conversation {
   }
 
   static StreamSubscription listen(DocStorage docStorage, ConversationCollectionListener listener,
-          {String collectionRoot = '/$collectionName'}) =>
-      listenForUpdates<Conversation>(docStorage, listener, collectionRoot, Conversation.fromSnapshot);
+          {String collectionRoot = '/$collectionName', OnErrorListener onErrorListener}) =>
+      listenForUpdates<Conversation>(docStorage, listener, collectionRoot, Conversation.fromSnapshot, onErrorListener);
 
   Map<String, dynamic> toData() {
     return {
@@ -386,8 +386,8 @@ class SuggestedReply {
   }
 
   static StreamSubscription listen(DocStorage docStorage, SuggestedReplyCollectionListener listener,
-          {String collectionRoot = '/$collectionName'}) =>
-      listenForUpdates<SuggestedReply>(docStorage, listener, collectionRoot, SuggestedReply.fromSnapshot);
+          {String collectionRoot = '/$collectionName', OnErrorListener onErrorListener}) =>
+      listenForUpdates<SuggestedReply>(docStorage, listener, collectionRoot, SuggestedReply.fromSnapshot, onErrorListener);
 
   Map<String, dynamic> toData() {
     return {
@@ -445,8 +445,8 @@ class Tag {
     return value;
   }
 
-  static void listen(DocStorage docStorage, TagCollectionListener listener, String collectionRoot) =>
-      listenForUpdates<Tag>(docStorage, listener, collectionRoot, Tag.fromSnapshot);
+  static void listen(DocStorage docStorage, TagCollectionListener listener, String collectionRoot, {OnErrorListener onErrorListener}) =>
+      listenForUpdates<Tag>(docStorage, listener, collectionRoot, Tag.fromSnapshot, onErrorListener);
 
   Map<String, dynamic> toData() {
     return {
@@ -551,8 +551,8 @@ class SystemMessage {
   }
 
   static StreamSubscription listen(DocStorage docStorage, SystemMessageCollectionListener listener,
-          {String collectionRoot = '/$collectionName'}) =>
-      listenForUpdates<SystemMessage>(docStorage, listener, collectionRoot, SystemMessage.fromSnapshot);
+          {String collectionRoot = '/$collectionName', OnErrorListener onErrorListener}) =>
+      listenForUpdates<SystemMessage>(docStorage, listener, collectionRoot, SystemMessage.fromSnapshot, onErrorListener);
 
   Map<String, dynamic> toData() {
     return {
@@ -624,8 +624,8 @@ class UserConfiguration {
   }
 
   static StreamSubscription listen(DocStorage docStorage, UserConfigurationCollectionListener listener,
-          {String collectionRoot = '/$collectionName'}) =>
-      listenForUpdates<UserConfiguration>(docStorage, listener, collectionRoot, UserConfiguration.fromSnapshot);
+          {String collectionRoot = '/$collectionName', OnErrorListener onErrorListener}) =>
+      listenForUpdates<UserConfiguration>(docStorage, listener, collectionRoot, UserConfiguration.fromSnapshot, onErrorListener);
 
   Map<String, dynamic> toData() {
     return {
@@ -651,6 +651,11 @@ typedef UserConfigurationCollectionListener = void Function(
   List<UserConfiguration> added,
   List<UserConfiguration> modified,
   List<UserConfiguration> removed,
+);
+
+typedef OnErrorListener = void Function(
+  Object error,
+  StackTrace stackTrace
 );
 
 // ======================================================================
@@ -870,6 +875,7 @@ StreamSubscription<List<DocSnapshot>> listenForUpdates<T>(
     void Function(List<T> added, List<T> modified, List<T> removed) listener,
     String collectionRoot,
     T Function(DocSnapshot doc) createModel,
+    [OnErrorListener onErrorListener]
     ) {
   log.verbose('Loading from $collectionRoot');
   log.verbose('Query root: $collectionRoot');
@@ -893,7 +899,7 @@ StreamSubscription<List<DocSnapshot>> listenForUpdates<T>(
       }
     }
     listener(added, modified, removed);
-  });
+  }, onError: onErrorListener);
 }
 
 /// Document storage interface.
