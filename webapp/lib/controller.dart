@@ -474,7 +474,10 @@ void initUI() {
         ..addAll(added)
         ..addAll(modified);
       view.conversationListSelectView.updateConversationLists(shards);
-    }, showAndLogError);
+    }, (error, stacktrace) {
+      view.conversationListPanelView.hideLoadSpinner();
+      showAndLogError(error, stacktrace);
+    });
 
   platform.listenForSystemMessages(
     (added, modified, removed) {
