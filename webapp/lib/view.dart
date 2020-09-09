@@ -511,6 +511,7 @@ class MessageView {
     if (position == null || position >= _messageTags.children.length) {
       // Add at the end
       _messageTags.append(tag.tag);
+      tag.tag.scrollIntoView();
       return;
     }
     // Add before an existing tag
@@ -519,6 +520,7 @@ class MessageView {
     }
     Node refChild = _messageTags.children[position];
     _messageTags.insertBefore(tag.tag, refChild);
+    tag.tag.scrollIntoView();
   }
 
   void removeTag(String tagId) {
