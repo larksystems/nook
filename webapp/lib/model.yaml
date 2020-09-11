@@ -53,7 +53,12 @@ Tag:
   type: 'TagType, default TagType.Normal'
   shortcut: 'string'
   filterable: 'bool'
-  group: "string, default ''"
+  group: 'string, default ""' # deprecated, replaced by groups
+  groups: 'array string, default []'
+  visible: 'bool, default true'
+  isUnifier: 'bool, default false'
+  unifierTagId: 'string'
+  unifiesTagIds: 'array string'
 
 TagType:
   dartType: 'enum'

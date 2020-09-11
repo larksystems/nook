@@ -40,7 +40,7 @@ void _populateConversationPanelView(model.Conversation conversation, {bool updat
     ..deidentifiedPhoneNumber = conversation.docId
     ..deidentifiedPhoneNumberShort = conversation.shortDeidentifiedPhoneNumber
     ..demographicsInfo = conversation.demographicsInfo.values.join(', ');
-  for (var tag in tagIdsToTags(conversation.tagIds, conversationTags)) {
+  for (var tag in tagIdsToTags(conversation.tagIds, conversationTagIdsToTags)) {
     view.conversationPanelView.addTags(new view.ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
   }
 
@@ -56,7 +56,7 @@ void _updateConversationPanelView(model.Conversation conversation) {
     ..deidentifiedPhoneNumberShort = conversation.shortDeidentifiedPhoneNumber
     ..demographicsInfo = conversation.demographicsInfo.values.join(', ');
   view.conversationPanelView.removeTags();
-  for (var tag in tagIdsToTags(conversation.tagIds, conversationTags)) {
+  for (var tag in tagIdsToTags(conversation.tagIds, conversationTagIdsToTags)) {
     view.conversationPanelView.addTags(new view.ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
   }
 
@@ -69,7 +69,7 @@ void _updateConversationPanelView(model.Conversation conversation) {
 
 view.MessageView _generateMessageView(model.Message message, model.Conversation conversation) {
   List<view.TagView> tags = [];
-  for (var tag in tagIdsToTags(message.tagIds, messageTags)) {
+  for (var tag in tagIdsToTags(message.tagIds, messageTagIdsToTags)) {
     tags.add(new view.MessageTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
   }
   var messageView = new view.MessageView(
@@ -181,7 +181,7 @@ void _addDateTagToFilterMenu(TagFilterType filterType) {
   view.conversationFilter[filterType].addMenuTag(view.AfterDateFilterMenuTagView(filterType), "Date");
 }
 
-void _populateSelectedFilterTags(List<model.Tag> tags, TagFilterType filterType) {
+void _populateSelectedFilterTags(Set<model.Tag> tags, TagFilterType filterType) {
   view.conversationFilter[filterType].clearSelectedTags();
   for (var tag in tags) {
     view.conversationFilter[filterType].addFilterTag(new view.FilterTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type), filterType));
@@ -220,15 +220,23 @@ Map<String, List<model.SuggestedReply>> _groupRepliesIntoCategories(List<model.S
 }
 
 Map<String, List<model.Tag>> _groupTagsIntoCategories(List<model.Tag> tags) {
-  tags.sort((tag1, tag2) {
-    int groupCompare = tag1.group.compareTo(tag2.group);
-    if (groupCompare != 0) return groupCompare;
-    return tag1.text.compareTo(tag2.text);
-  });
-
   Map<String, List<model.Tag>> result = {};
   for (model.Tag tag in tags) {
-    result.putIfAbsent(tag.group, () => []).add(tag);
+    if (tag.groups.isEmpty) {
+      if (tag.group.isEmpty) {
+        result.putIfAbsent("", () => []).add(tag);
+        continue;
+      }
+      result.putIfAbsent(tag.group, () => []).add(tag);
+      continue;
+    }
+    for (var group in tag.groups) {
+      result.putIfAbsent(group, () => []).add(tag);
+    }
+  }
+  // Sort tags alphabetically
+  for (var tags in result.values) {
+    tags.sort((t1, t2) => t1.text.compareTo(t2.text));
   }
   return result;
 }
