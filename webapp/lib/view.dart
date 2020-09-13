@@ -1271,7 +1271,7 @@ class ReplyPanelView {
   TextAreaElement _notesTextArea;
 
   AddActionView _addReply;
-  List<ReplyActionView> _replyViews;
+  List<ActionView> _replyViews;
 
   ReplyPanelView() {
     replyPanel = new DivElement()
@@ -1496,55 +1496,23 @@ class TagPanelView {
   }
 }
 
-class ActionView {
+abstract class ActionView {
   DivElement action;
-  DivElement _shortcutElement;
-  List<DivElement> _buttonElements;
-
-  ActionView(String text, String shortcut, String actionId, String buttonText) {
-    action = new DivElement()
-      ..classes.add('action')
-      ..dataset['id'] = actionId;
-
-    _shortcutElement = new DivElement()
-      ..classes.add('action__shortcut')
-      ..text = shortcut;
-    action.append(_shortcutElement);
-
-    var textElement = new DivElement()
-      ..classes.add('action__description')
-      ..text = text;
-    action.append(textElement);
-
-    var buttonElement = new DivElement()
-      ..classes.add('action__button')
-      ..classes.add('action__button--float')
-      ..text = buttonText;
-    action.append(buttonElement);
-    _buttonElements = [buttonElement];
-  }
-
-  void showShortcut(bool show) {
-    if (show) {
-      _shortcutElement.classes.remove('hidden');
-    } else {
-      _shortcutElement.classes.add('hidden');
-    }
-  }
-
-  void showButtons(bool show) {
-    if (show) {
-      _buttonElements.forEach((element) => element.classes.remove('hidden'));
-    } else {
-      _buttonElements.forEach((element) => element.classes.add('hidden'));
-    }
-  }
+  void showShortcut(bool show);
+  void showButtons(bool show);
 }
 
-class ReplyActionView extends ActionView {
+class ReplyActionView implements ActionView {
+  DivElement action;
+  DivElement _shortcutElement;
+  DivElement _textElement;
+  DivElement _translationElement;
+  List<DivElement> _buttonElements;
 
-  ReplyActionView(String text, String translation, String shortcut, int replyIndex, String buttonText) : super(text, shortcut, '$replyIndex', buttonText) {
-    action.children.clear();
+  ReplyActionView(String text, String translation, String shortcut, int replyIndex, String buttonText) {
+    action = new DivElement()
+      ..classes.add('action')
+      ..dataset['id'] = "${replyIndex}";
 
     _shortcutElement = new DivElement()
       ..classes.add('action__shortcut')
@@ -1559,56 +1527,172 @@ class ReplyActionView extends ActionView {
 
     { // Add text
       var textWrapper = new DivElement()
-        ..style.position = 'relative';
+        ..classes.add('action__description');
       textTranslationWrapper.append(textWrapper);
 
-      var descriptionElement = new DivElement()
-        ..classes.add('action__description');
-      textWrapper.append(descriptionElement);
-
-      var textElement = new DivElement()
+      _textElement = new DivElement()
         ..classes.add('action__text')
         ..text = text;
-      descriptionElement.append(textElement);
+      textWrapper.append(_textElement);
 
       var buttonElement = new DivElement()
         ..classes.add('action__button')
         ..classes.add('action__button--float')
         ..text = '$buttonText (En)'; // TODO(mariana): These project-specific preferences should be read from a project config file
       buttonElement.onClick.listen((_) => command(UIAction.sendMessage, new ReplyData(replyIndex)));
+      buttonElement.onMouseEnter.listen((event) => highlightText(true));
+      buttonElement.onMouseLeave.listen((event) => highlightText(false));
       textWrapper.append(buttonElement);
       _buttonElements.add(buttonElement);
     }
 
     { // Add translation
       var translationWrapper = new DivElement()
-        ..style.position = 'relative';
+        ..classes.add('action__description');
       textTranslationWrapper.append(translationWrapper);
 
-      var descriptionElement = new DivElement()
-        ..classes.add('action__description');
-      translationWrapper.append(descriptionElement);
-
-      var translationElement = new DivElement()
+      _translationElement = new DivElement()
         ..classes.add('action__translation')
         ..text = translation;
-      descriptionElement.append(translationElement);
+      translationWrapper.append(_translationElement);
 
       var buttonElement = new DivElement()
         ..classes.add('action__button')
         ..classes.add('action__button--float')
         ..text = '$buttonText (Swa)'; // TODO(mariana): These project-specific preferences should be read from a project config file
       buttonElement.onClick.listen((_) => command(UIAction.sendMessage, new ReplyData(replyIndex, replyWithTranslation: true)));
+      buttonElement.onMouseEnter.listen((event) => highlightTranslation(true));
+      buttonElement.onMouseLeave.listen((event) => highlightTranslation(false));
       translationWrapper.append(buttonElement);
       _buttonElements.add(buttonElement);
     }
   }
+
+  void showShortcut(bool show) {
+    _shortcutElement.classes.toggle('hidden', !show);
+  }
+
+  void showButtons(bool show) {
+    _buttonElements.forEach((button) => button.classes.toggle('hidden', !show));
+  }
+
+  void highlightText(bool highlight) {
+    _textElement.classes.toggle('action__text--bold', highlight);
+  }
+
+  void highlightTranslation(bool highlight) {
+    _translationElement.classes.toggle('action__translation--bold', highlight);
+  }
 }
 
-class TagActionView extends ActionView {
-  TagActionView(String text, String shortcut, String tagId, String buttonText) : super(text, shortcut, tagId, buttonText) {
-    var buttonElement = action.querySelector('.action__button');
-    buttonElement.onClick.listen((_) => command(UIAction.addTag, new TagData(action.dataset['id'])));
+class ReplyActionGroupView implements ActionView {
+  DivElement action;
+  List<DivElement> _buttonElements;
+  List<ReplyActionView> replies;
+
+  ReplyActionGroupView(String groupId, String groupDescription, String buttonText, this.replies) {
+    action = new DivElement()
+      ..classes.add('action')
+      ..classes.add('action--group')
+      ..dataset['id'] = groupId;
+
+    var textWrapper = new DivElement()
+      ..classes.add('action__group__description');
+    action.append(textWrapper);
+
+    var textElement = new DivElement()
+      ..classes.add('action__group__text')
+      ..text = groupDescription;
+    textWrapper.append(textElement);
+
+    _buttonElements = [];
+
+    var buttonGroup = new DivElement()
+      ..classes.add('action__group__buttons');
+    textWrapper.append(buttonGroup);
+
+    var sendButton = new DivElement()
+      ..classes.add('action__button')
+      ..classes.add('action__button--flex')
+      ..text = '$buttonText (En)'; // TODO(mariana): These project-specific preferences should be read from a project config file
+    sendButton.onClick.listen((_) => command(UIAction.sendMessageGroup, new GroupReplyData(groupId)));
+    sendButton.onMouseEnter.listen((event) {
+      sendButton.scrollIntoView(); // this is to stabilize the view around the button
+      replies.forEach((reply) => reply.highlightText(true));
+    });
+    sendButton.onMouseLeave.listen((event) => replies.forEach((reply) => reply.highlightText(false)));
+    buttonGroup.append(sendButton);
+    _buttonElements.add(sendButton);
+
+    var sendTranslationButton = new DivElement()
+      ..classes.add('action__button')
+      ..classes.add('action__button--flex')
+      ..text = '$buttonText (Swa)'; // TODO(mariana): These project-specific preferences should be read from a project config file
+    sendTranslationButton.onClick.listen((_) => command(UIAction.sendMessageGroup, new GroupReplyData(groupId, replyWithTranslation: true)));
+    sendTranslationButton.onMouseEnter.listen((event) {
+      sendTranslationButton.scrollIntoView(); // this is to stabilize the view around the button
+      replies.forEach((reply) => reply.highlightTranslation(true));
+    });
+    sendTranslationButton.onMouseLeave.listen((event) => replies.forEach((reply) => reply.highlightTranslation(false)));
+    buttonGroup.append(sendTranslationButton);
+    _buttonElements.add(sendTranslationButton);
+
+    var repliesWrapper = new DivElement()
+      ..classes.add('action__group__wrapper');
+    for (var reply in replies) {
+      repliesWrapper.append(reply.action);
+    }
+    action.append(repliesWrapper);
+  }
+
+  void showShortcut(bool show) {
+    for (var reply in replies) {
+      reply.showShortcut(show);
+    }
+  }
+
+  void showButtons(bool show) {
+    _buttonElements.forEach((button) => button.classes.toggle('hidden', !show));
+    for (var reply in replies) {
+      reply.showButtons(show);
+    }
+  }
+}
+
+class TagActionView implements ActionView {
+  DivElement action;
+  DivElement _shortcutElement;
+  DivElement _buttonElement;
+
+  TagActionView(String text, String shortcut, String tagId, String buttonText) {
+    action = new DivElement()
+      ..classes.add('action')
+      ..dataset['id'] = tagId;
+
+    _shortcutElement = new DivElement()
+      ..classes.add('action__shortcut')
+      ..text = shortcut;
+    action.append(_shortcutElement);
+
+    var textElement = new DivElement()
+      ..classes.add('action__description')
+      ..text = text;
+    action.append(textElement);
+
+    _buttonElement = new DivElement()
+      ..classes.add('action__button')
+      ..classes.add('action__button--float')
+      ..text = buttonText
+      ..onClick.listen((_) => command(UIAction.addTag, new TagData(action.dataset['id'])));
+    action.append(_buttonElement);
+  }
+
+  void showShortcut(bool show) {
+    _shortcutElement.classes.toggle('hidden', !show);
+  }
+
+  void showButtons(bool show) {
+    _buttonElement.classes.toggle('hidden', !show);
   }
 }
 

@@ -46,6 +46,9 @@ SuggestedReply:
   shortcut: 'string'
   seq_no: 'int seqNumber'
   category: 'string'
+  group_id: 'string groupId'
+  group_description: 'string groupDescription'
+  index_in_group: 'int indexInGroup'
 
 Tag:
   firebaseDocId: 'string tagId'

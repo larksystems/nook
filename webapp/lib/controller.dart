@@ -2,6 +2,7 @@ library controller;
 
 import 'dart:async';
 import 'dart:collection';
+import 'dart:math';
 
 import 'package:firebase/firebase.dart' show FirebaseError;
 
@@ -27,6 +28,7 @@ enum UIAction {
   updateTranslation,
   updateNote,
   sendMessage,
+  sendMessageGroup,
   sendManualMessage,
   addTag,
   addFilterTag,
@@ -78,6 +80,15 @@ class ReplyData extends Data {
 
   @override
   String toString() => 'ReplyData: {replyIndex: $replyIndex, replyWithTranslation: $replyWithTranslation}';
+}
+
+class GroupReplyData extends Data {
+  String replyGroupId;
+  bool replyWithTranslation;
+  GroupReplyData(this.replyGroupId, {this.replyWithTranslation: false});
+
+  @override
+  String toString() => 'GroupReplyData: {replyGroupId: $replyGroupId, replyWithTranslation: $replyWithTranslation}';
 }
 
 class ManualReplyData extends Data {
@@ -812,7 +823,7 @@ void command(UIAction action, Data data) {
         model.SuggestedReply translationReply = new model.SuggestedReply();
         translationReply
           ..text = selectedReply.translation
-          ..translation = '';
+          ..translation = selectedReply.text;
         selectedReply = translationReply;
       }
       if (!currentConfig.sendMultiMessageEnabled || selectedConversations.isEmpty) {
@@ -824,6 +835,30 @@ void command(UIAction action, Data data) {
         return;
       }
       sendMultiReply(selectedReply, selectedConversations);
+      break;
+    case UIAction.sendMessageGroup:
+      GroupReplyData replyData = data;
+      List<model.SuggestedReply> selectedReplies = suggestedRepliesByCategory[selectedSuggestedRepliesCategory].where((reply) => reply.groupId == replyData.replyGroupId).toList();
+      selectedReplies.sort((reply1, reply2) => reply1.indexInGroup.compareTo(reply2.indexInGroup));
+      if (replyData.replyWithTranslation) {
+        List<model.SuggestedReply> translationReplies = [];
+        for (var reply in selectedReplies) {
+          var translationReply = new model.SuggestedReply()
+            ..text = reply.translation
+            ..translation = reply.text;
+          translationReplies.add(translationReply);
+        }
+        selectedReplies = translationReplies;
+      }
+      if (!currentConfig.sendMultiMessageEnabled || selectedConversations.isEmpty) {
+        sendReplyGroup(selectedReplies, activeConversation);
+        return;
+      }
+      if (!view.sendingMultiMessagesUserConfirmation(selectedConversations.length)) {
+        log.verbose('User cancelled sending multi message reply: "${selectedReplies.map((r) => r.text).join("; ")}"');
+        return;
+      }
+      sendMultiReplyGroup(selectedReplies, selectedConversations);
       break;
     case UIAction.sendManualMessage:
       ManualReplyData replyData = data;
@@ -1363,6 +1398,82 @@ void sendMultiReply(model.SuggestedReply reply, List<model.Conversation> convers
     }
   });
   log.verbose('Reply "${reply.text}" queued for sending to conversations ${conversationIds}');
+}
+
+void sendReplyGroup(List<model.SuggestedReply> replies, model.Conversation conversation) {
+  List<String> textReplies = replies.map((r) => r.text).toList();
+  String repliesStr = textReplies.join("; ");
+  log.verbose('Preparing to send ${textReplies.length} replies "${repliesStr}" to conversation ${conversation.docId}');
+  List<model.Message> newMessages = [];
+  for (var reply in replies) {
+    model.Message newMessage = new model.Message()
+      ..text = reply.text
+      ..datetime = new DateTime.now()
+      ..direction = model.MessageDirection.Out
+      ..translation = reply.translation
+      ..tagIds = []
+      ..status = model.MessageStatus.pending;
+    newMessages.add(newMessage);
+  }
+  log.verbose('Adding ${textReplies.length} replies "${repliesStr}" to conversation ${conversation.docId}');
+  conversation.messages.addAll(newMessages);
+  for (var message in newMessages) {
+    view.conversationPanelView.addMessage(_generateMessageView(message, conversation));
+  }
+
+  log.verbose('Sending ${textReplies.length} replies "${repliesStr}" to conversation ${conversation.docId}');
+  platform.sendMessages(conversation.docId, textReplies, onError: (error) {
+    log.error('${textReplies.length} replies "${repliesStr}" failed to be sent to conversation ${conversation.docId}');
+    log.error('Error: ${error}');
+    command(UIAction.showSnackbar, new SnackbarData('Send Reply Failed', SnackbarNotificationType.error));
+    for (var message in newMessages) {
+      message.status = model.MessageStatus.failed;
+      if (conversation.docId == activeConversation.docId) {
+        int messageIndex = activeConversation.messages.indexOf(message);
+        view.conversationPanelView.messageViewAtIndex(messageIndex).setStatus(message.status);
+      }
+    }
+  });
+  log.verbose('${textReplies.length} replies "${repliesStr}" queued for sending to conversation ${conversation.docId}');
+}
+
+void sendMultiReplyGroup(List<model.SuggestedReply> replies, List<model.Conversation> conversations) {
+  List<String> conversationIds = conversations.map((conversation) => conversation.docId).toList();
+  List<String> textReplies = replies.map((r) => r.text).toList();
+  String repliesStr = textReplies.join("; ");
+  log.verbose('Preparing to send ${textReplies.length} replies "${repliesStr}" to conversations $conversationIds');
+  var newMessages = <model.Message>[];
+  for (var reply in replies) {
+    model.Message newMessage = new model.Message()
+      ..text = reply.text
+      ..datetime = new DateTime.now()
+      ..direction = model.MessageDirection.Out
+      ..translation = reply.translation
+      ..tagIds = []
+      ..status = model.MessageStatus.pending;
+    newMessages.add(newMessage);
+  }
+  log.verbose('Adding ${textReplies.length} replies "${repliesStr}" to conversation ${conversationIds}');
+  conversations.forEach((conversation) => conversation.messages.addAll(newMessages));
+  if (conversations.contains(activeConversation)) {
+    for (var message in newMessages) {
+      view.conversationPanelView.addMessage(_generateMessageView(message, activeConversation));
+    }
+  }
+  log.verbose('Sending ${textReplies.length} replies "${repliesStr}" to conversation ${conversationIds}');
+  platform.sendMultiMessages(conversationIds, textReplies, onError: (error) {
+    log.error('${textReplies.length} replies "${repliesStr}" failed to be sent to conversations ${conversationIds}');
+    log.error('Error: ${error}');
+    command(UIAction.showSnackbar, new SnackbarData('Send Multi Reply Failed', SnackbarNotificationType.error));
+    for (var message in newMessages) {
+      message.status = model.MessageStatus.failed;
+      if (conversationIds.contains(activeConversation.docId)) {
+        int messageIndex = activeConversation.messages.indexOf(message);
+        view.conversationPanelView.messageViewAtIndex(messageIndex).setStatus(message.status);
+      }
+    }
+  });
+  log.verbose('${textReplies.length} replies "${repliesStr}" queued for sending to conversations ${conversationIds}');
 }
 
 void setConversationTag(model.Tag tag, model.Conversation conversation) {

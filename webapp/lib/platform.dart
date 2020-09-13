@@ -12,6 +12,7 @@ import 'pubsub.dart';
 Logger log = new Logger('platform.dart');
 
 const _SEND_TO_MULTI_IDS_ACTION = "send_to_multi_ids";
+const _SEND_MESSAGES_TO_IDS_ACTION = "send_messages_to_ids";
 
 DocStorage _docStorage;
 PubSubClient _pubsubInstance;
@@ -212,6 +213,38 @@ Future<void> sendMultiMessage(List<String> ids, String message, {onError(dynamic
       'action' : _SEND_TO_MULTI_IDS_ACTION,
       'ids' : ids,
       'message' : message
+    };
+
+  try {
+    return await _pubsubInstance.publish(platform_constants.smsTopic, payload);
+  } catch (error, trace) {
+    if (onError != null) onError(error);
+    // Rethrow so that others could handle it
+    // and so that it is logged through the normal process
+    rethrow;
+  }
+}
+
+Future<void> sendMessages(String id, List<String> messages, {onError(dynamic)}) {
+  log.verbose("Sending message $id : $messages");
+
+  return sendMultiMessages([id], messages, onError: onError);
+}
+
+Future<void> sendMultiMessages(List<String> ids, List<String> messages, {onError(dynamic)}) async {
+  log.verbose("Sending multi-message $ids : $messages");
+
+  //  {
+  //  "action" : "send_to_multi_ids"
+  //  "ids" : [ "nook-uuid-23dsa" ],
+  //  "messages" : [ "🐱" ]
+  //  }
+
+  Map payload =
+    {
+      'action' : _SEND_MESSAGES_TO_IDS_ACTION,
+      'ids' : ids,
+      'messages' : messages
     };
 
   try {

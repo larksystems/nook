@@ -87,22 +87,27 @@ view.MessageView _generateMessageView(model.Message message, model.Conversation 
 }
 
 void _populateReplyPanelView(List<model.SuggestedReply> replies) {
-  replies.sort((r1, r2) {
-    if (r1.seqNumber == null && r2.seqNumber == null) {
-      return r1.shortcut.compareTo(r2.shortcut);
-    }
-    var seqNo1 = r1.seqNumber == null ? double.nan : r1.seqNumber;
-    var seqNo2 = r2.seqNumber == null ? double.nan : r2.seqNumber;
-    return seqNo1.compareTo(seqNo2);
-  });
+  Map<String, List<model.SuggestedReply>> repliesByGroups = _groupRepliesIntoGroups(replies);
   view.replyPanelView.clear();
   String buttonText = SEND_REPLY_BUTTON_TEXT;
-  for (var reply in replies) {
-    int replyIndex = replies.indexOf(reply);
-    var replyView = new view.ReplyActionView(reply.text, reply.translation, reply.shortcut, replyIndex, buttonText);
-    replyView.showShortcut(currentConfig.repliesKeyboardShortcutsEnabled);
-    replyView.showButtons(currentConfig.sendMessagesEnabled);
-    view.replyPanelView.addReply(replyView);
+  for (var groupId in repliesByGroups.keys) {
+    var repliesInGroup = repliesByGroups[groupId];
+    List<view.ReplyActionView> views = [];
+    var groupDescription = "";
+    for (var reply in repliesInGroup) {
+      groupDescription = reply.groupDescription;
+      int replyIndex = replies.indexOf(reply);
+      var replyView = new view.ReplyActionView(reply.text, reply.translation, reply.shortcut, replyIndex, buttonText);
+      replyView.showShortcut(currentConfig.repliesKeyboardShortcutsEnabled);
+      replyView.showButtons(currentConfig.sendMessagesEnabled);
+      views.add(replyView);
+    }
+    if (views.length == 1) {
+      view.replyPanelView.addReply(views.first);
+      continue;
+    }
+    var replyGroupView = new view.ReplyActionGroupView(groupId, groupDescription, buttonText + " all", views);
+    view.replyPanelView.addReply(replyGroupView);
   }
 }
 
@@ -215,6 +220,23 @@ Map<String, List<model.SuggestedReply>> _groupRepliesIntoCategories(List<model.S
       result[category] = [];
     }
     result[category].add(reply);
+  }
+  return result;
+}
+
+Map<String, List<model.SuggestedReply>> _groupRepliesIntoGroups(List<model.SuggestedReply> replies) {
+  Map<String, List<model.SuggestedReply>> result = {};
+  for (model.SuggestedReply reply in replies) {
+    // TODO (mariana): once we've transitioned to using groups, we can remove the sequence number fix
+    String groupId = reply.groupId ?? reply.seqNumber.toString();
+    if (!result.containsKey(groupId)) {
+      result[groupId] = [];
+    }
+    result[groupId].add(reply);
+  }
+  for (String groupId in result.keys) {
+    // TODO (mariana): once we've transitioned to using groups, we can remove the sequence number comparison
+    result[groupId].sort((reply1, reply2) => (reply1.indexInGroup ?? reply1.seqNumber).compareTo(reply2.indexInGroup ?? reply2.seqNumber));
   }
   return result;
 }

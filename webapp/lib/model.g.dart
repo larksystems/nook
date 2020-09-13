@@ -355,6 +355,9 @@ class SuggestedReply {
   String shortcut;
   int seqNumber;
   String category;
+  String groupId;
+  String groupDescription;
+  int indexInGroup;
 
   String get suggestedReplyId => docId;
 
@@ -368,7 +371,10 @@ class SuggestedReply {
       ..translation = String_fromData(data['translation'])
       ..shortcut = String_fromData(data['shortcut'])
       ..seqNumber = int_fromData(data['seq_no'])
-      ..category = String_fromData(data['category']);
+      ..category = String_fromData(data['category'])
+      ..groupId = String_fromData(data['group_id'])
+      ..groupDescription = String_fromData(data['group_description'])
+      ..indexInGroup = int_fromData(data['index_in_group']);
   }
 
   static SuggestedReply required(Map data, String fieldName, String className) {
@@ -396,6 +402,9 @@ class SuggestedReply {
       if (shortcut != null) 'shortcut': shortcut,
       if (seqNumber != null) 'seq_no': seqNumber,
       if (category != null) 'category': category,
+      if (groupId != null) 'group_id': groupId,
+      if (groupDescription != null) 'group_description': groupDescription,
+      if (indexInGroup != null) 'index_in_group': indexInGroup,
     };
   }
 
