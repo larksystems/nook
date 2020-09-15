@@ -1409,6 +1409,12 @@ void sendMultiReply(model.SuggestedReply reply, List<model.Conversation> convers
 }
 
 void sendReplyGroup(List<model.SuggestedReply> replies, model.Conversation conversation) {
+  int timer = 0;
+  for (var reply in replies) {
+    Timer(Duration(milliseconds: timer), () => sendReply(reply, conversation));
+    timer += 500;
+  }
+  return;
   List<String> textReplies = replies.map((r) => r.text).toList();
   String repliesStr = textReplies.join("; ");
   log.verbose('Preparing to send ${textReplies.length} replies "${repliesStr}" to conversation ${conversation.docId}');
@@ -1446,6 +1452,12 @@ void sendReplyGroup(List<model.SuggestedReply> replies, model.Conversation conve
 }
 
 void sendMultiReplyGroup(List<model.SuggestedReply> replies, List<model.Conversation> conversations) {
+  int timer = 0;
+  for (var reply in replies) {
+    Timer(Duration(milliseconds: timer), () => sendMultiReply(reply, conversations));
+    timer += 500;
+  }
+  return;
   List<String> conversationIds = conversations.map((conversation) => conversation.docId).toList();
   List<String> textReplies = replies.map((r) => r.text).toList();
   String repliesStr = textReplies.join("; ");
