@@ -642,6 +642,13 @@ void applyConfiguration(model.UserConfiguration newConfig) {
       oldConfig.repliesPanelVisibility != newConfig.repliesPanelVisibility) {
     view.showPanels(newConfig.repliesPanelVisibility, newConfig.tagsPanelVisibility);
   }
+
+  if (oldConfig.suggestedRepliesGroupsEnabled != newConfig.suggestedRepliesGroupsEnabled) {
+    if (suggestedRepliesByCategory != null) {
+      _populateReplyPanelView(suggestedRepliesByCategory[selectedSuggestedRepliesCategory]);
+    }
+  }
+
   log.verbose('Updated user configuration: $currentConfig');
 }
 
@@ -755,7 +762,8 @@ model.UserConfiguration get baseUserConfiguration => new model.UserConfiguration
     ..editNotesEnabled = false
     ..conversationalTurnsEnabled = false
     ..tagsPanelVisibility = false
-    ..repliesPanelVisibility = false;
+    ..repliesPanelVisibility = false
+    ..suggestedRepliesGroupsEnabled = false;
 
 model.UserConfiguration get emptyUserConfiguration => new model.UserConfiguration();
 

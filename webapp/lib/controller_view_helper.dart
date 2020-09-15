@@ -228,7 +228,9 @@ Map<String, List<model.SuggestedReply>> _groupRepliesIntoGroups(List<model.Sugge
   Map<String, List<model.SuggestedReply>> result = {};
   for (model.SuggestedReply reply in replies) {
     // TODO (mariana): once we've transitioned to using groups, we can remove the sequence number fix
-    String groupId = reply.groupId ?? reply.seqNumber.toString();
+    String groupId = currentConfig.suggestedRepliesGroupsEnabled ?
+        reply.groupId ?? reply.seqNumber.toString() :
+        reply.seqNumber.toString();
     if (!result.containsKey(groupId)) {
       result[groupId] = [];
     }
