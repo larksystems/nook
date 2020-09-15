@@ -135,6 +135,10 @@ bool sendingManualMultiMessageUserConfirmation(String messageText, int noMessage
   return window.confirm('Are you sure you want to send the following message to $noMessages conversation${noMessages == 1 ? "" : "s" }?\n\n$messageText');
 }
 
+bool sendingMultiMessageGroupUserConfirmation(int noMessages, int noConversations) {
+  return window.confirm('Are you sure you want to send $noMessages SMS message${noMessages == 1 ? "" : "s" } to $noConversations conversation${noConversations == 1 ? "" : "s" }?');
+}
+
 void showNormalStatus(String text) {
   tagPanelView._statusText.text = text;
   tagPanelView._statusPanel.classes.remove('status-line-warning');

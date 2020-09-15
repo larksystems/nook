@@ -862,8 +862,8 @@ void command(UIAction action, Data data) {
         sendReplyGroup(selectedReplies, activeConversation);
         return;
       }
-      if (!view.sendingMultiMessagesUserConfirmation(selectedConversations.length)) {
-        log.verbose('User cancelled sending multi message reply: "${selectedReplies.map((r) => r.text).join("; ")}"');
+      if (!view.sendingMultiMessageGroupUserConfirmation(selectedReplies.length, selectedConversations.length)) {
+        log.verbose('User cancelled sending multi message group reply: "${selectedReplies.map((r) => r.text).join("; ")}"');
         return;
       }
       sendMultiReplyGroup(selectedReplies, selectedConversations);
