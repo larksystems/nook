@@ -19,34 +19,91 @@
   background: #eee;
 }
 
-.action__description {
+.action.action--group {
+  flex-direction: column;
+  border: 1px dashed #999;
+  margin: 8px 4px;
+}
+
+.action.action--group:hover {
+  background: #fafafa;
+}
+
+.action__description,
+.action__group__description {
   flex:  1 1 auto;
   word-break: break-word;
+  position: relative;
+}
+
+.action__group__description {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.action__group__text {
+  font-style: italic;
+  margin-right: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.action__group__buttons {
+  display: flex;
 }
 
 .action__translation {
   font-size: .8em;
   padding-left: 16px;
   color: #666;
+  min-height: 29px;
+  display: flex;
+  align-items: center;
+}
+
+.action__text {
+  min-height: 29px;
+  display: flex;
+  align-items: center;
+}
+
+.action__text.action__text--bold,
+.action__translation.action__translation--bold {
+  font-weight: bold;
+  color: #222222;
 }
 
 .action__button,
 .new-message-box__send-button {
   flex: 0 0 auto;
   padding: 4px;
-  border-radius: 4px;
+  border-radius: 3px;
   border: 1px solid #bbb;
   opacity: 0;
   cursor: pointer;
   align-self: start;
+  background: white;
 }
 
-.action__button--float {
-  background: white;
+.action__button {
+  padding: 1px 6px;
+  margin: 2px;
   box-shadow: 0 0 5px 4px #eee;
+  text-align: center;
+  align-items: flex-start;
+}
+
+.action__button.action__button--float {
   position: absolute;
   right: 0;
   top: 0;
+}
+
+.action__button.action__button--flex {
+  display: flex;
+  opacity: 1;
+  box-shadow: none;
 }
 
 .new-message-box__send-button {

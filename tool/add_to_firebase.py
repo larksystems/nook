@@ -24,7 +24,7 @@ if __name__ == '__main__':
     CRYPTO_TOKEN_PATH = sys.argv[1]
     CONTENT_TYPE = sys.argv[2]
     INPUT_PATH = sys.argv[3]
-    
+
     log = logging.Logger(__file__, CRYPTO_TOKEN_PATH)
 
     firebase_client = firebase_util.init_firebase_client(CRYPTO_TOKEN_PATH)
@@ -64,9 +64,15 @@ if __name__ == '__main__':
                 reply_fields["seq_no"] = reply_data["seq_no"]
             if "category" in reply_data.keys():
                 reply_fields["category"] = reply_data["category"]
+            if "group_id" in reply_data.keys():
+                reply_fields["group_id"] = reply_data["group_id"]
+            if "group_description" in reply_data.keys():
+                reply_fields["group_description"] = reply_data["group_description"]
+            if "index_in_group" in reply_data.keys():
+                reply_fields["index_in_group"] = reply_data["index_in_group"]
 
             suggested_replies_documents.append({reply_id : reply_fields})
-        
+
         short_id = tool_utils.short_id()
         log.audit(f"add_to_firebase, suggested_replies: JobID ({short_id}), keys to download {json.dumps(suggested_replies_documents)}")
         suggested_replies_documents = firebase_util.convert_documents_to_firestore_format(suggested_replies_collection, suggested_replies_documents)

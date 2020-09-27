@@ -18,7 +18,8 @@ extension UserConfigurationUtil on g.UserConfiguration {
       ..editNotesEnabled = this.editNotesEnabled ?? defaults.editNotesEnabled
       ..conversationalTurnsEnabled = this.conversationalTurnsEnabled ?? defaults.conversationalTurnsEnabled
       ..tagsPanelVisibility = this.tagsPanelVisibility ?? defaults.tagsPanelVisibility
-      ..repliesPanelVisibility = this.repliesPanelVisibility ?? defaults.repliesPanelVisibility;
+      ..repliesPanelVisibility = this.repliesPanelVisibility ?? defaults.repliesPanelVisibility
+      ..suggestedRepliesGroupsEnabled = this.suggestedRepliesGroupsEnabled ?? defaults.suggestedRepliesGroupsEnabled;
 }
 
 extension ConversationListShardUtil on g.ConversationListShard {

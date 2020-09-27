@@ -355,6 +355,9 @@ class SuggestedReply {
   String shortcut;
   int seqNumber;
   String category;
+  String groupId;
+  String groupDescription;
+  int indexInGroup;
 
   String get suggestedReplyId => docId;
 
@@ -368,7 +371,10 @@ class SuggestedReply {
       ..translation = String_fromData(data['translation'])
       ..shortcut = String_fromData(data['shortcut'])
       ..seqNumber = int_fromData(data['seq_no'])
-      ..category = String_fromData(data['category']);
+      ..category = String_fromData(data['category'])
+      ..groupId = String_fromData(data['group_id'])
+      ..groupDescription = String_fromData(data['group_description'])
+      ..indexInGroup = int_fromData(data['index_in_group']);
   }
 
   static SuggestedReply required(Map data, String fieldName, String className) {
@@ -396,6 +402,9 @@ class SuggestedReply {
       if (shortcut != null) 'shortcut': shortcut,
       if (seqNumber != null) 'seq_no': seqNumber,
       if (category != null) 'category': category,
+      if (groupId != null) 'group_id': groupId,
+      if (groupDescription != null) 'group_description': groupDescription,
+      if (indexInGroup != null) 'index_in_group': indexInGroup,
     };
   }
 
@@ -601,6 +610,7 @@ class UserConfiguration {
   bool conversationalTurnsEnabled;
   bool tagsPanelVisibility;
   bool repliesPanelVisibility;
+  bool suggestedRepliesGroupsEnabled;
 
   String get userId => docId;
 
@@ -621,7 +631,8 @@ class UserConfiguration {
       ..editNotesEnabled = bool_fromData(data['edit_notes_enabled'])
       ..conversationalTurnsEnabled = bool_fromData(data['conversational_turns_enabled'])
       ..tagsPanelVisibility = bool_fromData(data['tags_panel_visibility'])
-      ..repliesPanelVisibility = bool_fromData(data['replies_panel_visibility']);
+      ..repliesPanelVisibility = bool_fromData(data['replies_panel_visibility'])
+      ..suggestedRepliesGroupsEnabled = bool_fromData(data['suggested_replies_groups_enabled']);
   }
 
   static UserConfiguration required(Map data, String fieldName, String className) {
@@ -656,6 +667,7 @@ class UserConfiguration {
       if (conversationalTurnsEnabled != null) 'conversational_turns_enabled': conversationalTurnsEnabled,
       if (tagsPanelVisibility != null) 'tags_panel_visibility': tagsPanelVisibility,
       if (repliesPanelVisibility != null) 'replies_panel_visibility': repliesPanelVisibility,
+      if (suggestedRepliesGroupsEnabled != null) 'suggested_replies_groups_enabled': suggestedRepliesGroupsEnabled,
     };
   }
 
