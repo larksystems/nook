@@ -401,7 +401,6 @@ void initUI() {
       if (currentConfig.conversationalTurnsEnabled) {
         _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.exclude], TagFilterType.exclude);
         _populateSelectedAfterDateFilterTag(conversationFilter.afterDateFilter[TagFilterType.exclude], TagFilterType.exclude);
-        _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.lastInboundTurn], TagFilterType.lastInboundTurn);
       }
     }, showAndLogError);
 
@@ -449,6 +448,12 @@ void initUI() {
       if (actionObjectState == UIActionObject.message) {
         view.tagPanelView.selectedGroup = selectedMessageTagsGroup;
         _populateTagPanelView(messageTagsByGroup[selectedMessageTagsGroup], TagReceiver.Message);
+      }
+
+      // Re-read the conversation filter from the URL since we now have the names of the tags
+      conversationFilter = new ConversationFilter.fromUrl();
+      if (currentConfig.conversationalTurnsEnabled) {
+        _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.lastInboundTurn], TagFilterType.lastInboundTurn);
       }
     }, showAndLogError);
 
