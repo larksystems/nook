@@ -508,6 +508,9 @@ void initUI() {
       String conversationListRoot = urlConversationListRoot;
       if (urlConversationListRoot == null) {
         conversationListRoot = ConversationListData.NONE;
+        if (shards.length == 1) { // we have just one shard - select it and load the data
+          conversationListRoot = shards.first.conversationListRoot;
+        }
       } else if (shards.where((shard) => shard.conversationListRoot == urlConversationListRoot).isEmpty) {
         log.warning("Attempting to select shard ${conversationListRoot} that doesn't exist");
         conversationListRoot = ConversationListData.NONE;
