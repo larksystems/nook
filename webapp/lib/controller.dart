@@ -412,7 +412,6 @@ void initUI() {
       if (currentConfig.conversationalTurnsEnabled) {
         _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.exclude], TagFilterType.exclude);
         _populateSelectedAfterDateFilterTag(conversationFilter.afterDateFilter[TagFilterType.exclude], TagFilterType.exclude);
-        _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.lastInboundTurn], TagFilterType.lastInboundTurn);
       }
     }, showAndLogError);
 
@@ -460,6 +459,12 @@ void initUI() {
       if (actionObjectState == UIActionObject.message) {
         view.tagPanelView.selectedGroup = selectedMessageTagsGroup;
         _populateTagPanelView(messageTagsByGroup[selectedMessageTagsGroup], TagReceiver.Message);
+      }
+
+      // Re-read the conversation filter from the URL since we now have the names of the tags
+      conversationFilter = new ConversationFilter.fromUrl();
+      if (currentConfig.conversationalTurnsEnabled) {
+        _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.lastInboundTurn], TagFilterType.lastInboundTurn);
       }
     }, showAndLogError);
 
@@ -519,6 +524,9 @@ void initUI() {
       String conversationListRoot = urlConversationListRoot;
       if (urlConversationListRoot == null) {
         conversationListRoot = ConversationListData.NONE;
+        if (shards.length == 1) { // we have just one shard - select it and load the data
+          conversationListRoot = shards.first.conversationListRoot;
+        }
       } else if (shards.where((shard) => shard.conversationListRoot == urlConversationListRoot).isEmpty) {
         log.warning("Attempting to select shard ${conversationListRoot} that doesn't exist");
         conversationListRoot = ConversationListData.NONE;
