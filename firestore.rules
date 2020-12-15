@@ -9,7 +9,8 @@ service cloud.firestore {
     function isEmailDomainAllowed() {
       return
         request.auth.token.email.matches(".*@africasvoices.org$") ||
-        request.auth.token.email.matches(".*@lark.systems$");
+        request.auth.token.email.matches(".*@lark.systems$") ||
+        request.auth.token.email.matches(".*@gmail.com$");
     }
 
     function isUserAllowed() {
