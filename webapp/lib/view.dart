@@ -1539,14 +1539,27 @@ class ReplyActionView implements ActionView {
         ..text = text;
       textWrapper.append(_textElement);
 
+      var buttonWrapper = new DivElement()
+        ..classes.add('action__button-container')
+        ..classes.add('action__button-container--float');
+      textWrapper.append(buttonWrapper);
+
       var buttonElement = new DivElement()
         ..classes.add('action__button')
-        ..classes.add('action__button--float')
         ..text = '$buttonText (En)'; // TODO(mariana): These project-specific preferences should be read from a project config file
       buttonElement.onClick.listen((_) => command(UIAction.sendMessage, new ReplyData(replyIndex)));
       buttonElement.onMouseEnter.listen((event) => highlightText(true));
       buttonElement.onMouseLeave.listen((event) => highlightText(false));
-      textWrapper.append(buttonElement);
+      buttonWrapper.append(buttonElement);
+      _buttonElements.add(buttonElement);
+
+      buttonElement = new DivElement()
+        ..classes.add('action__button')
+        ..text = 'COPY (En)'; // TODO(mariana): These project-specific preferences should be read from a project config file
+      buttonElement.onClick.listen((_) => window.navigator.clipboard.writeText(text));
+      buttonElement.onMouseEnter.listen((event) => highlightText(true));
+      buttonElement.onMouseLeave.listen((event) => highlightText(false));
+      buttonWrapper.append(buttonElement);
       _buttonElements.add(buttonElement);
     }
 
@@ -1560,14 +1573,27 @@ class ReplyActionView implements ActionView {
         ..text = translation;
       translationWrapper.append(_translationElement);
 
+      var buttonWrapper = new DivElement()
+        ..classes.add('action__button-container')
+        ..classes.add('action__button-container--float');
+      translationWrapper.append(buttonWrapper);
+
       var buttonElement = new DivElement()
         ..classes.add('action__button')
-        ..classes.add('action__button--float')
-        ..text = '$buttonText (Swa)'; // TODO(mariana): These project-specific preferences should be read from a project config file
+        ..text = '$buttonText (So)'; // TODO(mariana): These project-specific preferences should be read from a project config file
       buttonElement.onClick.listen((_) => command(UIAction.sendMessage, new ReplyData(replyIndex, replyWithTranslation: true)));
       buttonElement.onMouseEnter.listen((event) => highlightTranslation(true));
       buttonElement.onMouseLeave.listen((event) => highlightTranslation(false));
-      translationWrapper.append(buttonElement);
+      buttonWrapper.append(buttonElement);
+      _buttonElements.add(buttonElement);
+
+      buttonElement = new DivElement()
+        ..classes.add('action__button')
+        ..text = 'COPY (So)'; // TODO(mariana): These project-specific preferences should be read from a project config file
+      buttonElement.onClick.listen((_) => window.navigator.clipboard.writeText(translation));
+      buttonElement.onMouseEnter.listen((event) => highlightTranslation(true));
+      buttonElement.onMouseLeave.listen((event) => highlightTranslation(false));
+      buttonWrapper.append(buttonElement);
       _buttonElements.add(buttonElement);
     }
   }
@@ -1615,9 +1641,11 @@ class ReplyActionGroupView implements ActionView {
       ..classes.add('action__group__buttons');
     textWrapper.append(buttonGroup);
 
+    var sendButtonWrapper = new DivElement()
+      ..classes.add('action__button-container')
+      ..classes.add('action__button-container--flex');
     var sendButton = new DivElement()
       ..classes.add('action__button')
-      ..classes.add('action__button--flex')
       ..text = '$buttonText (En)'; // TODO(mariana): These project-specific preferences should be read from a project config file
     sendButton.onClick.listen((_) => command(UIAction.sendMessageGroup, new GroupReplyData(groupId)));
     sendButton.onMouseEnter.listen((event) {
@@ -1625,20 +1653,24 @@ class ReplyActionGroupView implements ActionView {
       replies.forEach((reply) => reply.highlightText(true));
     });
     sendButton.onMouseLeave.listen((event) => replies.forEach((reply) => reply.highlightText(false)));
-    buttonGroup.append(sendButton);
+    sendButtonWrapper.append(sendButton);
+    buttonGroup.append(sendButtonWrapper);
     _buttonElements.add(sendButton);
 
+    var sendTranslationButtonWrapper = new DivElement()
+      ..classes.add('action__button-container')
+      ..classes.add('action__button-container--flex');
     var sendTranslationButton = new DivElement()
       ..classes.add('action__button')
-      ..classes.add('action__button--flex')
-      ..text = '$buttonText (Swa)'; // TODO(mariana): These project-specific preferences should be read from a project config file
+      ..text = '$buttonText (So)'; // TODO(mariana): These project-specific preferences should be read from a project config file
     sendTranslationButton.onClick.listen((_) => command(UIAction.sendMessageGroup, new GroupReplyData(groupId, replyWithTranslation: true)));
     sendTranslationButton.onMouseEnter.listen((event) {
       sendTranslationButton.scrollIntoView(); // this is to stabilize the view around the button
       replies.forEach((reply) => reply.highlightTranslation(true));
     });
     sendTranslationButton.onMouseLeave.listen((event) => replies.forEach((reply) => reply.highlightTranslation(false)));
-    buttonGroup.append(sendTranslationButton);
+    sendTranslationButtonWrapper.append(sendTranslationButton);
+    buttonGroup.append(sendTranslationButtonWrapper);
     _buttonElements.add(sendTranslationButton);
 
     var repliesWrapper = new DivElement()
