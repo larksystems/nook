@@ -301,6 +301,7 @@ Future<void> updateNotes(Conversation conversation, String updatedText) {
   return conversation.setNotes(_pubsubInstance, updatedText);
 }
 
+@deprecated
 Future<void> updateUnread(List<Conversation> conversations, bool newValue) {
   log.verbose("Updating unread=$newValue for ${
     conversations.length == 1

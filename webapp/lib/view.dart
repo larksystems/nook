@@ -171,8 +171,6 @@ const REPLY_PANEL_TITLE = 'Suggested responses';
 const TAG_PANEL_TITLE = 'Tags';
 const ADD_REPLY_INFO = 'Add new suggested response';
 const ADD_TAG_INFO = 'Add new tag';
-const MARK_UNREAD_INFO = 'Mark unread';
-const MARK_SELECTED_UNREAD_INFO = 'Mark selected unread';
 
 class ConversationPanelView {
   // HTML elements
@@ -807,7 +805,7 @@ class ConversationListSelectHeader {
 class ConversationListPanelView {
   DivElement conversationListPanel;
   DivElement _conversationPanelTitle;
-  MarkUnreadActionView _markUnread;
+  ChangeSortOrderActionView _changeSortOrder;
   LazyListViewModel _conversationList;
   CheckboxInputElement _selectAllCheckbox;
   DivElement _loadSpinner;
@@ -849,10 +847,10 @@ class ConversationListPanelView {
       ..text = _conversationPanelTitleText;
     panelHeader.append(_conversationPanelTitle);
 
-    _markUnread = MarkUnreadActionView();
+    _changeSortOrder = ChangeSortOrderActionView();
     panelHeader.append(new DivElement()
-      ..classes.add('conversation-list-header__mark-unread')
-      ..append(_markUnread.markUnreadAction));
+      ..classes.add('conversation-list__sort-order')
+      ..append(_changeSortOrder.changeSortOrderAction));
 
     _loadSpinner = new DivElement()
       ..classes.add('load-spinner');
@@ -895,14 +893,10 @@ class ConversationListPanelView {
     List<ConversationSummary> conversationsToAdd = [];
     for (var conversation in conversations) {
       ConversationSummary summary = _phoneToConversations[conversation.docId];
-      if (summary != null) {
-        updateConversationSummary(summary, conversation);
-        continue;
-      }
+      if (summary != null) continue;
       summary = new ConversationSummary(
           conversation.docId,
-          conversation.messages.first.text,
-          conversation.unread);
+          conversation.messages.first.text);
       conversationsToAdd.add(summary);
     }
     _conversationList.appendItems(conversationsToAdd);
@@ -914,21 +908,13 @@ class ConversationListPanelView {
 
   void addOrUpdateConversation(Conversation conversation) {
     ConversationSummary summary = _phoneToConversations[conversation.docId];
-    if (summary != null) {
-      updateConversationSummary(summary, conversation);
-      return;
-    }
+    if (summary != null) return;
     summary = new ConversationSummary(
         conversation.docId,
-        conversation.messages.first.text,
-        conversation.unread);
+        conversation.messages.first.text);
     _conversationList.addItem(summary, null);
     _phoneToConversations[summary.deidentifiedPhoneNumber] = summary;
     _conversationPanelTitle.text = _conversationPanelTitleText;
-  }
-
-  void updateConversationSummary(ConversationSummary summary, Conversation conversation) {
-    conversation.unread ? summary._markUnread() : summary._markRead();
   }
 
   void selectConversation(String deidentifiedPhoneNumber) {
@@ -936,7 +922,6 @@ class ConversationListPanelView {
     activeConversation = _phoneToConversations[deidentifiedPhoneNumber];
     activeConversation._select();
     _conversationList.selectItem(activeConversation);
-    command(UIAction.markConversationRead, ConversationData(deidentifiedPhoneNumber));
   }
 
   void showWarning(String deidentifiedPhoneNumber) {
@@ -953,12 +938,8 @@ class ConversationListPanelView {
     _conversationPanelTitle.text = _conversationPanelTitleText;
   }
 
-  void markConversationRead(String deidentifiedPhoneNumber) {
-    _phoneToConversations[deidentifiedPhoneNumber]?._markRead();
-  }
-
-  void markConversationUnread(String deidentifiedPhoneNumber) {
-    _phoneToConversations[deidentifiedPhoneNumber]?._markUnread();
+  void changeConversationSortOrder(UIConversationSort conversationSort) {
+    _changeSortOrder.showSortButton(conversationSort);
   }
 
   void checkConversation(String deidentifiedPhoneNumber) {
@@ -973,7 +954,6 @@ class ConversationListPanelView {
   void uncheckAllConversations() => _phoneToConversations.forEach((_, conversation) => conversation._uncheck());
   void showCheckboxes(bool show) {
     _selectAllCheckbox.hidden = !show;
-    _markUnread.multiSelectMode(show);
     _phoneToConversations.forEach((_, conversation) => conversation._showCheckbox(show));
   }
 
@@ -1178,13 +1158,12 @@ class ConversationSummary with LazyListViewItem {
 
   String deidentifiedPhoneNumber;
   String _text;
-  bool _unread;
   bool _checked = false;
   bool _selected = false;
   bool _checkboxHidden = true;
   bool _warning = false;
 
-  ConversationSummary(this.deidentifiedPhoneNumber, this._text, this._unread);
+  ConversationSummary(this.deidentifiedPhoneNumber, this._text);
 
   Element buildElement() {
     var conversationSummary = new DivElement()
@@ -1204,7 +1183,6 @@ class ConversationSummary with LazyListViewItem {
       ..dataset['id'] = deidentifiedPhoneNumber
       ..onClick.listen((_) => command(UIAction.showConversation, new ConversationData(deidentifiedPhoneNumber)));
     if (_selected) conversationSummary.classes.add('conversation-list__item--selected');
-    if (_unread) conversationSummary.classes.add('conversation-list__item--unread');
     if (_warning) conversationSummary.classes.add('conversation-list__item--warning');
     summaryMessage
       ..append(
@@ -1238,14 +1216,6 @@ class ConversationSummary with LazyListViewItem {
   void _deselect() {
     _selected = false;
     elementOrNull?.classes?.remove('conversation-list__item--selected');
-  }
-  void _markRead() {
-    _unread = false;
-    elementOrNull?.classes?.remove('conversation-list__item--unread');
-  }
-  void _markUnread() {
-    _unread = true;
-    elementOrNull?.classes?.add('conversation-list__item--unread');
   }
   void _check() {
     _checked = true;
@@ -1785,29 +1755,32 @@ class AddTagActionView extends AddActionView {
   }
 }
 
-class MarkUnreadActionView {
-  DivElement markUnreadAction;
+class ChangeSortOrderActionView {
+  DivElement changeSortOrderAction;
 
-  MarkUnreadActionView() {
-    markUnreadAction = new DivElement()
-      ..classes.add('add-action__button')
-      ..onClick.listen(markConversationsUnread);
-    multiSelectMode(false);
+  ChangeSortOrderActionView() {
+    changeSortOrderAction = new DivElement()
+      ..classes.add('sort-action__button')
+      ..onClick.listen((_) => command(UIAction.changeConversationSortOrder));
+    showSortButton(UIConversationSort.alphabeticalById);
   }
 
-  void markConversationsUnread([_]) {
-    command(UIAction.markConversationUnread, ConversationData(activeConversation.docId));
-  }
-
-  void multiSelectMode(bool enabled) {
-    if (enabled) {
-      markUnreadAction
-        ..title = 'Mark selected conversations unread'
-        ..text = MARK_SELECTED_UNREAD_INFO;
-    } else {
-      markUnreadAction
-        ..title = 'Mark current conversation unread'
-        ..text = MARK_UNREAD_INFO;
+  void showSortButton(UIConversationSort sort) {
+    changeSortOrderAction.classes.removeAll([
+      'sort-action__button--alphabetically',
+      'sort-action__button--chronologically',
+    ]);
+    switch (sort) {
+      case UIConversationSort.alphabeticalById:
+        changeSortOrderAction
+          ..title = 'Sort conversations alphabetically by ID'
+          ..classes.toggle('sort-action__button--alphabetically');
+        break;
+      case UIConversationSort.mostRecentInMessageFirst:
+        changeSortOrderAction
+          ..title = 'Sort conversations with most recent incoming message at the top'
+          ..classes.toggle('sort-action__button--chronologically');
+        break;
     }
   }
 }

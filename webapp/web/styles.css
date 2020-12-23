@@ -193,10 +193,10 @@ main {
 
 .conversation-list-header__checkbox {
     flex: 0 0 auto;
-    margin: 16px 8px auto;
+    margin: auto 8px;
 }
 
-.conversation-list-header__mark-unread {
+.conversation-list-header__sort-order {
     flex: 0 0 auto;
     padding: 12px;
 }
@@ -223,8 +223,27 @@ main {
     background: #f9f9f9;
 }
 
-.conversation-list__item--unread {
-    font-weight:bold;
+.conversation-list__sort-order {
+    flex: 0 0 auto;
+    padding: 12px 8px;
+}
+
+.sort-action__button {
+    font-size: 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    height: 20px;
+    width: 20px;
+}
+
+.sort-action__button--alphabetically {
+    background: url('assets/icon-sort-id.png');
+    background-size: contain;
+}
+
+.sort-action__button--chronologically {
+    background: url('assets/icon-sort-date.png');
+    background-size: contain;
 }
 
 .conversation-selector {

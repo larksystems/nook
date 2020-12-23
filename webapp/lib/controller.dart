@@ -41,8 +41,7 @@ enum UIAction {
   selectConversationList,
   selectConversation,
   deselectConversation,
-  markConversationRead,
-  markConversationUnread,
+  changeConversationSortOrder,
   selectMessage,
   deselectMessage,
   userSignedIn,
@@ -60,6 +59,11 @@ enum UIAction {
   hideAgeTags,
   showSnackbar,
   updateConversationIdFilter,
+}
+
+enum UIConversationSort {
+  alphabeticalById,
+  mostRecentInMessageFirst,
 }
 
 class Data {}
@@ -300,6 +304,7 @@ class SnackbarData extends Data {
 List<model.SystemMessage> systemMessages;
 
 UIActionObject actionObjectState = UIActionObject.loadingConversations;
+UIConversationSort conversationSortOrder = UIConversationSort.values[0];
 
 StreamSubscription conversationListSubscription;
 Set<model.Conversation> conversations;
@@ -340,8 +345,8 @@ void init() async {
 
 void initUI() {
   systemMessages = [];
-  conversations = emptyConversationsSet;
-  filteredConversations = emptyConversationsSet;
+  conversations = emptyConversationsSet(conversationSortOrder);
+  filteredConversations = emptyConversationsSet(conversationSortOrder);
   suggestedReplies = [];
   conversationTags = [];
   conversationTagIdsToTags = {};
@@ -358,6 +363,8 @@ void initUI() {
   conversationFilter = new ConversationFilter.fromUrl();
   _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.include], TagFilterType.include);
   view.conversationIdFilter.filter = conversationFilter.conversationIdFilter;
+
+  view.conversationListPanelView.changeConversationSortOrder(conversationSortOrder);
 
   platform.listenForConversationTags(
     (added, modified, removed) {
@@ -746,17 +753,22 @@ void conversationListSelected(String conversationListRoot) {
       // Update the active conversation view as needed
       if (updatedIds.contains(activeConversation.docId)) {
         updateViewForConversation(activeConversation, updateInPlace: true);
-        if (!activeConversation.unread) {
-          command(UIAction.markConversationRead, ConversationData(activeConversation.docId));
-        }
       }
     },
     conversationListRoot,
     showAndLogError);
 }
 
-SplayTreeSet<model.Conversation> get emptyConversationsSet =>
-    SplayTreeSet(model.ConversationUtil.mostRecentInboundFirst);
+SplayTreeSet<model.Conversation> emptyConversationsSet(UIConversationSort sortOrder) {
+  switch (sortOrder) {
+    case UIConversationSort.alphabeticalById:
+      return SplayTreeSet(model.ConversationUtil.compareConversationId);
+    case UIConversationSort.mostRecentInMessageFirst:
+      return SplayTreeSet(model.ConversationUtil.mostRecentInboundFirst);
+  }
+  // default to sort by ID
+  return SplayTreeSet(model.ConversationUtil.compareConversationId);
+}
 
 model.UserConfiguration get baseUserConfiguration => new model.UserConfiguration()
     ..repliesKeyboardShortcutsEnabled = false
@@ -798,7 +810,7 @@ Set<model.Conversation> get conversationsInView {
 
 DateTime lastUserActivity = new DateTime.now();
 
-void command(UIAction action, Data data) {
+void command(UIAction action, [Data data]) {
   log.verbose('Executing UI command: $actionObjectState - $action - $data');
   log.verbose('Active conversation: ${activeConversation?.docId}');
   log.verbose('Selected conversations: ${selectedConversations?.map((c) => c.docId)?.toList()}');
@@ -1013,26 +1025,14 @@ void command(UIAction action, Data data) {
           break;
       }
       break;
-    case UIAction.markConversationRead:
-      ConversationData conversationData = data;
-      model.Conversation conversation = conversations.singleWhere((c) => c.docId == conversationData.deidentifiedPhoneNumber);
-      view.conversationListPanelView.markConversationRead(conversation.docId);
-      platform.updateUnread([conversation], false).catchError(showAndLogError);
-      break;
-    case UIAction.markConversationUnread:
-      if (!currentConfig.sendMultiMessageEnabled || selectedConversations.isEmpty) {
-        view.conversationListPanelView.markConversationUnread(activeConversation.docId);
-        platform.updateUnread([activeConversation], true).catchError(showAndLogError);
-        return;
-      }
-      var markedConversations = <model.Conversation>[];
-      for (var conversation in selectedConversations) {
-        if (!conversation.unread) {
-          markedConversations.add(conversation);
-          view.conversationListPanelView.markConversationUnread(conversation.docId);
-        }
-      }
-      platform.updateUnread(markedConversations, true).catchError(showAndLogError);
+    case UIAction.changeConversationSortOrder:
+      conversationSortOrder = UIConversationSort.values[(UIConversationSort.values.indexOf(conversationSortOrder) + 1) % UIConversationSort.values.length];
+      conversations = emptyConversationsSet(conversationSortOrder)
+        ..addAll(conversations);
+      filteredConversations = emptyConversationsSet(conversationSortOrder)
+        ..addAll(filteredConversations);
+      view.conversationListPanelView.changeConversationSortOrder(conversationSortOrder);
+      updateFilteredAndSelectedConversationLists(updateList: false);
       break;
     case UIAction.showConversation:
       ConversationData conversationData = data;
@@ -1044,8 +1044,8 @@ void command(UIAction action, Data data) {
       break;
     case UIAction.selectConversationList:
       ConversationListData conversationListData = data;
-      conversations = emptyConversationsSet;
-      filteredConversations = emptyConversationsSet;
+      conversations = emptyConversationsSet(conversationSortOrder);
+      filteredConversations = emptyConversationsSet(conversationSortOrder);
       selectedConversations.clear();
       activeConversation = null;
       actionObjectState = UIActionObject.loadingConversations;
@@ -1260,10 +1260,10 @@ void command(UIAction action, Data data) {
   }
 }
 
-void updateFilteredAndSelectedConversationLists() {
+void updateFilteredAndSelectedConversationLists({bool updateList = true}) {
   filteredConversations = conversations.where((conversation) => conversationFilter.test(conversation)).toSet();
   if (!currentConfig.sendMultiMessageEnabled) {
-    activeConversation = updateViewForConversations(conversationsInView, updateList: true);
+    activeConversation = updateViewForConversations(conversationsInView, updateList: updateList);
     return;
   }
   // Update the conversation objects in [selectedConversations] in case any of them were replaced
@@ -1272,7 +1272,7 @@ void updateFilteredAndSelectedConversationLists() {
 
   // Show both filtered and selected conversations in the list,
   // but mark the selected conversations that don't meet the filter with a warning
-  activeConversation = updateViewForConversations(conversationsInView, updateList: true);
+  activeConversation = updateViewForConversations(conversationsInView, updateList: updateList);
   view.conversationListPanelView.showCheckboxes(currentConfig.sendMultiMessageEnabled);
   conversationsInView.forEach((conversation) {
     if (selectedConversations.contains(conversation)) {
