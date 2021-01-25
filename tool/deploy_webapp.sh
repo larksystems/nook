@@ -106,8 +106,15 @@ cd ..
 
 echo ""
 
+echo "copying nook-configurator..."
+cp -r ../nook-configurator/webapp/build public/configure
+echo "nook-configurator copied"
+
+echo ""
+
 # Copy the constants in the build folder
 cp $FIREBASE_CONSTANTS_FILE public/assets/firebase_constants.json
+cp $FIREBASE_CONSTANTS_FILE public/configure/assets/firebase_constants.json
 
 # Copy the latest commit sha1 hash on origin/master into the build folder
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
