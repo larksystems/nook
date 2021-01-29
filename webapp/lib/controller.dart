@@ -344,7 +344,7 @@ model.UserConfiguration currentUserConfig;
 model.UserConfiguration currentConfig;
 
 bool hideDemogsTags;
-bool showCohortPeriodOnlyMessages;
+bool showCohortPeriodOnlyMessages = false;
 
 void init() async {
   defaultUserConfig = baseUserConfiguration;
