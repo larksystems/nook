@@ -811,6 +811,8 @@ class ConversationListPanelView {
   DivElement _loadSpinner;
   DivElement _selectConversationListMessage;
 
+  CheckboxInputElement _showCCMessagesOnly;
+
   ConversationIdFilter conversationIdFilter;
   ConversationIncludeFilter conversationIncludeFilter;
   ConversationExcludeFilter conversationExcludeFilter;
@@ -851,6 +853,24 @@ class ConversationListPanelView {
     panelHeader.append(new DivElement()
       ..classes.add('conversation-list__sort-order')
       ..append(_changeSortOrder.changeSortOrderAction));
+
+    // force the header to split here on a second line
+    panelHeader.append(new DivElement()
+      ..style.flexBasis = "100%"
+      ..style.height = "0");
+
+    _showCCMessagesOnly = new CheckboxInputElement()
+      ..classes.add('conversation-list-header__checkbox')
+      ..title = 'Show only messages sent/received during the cohort conversation period'
+      ..checked = false
+      ..onClick.listen((_) => command(UIAction.showCohortPeriodOnlyMessages, new ShowCohortPeriodOnlyMessagesData(_showCCMessagesOnly.checked)));
+    panelHeader.append(_showCCMessagesOnly);
+
+    var showCCMessagesOnlyLabel = new DivElement()
+      ..classes.add('panel-title')
+      ..classes.add('conversation-list-header__title')
+      ..text = "Show only cohort messages";
+    panelHeader.append(showCCMessagesOnlyLabel);
 
     _loadSpinner = new DivElement()
       ..classes.add('load-spinner');

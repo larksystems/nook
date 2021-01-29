@@ -59,6 +59,7 @@ enum UIAction {
   hideAgeTags,
   showSnackbar,
   updateConversationIdFilter,
+  showCohortPeriodOnlyMessages,
 }
 
 enum UIConversationSort {
@@ -301,6 +302,14 @@ class SnackbarData extends Data {
   String toString() => 'SnackbarData: {text: $text, type: $type}';
 }
 
+class ShowCohortPeriodOnlyMessagesData extends Data {
+  bool show;
+  ShowCohortPeriodOnlyMessagesData(this.show);
+
+  @override
+  String toString() => 'ShowCohortPeriodOnlyMessagesData: {show: $show}';
+}
+
 List<model.SystemMessage> systemMessages;
 
 UIActionObject actionObjectState = UIActionObject.loadingConversations;
@@ -335,6 +344,7 @@ model.UserConfiguration currentUserConfig;
 model.UserConfiguration currentConfig;
 
 bool hideDemogsTags;
+bool showCohortPeriodOnlyMessages;
 
 void init() async {
   defaultUserConfig = baseUserConfiguration;
@@ -1257,6 +1267,11 @@ void command(UIAction action, [Data data]) {
       SnackbarData snackbarData = data;
       view.snackbarView.showSnackbar(snackbarData.text, snackbarData.type);
       break;
+
+    case UIAction.showCohortPeriodOnlyMessages:
+      ShowCohortPeriodOnlyMessagesData showData = data;
+      showCohortPeriodOnlyMessages = showData.show;
+      updateViewForConversation(activeConversation);
   }
 }
 
