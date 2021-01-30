@@ -655,11 +655,14 @@ abstract class TagView {
 }
 
 class MessageTagView extends TagView {
-  MessageTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle) {
+  MessageTagView(String text, String tagId, TagStyle tagStyle, [bool highlight = false]) : super(text, tagId, tagStyle) {
     _removeButton.onClick.listen((_) {
       DivElement message = getAncestors(tag).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
       command(UIAction.removeMessageTag, new MessageTagData(tagId, int.parse(message.dataset['message-index'])));
     });
+    if (highlight) {
+      tag.classes.add('tag--highlighted');
+    }
   }
 }
 

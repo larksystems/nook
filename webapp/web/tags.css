@@ -6,6 +6,20 @@
   display: flex;
 }
 
+.tag__name {
+  padding: 2px 5px;
+  margin: 1px 0;
+  border-radius: 2px;
+  border: 1px dashed #ddd;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.tag--highlighted .tag__name {
+  background-color: #ddd;
+  border: 1px dashed #000;
+}
 .tag--green .tag__name {
   color:  darkgreen;
   font-weight: bold;
@@ -22,16 +36,6 @@
   border-color: crimson;
   background-color: crimson;
   color: white;
-}
-
-.tag__name {
-  padding: 2px 5px;
-  margin: 1px 0;
-  border-radius: 2px;
-  border: 1px dashed #ddd;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 200px;
 }
 
 .tag__remove {
