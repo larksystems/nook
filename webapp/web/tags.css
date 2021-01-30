@@ -19,6 +19,7 @@
 .tag--highlighted .tag__name {
   background-color: #ddd;
   border: 1px dashed #000;
+  font-weight: bold;
 }
 .tag--green .tag__name {
   color:  darkgreen;
