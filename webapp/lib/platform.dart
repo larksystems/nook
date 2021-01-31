@@ -271,3 +271,10 @@ Future<void> removeConversationTag(Conversation conversation, String tagId) {
   log.verbose("Removing tag $tagId from ${conversation.docId}");
   return conversation.removeTagIds(_pubsubInstance, [tagId]);
 }
+
+Future<void> addTag(Tag tag) {
+  log.verbose("Adding new tag ${tag.tagId} to tag list");
+  var tagData = tag.toData();
+  tagData['__id'] = tag.docId;
+  return _pubsubInstance.publishAddOpinion('nook/set_tag', tagData);
+}
