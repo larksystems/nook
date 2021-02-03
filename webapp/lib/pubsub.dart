@@ -7,7 +7,7 @@ import 'package:http/http.dart';
 
 import 'logger.dart';
 import 'model.dart' show DocPubSubUpdate;
-import 'platform_constants.dart' as platform_constants;
+import 'package:katikati_ui_lib/components/platform/platform_constants.dart' as platform_constants;
 
 Logger log = new Logger('pubsub.dart');
 

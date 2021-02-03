@@ -6,7 +6,8 @@ import 'controller.dart' as controller;
 import 'logger.dart';
 import 'model.dart';
 import 'model_firebase.dart';
-import 'platform_constants.dart' as platform_constants;
+import 'package:katikati_ui_lib/components/platform/platform_constants.dart' as platform_constants;
+import 'package:katikati_ui_lib/components/platform/platform.dart' as platform;
 import 'pubsub.dart';
 
 Logger log = new Logger('platform.dart');
@@ -18,24 +19,7 @@ PubSubClient _pubsubInstance;
 PubSubClient _uptimePubSubInstance;
 
 init() async {
-  await platform_constants.init();
-
-  firebase.initializeApp(
-    apiKey: platform_constants.apiKey,
-    authDomain: platform_constants.authDomain,
-    databaseURL: platform_constants.databaseURL,
-    projectId: platform_constants.projectId,
-    storageBucket: platform_constants.storageBucket,
-    messagingSenderId: platform_constants.messagingSenderId);
-
-  // Firebase login
-  firebaseAuth.onAuthStateChanged.listen((firebase.User user) async {
-    if (user == null) { // User signed out
-      _pubsubInstance = null;
-      controller.command(controller.UIAction.userSignedOut, null);
-      return;
-    }
-    // User signed in
+  await platform.init("/assets/firebase_constants.json", (user) {
     String photoURL = firebaseAuth.currentUser.photoURL;
     if (photoURL == null) {
       photoURL =  '/assets/user_image_placeholder.png';
@@ -45,6 +29,9 @@ init() async {
     controller.command(controller.UIAction.userSignedIn, new controller.UserData(user.displayName, user.email, photoURL));
     _uptimePubSubInstance = new PubSubClient(platform_constants.statuszUrl, user);
     initUptimeMonitoring();
+  }, () {
+    _pubsubInstance = null;
+    controller.command(controller.UIAction.userSignedOut, null);
   });
 }
 

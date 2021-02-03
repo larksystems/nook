@@ -3,6 +3,7 @@ library controller;
 import 'dart:async';
 import 'dart:collection';
 import 'dart:math';
+import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
 
 import 'package:firebase/firebase.dart' show FirebaseError;
 
