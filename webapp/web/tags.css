@@ -73,7 +73,6 @@
   border-radius: 2px;
   display: inline-block;
   vertical-align: middle;
-  opacity: 0;
   cursor: pointer;
 }
 
@@ -84,7 +83,7 @@
   top: 1px;
   content: ' ';
   height: 14px;
-  width: 1px;
+  width: 2px;
   background-color: #ccc;
   display: block;
 }
@@ -96,10 +95,6 @@
 .tag__remove:after {
   top: -13px;
   transform: rotate(-45deg);
-}
-
-.tag:hover .tag__remove {
-  opacity: 0.7;
 }
 
 .tag__remove:hover:before,
@@ -122,7 +117,6 @@
   border-radius: 2px;
   display: inline-block;
   vertical-align: middle;
-  opacity: 0;
   cursor: pointer;
 }
 
@@ -133,7 +127,7 @@
   top: 1px;
   content: ' ';
   height: 14px;
-  width: 1px;
+  width: 2px;
   background-color: #ccc;
   display: block;
 }
@@ -144,10 +138,6 @@
 
 .tag__add:after {
   top: -13px;
-}
-
-.message__tags:hover .tag__add {
-  opacity: 0.7;
 }
 
 .tag__add:hover:before,
@@ -170,7 +160,6 @@
   border-radius: 2px;
   display: inline-block;
   vertical-align: middle;
-  opacity: 0.7;
   cursor: pointer;
 }
 
@@ -181,7 +170,7 @@
   top: 1px;
   content: ' ';
   height: 14px;
-  width: 1px;
+  width: 2px;
   background-color: #ccc;
   display: block;
 }
@@ -207,4 +196,52 @@
 .tag__confirm:active:before,
 .tag__confirm:active:after {
   background-color: #333;
+}
+
+
+
+/* hover-only buttons */
+
+.tag .tag__remove.tag--hover-only-btn {
+  opacity: 0;
+}
+.tag:hover .tag__remove.tag--hover-only-btn {
+  opacity: 1;
+}
+
+.message__tags .tag__add.tag--hover-only-btn {
+  opacity: 0;
+}
+.message__tags:hover .tag__add.tag--hover-only-btn {
+  opacity: 1;
+}
+
+
+
+/* tag colours for the transitory tag editing */
+
+.tag__remove.edit-tag-widget__cancel-button:before,
+.tag__remove.edit-tag-widget__cancel-button:after {
+  background-color: #aa271b;
+}
+.tag__remove.edit-tag-widget__cancel-button:hover:before,
+.tag__remove.edit-tag-widget__cancel-button:hover:after {
+  background-color: #922117;
+}
+.tag__remove.edit-tag-widget__cancel-button:active:before,
+.tag__remove.edit-tag-widget__cancel-button:active:after {
+  background-color: #8e1e14;
+}
+
+.tag__confirm.edit-tag-widget__save-button:before,
+.tag__confirm.edit-tag-widget__save-button:after {
+  background-color: #167533;
+}
+.tag__confirm.edit-tag-widget__save-button:hover:before,
+.tag__confirm.edit-tag-widget__save-button:hover:after {
+  background-color: #105b27;
+}
+.tag__confirm.edit-tag-widget__save-button:active:before,
+.tag__confirm.edit-tag-widget__save-button:active:after {
+  background-color: #0c471e;
 }
