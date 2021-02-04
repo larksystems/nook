@@ -63,7 +63,6 @@ enum UIAction {
   hideAgeTags,
   showSnackbar,
   updateConversationIdFilter,
-  showCohortPeriodOnlyMessages,
 }
 
 enum UIConversationSort {
@@ -215,10 +214,11 @@ class UserData extends Data {
   String toString() => 'UserData: {displayName: $displayName, email: $email, photoUrl: $photoUrl}';
 }
 
-enum SignInDomain { avf, lark, ucam, gmail }
+enum SignInDomain { avf, lark, katikati, ucam, gmail }
 const signInDomainsInfo = {
   SignInDomain.avf: {"displayName": "Africa's Voices", "domain": "africasvoices.org"},
   SignInDomain.lark: {"displayName": "Lark Systems", "domain": "lark.systems"},
+  SignInDomain.katikati: {"displayName": "Katikati", "domain": "katikati.world"},
   SignInDomain.ucam: {"displayName": "University of Cambridge", "domain": "cam.ac.uk"},
   SignInDomain.gmail: {"displayName": "Gmail", "domain": "gmail.com"},
 };
@@ -316,13 +316,6 @@ class SnackbarData extends Data {
   String toString() => 'SnackbarData: {text: $text, type: $type}';
 }
 
-class ShowCohortPeriodOnlyMessagesData extends Data {
-  bool show;
-  ShowCohortPeriodOnlyMessagesData(this.show);
-
-  @override
-  String toString() => 'ShowCohortPeriodOnlyMessagesData: {show: $show}';
-}
 
 List<model.SystemMessage> systemMessages;
 
@@ -358,7 +351,6 @@ model.UserConfiguration currentUserConfig;
 model.UserConfiguration currentConfig;
 
 bool hideDemogsTags;
-bool showCohortPeriodOnlyMessages = false;
 
 void init() async {
   defaultUserConfig = baseUserConfiguration;
@@ -1303,12 +1295,6 @@ void command(UIAction action, [Data data]) {
     case UIAction.showSnackbar:
       SnackbarData snackbarData = data;
       view.snackbarView.showSnackbar(snackbarData.text, snackbarData.type);
-      break;
-
-    case UIAction.showCohortPeriodOnlyMessages:
-      ShowCohortPeriodOnlyMessagesData showData = data;
-      showCohortPeriodOnlyMessages = showData.show;
-      updateViewForConversation(activeConversation);
       break;
 
     default:

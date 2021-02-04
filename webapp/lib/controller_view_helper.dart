@@ -7,9 +7,6 @@ const TAG_MESSAGE_BUTTON_TEXT = 'TAG';
 
 const SMS_MAX_LENGTH = 160;
 
-const COHORT_ACCEPTED_TAG_ID = "tag-5f435833";
-const FIRST_ADVERT_AFTER_COHORT_CONVERSATION_MESSAGE = "1/3 Dhageystaha qaaliga ee HAGE, waad ku mahadsantahay kusoo biiritaankii dodeeni hore asbuucaan waxaan idiin heyna  su`al cusub";
-
 enum TagReceiver {
   Conversation,
   Message
@@ -47,13 +44,7 @@ void _populateConversationPanelView(model.Conversation conversation, {bool updat
     view.conversationPanelView.addTags(new view.ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
   }
 
-  bool inCohortConversationSegment = false;
   for (var message in conversation.messages) {
-    if (showCohortPeriodOnlyMessages) {
-      if (message.tagIds.contains(COHORT_ACCEPTED_TAG_ID)) inCohortConversationSegment = true;
-      if (message.text == FIRST_ADVERT_AFTER_COHORT_CONVERSATION_MESSAGE) inCohortConversationSegment = false;
-      if (!inCohortConversationSegment) continue;
-    }
     view.MessageView messageView = _generateMessageView(message, conversation);
     view.conversationPanelView.addMessage(messageView);
   }

@@ -167,9 +167,9 @@ void makeEditable(Element element, {void onChange(e), void onEnter(e)}) {
     });
 }
 
-const REPLY_PANEL_TITLE = 'Suggested responses';
+const REPLY_PANEL_TITLE = 'Standard messages';
 const TAG_PANEL_TITLE = 'Tags';
-const ADD_REPLY_INFO = 'Add new suggested response';
+const ADD_REPLY_INFO = 'Add new standard message';
 const ADD_TAG_INFO = 'Add new tag';
 
 class ConversationPanelView {
@@ -919,19 +919,6 @@ class ConversationListPanelView {
       ..style.flexBasis = "100%"
       ..style.height = "0");
 
-    _showCCMessagesOnly = new CheckboxInputElement()
-      ..classes.add('conversation-list-header__checkbox')
-      ..title = 'Show only messages sent/received during the cohort conversation period'
-      ..checked = false
-      ..onClick.listen((_) => command(UIAction.showCohortPeriodOnlyMessages, new ShowCohortPeriodOnlyMessagesData(_showCCMessagesOnly.checked)));
-    panelHeader.append(_showCCMessagesOnly);
-
-    var showCCMessagesOnlyLabel = new DivElement()
-      ..classes.add('panel-title')
-      ..classes.add('conversation-list-header__title')
-      ..text = "Show only cohort messages";
-    panelHeader.append(showCCMessagesOnlyLabel);
-
     _loadSpinner = new DivElement()
       ..classes.add('load-spinner');
     conversationListPanel.append(_loadSpinner);
@@ -1602,15 +1589,6 @@ class ReplyActionView implements ActionView {
       buttonElement.onMouseLeave.listen((event) => highlightText(false));
       buttonWrapper.append(buttonElement);
       _buttonElements.add(buttonElement);
-
-      buttonElement = new DivElement()
-        ..classes.add('action__button')
-        ..text = 'COPY (En)'; // TODO(mariana): These project-specific preferences should be read from a project config file
-      buttonElement.onClick.listen((_) => window.navigator.clipboard.writeText(text));
-      buttonElement.onMouseEnter.listen((event) => highlightText(true));
-      buttonElement.onMouseLeave.listen((event) => highlightText(false));
-      buttonWrapper.append(buttonElement);
-      _buttonElements.add(buttonElement);
     }
 
     { // Add translation
@@ -1632,15 +1610,6 @@ class ReplyActionView implements ActionView {
         ..classes.add('action__button')
         ..text = '$buttonText (So)'; // TODO(mariana): These project-specific preferences should be read from a project config file
       buttonElement.onClick.listen((_) => command(UIAction.sendMessage, new ReplyData(replyIndex, replyWithTranslation: true)));
-      buttonElement.onMouseEnter.listen((event) => highlightTranslation(true));
-      buttonElement.onMouseLeave.listen((event) => highlightTranslation(false));
-      buttonWrapper.append(buttonElement);
-      _buttonElements.add(buttonElement);
-
-      buttonElement = new DivElement()
-        ..classes.add('action__button')
-        ..text = 'COPY (So)'; // TODO(mariana): These project-specific preferences should be read from a project config file
-      buttonElement.onClick.listen((_) => window.navigator.clipboard.writeText(translation));
       buttonElement.onMouseEnter.listen((event) => highlightTranslation(true));
       buttonElement.onMouseLeave.listen((event) => highlightTranslation(false));
       buttonWrapper.append(buttonElement);
@@ -1953,22 +1922,25 @@ class AuthMainView {
       ..classes.add('auth-main__logos');
     authElement.append(logosContainer);
 
-    var avfLogo = new ImageElement(src: 'assets/africas-voices-logo.svg')
+    var katikatiLogo = new ImageElement(src: 'assets/logo-katikati.svg')
       ..classes.add('partner-logo')
-      ..classes.add('partner-logo--avf');
-    logosContainer.append(avfLogo);
+      ..classes.add('partner-logo--katikati');
+    logosContainer.append(katikatiLogo);
+
+    var ifrcLogo = new ImageElement(src: 'assets/logo-ifrc.svg')
+      ..classes.add('partner-logo')
+      ..classes.add('partner-logo--ifrc');
+    logosContainer.append(ifrcLogo);
 
     var shortDescription = new DivElement()
       ..classes.add('project-description')
       ..append(new ParagraphElement()..text = descriptionText1);
     authElement.append(shortDescription);
 
-    for (var domain in SignInDomain.values) {
-      var signInButton = new ButtonElement()
-        ..text = "Sign in with ${signInDomainsInfo[domain]['displayName']}"
-        ..onClick.listen((_) => command(UIAction.signInButtonClicked, new SignInData(domain)));
-      authElement.append(signInButton);
-    }
+    var signInButton = new ButtonElement()
+      ..text = "Sign in"
+      ..onClick.listen((_) => command(UIAction.signInButtonClicked, new SignInData(SignInDomain.lark)));
+    authElement.append(signInButton);
   }
 }
 
