@@ -20,7 +20,7 @@ PubSubClient _uptimePubSubInstance;
 
 init() async {
   await platform.init("/assets/firebase_constants.json", (user) {
-    String photoURL = firebaseAuth.currentUser.photoURL;
+    String photoURL = platform.firebaseAuth.currentUser.photoURL;
     if (photoURL == null) {
       photoURL =  '/assets/user_image_placeholder.png';
     }
@@ -158,25 +158,6 @@ void initUptimeMonitoring() {
         controller.command(controller.UIAction.updateSystemMessages, new controller.SystemMessagesData(controller.systemMessages));
       });
   });
-}
-
-firebase.Auth get firebaseAuth => firebase.auth();
-
-/// Signs the user in.
-signIn(String domain) {
-  var provider = new firebase.GoogleAuthProvider();
-  provider.setCustomParameters({'hd': domain});
-  firebaseAuth.signInWithPopup(provider);
-}
-
-/// Signs the user out.
-signOut() {
-  firebaseAuth.signOut();
-}
-
-/// Returns true if a user is signed-in.
-bool isUserSignedIn() {
-  return firebaseAuth.currentUser != null;
 }
 
 Future<void> sendMessage(String id, String message, {onError(dynamic)}) {
