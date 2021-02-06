@@ -1110,7 +1110,7 @@ void command(UIAction action, Data data) {
       break;
     case UIAction.signInButtonClicked:
       SignInData signInData = data;
-      platform.signIn(signInDomainsInfo[signInData.domain]['domain']);
+      platform.signIn(domain: signInDomainsInfo[signInData.domain]['domain']);
       break;
     case UIAction.signOutButtonClicked:
       platform.signOut();

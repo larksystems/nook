@@ -8,6 +8,7 @@ import 'model.dart';
 import 'model_firebase.dart';
 import 'package:katikati_ui_lib/components/platform/platform_constants.dart' as platform_constants;
 import 'package:katikati_ui_lib/components/platform/platform.dart' as platform;
+export 'package:katikati_ui_lib/components/platform/platform.dart';
 import 'pubsub.dart';
 
 Logger log = new Logger('platform.dart');
