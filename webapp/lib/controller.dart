@@ -3,6 +3,7 @@ library controller;
 import 'dart:async';
 import 'dart:collection';
 import 'dart:math';
+import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
 
 import 'package:firebase/firebase.dart' show FirebaseError;
 
@@ -1109,7 +1110,7 @@ void command(UIAction action, Data data) {
       break;
     case UIAction.signInButtonClicked:
       SignInData signInData = data;
-      platform.signIn(signInDomainsInfo[signInData.domain]['domain']);
+      platform.signIn(domain: signInDomainsInfo[signInData.domain]['domain']);
       break;
     case UIAction.signOutButtonClicked:
       platform.signOut();

@@ -6,7 +6,9 @@ import 'controller.dart' as controller;
 import 'logger.dart';
 import 'model.dart';
 import 'model_firebase.dart';
-import 'platform_constants.dart' as platform_constants;
+import 'package:katikati_ui_lib/components/platform/platform_constants.dart' as platform_constants;
+import 'package:katikati_ui_lib/components/platform/platform.dart' as platform;
+export 'package:katikati_ui_lib/components/platform/platform.dart';
 import 'pubsub.dart';
 
 Logger log = new Logger('platform.dart');
@@ -18,25 +20,8 @@ PubSubClient _pubsubInstance;
 PubSubClient _uptimePubSubInstance;
 
 init() async {
-  await platform_constants.init();
-
-  firebase.initializeApp(
-    apiKey: platform_constants.apiKey,
-    authDomain: platform_constants.authDomain,
-    databaseURL: platform_constants.databaseURL,
-    projectId: platform_constants.projectId,
-    storageBucket: platform_constants.storageBucket,
-    messagingSenderId: platform_constants.messagingSenderId);
-
-  // Firebase login
-  firebaseAuth.onAuthStateChanged.listen((firebase.User user) async {
-    if (user == null) { // User signed out
-      _pubsubInstance = null;
-      controller.command(controller.UIAction.userSignedOut, null);
-      return;
-    }
-    // User signed in
-    String photoURL = firebaseAuth.currentUser.photoURL;
+  await platform.init("/assets/firebase_constants.json", (user) {
+    String photoURL = platform.firebaseAuth.currentUser.photoURL;
     if (photoURL == null) {
       photoURL =  '/assets/user_image_placeholder.png';
     }
@@ -45,6 +30,9 @@ init() async {
     controller.command(controller.UIAction.userSignedIn, new controller.UserData(user.displayName, user.email, photoURL));
     _uptimePubSubInstance = new PubSubClient(platform_constants.statuszUrl, user);
     initUptimeMonitoring();
+  }, () {
+    _pubsubInstance = null;
+    controller.command(controller.UIAction.userSignedOut, null);
   });
 }
 
@@ -171,25 +159,6 @@ void initUptimeMonitoring() {
         controller.command(controller.UIAction.updateSystemMessages, new controller.SystemMessagesData(controller.systemMessages));
       });
   });
-}
-
-firebase.Auth get firebaseAuth => firebase.auth();
-
-/// Signs the user in.
-signIn(String domain) {
-  var provider = new firebase.GoogleAuthProvider();
-  provider.setCustomParameters({'hd': domain});
-  firebaseAuth.signInWithPopup(provider);
-}
-
-/// Signs the user out.
-signOut() {
-  firebaseAuth.signOut();
-}
-
-/// Returns true if a user is signed-in.
-bool isUserSignedIn() {
-  return firebaseAuth.currentUser != null;
 }
 
 Future<void> sendMessage(String id, String message, {onError(dynamic)}) {
