@@ -6,6 +6,7 @@ import 'dart:math';
 import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
 
 import 'package:firebase/firebase.dart' show FirebaseError;
+import 'package:nook/user_position_reporter.dart';
 
 import 'logger.dart';
 import 'model.dart' as model;
@@ -330,6 +331,8 @@ model.UserConfiguration currentUserConfig;
 /// It's computed by merging the [defaultUserConfig] and [currentUserConfig] (if set).
 model.UserConfiguration currentConfig;
 
+UserPositionReporter userPositionReporter;
+
 bool hideDemogsTags;
 
 void init() async {
@@ -337,6 +340,7 @@ void init() async {
   currentUserConfig = currentConfig = emptyUserConfiguration;
   view.init();
   await platform.init();
+  userPositionReporter = UserPositionReporter();
 }
 
 void initUI() {
@@ -1042,6 +1046,7 @@ void command(UIAction action, Data data) {
       activeConversation = conversations.singleWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
       if (shouldRecomputeConversationList) updateFilteredAndSelectedConversationLists();
       updateViewForConversation(activeConversation);
+
       break;
     case UIAction.selectConversationList:
       ConversationListData conversationListData = data;
@@ -1330,6 +1335,7 @@ model.Conversation updateViewForConversations(Set<model.Conversation> conversati
 }
 
 void updateViewForConversation(model.Conversation conversation, {bool updateInPlace: false}) {
+  userPositionReporter.reportPresence(signedInUser, conversation);
   if (conversation == null) return;
   // Replace the previous conversation in the conversation panel
   _populateConversationPanelView(conversation, updateInPlace: updateInPlace);
