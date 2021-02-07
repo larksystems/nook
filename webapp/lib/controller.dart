@@ -2,8 +2,8 @@ library controller;
 
 import 'dart:async';
 import 'dart:collection';
-import 'dart:math';
 import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
+import 'package:katikati_ui_lib/components/auth/auth.dart';
 
 import 'package:firebase/firebase.dart' show FirebaseError;
 import 'package:nook/user_position_reporter.dart';
@@ -207,14 +207,6 @@ class UserData extends Data {
   @override
   String toString() => 'UserData: {displayName: $displayName, email: $email, photoUrl: $photoUrl}';
 }
-
-enum SignInDomain { avf, lark, ucam, gmail }
-const signInDomainsInfo = {
-  SignInDomain.avf: {"displayName": "Africa's Voices", "domain": "africasvoices.org"},
-  SignInDomain.lark: {"displayName": "Lark Systems", "domain": "lark.systems"},
-  SignInDomain.ucam: {"displayName": "University of Cambridge", "domain": "cam.ac.uk"},
-  SignInDomain.gmail: {"displayName": "Gmail", "domain": "gmail.com"},
-};
 
 class SignInData extends Data {
   SignInDomain domain;
