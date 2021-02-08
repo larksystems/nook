@@ -212,6 +212,7 @@ main {
     border-bottom: 1px solid lightgray;
     border-left: 5px solid #fff;
     word-break: break-word;
+    position: relative;
 }
 
 .conversation-list__item:hover {
@@ -225,6 +226,15 @@ main {
 
 .conversation-list__item--unread {
     font-weight:bold;
+}
+
+.conversation-list__user-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 5px;
+    position: absolute;
+    top: 10px;
+    right: 10px;
 }
 
 .conversation-selector {

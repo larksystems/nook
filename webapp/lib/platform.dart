@@ -229,6 +229,9 @@ void listenForMessageTags(TagCollectionListener listener, [OnErrorListener onErr
 void listenForSuggestedReplies(SuggestedReplyCollectionListener listener, [OnErrorListener onErrorListener]) =>
     SuggestedReply.listen(_docStorage, listener, onErrorListener: onErrorListener);
 
+void listenForUserPresence(UserPresenceCollectionListener listener, [OnErrorListener onErrorListener]) =>
+    UserPresence.listen(_docStorage, listener, onErrorListener: onErrorListener);
+
 Future<void> addMessageTag(Conversation conversation, Message message, String tagId) {
   log.verbose("Adding tag $tagId to message in conversation ${conversation.docId}");
   return message.addTagId(_pubsubInstance, conversation, tagId);

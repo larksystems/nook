@@ -948,6 +948,14 @@ class ConversationListPanelView {
     _phoneToConversations[deidentifiedPhoneNumber]?._showWarning(false);
   }
 
+  void showOtherUserPresence(String deidentifiedPhoneNumber, String otherUserInfo, bool recent) {
+    _phoneToConversations[deidentifiedPhoneNumber]?._showOtherUserPresence(true, otherUserInfo, recent);
+  }
+
+  void clearOtherUserPresence(String deidentifiedPhoneNumber) {
+    _phoneToConversations[deidentifiedPhoneNumber]?._showOtherUserPresence(false);
+  }
+
   void clearConversationList() {
     _conversationList.clearItems();
     _phoneToConversations.clear();
@@ -1176,6 +1184,7 @@ class ConversationIdFilter {
 
 class ConversationSummary with LazyListViewItem {
   CheckboxInputElement _selectCheckbox;
+  DivElement _otherUserPresenceIndicator;
 
   String deidentifiedPhoneNumber;
   String _text;
@@ -1184,6 +1193,10 @@ class ConversationSummary with LazyListViewItem {
   bool _selected = false;
   bool _checkboxHidden = true;
   bool _warning = false;
+
+  bool _otherUserPresent = false;
+  String _otherUserInfo = '';
+  bool _otherUserRecent = false;
 
   ConversationSummary(this.deidentifiedPhoneNumber, this._text, this._unread);
 
@@ -1217,6 +1230,14 @@ class ConversationSummary with LazyListViewItem {
           ..classes.add('summary-message__text')
           ..text = _text);
     conversationSummary.append(summaryMessage);
+
+    _otherUserPresenceIndicator = new DivElement()
+      ..classes.add('conversation-list__user-indicator');
+    if (_otherUserPresent) {
+      _setOtherUserPresenceColour(_otherUserInfo, _otherUserRecent);
+      conversationSummary.append(_otherUserPresenceIndicator);
+    }
+
     return conversationSummary;
   }
 
@@ -1263,6 +1284,27 @@ class ConversationSummary with LazyListViewItem {
   void _showWarning(bool show) {
     _warning = show;
     elementOrNull?.classes?.toggle('conversation-list__item--warning', show);
+  }
+  void _showOtherUserPresence(bool show, [String otherUserInfo='', bool recent=false]) {
+    print(show);
+    print(otherUserInfo);
+    print(recent);
+    print('----');
+    _otherUserPresent = show;
+    _otherUserInfo = otherUserInfo;
+    _otherUserRecent = recent;
+    _setOtherUserPresenceColour(otherUserInfo, recent);
+
+    if (_otherUserPresent) {
+      elementOrNull?.append(_otherUserPresenceIndicator);
+      return;
+    }
+    _otherUserPresenceIndicator.remove();
+  }
+  void _setOtherUserPresenceColour(String otherUserInfo, bool recent) {
+    var hue = otherUserInfo.hashCode % 360;
+    var light = recent ? 50 : 80;
+    _otherUserPresenceIndicator.style.backgroundColor = 'hsl($hue, 60%, $light%)';
   }
 }
 

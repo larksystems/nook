@@ -579,6 +579,51 @@ void initUI() {
     }, showAndLogError);
   // Apply the default configuration before loading any new configs.
   applyConfiguration(defaultUserConfig);
+
+  Map<String, Timer> timers = {};
+  Set<model.UserPresence> otherUserPresence = {};
+  platform.listenForUserPresence(
+    (added, modified, removed) {
+      for (var userPresence in modified + removed) {
+        if (userPresence.conversationId == null) continue;
+        if (userPresence.userId == signedInUser.userEmail) continue;
+        var previousUserPresence = otherUserPresence.where((element) => element.userId == userPresence.userId).toList();
+        if (previousUserPresence.isNotEmpty) view.conversationListPanelView.clearOtherUserPresence(previousUserPresence.first.conversationId);
+        otherUserPresence.removeAll(previousUserPresence);
+        timers[userPresence.userId]?.cancel();
+      }
+
+      var presenceAge = DateTime.now().toUtc().subtract(Duration(minutes: 10));
+      var recencyAge = DateTime.now().toUtc().subtract(Duration(minutes: 2));
+      for (var userPresence in added + modified) {
+        if (userPresence.conversationId == null) continue;
+        if (userPresence.userId == signedInUser.userEmail) continue;
+
+        otherUserPresence.add(userPresence);
+
+        var datetime = DateTime.parse(userPresence.timestamp).toUtc();
+        bool shouldShow = datetime.isAfter(presenceAge);
+        if (!shouldShow) continue;
+
+        bool isRecent = datetime.isAfter(recencyAge);
+        view.conversationListPanelView.showOtherUserPresence(userPresence.conversationId, userPresence.userId, isRecent);
+
+        var isLessRecentTimerCallback = () {
+          view.conversationListPanelView.clearOtherUserPresence(userPresence.conversationId);
+        };
+        var isRecentTimerCallback = () {
+          view.conversationListPanelView.showOtherUserPresence(userPresence.conversationId, userPresence.userId, false);
+          timers[userPresence.userId] = new Timer(datetime.difference(presenceAge), isLessRecentTimerCallback);
+        };
+
+        if (isRecent) {
+          timers[userPresence.userId] = new Timer(datetime.difference(recencyAge), isRecentTimerCallback);
+        } else {
+          timers[userPresence.userId] = new Timer(datetime.difference(presenceAge), isLessRecentTimerCallback);
+        }
+      }
+    }
+  );
 }
 
 
