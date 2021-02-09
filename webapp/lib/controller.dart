@@ -62,6 +62,7 @@ enum UIAction {
   hideAgeTags,
   showSnackbar,
   updateConversationIdFilter,
+  goToUser,
 }
 
 class Data {}
@@ -299,6 +300,14 @@ class SnackbarData extends Data {
   String toString() => 'SnackbarData: {text: $text, type: $type}';
 }
 
+class OtherUserData extends Data {
+  String userId;
+  OtherUserData(this.userId);
+
+  @override
+  String toString() => 'OtherUserData: {userId: $userId}';
+}
+
 List<model.SystemMessage> systemMessages;
 
 UIActionObject actionObjectState = UIActionObject.loadingConversations;
@@ -332,6 +341,8 @@ model.UserConfiguration currentUserConfig;
 model.UserConfiguration currentConfig;
 
 UserPositionReporter userPositionReporter;
+Map<String, Timer> otherUserPresenceTimersByUserId = {};
+Map<String, model.UserPresence> otherUserPresenceByUserId = {};
 
 bool hideDemogsTags;
 
@@ -582,31 +593,32 @@ void initUI() {
 
   platform.listenForUserPresence(
     (added, modified, removed) {
-      // Remove any the user presence markings that have changed from the UI
+      // Remove the user presence markings that have changed from the UI
       for (var userPresence in modified + removed) {
         if (userPresence.userId == signedInUser.userEmail) continue;
-        var previousUserPresence = otherUserPresence[userPresence.userId];
-        if (previousUserPresence != null) view.conversationListPanelView.clearOtherUserPresence(userPresence.userId, previousUserPresence.conversationId);
-        timers[userPresence.userId]?.cancel();
+        var previousUserPresence = otherUserPresenceByUserId[userPresence.userId];
+        if (previousUserPresence != null) {
+          view.conversationListPanelView.clearOtherUserPresence(userPresence.userId, previousUserPresence.conversationId);
+          view.otherLoggedInUsers.hideOtherUserPresence(userPresence.userId);
+        }
+
+        otherUserPresenceTimersByUserId[userPresence.userId]?.cancel();
       }
 
       for (var userPresence in removed) {
-        otherUserPresence.remove(userPresence.userId);
+        otherUserPresenceByUserId.remove(userPresence.userId);
       }
 
       for (var userPresence in added + modified) {
         if (userPresence.userId == signedInUser.userEmail) continue;
-        otherUserPresence[userPresence.userId] = userPresence;
+        otherUserPresenceByUserId[userPresence.userId] = userPresence;
       }
 
-      displayOtherUserPresenceIndicators(otherUserPresence.values.toList());
+      displayOtherUserPresenceIndicators(otherUserPresenceByUserId.values.toList());
     }
   );
 }
 
-
-Map<String, Timer> timers = {};
-Map<String, model.UserPresence> otherUserPresence = {};
 
 void displayOtherUserPresenceIndicators(List<model.UserPresence> otherUsers) {
   var presenceAge = DateTime.now().toUtc().subtract(Duration(minutes: 10));
@@ -621,22 +633,25 @@ void displayOtherUserPresenceIndicators(List<model.UserPresence> otherUsers) {
 
     bool isRecent = datetime.isAfter(recencyAge);
     view.conversationListPanelView.showOtherUserPresence(userPresence.userId, userPresence.conversationId, isRecent);
+    view.otherLoggedInUsers.showOtherUserPresence(userPresence.userId, isRecent);
 
     var isLessRecentTimerCallback = () {
       view.conversationListPanelView.clearOtherUserPresence(userPresence.userId, userPresence.conversationId);
+      view.otherLoggedInUsers.hideOtherUserPresence(userPresence.userId);
     };
     var isRecentTimerCallback = () {
       view.conversationListPanelView.showOtherUserPresence(userPresence.userId, userPresence.conversationId, false);
-      timers[userPresence.userId]?.cancel();
-      timers[userPresence.userId] = new Timer(datetime.difference(presenceAge), isLessRecentTimerCallback);
+      view.otherLoggedInUsers.showOtherUserPresence(userPresence.userId, false);
+      otherUserPresenceTimersByUserId[userPresence.userId]?.cancel();
+      otherUserPresenceTimersByUserId[userPresence.userId] = new Timer(datetime.difference(presenceAge), isLessRecentTimerCallback);
     };
 
     if (isRecent) {
-      timers[userPresence.userId]?.cancel();
-      timers[userPresence.userId] = new Timer(datetime.difference(recencyAge), isRecentTimerCallback);
+      otherUserPresenceTimersByUserId[userPresence.userId]?.cancel();
+      otherUserPresenceTimersByUserId[userPresence.userId] = new Timer(datetime.difference(recencyAge), isRecentTimerCallback);
     } else {
-      timers[userPresence.userId]?.cancel();
-      timers[userPresence.userId] = new Timer(datetime.difference(presenceAge), isLessRecentTimerCallback);
+      otherUserPresenceTimersByUserId[userPresence.userId]?.cancel();
+      otherUserPresenceTimersByUserId[userPresence.userId] = new Timer(datetime.difference(presenceAge), isLessRecentTimerCallback);
     }
   }
 }
@@ -805,7 +820,7 @@ void conversationListSelected(String conversationListRoot) {
 
       updateFilteredAndSelectedConversationLists();
 
-      displayOtherUserPresenceIndicators(otherUserPresence.values.toList());
+      displayOtherUserPresenceIndicators(otherUserPresenceByUserId.values.toList());
 
       if (activeConversation == null) return;
 
@@ -1324,6 +1339,11 @@ void command(UIAction action, Data data) {
       SnackbarData snackbarData = data;
       view.snackbarView.showSnackbar(snackbarData.text, snackbarData.type);
       break;
+
+    case UIAction.goToUser:
+      OtherUserData userData = data;
+      String conversationId = otherUserPresenceByUserId[userData.userId].conversationId;
+      command(UIAction.showConversation, ConversationData(conversationId));
   }
 }
 
