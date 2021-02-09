@@ -229,8 +229,8 @@ main {
 
 .conversation-list__user-indicators {
     position: absolute;
-    top: 10px;
-    right: 10px;
+    top: 8px;
+    right: 8px;
 }
 
 .header__other-users {
@@ -245,6 +245,7 @@ main {
     width: 10px;
     height: 10px;
     border-radius: 5px;
+    margin: 2px;
 }
 
 .conversation-selector {
