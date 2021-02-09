@@ -948,12 +948,12 @@ class ConversationListPanelView {
     _phoneToConversations[deidentifiedPhoneNumber]?._showWarning(false);
   }
 
-  void showOtherUserPresence(String deidentifiedPhoneNumber, String otherUserInfo, bool recent) {
-    _phoneToConversations[deidentifiedPhoneNumber]?._showOtherUserPresence(true, otherUserInfo, recent);
+  void showOtherUserPresence(String userId, String deidentifiedPhoneNumber, bool recent) {
+    _phoneToConversations[deidentifiedPhoneNumber]?._showOtherUserPresence(userId, recent);
   }
 
-  void clearOtherUserPresence(String deidentifiedPhoneNumber) {
-    _phoneToConversations[deidentifiedPhoneNumber]?._showOtherUserPresence(false);
+  void clearOtherUserPresence(String userId, String deidentifiedPhoneNumber) {
+    _phoneToConversations[deidentifiedPhoneNumber]?._hideOtherUserPresence(userId);
   }
 
   void clearConversationList() {
@@ -1194,9 +1194,7 @@ class ConversationSummary with LazyListViewItem {
   bool _checkboxHidden = true;
   bool _warning = false;
 
-  bool _otherUserPresent = false;
-  String _otherUserInfo = '';
-  bool _otherUserRecent = false;
+  Map<String, bool> _presentUsers = {};
 
   ConversationSummary(this.deidentifiedPhoneNumber, this._text, this._unread);
 
@@ -1232,9 +1230,11 @@ class ConversationSummary with LazyListViewItem {
     conversationSummary.append(summaryMessage);
 
     _otherUserPresenceIndicator = new DivElement()
-      ..classes.add('conversation-list__user-indicator');
-    if (_otherUserPresent) {
-      _setOtherUserPresenceColour(_otherUserInfo, _otherUserRecent);
+      ..classes.add('conversation-list__user-indicators');
+    if (_presentUsers.isNotEmpty) {
+      for (var userId in _presentUsers.keys) {
+        _otherUserPresenceIndicator.append(_generateOtherUserPresenceIndicator(userId, _presentUsers[userId]));
+      }
       conversationSummary.append(_otherUserPresenceIndicator);
     }
 
@@ -1285,26 +1285,45 @@ class ConversationSummary with LazyListViewItem {
     _warning = show;
     elementOrNull?.classes?.toggle('conversation-list__item--warning', show);
   }
-  void _showOtherUserPresence(bool show, [String otherUserInfo='', bool recent=false]) {
-    print(show);
-    print(otherUserInfo);
-    print(recent);
-    print('----');
-    _otherUserPresent = show;
-    _otherUserInfo = otherUserInfo;
-    _otherUserRecent = recent;
-    _setOtherUserPresenceColour(otherUserInfo, recent);
 
-    if (_otherUserPresent) {
-      elementOrNull?.append(_otherUserPresenceIndicator);
-      return;
+  void _hideOtherUserPresence(String userId) {
+    var indicator = _otherUserPresenceIndicator.querySelector('[data-id="$userId"]');
+    indicator?.remove();
+    _presentUsers.remove(userId);
+
+    if (_presentUsers.isEmpty) {
+      _otherUserPresenceIndicator.remove();
+      _otherUserPresenceIndicator.children.clear();
+      _presentUsers = {};
     }
-    _otherUserPresenceIndicator.remove();
   }
-  void _setOtherUserPresenceColour(String otherUserInfo, bool recent) {
-    var hue = otherUserInfo.hashCode % 360;
+
+  void _showOtherUserPresence(String userId, bool recent) {
+    if (_presentUsers.isEmpty) {
+      elementOrNull?.append(_otherUserPresenceIndicator);
+    }
+
+    if (_presentUsers.containsKey(userId)) {
+      var previousIndicator = _otherUserPresenceIndicator.querySelector('[data-id="$userId"]');
+      previousIndicator.remove();
+    }
+
+    _otherUserPresenceIndicator.append(_generateOtherUserPresenceIndicator(userId, recent));
+    _presentUsers[userId] = recent;
+  }
+
+  DivElement _generateOtherUserPresenceIndicator(String userId, bool recent) {
+    return DivElement()
+      ..classes.add('conversation-list__user-indicator')
+      ..title = userId
+      ..dataset['id'] = userId
+      ..style.backgroundColor = _generateColourForId(userId, recent);
+  }
+
+  String _generateColourForId(String userId, bool recent) {
+    var hue = userId.hashCode % 360;
     var light = recent ? 50 : 80;
-    _otherUserPresenceIndicator.style.backgroundColor = 'hsl($hue, 60%, $light%)';
+    return 'hsl($hue, 60%, $light%)';
   }
 }
 
