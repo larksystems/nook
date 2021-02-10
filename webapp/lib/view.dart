@@ -41,7 +41,7 @@ void init() {
     "assets/africas-voices-logo.svg",
     "Welcome to Nook.", 
     "Sign in to Nook where you can manage SMS conversations.",
-    [SignInDomain.avf, SignInDomain.lark, SignInDomain.ucam, SignInDomain.gmail],
+    [SignInDomain.avf, SignInDomain.lark],
     (domain) => command(UIAction.signInButtonClicked, new SignInData(domain))
   );
   urlView = new UrlView();
