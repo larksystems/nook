@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:html';
 import 'dart:convert';
 import 'dart:math' as math;
@@ -11,7 +10,7 @@ import 'package:katikati_ui_lib/components/banner/banner.dart';
 
 import 'controller.dart';
 import 'dom_utils.dart';
-import 'logger.dart';
+import 'package:katikati_ui_lib/components/logger.dart';
 import 'model.dart';
 import 'lazy_list_view_model.dart';
 
