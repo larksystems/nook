@@ -6,6 +6,8 @@ import 'dart:svg' as svg;
 
 import 'package:intl/intl.dart';
 import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
+import 'package:katikati_ui_lib/components/auth/auth.dart';
+import 'package:katikati_ui_lib/components/banner/banner.dart';
 
 import 'controller.dart';
 import 'dom_utils.dart';
@@ -36,7 +38,13 @@ void init() {
   replyPanelView = new ReplyPanelView();
   tagPanelView = new TagPanelView();
   authHeaderView = new AuthHeaderView();
-  authMainView = new AuthMainView();
+  authMainView = new AuthMainView(
+    "assets/africas-voices-logo.svg",
+    "Welcome to Nook.", 
+    "Sign in to Nook where you can manage SMS conversations.",
+    [SignInDomain.avf, SignInDomain.lark],
+    (domain) => command(UIAction.signInButtonClicked, new SignInData(domain))
+  );
   urlView = new UrlView();
   snackbarView = new SnackbarView();
   bannerView = new BannerView();
@@ -1856,38 +1864,6 @@ class AuthHeaderView {
   }
 }
 
-class AuthMainView {
-  DivElement authElement;
-
-  final descriptionText1 = 'Sign in to Nook where you can manage SMS conversations.';
-
-  AuthMainView() {
-    authElement = new DivElement()
-      ..classes.add('auth-main');
-
-    var logosContainer = new DivElement()
-      ..classes.add('auth-main__logos');
-    authElement.append(logosContainer);
-
-    var avfLogo = new ImageElement(src: 'assets/africas-voices-logo.svg')
-      ..classes.add('partner-logo')
-      ..classes.add('partner-logo--avf');
-    logosContainer.append(avfLogo);
-
-    var shortDescription = new DivElement()
-      ..classes.add('project-description')
-      ..append(new ParagraphElement()..text = descriptionText1);
-    authElement.append(shortDescription);
-
-    for (var domain in SignInDomain.values) {
-      var signInButton = new ButtonElement()
-        ..text = "Sign in with ${signInDomainsInfo[domain]['displayName']}"
-        ..onClick.listen((_) => command(UIAction.signInButtonClicked, new SignInData(domain)));
-      authElement.append(signInButton);
-    }
-  }
-}
-
 class UrlView {
 
   static const String queryDisableRepliesKey = 'disableReplies';
@@ -2040,32 +2016,3 @@ class UrlView {
 
 }
 
-class BannerView {
-  DivElement bannerElement;
-  DivElement _contents;
-
-  /// The length of the animation in milliseconds.
-  /// This must match the animation length set in banner.css
-  static const ANIMATION_LENGTH_MS = 200;
-
-  BannerView() {
-    bannerElement = new DivElement()
-      ..id = 'banner'
-      ..classes.add('hidden');
-
-    _contents = new DivElement()
-      ..classes.add('contents');
-    bannerElement.append(_contents);
-  }
-
-  showBanner(String message) {
-    _contents.text = message;
-    bannerElement.classes.remove('hidden');
-  }
-
-  hideBanner() {
-    bannerElement.classes.add('hidden');
-    // Remove the contents after the animation ends
-    new Timer(new Duration(milliseconds: ANIMATION_LENGTH_MS), () => _contents.text = '');
-  }
-}
