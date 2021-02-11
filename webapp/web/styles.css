@@ -184,21 +184,19 @@ main {
 
 .conversation-list-header {
     display: flex;
+    flex-wrap: wrap;
     border-left: 5px solid #fff;
+    padding: 8px 0;
 }
 
 .conversation-list-header__title {
     flex: 1 1 auto;
+    padding: 4px 8px;
 }
 
 .conversation-list-header__checkbox {
     flex: 0 0 auto;
     margin: auto 8px;
-}
-
-.conversation-list-header__sort-order {
-    flex: 0 0 auto;
-    padding: 12px;
 }
 
 .select-conversation-list-message {
@@ -225,7 +223,7 @@ main {
 
 .conversation-list__sort-order {
     flex: 0 0 auto;
-    padding: 12px 8px;
+    padding: 4px 8px;
 }
 
 .sort-action__button {
