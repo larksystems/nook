@@ -67,6 +67,7 @@ enum UIAction {
   hideAgeTags,
   showSnackbar,
   updateConversationIdFilter,
+  goToUser,
 }
 
 class Data {}
@@ -306,6 +307,14 @@ class SnackbarData extends Data {
   String toString() => 'SnackbarData: {text: $text, type: $type}';
 }
 
+class OtherUserData extends Data {
+  String userId;
+  OtherUserData(this.userId);
+
+  @override
+  String toString() => 'OtherUserData: {userId: $userId}';
+}
+
 List<model.SystemMessage> systemMessages;
 
 UIActionObject actionObjectState = UIActionObject.loadingConversations;
@@ -339,6 +348,8 @@ model.UserConfiguration currentUserConfig;
 model.UserConfiguration currentConfig;
 
 UserPositionReporter userPositionReporter;
+Map<String, Timer> otherUserPresenceTimersByUserId = {};
+Map<String, model.UserPresence> otherUserPresenceByUserId = {};
 
 bool hideDemogsTags;
 
@@ -586,8 +597,71 @@ void initUI() {
     }, showAndLogError);
   // Apply the default configuration before loading any new configs.
   applyConfiguration(defaultUserConfig);
+
+  platform.listenForUserPresence(
+    (added, modified, removed) {
+      // Remove the user presence markings that have changed from the UI
+      for (var userPresence in modified + removed) {
+        if (userPresence.userId == signedInUser.userEmail) continue;
+        var previousUserPresence = otherUserPresenceByUserId[userPresence.userId];
+        if (previousUserPresence != null) {
+          view.conversationListPanelView.clearOtherUserPresence(userPresence.userId, previousUserPresence.conversationId);
+          view.otherLoggedInUsers.hideOtherUserPresence(userPresence.userId);
+        }
+
+        otherUserPresenceTimersByUserId[userPresence.userId]?.cancel();
+      }
+
+      for (var userPresence in removed) {
+        otherUserPresenceByUserId.remove(userPresence.userId);
+      }
+
+      for (var userPresence in added + modified) {
+        if (userPresence.userId == signedInUser.userEmail) continue;
+        otherUserPresenceByUserId[userPresence.userId] = userPresence;
+      }
+
+      displayOtherUserPresenceIndicators(otherUserPresenceByUserId.values.toList());
+    }
+  );
 }
 
+
+void displayOtherUserPresenceIndicators(List<model.UserPresence> otherUsers) {
+  var presenceAge = DateTime.now().toUtc().subtract(Duration(minutes: 10));
+  var recencyAge = DateTime.now().toUtc().subtract(Duration(minutes: 2));
+
+  for (var userPresence in otherUsers) {
+    if (userPresence.conversationId == null) continue;
+
+    var datetime = DateTime.parse(userPresence.timestamp).toUtc();
+    bool shouldShow = datetime.isAfter(presenceAge);
+    if (!shouldShow) continue;
+
+    bool isRecent = datetime.isAfter(recencyAge);
+    view.conversationListPanelView.showOtherUserPresence(userPresence.userId, userPresence.conversationId, isRecent);
+    view.otherLoggedInUsers.showOtherUserPresence(userPresence.userId, isRecent);
+
+    var isLessRecentTimerCallback = () {
+      view.conversationListPanelView.clearOtherUserPresence(userPresence.userId, userPresence.conversationId);
+      view.otherLoggedInUsers.hideOtherUserPresence(userPresence.userId);
+    };
+    var isRecentTimerCallback = () {
+      view.conversationListPanelView.showOtherUserPresence(userPresence.userId, userPresence.conversationId, false);
+      view.otherLoggedInUsers.showOtherUserPresence(userPresence.userId, false);
+      otherUserPresenceTimersByUserId[userPresence.userId]?.cancel();
+      otherUserPresenceTimersByUserId[userPresence.userId] = new Timer(datetime.difference(presenceAge), isLessRecentTimerCallback);
+    };
+
+    if (isRecent) {
+      otherUserPresenceTimersByUserId[userPresence.userId]?.cancel();
+      otherUserPresenceTimersByUserId[userPresence.userId] = new Timer(datetime.difference(recencyAge), isRecentTimerCallback);
+    } else {
+      otherUserPresenceTimersByUserId[userPresence.userId]?.cancel();
+      otherUserPresenceTimersByUserId[userPresence.userId] = new Timer(datetime.difference(presenceAge), isLessRecentTimerCallback);
+    }
+  }
+}
 
 /// Sets user customization flags from the data map
 /// If a flag is not set in the data map, it defaults to the existing values
@@ -752,6 +826,8 @@ void conversationListSelected(String conversationListRoot) {
       }
 
       updateFilteredAndSelectedConversationLists();
+
+      displayOtherUserPresenceIndicators(otherUserPresenceByUserId.values.toList());
 
       if (activeConversation == null) return;
 
@@ -1292,6 +1368,12 @@ void command(UIAction action, Data data) {
     case UIAction.showSnackbar:
       SnackbarData snackbarData = data;
       view.snackbarView.showSnackbar(snackbarData.text, snackbarData.type);
+      break;
+
+    case UIAction.goToUser:
+      OtherUserData userData = data;
+      String conversationId = otherUserPresenceByUserId[userData.userId].conversationId;
+      command(UIAction.showConversation, ConversationData(conversationId));
       break;
 
     default:
