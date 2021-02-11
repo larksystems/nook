@@ -954,6 +954,7 @@ void command(UIAction action, [Data data]) {
       view.conversationFilter[tagData.filterType].addFilterTag(new view.FilterTagView(unifierTag.text, unifierTag.tagId, tagTypeToStyle(unifierTag.type), tagData.filterType));
       if (actionObjectState == UIActionObject.loadingConversations) return;
       updateFilteredAndSelectedConversationLists();
+      updateViewForConversation(activeConversation, updateInPlace: true);
       break;
     case UIAction.removeConversationTag:
       ConversationTagData conversationTagData = data;
@@ -981,6 +982,7 @@ void command(UIAction action, [Data data]) {
       view.conversationFilter[tagData.filterType].removeFilterTag(tag.tagId);
       if (actionObjectState == UIActionObject.loadingConversations) return;
       updateFilteredAndSelectedConversationLists();
+      updateViewForConversation(activeConversation, updateInPlace: true);
       break;
     case UIAction.promptAfterDateFilter:
       AfterDateFilterData filterData = data;
