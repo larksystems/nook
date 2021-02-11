@@ -10,6 +10,10 @@ usage_and_exit() {
   exit 1
 }
 
+just_exit() {
+  exit 1
+}
+
 FIREBASE_DEPLOY_ARGS=()
 
 while [ "$#" -gt 0 ]; do
@@ -81,8 +85,44 @@ echo "project id: $CRYPTO_TOKEN_PROJECT_ID"
 
 if [ "$FIREBASE_CONSTANTS_PROJECT_ID" != "$CRYPTO_TOKEN_PROJECT_ID" ]; then
   echo "the two project ids must match, check that you're deploying to the correct project"
-  usage_and_exit
+  just_exit
 fi
+
+########## validate the cloud functions urls in the firebase constants file
+
+echo ""
+echo "verifying cloud functions urls from firebase constants..."
+
+CLOUD_FUNCTIONS_LOCATION="europe-west1"
+
+EXPECTED_URLS=( \
+  "https://$CLOUD_FUNCTIONS_LOCATION-$FIREBASE_CONSTANTS_PROJECT_ID.cloudfunctions.net/Log" \
+  "https://$CLOUD_FUNCTIONS_LOCATION-$FIREBASE_CONSTANTS_PROJECT_ID.cloudfunctions.net/Publish" \
+  "https://$CLOUD_FUNCTIONS_LOCATION-$FIREBASE_CONSTANTS_PROJECT_ID.cloudfunctions.net/StatusZ" \
+)
+
+EXPECTED_KEYS=( \
+  "logUrl" \
+  "publishUrl" \
+  "statuszUrl" \
+)
+
+for i in 0 1 2; do
+  EXPECTED_URL=${EXPECTED_URLS[$i]}
+  EXPECTED_KEY=${EXPECTED_KEYS[$i]}
+  PYTHON_CODE="import json,sys; constants=json.load(sys.stdin); print(constants[\"$EXPECTED_KEY\"])"
+  URL=$(cat "$FIREBASE_CONSTANTS_FILE" | python -c "$PYTHON_CODE")
+  if [ "$URL" != "$EXPECTED_URL" ]; then
+    echo ""
+    echo "bad key $EXPECTED_KEY"
+    echo "  got:      $URL"
+    echo "  expected: $EXPECTED_URL"
+    just_exit
+  fi
+done
+
+echo "done! cloud functions urls look as expected"
+echo ""
 
 ########## cd to the nook project directory and get the absolute path
 

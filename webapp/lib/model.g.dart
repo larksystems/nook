@@ -3,7 +3,7 @@
 
 import 'dart:async';
 
-import 'logger.dart';
+import 'package:katikati_ui_lib/components/logger.dart';
 
 Logger log = Logger('model.g.dart');
 
