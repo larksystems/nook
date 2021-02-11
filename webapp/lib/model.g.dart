@@ -3,7 +3,7 @@
 
 import 'dart:async';
 
-import 'logger.dart';
+import 'package:katikati_ui_lib/components/logger.dart';
 
 Logger log = Logger('model.g.dart');
 
@@ -678,6 +678,59 @@ typedef UserConfigurationCollectionListener = void Function(
   List<UserConfiguration> added,
   List<UserConfiguration> modified,
   List<UserConfiguration> removed,
+);
+
+class UserPresence {
+  static const collectionName = 'user_presence';
+
+  String docId;
+  String timestamp;
+  String conversationId;
+
+  String get userId => docId;
+
+  static UserPresence fromSnapshot(DocSnapshot doc, [UserPresence modelObj]) =>
+      fromData(doc.data, modelObj)..docId = doc.id;
+
+  static UserPresence fromData(data, [UserPresence modelObj]) {
+    if (data == null) return null;
+    return (modelObj ?? UserPresence())
+      ..timestamp = String_fromData(data['timestamp'])
+      ..conversationId = String_fromData(data['conversation_id']);
+  }
+
+  static UserPresence required(Map data, String fieldName, String className) {
+    var value = fromData(data[fieldName]);
+    if (value == null && !data.containsKey(fieldName))
+      throw ValueException("$className.$fieldName is missing");
+    return value;
+  }
+
+  static UserPresence notNull(Map data, String fieldName, String className) {
+    var value = required(data, fieldName, className);
+    if (value == null)
+      throw ValueException("$className.$fieldName must not be null");
+    return value;
+  }
+
+  static StreamSubscription listen(DocStorage docStorage, UserPresenceCollectionListener listener,
+          {String collectionRoot = '/$collectionName', OnErrorListener onErrorListener}) =>
+      listenForUpdates<UserPresence>(docStorage, listener, collectionRoot, UserPresence.fromSnapshot, onErrorListener);
+
+  Map<String, dynamic> toData() {
+    return {
+      if (timestamp != null) 'timestamp': timestamp,
+      if (conversationId != null) 'conversation_id': conversationId,
+    };
+  }
+
+  @override
+  String toString() => 'UserPresence [$docId]: ${toData().toString()}';
+}
+typedef UserPresenceCollectionListener = void Function(
+  List<UserPresence> added,
+  List<UserPresence> modified,
+  List<UserPresence> removed,
 );
 
 typedef OnErrorListener = void Function(

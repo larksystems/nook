@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:html';
 import 'dart:convert';
 import 'dart:math' as math;
@@ -11,13 +10,14 @@ import 'package:katikati_ui_lib/components/banner/banner.dart';
 
 import 'controller.dart';
 import 'dom_utils.dart';
-import 'logger.dart';
+import 'package:katikati_ui_lib/components/logger.dart';
 import 'model.dart';
 import 'lazy_list_view_model.dart';
 
 
 Logger log = new Logger('view.dart');
 
+OtherLoggedInUsers otherLoggedInUsers;
 ConversationListSelectHeader conversationListSelectView;
 ConversationListPanelView conversationListPanelView;
 ConversationIdFilter conversationIdFilter;
@@ -32,6 +32,7 @@ SnackbarView snackbarView;
 BannerView bannerView;
 
 void init() {
+  otherLoggedInUsers = new OtherLoggedInUsers();
   conversationListSelectView = new ConversationListSelectHeader();
   conversationListPanelView = new ConversationListPanelView();
   conversationPanelView = new ConversationPanelView();
@@ -59,6 +60,8 @@ void init() {
   querySelector('header')
       ..insertAdjacentElement('beforeBegin', bannerView.bannerElement)
       ..append(conversationListSelectView.panel)
+      ..append(new DivElement()..classes.add('flex-fill-gap'))
+      ..append(otherLoggedInUsers.loggedInUsers)
       ..append(authHeaderView.authElement);
 
   document.onKeyDown.listen(
@@ -158,20 +161,20 @@ void showWarningStatus(String text) {
   tagPanelView._statusPanel.classes.add('status-line-warning');
 }
 
-void makeEditable(Element element, {void onChange(), void onEnter()}) {
+void makeEditable(Element element, {void onChange(e), void onEnter(e)}) {
   element
     ..contentEditable = 'true'
     ..onBlur.listen((e) {
-      if (onChange != null) onChange();
       e.stopPropagation();
+      if (onChange != null) onChange(e);
     })
-    ..onKeyDown.listen((e) => e.stopPropagation())
+    ..onKeyPress.listen((e) => e.stopPropagation())
     ..onKeyUp.listen((e) => e.stopPropagation())
-    ..onKeyPress.listen((e) {
+    ..onKeyDown.listen((e) {
       e.stopPropagation();
       if (onEnter != null && e.keyCode == KeyCode.ENTER) {
         e.stopImmediatePropagation();
-        onEnter();
+        onEnter(e);
       }
     });
 }
@@ -244,7 +247,7 @@ class ConversationPanelView {
 
     _newMessageTextArea = new TextAreaElement()
       ..classes.add('new-message-box__textarea');
-    makeEditable(_newMessageTextArea, onChange: () {
+    makeEditable(_newMessageTextArea, onChange: (e) {
       if (_newMessageTextArea.value.length >= SMS_MAX_LENGTH) {
         _newMessageTextArea.classes.toggle('warning-background', true);
         return;
@@ -390,7 +393,7 @@ class AfterDateFilterView {
   AfterDateFilterView() {
     _textArea = new TextAreaElement()
       ..classes.add('after-date-prompt__textarea');
-    makeEditable(_textArea, onEnter: () => applyFilter());
+    makeEditable(_textArea, onEnter: (_) => applyFilter());
 
     panel = DivElement()
       ..classes.add('after-date-prompt')
@@ -476,6 +479,7 @@ class MessageView {
   DivElement _messageText;
   DivElement _messageTranslation;
   DivElement _messageTags;
+  DivElement _addMessageTagButton;
 
   static MessageView selectedMessageView;
 
@@ -515,6 +519,17 @@ class MessageView {
     tags.forEach((tag) => _messageTags.append(tag.tag));
     message.append(_messageTags);
 
+    _addMessageTagButton = new DivElement()
+      ..classes.add('message__add-tag-button')
+      ..classes.add('tag__add')
+      ..classes.add('tag--hover-only-btn')
+      ..onClick.listen((e) {
+        e.stopPropagation();
+        command(UIAction.selectMessage, new MessageData(conversationId, messageIndex));
+        command(UIAction.startAddNewTagInline, new MessageData(conversationId, messageIndex));
+      });
+    _messageTags.append(_addMessageTagButton);
+
     setStatus(status);
   }
 
@@ -523,7 +538,7 @@ class MessageView {
   void addTag(TagView tag, [int position]) {
     if (position == null || position >= _messageTags.children.length) {
       // Add at the end
-      _messageTags.append(tag.tag);
+      _messageTags.insertBefore(tag.tag, _addMessageTagButton);
       tag.tag.scrollIntoView();
       return;
     }
@@ -573,7 +588,7 @@ class MessageView {
       ..classes.add('message__translation')
       ..text = translation;
     if (enable) {
-      makeEditable(_messageTranslation, onChange: () {
+      makeEditable(_messageTranslation, onChange: (_) {
         command(UIAction.updateTranslation,
                 new TranslationData(
                     _messageTranslation.text,
@@ -619,7 +634,7 @@ enum TagStyle {
 
 abstract class TagView {
   DivElement tag;
-  SpanElement _tagText;
+  var _tagText;
   SpanElement _removeButton;
 
   TagView(String text, String tagId, TagStyle tagStyle) {
@@ -649,17 +664,25 @@ abstract class TagView {
     tag.append(_tagText);
 
     _removeButton = new SpanElement()
-      ..classes.add('tag__remove');
+      ..classes.add('tag__remove')
+      ..classes.add('tag--hover-only-btn');
     tag.append(_removeButton);
+  }
+
+  void markPending() {
+    tag.classes.add('tag--pending');
   }
 }
 
 class MessageTagView extends TagView {
-  MessageTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle) {
+  MessageTagView(String text, String tagId, TagStyle tagStyle, [bool highlight = false]) : super(text, tagId, tagStyle) {
     _removeButton.onClick.listen((_) {
       DivElement message = getAncestors(tag).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
       command(UIAction.removeMessageTag, new MessageTagData(tagId, int.parse(message.dataset['message-index'])));
     });
+    if (highlight) {
+      tag.classes.add('tag--highlighted');
+    }
   }
 }
 
@@ -669,6 +692,46 @@ class ConversationTagView extends TagView {
       DivElement messageSummary = getAncestors(tag).firstWhere((e) => e.classes.contains('conversation-summary'));
       command(UIAction.removeConversationTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
     });
+  }
+}
+
+class EditableTagView extends TagView {
+  DivElement _addMessageTagSaveButton;
+
+  EditableTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle) {
+    tag.classes.add('tag--unsaved');
+
+    makeEditable(_tagText, onEnter: (e) {
+      e.stopPropagation();
+      e.preventDefault();
+      command(UIAction.saveTag, new SaveTagData(_tagText.text, tagId));
+    });
+
+    _addMessageTagSaveButton = new DivElement()
+      ..classes.add('edit-tag-widget__save-button')
+      ..classes.add('tag__confirm')
+      ..onClick.listen((e) {
+        e.stopPropagation();
+        command(UIAction.saveTag, new SaveTagData(_tagText.text, tagId));
+      });
+    tag.insertBefore(_addMessageTagSaveButton, _removeButton);
+
+
+    _removeButton
+      ..classes.remove('tag--hover-only-btn')
+      ..classes.add('edit-tag-widget__cancel-button');
+    _removeButton.onClick.listen((e) {
+      e.stopPropagation();
+      DivElement message = getAncestors(tag).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
+      command(UIAction.cancelAddNewTagInline, new MessageTagData(tagId, int.parse(message.dataset['message-index'])));
+    });
+  }
+
+  void focus() => _tagText.focus();
+
+  void markPending() {
+    tag.classes.remove('tag--unsaved');
+    super.markPending();
   }
 }
 
@@ -956,6 +1019,14 @@ class ConversationListPanelView {
     _phoneToConversations[deidentifiedPhoneNumber]?._showWarning(false);
   }
 
+  void showOtherUserPresence(String userId, String deidentifiedPhoneNumber, bool recent) {
+    _phoneToConversations[deidentifiedPhoneNumber]?.showOtherUserPresence(userId, recent);
+  }
+
+  void clearOtherUserPresence(String userId, String deidentifiedPhoneNumber) {
+    _phoneToConversations[deidentifiedPhoneNumber]?.hideOtherUserPresence(userId);
+  }
+
   void clearConversationList() {
     _conversationList.clearItems();
     _phoneToConversations.clear();
@@ -1169,7 +1240,7 @@ class ConversationIdFilter {
     _idInput = new TextInputElement()
       ..classes.add('conversation-filter__input')
       ..placeholder = 'Enter conversation ID';
-    makeEditable(_idInput, onChange: () {
+    makeEditable(_idInput, onChange: (_) {
       command(UIAction.updateConversationIdFilter, new ConversationIdFilterData(_idInput.value));
     });
     conversationFilter.append(_idInput);
@@ -1182,8 +1253,9 @@ class ConversationIdFilter {
   }
 }
 
-class ConversationSummary with LazyListViewItem {
+class ConversationSummary with LazyListViewItem, UserPresenceIndicator {
   CheckboxInputElement _selectCheckbox;
+  DivElement _otherUserPresenceIndicator;
 
   String deidentifiedPhoneNumber;
   String _text;
@@ -1193,7 +1265,13 @@ class ConversationSummary with LazyListViewItem {
   bool _checkboxHidden = true;
   bool _warning = false;
 
-  ConversationSummary(this.deidentifiedPhoneNumber, this._text, this._unread);
+  Map<String, bool> _presentUsers = {};
+
+  ConversationSummary(this.deidentifiedPhoneNumber, this._text, this._unread) {
+    _otherUserPresenceIndicator = new DivElement()
+      ..classes.add('conversation-list__user-indicators')
+      ..classes.add('user-indicators');
+  }
 
   Element buildElement() {
     var conversationSummary = new DivElement()
@@ -1225,6 +1303,11 @@ class ConversationSummary with LazyListViewItem {
           ..classes.add('summary-message__text')
           ..text = _text);
     conversationSummary.append(summaryMessage);
+
+    if (_presentUsers.isNotEmpty) {
+      conversationSummary.append(_otherUserPresenceIndicator);
+    }
+
     return conversationSummary;
   }
 
@@ -1271,6 +1354,84 @@ class ConversationSummary with LazyListViewItem {
   void _showWarning(bool show) {
     _warning = show;
     elementOrNull?.classes?.toggle('conversation-list__item--warning', show);
+  }
+
+  @override
+  void hideOtherUserPresence(String userId) {
+    super.hideOtherUserPresence(userId);
+    if (_presentUsers.isEmpty) {
+      _otherUserPresenceIndicator.remove();
+    }
+  }
+
+  @override
+  void showOtherUserPresence(String userId, bool recent) {
+    if (_presentUsers.isEmpty) {
+      elementOrNull?.append(_otherUserPresenceIndicator);
+    }
+    super.showOtherUserPresence(userId, recent);
+  }
+}
+
+mixin UserPresenceIndicator {
+  DivElement _otherUserPresenceIndicator;
+  Map<String, bool> _presentUsers = {};
+
+  void hideOtherUserPresence(String userId) {
+    var indicator = _otherUserPresenceIndicator.querySelector('[data-id="$userId"]');
+    indicator?.remove();
+    _presentUsers.remove(userId);
+
+    if (_presentUsers.isEmpty) {
+      _otherUserPresenceIndicator.children.clear();
+      _presentUsers = {};
+    }
+  }
+
+  void showOtherUserPresence(String userId, bool recent) {
+    if (_presentUsers.containsKey(userId)) {
+      var previousIndicator = _otherUserPresenceIndicator.querySelector('[data-id="$userId"]');
+      previousIndicator.remove();
+    }
+
+    _otherUserPresenceIndicator.append(_generateOtherUserPresenceIndicator(userId, recent));
+    _presentUsers[userId] = recent;
+  }
+
+  DivElement _generateOtherUserPresenceIndicator(String userId, bool recent) {
+    return DivElement()
+      ..classes.add('user-indicator')
+      ..title = userId
+      ..dataset['id'] = userId
+      ..style.backgroundColor = _generateColourForId(userId, recent);
+  }
+
+  String _generateColourForId(String userId, bool recent) {
+    var hue = userId.hashCode % 360;
+    var light = recent ? 50 : 80;
+    return 'hsl($hue, 60%, $light%)';
+  }
+}
+
+class OtherLoggedInUsers with UserPresenceIndicator {
+  DivElement loggedInUsers;
+
+  OtherLoggedInUsers() {
+    loggedInUsers = new DivElement()
+      ..classes.add('header__other-users');
+
+    _otherUserPresenceIndicator = new DivElement()
+      ..classes.add('user-indicators');
+
+    loggedInUsers.append(_otherUserPresenceIndicator);
+  }
+
+  @override
+  void showOtherUserPresence(String userId, bool recent) {
+    super.showOtherUserPresence(userId, recent);
+
+    var userIndicator = _otherUserPresenceIndicator.querySelector('[data-id="$userId"]');
+    userIndicator.onClick.listen((event) => command(UIAction.goToUser, OtherUserData(userId)));
   }
 }
 
@@ -1397,7 +1558,7 @@ class ReplyPanelView {
       ..classes.add('notes-box__textarea')
       ..value = text;
     if (enable) {
-      makeEditable(_notesTextArea, onChange: () {
+      makeEditable(_notesTextArea, onChange: (_) {
         command(UIAction.updateNote, new NoteData(_notesTextArea.value));
       });
     } else {

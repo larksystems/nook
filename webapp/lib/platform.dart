@@ -3,7 +3,7 @@ import "dart:async";
 import 'package:firebase/firebase.dart' as firebase;
 
 import 'controller.dart' as controller;
-import 'logger.dart';
+import 'package:katikati_ui_lib/components/logger.dart';
 import 'model.dart';
 import 'model_firebase.dart';
 import 'package:katikati_ui_lib/components/platform/platform_constants.dart' as platform_constants;
@@ -54,7 +54,7 @@ void initUptimeMonitoring() {
       };
       _uptimePubSubInstance.publish(platform_constants.statuszTopic, payload).then(
         (_) {
-          log.success('Uptime ping ${t.tick}.${tt.tick} successful');
+          log.debug('Uptime ping ${t.tick}.${tt.tick} successful');
 
           // Add success to the three pings queue
           lastThreePingsQueue.add(true);
@@ -106,7 +106,7 @@ void initUptimeMonitoring() {
     };
     _uptimePubSubInstance.publish(platform_constants.statuszTopic, payload).then(
       (_) {
-        log.success('Uptime ping ${t.tick} successful');
+        log.debug('Uptime ping ${t.tick} successful');
 
         // Cancel the previous 5 sec timer if it's still going.
         fiveSecTimer?.cancel();
@@ -229,6 +229,9 @@ void listenForMessageTags(TagCollectionListener listener, [OnErrorListener onErr
 void listenForSuggestedReplies(SuggestedReplyCollectionListener listener, [OnErrorListener onErrorListener]) =>
     SuggestedReply.listen(_docStorage, listener, onErrorListener: onErrorListener);
 
+void listenForUserPresence(UserPresenceCollectionListener listener, [OnErrorListener onErrorListener]) =>
+    UserPresence.listen(_docStorage, listener, onErrorListener: onErrorListener);
+
 Future<void> addMessageTag(Conversation conversation, Message message, String tagId) {
   log.verbose("Adding tag $tagId to message in conversation ${conversation.docId}");
   return message.addTagId(_pubsubInstance, conversation, tagId);
@@ -270,4 +273,11 @@ Future<void> addConversationTag(Conversation conversation, String tagId) {
 Future<void> removeConversationTag(Conversation conversation, String tagId) {
   log.verbose("Removing tag $tagId from ${conversation.docId}");
   return conversation.removeTagIds(_pubsubInstance, [tagId]);
+}
+
+Future<void> addTag(Tag tag) {
+  log.verbose("Adding new tag ${tag.tagId} to tag list");
+  var tagData = tag.toData();
+  tagData['__id'] = tag.docId;
+  return _pubsubInstance.publishAddOpinion('nook/set_tag', tagData);
 }

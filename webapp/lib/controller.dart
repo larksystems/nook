@@ -7,8 +7,9 @@ import 'package:katikati_ui_lib/components/auth/auth.dart';
 
 import 'package:firebase/firebase.dart' show FirebaseError;
 import 'package:nook/user_position_reporter.dart';
+import 'package:uuid/uuid.dart' as uuid;
 
-import 'logger.dart';
+import 'package:katikati_ui_lib/components/logger.dart';
 import 'model.dart' as model;
 import 'platform.dart' as platform;
 import 'pubsub.dart' show PubSubException;
@@ -24,6 +25,7 @@ enum UIActionObject {
   conversation,
   message,
   loadingConversations,
+  addTagInline,
 }
 
 enum UIAction {
@@ -54,6 +56,9 @@ enum UIAction {
   keyPressed,
   addNewSuggestedReply,
   addNewTag,
+  startAddNewTagInline,
+  cancelAddNewTagInline,
+  saveTag,
   selectAllConversations,
   deselectAllConversations,
   updateSystemMessages,
@@ -62,6 +67,7 @@ enum UIAction {
   hideAgeTags,
   showSnackbar,
   updateConversationIdFilter,
+  goToUser,
 }
 
 class Data {}
@@ -242,6 +248,16 @@ class AddTagData extends Data {
   String toString() => 'AddTagData: {tagText: $tagText}';
 }
 
+class SaveTagData extends Data {
+  String tagText;
+  String tagId;
+
+  SaveTagData(this.tagText, this.tagId);
+
+  @override
+  String toString() => 'SaveTagData: {tagText: $tagText, tagId: $tagId}';
+}
+
 class UpdateSuggestedRepliesCategoryData extends Data {
   String category;
   UpdateSuggestedRepliesCategoryData(this.category);
@@ -291,6 +307,14 @@ class SnackbarData extends Data {
   String toString() => 'SnackbarData: {text: $text, type: $type}';
 }
 
+class OtherUserData extends Data {
+  String userId;
+  OtherUserData(this.userId);
+
+  @override
+  String toString() => 'OtherUserData: {userId: $userId}';
+}
+
 List<model.SystemMessage> systemMessages;
 
 UIActionObject actionObjectState = UIActionObject.loadingConversations;
@@ -324,6 +348,8 @@ model.UserConfiguration currentUserConfig;
 model.UserConfiguration currentConfig;
 
 UserPositionReporter userPositionReporter;
+Map<String, Timer> otherUserPresenceTimersByUserId = {};
+Map<String, model.UserPresence> otherUserPresenceByUserId = {};
 
 bool hideDemogsTags;
 
@@ -453,7 +479,7 @@ void initUI() {
         selectedMessageTagsGroup = groups.first;
       }
 
-      if (actionObjectState == UIActionObject.message) {
+      if (actionObjectState == UIActionObject.message || actionObjectState == UIActionObject.addTagInline) {
         view.tagPanelView.selectedGroup = selectedMessageTagsGroup;
         _populateTagPanelView(messageTagsByGroup[selectedMessageTagsGroup], TagReceiver.Message);
       }
@@ -571,8 +597,71 @@ void initUI() {
     }, showAndLogError);
   // Apply the default configuration before loading any new configs.
   applyConfiguration(defaultUserConfig);
+
+  platform.listenForUserPresence(
+    (added, modified, removed) {
+      // Remove the user presence markings that have changed from the UI
+      for (var userPresence in modified + removed) {
+        if (userPresence.userId == signedInUser.userEmail) continue;
+        var previousUserPresence = otherUserPresenceByUserId[userPresence.userId];
+        if (previousUserPresence != null) {
+          view.conversationListPanelView.clearOtherUserPresence(userPresence.userId, previousUserPresence.conversationId);
+          view.otherLoggedInUsers.hideOtherUserPresence(userPresence.userId);
+        }
+
+        otherUserPresenceTimersByUserId[userPresence.userId]?.cancel();
+      }
+
+      for (var userPresence in removed) {
+        otherUserPresenceByUserId.remove(userPresence.userId);
+      }
+
+      for (var userPresence in added + modified) {
+        if (userPresence.userId == signedInUser.userEmail) continue;
+        otherUserPresenceByUserId[userPresence.userId] = userPresence;
+      }
+
+      displayOtherUserPresenceIndicators(otherUserPresenceByUserId.values.toList());
+    }
+  );
 }
 
+
+void displayOtherUserPresenceIndicators(List<model.UserPresence> otherUsers) {
+  var presenceAge = DateTime.now().toUtc().subtract(Duration(minutes: 10));
+  var recencyAge = DateTime.now().toUtc().subtract(Duration(minutes: 2));
+
+  for (var userPresence in otherUsers) {
+    if (userPresence.conversationId == null) continue;
+
+    var datetime = DateTime.parse(userPresence.timestamp).toUtc();
+    bool shouldShow = datetime.isAfter(presenceAge);
+    if (!shouldShow) continue;
+
+    bool isRecent = datetime.isAfter(recencyAge);
+    view.conversationListPanelView.showOtherUserPresence(userPresence.userId, userPresence.conversationId, isRecent);
+    view.otherLoggedInUsers.showOtherUserPresence(userPresence.userId, isRecent);
+
+    var isLessRecentTimerCallback = () {
+      view.conversationListPanelView.clearOtherUserPresence(userPresence.userId, userPresence.conversationId);
+      view.otherLoggedInUsers.hideOtherUserPresence(userPresence.userId);
+    };
+    var isRecentTimerCallback = () {
+      view.conversationListPanelView.showOtherUserPresence(userPresence.userId, userPresence.conversationId, false);
+      view.otherLoggedInUsers.showOtherUserPresence(userPresence.userId, false);
+      otherUserPresenceTimersByUserId[userPresence.userId]?.cancel();
+      otherUserPresenceTimersByUserId[userPresence.userId] = new Timer(datetime.difference(presenceAge), isLessRecentTimerCallback);
+    };
+
+    if (isRecent) {
+      otherUserPresenceTimersByUserId[userPresence.userId]?.cancel();
+      otherUserPresenceTimersByUserId[userPresence.userId] = new Timer(datetime.difference(recencyAge), isRecentTimerCallback);
+    } else {
+      otherUserPresenceTimersByUserId[userPresence.userId]?.cancel();
+      otherUserPresenceTimersByUserId[userPresence.userId] = new Timer(datetime.difference(presenceAge), isLessRecentTimerCallback);
+    }
+  }
+}
 
 /// Sets user customization flags from the data map
 /// If a flag is not set in the data map, it defaults to the existing values
@@ -738,6 +827,8 @@ void conversationListSelected(String conversationListRoot) {
 
       updateFilteredAndSelectedConversationLists();
 
+      displayOtherUserPresenceIndicators(otherUserPresenceByUserId.values.toList());
+
       if (activeConversation == null) return;
 
       // Update the active conversation view as needed
@@ -828,6 +919,11 @@ void command(UIAction action, Data data) {
       break;
   }
 
+  if (actionObjectState == UIActionObject.addTagInline) {
+    subCommandForAddTagInline(action, data);
+    return;
+  }
+
   switch (action) {
     case UIAction.sendMessage:
       ReplyData replyData = data;
@@ -915,6 +1011,8 @@ void command(UIAction action, Data data) {
           break;
         case UIActionObject.loadingConversations:
           break;
+        default:
+          break;
       }
       updateFilteredAndSelectedConversationLists();
       break;
@@ -929,6 +1027,7 @@ void command(UIAction action, Data data) {
       view.conversationFilter[tagData.filterType].addFilterTag(new view.FilterTagView(unifierTag.text, unifierTag.tagId, tagTypeToStyle(unifierTag.type), tagData.filterType));
       if (actionObjectState == UIActionObject.loadingConversations) return;
       updateFilteredAndSelectedConversationLists();
+      updateViewForConversation(activeConversation, updateInPlace: true);
       break;
     case UIAction.removeConversationTag:
       ConversationTagData conversationTagData = data;
@@ -956,6 +1055,7 @@ void command(UIAction action, Data data) {
       view.conversationFilter[tagData.filterType].removeFilterTag(tag.tagId);
       if (actionObjectState == UIActionObject.loadingConversations) return;
       updateFilteredAndSelectedConversationLists();
+      updateViewForConversation(activeConversation, updateInPlace: true);
       break;
     case UIAction.promptAfterDateFilter:
       AfterDateFilterData filterData = data;
@@ -993,6 +1093,8 @@ void command(UIAction action, Data data) {
           break;
         case UIActionObject.loadingConversations:
           break;
+        default:
+          break;
       }
       break;
     case UIAction.deselectMessage:
@@ -1007,6 +1109,8 @@ void command(UIAction action, Data data) {
           actionObjectState = UIActionObject.conversation;
           break;
         case UIActionObject.loadingConversations:
+          break;
+        default:
           break;
       }
       break;
@@ -1178,6 +1282,8 @@ void command(UIAction action, Data data) {
           return;
         case UIActionObject.loadingConversations:
           break;
+        default:
+          break;
       }
       // There is no matching shortcut in either replies or tags, ignore
       break;
@@ -1188,6 +1294,10 @@ void command(UIAction action, Data data) {
     case UIAction.addNewTag:
       AddTagData tagData = data;
       // TODO: call platform
+      break;
+    case UIAction.startAddNewTagInline:
+      actionObjectState = UIActionObject.addTagInline;
+      subCommandForAddTagInline(action, data);
       break;
     case UIAction.selectAllConversations:
       view.conversationListPanelView.checkAllConversations();
@@ -1232,6 +1342,8 @@ void command(UIAction action, Data data) {
           selectedConversationTagsGroup = updateGroupData.group;
           _populateTagPanelView(conversationTagsByGroup[selectedConversationTagsGroup], TagReceiver.Conversation);
           break;
+        default:
+          break;
       }
       break;
     case UIAction.hideAgeTags:
@@ -1248,12 +1360,84 @@ void command(UIAction action, Data data) {
           break;
         case UIActionObject.loadingConversations:
           break;
+        default:
+          break;
       }
       break;
 
     case UIAction.showSnackbar:
       SnackbarData snackbarData = data;
       view.snackbarView.showSnackbar(snackbarData.text, snackbarData.type);
+      break;
+
+    case UIAction.goToUser:
+      OtherUserData userData = data;
+      String conversationId = otherUserPresenceByUserId[userData.userId].conversationId;
+      command(UIAction.showConversation, ConversationData(conversationId));
+      break;
+
+    default:
+      break;
+  }
+}
+
+model.Tag newTagToAdd;
+model.Message message;
+model.Conversation conversation;
+
+void subCommandForAddTagInline(UIAction action, [Data data]) {
+  switch (action) {
+    case UIAction.startAddNewTagInline:
+      if (newTagToAdd != null) return; // another tag creation in progress
+
+      MessageData messageData = data;
+      newTagToAdd = new model.Tag()
+        ..docId = generateTagId()
+        ..filterable = true
+        ..groups = ["${signedInUser.userName}'s tags"]
+        ..isUnifier = false
+        ..text = ''
+        ..shortcut = ''
+        ..visible = true
+        ..type = model.TagType.Normal;
+
+      conversation = activeConversation;
+      message = conversation.messages[messageData.messageIndex];
+
+      var newTagView = new view.EditableTagView(newTagToAdd.text, newTagToAdd.tagId, tagTypeToStyle(newTagToAdd.type));
+      view.conversationPanelView
+          .messageViewAtIndex(messageData.messageIndex)
+          .addTag(newTagView);
+      newTagView.focus();
+      break;
+    case UIAction.saveTag:
+      SaveTagData saveTagData = data;
+      actionObjectState = UIActionObject.message;
+
+      newTagToAdd..text = saveTagData.tagText;
+      platform.addTag(newTagToAdd).then(
+        (_) {
+          view.conversationPanelView
+              .messageViewAtIndex(conversation.messages.indexOf(message))
+              .removeTag(newTagToAdd.tagId);
+          messageTags.add(newTagToAdd);
+
+          setMessageTag(newTagToAdd, message, conversation);
+          newTagToAdd = null;
+          message = null;
+          conversation = null;
+        }, onError: showAndLogError);
+      break;
+    case UIAction.cancelAddNewTagInline:
+      actionObjectState = UIActionObject.message;
+      view.conversationPanelView
+          .messageViewAtIndex(conversation.messages.indexOf(message))
+          .removeTag(newTagToAdd.tagId);
+      newTagToAdd = null;
+      message = null;
+      conversation = null;
+      break;
+    default:
       break;
   }
 }
@@ -1343,6 +1527,8 @@ void updateViewForConversation(model.Conversation conversation, {bool updateInPl
       _populateTagPanelView(conversationTagsByGroup[selectedConversationTagsGroup], TagReceiver.Conversation);
       break;
     case UIActionObject.loadingConversations:
+      break;
+    default:
       break;
   }
   _selectConversationInView(conversation);
@@ -1513,9 +1699,11 @@ void setMessageTag(model.Tag tag, model.Message message, model.Conversation conv
   if (!message.tagIds.contains(tag.tagId)) {
     platform.addMessageTag(activeConversation, message, tag.tagId).then(
       (_) {
+        var tagView = new view.MessageTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type));
         view.conversationPanelView
           .messageViewAtIndex(conversation.messages.indexOf(message))
-          .addTag(new view.MessageTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
+          .addTag(tagView);
+        tagView.markPending();
       }, onError: showAndLogError);
   }
 }
