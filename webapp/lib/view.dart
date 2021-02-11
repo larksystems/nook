@@ -17,6 +17,7 @@ import 'lazy_list_view_model.dart';
 
 Logger log = new Logger('view.dart');
 
+OtherLoggedInUsers otherLoggedInUsers;
 ConversationListSelectHeader conversationListSelectView;
 ConversationListPanelView conversationListPanelView;
 ConversationIdFilter conversationIdFilter;
@@ -31,6 +32,7 @@ SnackbarView snackbarView;
 BannerView bannerView;
 
 void init() {
+  otherLoggedInUsers = new OtherLoggedInUsers();
   conversationListSelectView = new ConversationListSelectHeader();
   conversationListPanelView = new ConversationListPanelView();
   conversationPanelView = new ConversationPanelView();
@@ -58,6 +60,8 @@ void init() {
   querySelector('header')
       ..insertAdjacentElement('beforeBegin', bannerView.bannerElement)
       ..append(conversationListSelectView.panel)
+      ..append(new DivElement()..classes.add('flex-fill-gap'))
+      ..append(otherLoggedInUsers.loggedInUsers)
       ..append(authHeaderView.authElement);
 
   document.onKeyDown.listen(
@@ -958,6 +962,14 @@ class ConversationListPanelView {
     _phoneToConversations[deidentifiedPhoneNumber]?._showWarning(false);
   }
 
+  void showOtherUserPresence(String userId, String deidentifiedPhoneNumber, bool recent) {
+    _phoneToConversations[deidentifiedPhoneNumber]?.showOtherUserPresence(userId, recent);
+  }
+
+  void clearOtherUserPresence(String userId, String deidentifiedPhoneNumber) {
+    _phoneToConversations[deidentifiedPhoneNumber]?.hideOtherUserPresence(userId);
+  }
+
   void clearConversationList() {
     _conversationList.clearItems();
     _phoneToConversations.clear();
@@ -1184,8 +1196,9 @@ class ConversationIdFilter {
   }
 }
 
-class ConversationSummary with LazyListViewItem {
+class ConversationSummary with LazyListViewItem, UserPresenceIndicator {
   CheckboxInputElement _selectCheckbox;
+  DivElement _otherUserPresenceIndicator;
 
   String deidentifiedPhoneNumber;
   String _text;
@@ -1195,7 +1208,13 @@ class ConversationSummary with LazyListViewItem {
   bool _checkboxHidden = true;
   bool _warning = false;
 
-  ConversationSummary(this.deidentifiedPhoneNumber, this._text, this._unread);
+  Map<String, bool> _presentUsers = {};
+
+  ConversationSummary(this.deidentifiedPhoneNumber, this._text, this._unread) {
+    _otherUserPresenceIndicator = new DivElement()
+      ..classes.add('conversation-list__user-indicators')
+      ..classes.add('user-indicators');
+  }
 
   Element buildElement() {
     var conversationSummary = new DivElement()
@@ -1227,6 +1246,11 @@ class ConversationSummary with LazyListViewItem {
           ..classes.add('summary-message__text')
           ..text = _text);
     conversationSummary.append(summaryMessage);
+
+    if (_presentUsers.isNotEmpty) {
+      conversationSummary.append(_otherUserPresenceIndicator);
+    }
+
     return conversationSummary;
   }
 
@@ -1273,6 +1297,84 @@ class ConversationSummary with LazyListViewItem {
   void _showWarning(bool show) {
     _warning = show;
     elementOrNull?.classes?.toggle('conversation-list__item--warning', show);
+  }
+
+  @override
+  void hideOtherUserPresence(String userId) {
+    super.hideOtherUserPresence(userId);
+    if (_presentUsers.isEmpty) {
+      _otherUserPresenceIndicator.remove();
+    }
+  }
+
+  @override
+  void showOtherUserPresence(String userId, bool recent) {
+    if (_presentUsers.isEmpty) {
+      elementOrNull?.append(_otherUserPresenceIndicator);
+    }
+    super.showOtherUserPresence(userId, recent);
+  }
+}
+
+mixin UserPresenceIndicator {
+  DivElement _otherUserPresenceIndicator;
+  Map<String, bool> _presentUsers = {};
+
+  void hideOtherUserPresence(String userId) {
+    var indicator = _otherUserPresenceIndicator.querySelector('[data-id="$userId"]');
+    indicator?.remove();
+    _presentUsers.remove(userId);
+
+    if (_presentUsers.isEmpty) {
+      _otherUserPresenceIndicator.children.clear();
+      _presentUsers = {};
+    }
+  }
+
+  void showOtherUserPresence(String userId, bool recent) {
+    if (_presentUsers.containsKey(userId)) {
+      var previousIndicator = _otherUserPresenceIndicator.querySelector('[data-id="$userId"]');
+      previousIndicator.remove();
+    }
+
+    _otherUserPresenceIndicator.append(_generateOtherUserPresenceIndicator(userId, recent));
+    _presentUsers[userId] = recent;
+  }
+
+  DivElement _generateOtherUserPresenceIndicator(String userId, bool recent) {
+    return DivElement()
+      ..classes.add('user-indicator')
+      ..title = userId
+      ..dataset['id'] = userId
+      ..style.backgroundColor = _generateColourForId(userId, recent);
+  }
+
+  String _generateColourForId(String userId, bool recent) {
+    var hue = userId.hashCode % 360;
+    var light = recent ? 50 : 80;
+    return 'hsl($hue, 60%, $light%)';
+  }
+}
+
+class OtherLoggedInUsers with UserPresenceIndicator {
+  DivElement loggedInUsers;
+
+  OtherLoggedInUsers() {
+    loggedInUsers = new DivElement()
+      ..classes.add('header__other-users');
+
+    _otherUserPresenceIndicator = new DivElement()
+      ..classes.add('user-indicators');
+
+    loggedInUsers.append(_otherUserPresenceIndicator);
+  }
+
+  @override
+  void showOtherUserPresence(String userId, bool recent) {
+    super.showOtherUserPresence(userId, recent);
+
+    var userIndicator = _otherUserPresenceIndicator.querySelector('[data-id="$userId"]');
+    userIndicator.onClick.listen((event) => command(UIAction.goToUser, OtherUserData(userId)));
   }
 }
 
