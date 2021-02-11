@@ -67,6 +67,7 @@
   flex-direction: column;
   align-items: flex-start;
   flex: 0 1 auto;
+  height: 100%;
 }
 
 .status-line {
