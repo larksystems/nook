@@ -63,7 +63,9 @@ void _updateConversationPanelView(model.Conversation conversation) {
 view.MessageView _generateMessageView(model.Message message, model.Conversation conversation) {
   List<view.TagView> tags = [];
   for (var tag in tagIdsToTags(message.tagIds, messageTagIdsToTags)) {
-    tags.add(new view.MessageTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
+    bool shouldHighlightTag = conversationFilter.filterTagIds[TagFilterType.include].contains(tag.tagId);
+    shouldHighlightTag = shouldHighlightTag || conversationFilter.filterTagIds[TagFilterType.lastInboundTurn].contains(tag.tagId);
+    tags.add(new view.MessageTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type), shouldHighlightTag));
   }
   var messageView = new view.MessageView(
       message.text,
