@@ -8,7 +8,7 @@ import 'package:katikati_ui_lib/components/auth/auth.dart';
 import 'package:firebase/firebase.dart' show FirebaseError;
 import 'package:nook/user_position_reporter.dart';
 
-import 'logger.dart';
+import 'package:katikati_ui_lib/components/logger.dart';
 import 'model.dart' as model;
 import 'platform.dart' as platform;
 import 'pubsub.dart' show PubSubException;

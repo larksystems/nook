@@ -3,7 +3,7 @@ import "dart:async";
 import 'package:firebase/firebase.dart' as firebase;
 
 import 'controller.dart' as controller;
-import 'logger.dart';
+import 'package:katikati_ui_lib/components/logger.dart';
 import 'model.dart';
 import 'model_firebase.dart';
 import 'package:katikati_ui_lib/components/platform/platform_constants.dart' as platform_constants;
@@ -54,7 +54,7 @@ void initUptimeMonitoring() {
       };
       _uptimePubSubInstance.publish(platform_constants.statuszTopic, payload).then(
         (_) {
-          log.success('Uptime ping ${t.tick}.${tt.tick} successful');
+          log.debug('Uptime ping ${t.tick}.${tt.tick} successful');
 
           // Add success to the three pings queue
           lastThreePingsQueue.add(true);
@@ -106,7 +106,7 @@ void initUptimeMonitoring() {
     };
     _uptimePubSubInstance.publish(platform_constants.statuszTopic, payload).then(
       (_) {
-        log.success('Uptime ping ${t.tick} successful');
+        log.debug('Uptime ping ${t.tick} successful');
 
         // Cancel the previous 5 sec timer if it's still going.
         fiveSecTimer?.cancel();
