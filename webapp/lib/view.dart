@@ -161,20 +161,20 @@ void showWarningStatus(String text) {
   tagPanelView._statusPanel.classes.add('status-line-warning');
 }
 
-void makeEditable(Element element, {void onChange(), void onEnter()}) {
+void makeEditable(Element element, {void onChange(e), void onEnter(e)}) {
   element
     ..contentEditable = 'true'
     ..onBlur.listen((e) {
-      if (onChange != null) onChange();
       e.stopPropagation();
+      if (onChange != null) onChange(e);
     })
-    ..onKeyDown.listen((e) => e.stopPropagation())
+    ..onKeyPress.listen((e) => e.stopPropagation())
     ..onKeyUp.listen((e) => e.stopPropagation())
-    ..onKeyPress.listen((e) {
+    ..onKeyDown.listen((e) {
       e.stopPropagation();
       if (onEnter != null && e.keyCode == KeyCode.ENTER) {
         e.stopImmediatePropagation();
-        onEnter();
+        onEnter(e);
       }
     });
 }
@@ -247,7 +247,7 @@ class ConversationPanelView {
 
     _newMessageTextArea = new TextAreaElement()
       ..classes.add('new-message-box__textarea');
-    makeEditable(_newMessageTextArea, onChange: () {
+    makeEditable(_newMessageTextArea, onChange: (e) {
       if (_newMessageTextArea.value.length >= SMS_MAX_LENGTH) {
         _newMessageTextArea.classes.toggle('warning-background', true);
         return;
@@ -393,7 +393,7 @@ class AfterDateFilterView {
   AfterDateFilterView() {
     _textArea = new TextAreaElement()
       ..classes.add('after-date-prompt__textarea');
-    makeEditable(_textArea, onEnter: () => applyFilter());
+    makeEditable(_textArea, onEnter: (_) => applyFilter());
 
     panel = DivElement()
       ..classes.add('after-date-prompt')
@@ -479,6 +479,7 @@ class MessageView {
   DivElement _messageText;
   DivElement _messageTranslation;
   DivElement _messageTags;
+  DivElement _addMessageTagButton;
 
   static MessageView selectedMessageView;
 
@@ -518,6 +519,17 @@ class MessageView {
     tags.forEach((tag) => _messageTags.append(tag.tag));
     message.append(_messageTags);
 
+    _addMessageTagButton = new DivElement()
+      ..classes.add('message__add-tag-button')
+      ..classes.add('tag__add')
+      ..classes.add('tag--hover-only-btn')
+      ..onClick.listen((e) {
+        e.stopPropagation();
+        command(UIAction.selectMessage, new MessageData(conversationId, messageIndex));
+        command(UIAction.startAddNewTagInline, new MessageData(conversationId, messageIndex));
+      });
+    _messageTags.append(_addMessageTagButton);
+
     setStatus(status);
   }
 
@@ -526,7 +538,7 @@ class MessageView {
   void addTag(TagView tag, [int position]) {
     if (position == null || position >= _messageTags.children.length) {
       // Add at the end
-      _messageTags.append(tag.tag);
+      _messageTags.insertBefore(tag.tag, _addMessageTagButton);
       tag.tag.scrollIntoView();
       return;
     }
@@ -576,7 +588,7 @@ class MessageView {
       ..classes.add('message__translation')
       ..text = translation;
     if (enable) {
-      makeEditable(_messageTranslation, onChange: () {
+      makeEditable(_messageTranslation, onChange: (_) {
         command(UIAction.updateTranslation,
                 new TranslationData(
                     _messageTranslation.text,
@@ -622,7 +634,7 @@ enum TagStyle {
 
 abstract class TagView {
   DivElement tag;
-  SpanElement _tagText;
+  var _tagText;
   SpanElement _removeButton;
 
   TagView(String text, String tagId, TagStyle tagStyle) {
@@ -652,8 +664,13 @@ abstract class TagView {
     tag.append(_tagText);
 
     _removeButton = new SpanElement()
-      ..classes.add('tag__remove');
+      ..classes.add('tag__remove')
+      ..classes.add('tag--hover-only-btn');
     tag.append(_removeButton);
+  }
+
+  void markPending() {
+    tag.classes.add('tag--pending');
   }
 }
 
@@ -675,6 +692,46 @@ class ConversationTagView extends TagView {
       DivElement messageSummary = getAncestors(tag).firstWhere((e) => e.classes.contains('conversation-summary'));
       command(UIAction.removeConversationTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
     });
+  }
+}
+
+class EditableTagView extends TagView {
+  DivElement _addMessageTagSaveButton;
+
+  EditableTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle) {
+    tag.classes.add('tag--unsaved');
+
+    makeEditable(_tagText, onEnter: (e) {
+      e.stopPropagation();
+      e.preventDefault();
+      command(UIAction.saveTag, new SaveTagData(_tagText.text, tagId));
+    });
+
+    _addMessageTagSaveButton = new DivElement()
+      ..classes.add('edit-tag-widget__save-button')
+      ..classes.add('tag__confirm')
+      ..onClick.listen((e) {
+        e.stopPropagation();
+        command(UIAction.saveTag, new SaveTagData(_tagText.text, tagId));
+      });
+    tag.insertBefore(_addMessageTagSaveButton, _removeButton);
+
+
+    _removeButton
+      ..classes.remove('tag--hover-only-btn')
+      ..classes.add('edit-tag-widget__cancel-button');
+    _removeButton.onClick.listen((e) {
+      e.stopPropagation();
+      DivElement message = getAncestors(tag).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
+      command(UIAction.cancelAddNewTagInline, new MessageTagData(tagId, int.parse(message.dataset['message-index'])));
+    });
+  }
+
+  void focus() => _tagText.focus();
+
+  void markPending() {
+    tag.classes.remove('tag--unsaved');
+    super.markPending();
   }
 }
 
@@ -1183,7 +1240,7 @@ class ConversationIdFilter {
     _idInput = new TextInputElement()
       ..classes.add('conversation-filter__input')
       ..placeholder = 'Enter conversation ID';
-    makeEditable(_idInput, onChange: () {
+    makeEditable(_idInput, onChange: (_) {
       command(UIAction.updateConversationIdFilter, new ConversationIdFilterData(_idInput.value));
     });
     conversationFilter.append(_idInput);
@@ -1501,7 +1558,7 @@ class ReplyPanelView {
       ..classes.add('notes-box__textarea')
       ..value = text;
     if (enable) {
-      makeEditable(_notesTextArea, onChange: () {
+      makeEditable(_notesTextArea, onChange: (_) {
         command(UIAction.updateNote, new NoteData(_notesTextArea.value));
       });
     } else {

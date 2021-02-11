@@ -38,6 +38,32 @@
   background-color: crimson;
   color: white;
 }
+.tag--unsaved .tag__name {
+  -webkit-animation: borderBlinkUnsaved 1s step-end infinite;
+  animation: borderBlinkUnsaved 1s step-end infinite;
+  border: 2px solid;
+}
+@-webkit-keyframes borderBlinkUnsaved {
+  from, to {
+      border-color: #bbb;
+  }
+  50% {
+      border-color: #ddd;
+  }
+}
+@keyframes borderBlinkUnsaved {
+  from, to {
+    border-color: #bbb;
+  }
+  50% {
+      border-color: #ddd;
+  }
+}
+.tag--pending .tag__name {
+  color: #666;
+}
+
+/* A simple x button to add a new tag */
 
 .tag__remove {
   width: 16px;
@@ -47,7 +73,6 @@
   border-radius: 2px;
   display: inline-block;
   vertical-align: middle;
-  opacity: 0;
   cursor: pointer;
 }
 
@@ -58,7 +83,7 @@
   top: 1px;
   content: ' ';
   height: 14px;
-  width: 1px;
+  width: 2px;
   background-color: #ccc;
   display: block;
 }
@@ -72,10 +97,6 @@
   transform: rotate(-45deg);
 }
 
-.tag:hover .tag__remove {
-  opacity: 0.7;
-}
-
 .tag__remove:hover:before,
 .tag__remove:hover:after {
   background-color: #888;
@@ -84,4 +105,143 @@
 .tag__remove:active:before,
 .tag__remove:active:after {
   background-color: #333;
+}
+
+/* A simple plus button to add a new tag */
+
+.tag__add {
+  width: 16px;
+  height: 16px;
+  margin: 1px 2px 1px 2px;
+  padding: 3px 0;
+  border-radius: 2px;
+  display: inline-block;
+  vertical-align: middle;
+  cursor: pointer;
+}
+
+.tag__add:before,
+.tag__add:after {
+  position: relative;
+  left: 7px;
+  top: 1px;
+  content: ' ';
+  height: 14px;
+  width: 2px;
+  background-color: #ccc;
+  display: block;
+}
+
+.tag__add:before {
+  transform: rotate(90deg);
+}
+
+.tag__add:after {
+  top: -13px;
+}
+
+.tag__add:hover:before,
+.tag__add:hover:after {
+  background-color: #888;
+}
+
+.tag__add:active:before,
+.tag__add:active:after {
+  background-color: #333;
+}
+
+/* A simple tick button to add a new tag */
+
+.tag__confirm {
+  width: 16px;
+  height: 16px;
+  margin: 1px 2px 1px 2px;
+  padding: 3px 0;
+  border-radius: 2px;
+  display: inline-block;
+  vertical-align: middle;
+  cursor: pointer;
+}
+
+.tag__confirm:before,
+.tag__confirm:after {
+  position: relative;
+  left: 7px;
+  top: 1px;
+  content: ' ';
+  height: 14px;
+  width: 2px;
+  background-color: #ccc;
+  display: block;
+}
+
+.tag__confirm:before {
+  left: 10px;
+  height: 12px;
+  transform: rotate(40deg);
+}
+
+.tag__confirm:after {
+  left: 4px;
+  top: -6px;
+  height: 7px;
+  transform: rotate(310deg);
+}
+
+.tag__confirm:hover:before,
+.tag__confirm:hover:after {
+  background-color: #888;
+}
+
+.tag__confirm:active:before,
+.tag__confirm:active:after {
+  background-color: #333;
+}
+
+
+
+/* hover-only buttons */
+
+.tag .tag__remove.tag--hover-only-btn {
+  opacity: 0;
+}
+.tag:hover .tag__remove.tag--hover-only-btn {
+  opacity: 1;
+}
+
+.message__tags .tag__add.tag--hover-only-btn {
+  opacity: 0;
+}
+.message__tags:hover .tag__add.tag--hover-only-btn {
+  opacity: 1;
+}
+
+
+
+/* tag colours for the transitory tag editing */
+
+.tag__remove.edit-tag-widget__cancel-button:before,
+.tag__remove.edit-tag-widget__cancel-button:after {
+  background-color: #aa271b;
+}
+.tag__remove.edit-tag-widget__cancel-button:hover:before,
+.tag__remove.edit-tag-widget__cancel-button:hover:after {
+  background-color: #922117;
+}
+.tag__remove.edit-tag-widget__cancel-button:active:before,
+.tag__remove.edit-tag-widget__cancel-button:active:after {
+  background-color: #8e1e14;
+}
+
+.tag__confirm.edit-tag-widget__save-button:before,
+.tag__confirm.edit-tag-widget__save-button:after {
+  background-color: #167533;
+}
+.tag__confirm.edit-tag-widget__save-button:hover:before,
+.tag__confirm.edit-tag-widget__save-button:hover:after {
+  background-color: #105b27;
+}
+.tag__confirm.edit-tag-widget__save-button:active:before,
+.tag__confirm.edit-tag-widget__save-button:active:after {
+  background-color: #0c471e;
 }
