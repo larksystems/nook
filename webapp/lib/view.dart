@@ -40,7 +40,7 @@ void init() {
   authHeaderView = new AuthHeaderView();
   authMainView = new AuthMainView(
     "assets/africas-voices-logo.svg",
-    "Welcome to Nook.", 
+    "Welcome to Nook.",
     "Sign in to Nook where you can manage SMS conversations.",
     [SignInDomain.avf, SignInDomain.lark],
     (domain) => command(UIAction.signInButtonClicked, new SignInData(domain))
@@ -1078,9 +1078,9 @@ class ConversationFilter {
 
       return newContainer;
     }).append(tag.tag);
-    _tagGroupsContainers[category].style.display = 'block'; // briefly override any display settings to make sure we can compute getBoundingClientRect()
+    bool wasHidden = _tagGroupsContainers[category].classes.remove('hidden'); // briefly override any display settings to make sure we can compute getBoundingClientRect()
     List<num> widths = _tagGroupsContainers[category].querySelectorAll('.tag__name').toList().map((e) => e.getBoundingClientRect().width).toList();
-    _tagGroupsContainers[category].style.display = ''; // clear inline display settings
+    _tagGroupsContainers[category].classes.toggle('hidden', wasHidden); // clear inline display settings
     num avgGridWidth = widths.fold(0, (previousValue, width) => previousValue + width);
     avgGridWidth = avgGridWidth / widths.length;
     num colSpacing = 10;
@@ -2015,4 +2015,3 @@ class UrlView {
   }
 
 }
-
