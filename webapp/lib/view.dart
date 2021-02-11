@@ -508,6 +508,7 @@ class MessageView {
     _addMessageTagButton = new DivElement()
       ..classes.add('message__add-tag-button')
       ..classes.add('tag__add')
+      ..classes.add('tag--hover-only-btn')
       ..onClick.listen((e) {
         e.stopPropagation();
         command(UIAction.selectMessage, new MessageData(conversationId, messageIndex));
@@ -649,7 +650,8 @@ abstract class TagView {
     tag.append(_tagText);
 
     _removeButton = new SpanElement()
-      ..classes.add('tag__remove');
+      ..classes.add('tag__remove')
+      ..classes.add('tag--hover-only-btn');
     tag.append(_removeButton);
   }
 
@@ -685,7 +687,11 @@ class EditableTagView extends TagView {
   EditableTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle) {
     tag.classes.add('tag--unsaved');
 
-    makeEditable(_tagText, onEnter: (e) => e.preventDefault());
+    makeEditable(_tagText, onEnter: (e) {
+      e.stopPropagation();
+      e.preventDefault();
+      command(UIAction.saveTag, new SaveTagData(_tagText.text, tagId));
+    });
 
     _addMessageTagSaveButton = new DivElement()
       ..classes.add('edit-tag-widget__save-button')
@@ -697,6 +703,9 @@ class EditableTagView extends TagView {
     tag.insertBefore(_addMessageTagSaveButton, _removeButton);
 
 
+    _removeButton
+      ..classes.remove('tag--hover-only-btn')
+      ..classes.add('edit-tag-widget__cancel-button');
     _removeButton.onClick.listen((e) {
       e.stopPropagation();
       DivElement message = getAncestors(tag).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
