@@ -955,15 +955,18 @@ class ConversationListPanelView {
   }
 
   void updateConversationList(Set<Conversation> conversations) {
-    Set<String> uuidSets = Set<String>();
+    Set<String> conversationUuids = Set<String>();
     for (Conversation c in conversations) {
-      uuidSets.add(c.docId);
+      conversationUuids.add(c.docId);
     }
-    _phoneToConversations.removeWhere((String uuid, ConversationSummary summary) {
-      if (uuidSets.contains(uuid)) return false;
-      _conversationList.removeItem(summary);
-      return true;
-    });
+    List<ConversationSummary> conversationsToRemove = [];
+    for (var uuid in _phoneToConversations.keys) {
+      if (conversationUuids.contains(uuid)) continue;
+      conversationsToRemove.add(_phoneToConversations[uuid]);
+    }
+    _conversationList.removeItems(conversationsToRemove);
+    _phoneToConversations.removeWhere((key, value) => !conversationUuids.contains(key));
+
     List<ConversationSummary> conversationsToAdd = [];
     for (var conversation in conversations) {
       ConversationSummary summary = _phoneToConversations[conversation.docId];

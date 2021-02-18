@@ -15,22 +15,11 @@ class LazyListViewModel {
   /// and typically displaying only a subset of the items.
   final DivElement _listView;
 
-  /// The vertical scroll distance of the DOM elements in the [_listView] in pixels.
-  int _scrollLength = _scrollPadMinHeight;
-
-  /// The width of the [_listView] scrolling area in pixels
-  /// or `null` if it has not been cached yet.
-  int _scrollWidth = 10;
-
   /// A DOM element used to pad the height of the scroll list
   /// so that scrolling approximates the list size
   /// without adding all of the individual DOM elements
   final _scrollPad = DivElement();
   static const _scrollPadMinHeight = 30;
-
-  /// When the width of the scrolling area changes,
-  /// a delayed [Future] is created to recalculate [_scrollLength].
-  Future _scrollLengthRecalc;
 
   LazyListViewModel(this._listView) {
     _listView.onScroll.listen(_updateCachedElements);
@@ -48,7 +37,6 @@ class LazyListViewModel {
       // Insert the item's element into the cached/visible DOM elements
       Node refChild = _listView.children[position];
       _listView.insertBefore(item.element, refChild);
-      _scrollLength += item.element.clientHeight;
     } else {
       _updateCachedElements();
     }
@@ -66,7 +54,6 @@ class LazyListViewModel {
     _scrollPad.remove();
     assert(_listView.children.length == 0);
     _items.clear();
-    _scrollLength = _scrollPadMinHeight;
   }
 
   void selectItem(LazyListViewItem item) {
@@ -83,41 +70,50 @@ class LazyListViewModel {
     _updateScrollPad();
   }
 
-  void removeItem(LazyListViewItem item) {
-    int position = _items.indexOf(item);
-    _items.remove(item);
-    if (position < _listView.children.length - 1) {
-      _scrollLength -= item.element.clientHeight;
+  void removeItem(LazyListViewItem item) => removeItems([item]);
+
+  void removeItems(List<LazyListViewItem> items) {
+    for (var item in items) {
+      _items.remove(item);
+      item.removeElement();
     }
-    item.disposeElement();
     _scrollPad.remove();
     _updateScrollPad();
   }
 
   /// Update the [LazyListViewItem] elements cached/displayed in the DOM
   /// based on the scroll position "scrollTop",
-  /// the length of the cached/displayed DOM elements "scrollLength",
+  /// the height of the cached/displayed DOM elements "scrollHeight",
   /// and the height of the scrolling area.
   void _updateCachedElements([_ignored_]) {
-    if (_scrollWidth == null) {
-      _scrollWidth = _listView.clientWidth;
-    } else if (_scrollWidth != _listView.clientWidth) {
-      // If the scroll area width changed, then recalculate the scroll length
-      // because the item heights and thus the scroll length depends upon the scroll area width.
-      _scrollLengthRecalc ??= new Future.delayed(const Duration(seconds: 2), () {
-        _scrollLength = _listView.children.fold(0, (len, element)
-            => element == _scrollPad ? _scrollPadMinHeight : len + element.clientHeight);
-        _scrollWidth = _listView.clientWidth;
-        _scrollLengthRecalc = null;
-      });
-    }
-
     _scrollPad.remove();
-    var desiredScrollLength = _listView.scrollTop + 3 * _listView.clientHeight;
-    while (_scrollLength < desiredScrollLength && _listView.children.length < _items.length) {
-      var item = _items[_listView.children.length];
-      _listView.append(item.element);
-      _scrollLength += item.element.clientHeight;
+
+    var currentScrollHeight = _listView.scrollHeight;
+    var desiredScrollHeight = _listView.scrollTop + 3 * _listView.clientHeight;
+    if (currentScrollHeight < desiredScrollHeight && _listView.children.length < _items.length) {
+      // Handle special case if no elements are visible - initialise the list with one element
+      if (_listView.children.isEmpty) {
+        var item = _items[_listView.children.length];
+        _listView.append(item.element);
+        currentScrollHeight = _listView.scrollHeight;
+      }
+      // Special case: there are fewer elements visible
+      if (_listView.scrollHeight <= _listView.clientHeight) {
+        currentScrollHeight = 0;
+        for (var child in _listView.children) {
+          currentScrollHeight += child.offsetHeight;
+        }
+      }
+      // Compute the average height of the elements so far and use it to calculate how many more elements to add to the view
+      double aveItemHeight = currentScrollHeight / _listView.children.length;
+      num numDesiredItems = (desiredScrollHeight - currentScrollHeight) / aveItemHeight;
+      int maxItems = _items.length - _listView.children.length;
+      int numItemsToAdd = numDesiredItems > maxItems ? maxItems : numDesiredItems.ceil();
+
+      for (int i = 0; i < numItemsToAdd; i++) {
+        var item = _items[_listView.children.length];
+        _listView.append(item.element);
+      }
     }
     _updateScrollPad();
   }
@@ -162,6 +158,13 @@ mixin LazyListViewItem {
     if (elementOrNull != null) {
       elementOrNull.remove();
       elementOrNull = null;
+    }
+  }
+
+  /// Remove the DOM element from its parent, but keep the associated DOM element
+  void removeElement() {
+    if (elementOrNull != null) {
+      elementOrNull.remove();
     }
   }
 }
