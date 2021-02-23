@@ -6,6 +6,7 @@ import 'dart:svg' as svg;
 import 'package:intl/intl.dart';
 import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
 import 'package:katikati_ui_lib/components/auth/auth.dart';
+import 'package:katikati_ui_lib/components/auth/auth_header.dart';
 import 'package:katikati_ui_lib/components/banner/banner.dart';
 
 import 'controller.dart';
@@ -31,6 +32,8 @@ UrlView urlView;
 SnackbarView snackbarView;
 BannerView bannerView;
 
+var signInDomains = [SignInDomain.avf, SignInDomain.lark];
+
 void init() {
   otherLoggedInUsers = new OtherLoggedInUsers();
   conversationListSelectView = new ConversationListSelectHeader();
@@ -38,12 +41,16 @@ void init() {
   conversationPanelView = new ConversationPanelView();
   replyPanelView = new ReplyPanelView();
   tagPanelView = new TagPanelView();
-  authHeaderView = new AuthHeaderView();
+  authHeaderView = new AuthHeaderView((){
+    command(UIAction.signInButtonClicked, new SignInData(signInDomains.first));
+  }, (){
+    command(UIAction.signOutButtonClicked, null);
+  });
   authMainView = new AuthMainView(
     "assets/africas-voices-logo.svg",
     "Welcome to Nook.",
     "Sign in to Nook where you can manage SMS conversations.",
-    [SignInDomain.avf, SignInDomain.lark],
+    signInDomains,
     (domain) => command(UIAction.signInButtonClicked, new SignInData(domain))
   );
   urlView = new UrlView();
@@ -1982,49 +1989,6 @@ class MarkUnreadActionView {
         ..title = 'Mark current conversation unread'
         ..text = MARK_UNREAD_INFO;
     }
-  }
-}
-
-class AuthHeaderView {
-  DivElement authElement;
-  DivElement _userPic;
-  DivElement _userName;
-  ButtonElement _signOutButton;
-
-  AuthHeaderView() {
-    authElement = new DivElement()
-      ..classes.add('auth');
-
-    _userPic = new DivElement()
-      ..classes.add('user-pic');
-    authElement.append(_userPic);
-
-    _userName = new DivElement()
-      ..classes.add('user-name');
-    authElement.append(_userName);
-
-    _signOutButton = new ButtonElement()
-      ..text = 'Sign out'
-      ..onClick.listen((_) => command(UIAction.signOutButtonClicked, null));
-    authElement.append(_signOutButton);
-  }
-
-  void signIn(String userName, userPicUrl) {
-    // Set the user's profile pic and name
-    _userPic.style.backgroundImage = 'url($userPicUrl)';
-    _userName.text = userName;
-
-    // Show user's profile pic, name and sign-out button.
-    _userName.attributes.remove('hidden');
-    _userPic.attributes.remove('hidden');
-    _signOutButton.attributes.remove('hidden');
-  }
-
-  void signOut() {
-    // Hide user's profile pic, name and sign-out button.
-    _userName.attributes['hidden'] = 'true';
-    _userPic.attributes['hidden'] = 'true';
-    _signOutButton.attributes['hidden'] = 'true';
   }
 }
 
