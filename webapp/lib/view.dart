@@ -1545,7 +1545,6 @@ class ReplyPanelView {
     }
   }
 
-  // todo: make this call based on the user config
   void disableReplies() {
     _replies.remove();
     _panelTitle.children.clear();
