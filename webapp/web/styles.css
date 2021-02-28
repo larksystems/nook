@@ -440,18 +440,6 @@ main {
     margin: 0 6px;
 }
 
-.user-pic {
-    width: 20px;
-    height: 20px;
-    border-radius: 2px;
-    background-size: contain;
-    margin: 6px;
-}
-
-.user-name {
-    margin: 6px;
-}
-
 .flex-fill-gap {
     flex: 1 1 auto;
 }

@@ -8,6 +8,8 @@ import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
 import 'package:katikati_ui_lib/components/auth/auth.dart';
 import 'package:katikati_ui_lib/components/auth/auth_header.dart';
 import 'package:katikati_ui_lib/components/banner/banner.dart';
+import 'package:katikati_ui_lib/components/brand_asset/brand_asset.dart';
+import 'package:katikati_ui_lib/components/nav/nav_header.dart';
 
 import 'controller.dart';
 import 'dom_utils.dart';
@@ -31,6 +33,7 @@ AuthMainView authMainView;
 UrlView urlView;
 SnackbarView snackbarView;
 BannerView bannerView;
+NavHeaderView navHeaderView;
 
 var signInDomains = [SignInDomain.avf, SignInDomain.lark];
 
@@ -47,7 +50,7 @@ void init() {
     command(UIAction.signOutButtonClicked, null);
   });
   authMainView = new AuthMainView(
-    "assets/africas-voices-logo.svg",
+    Brand.avf,
     "Welcome to Nook.",
     "Sign in to Nook where you can manage SMS conversations.",
     signInDomains,
@@ -64,12 +67,16 @@ void init() {
   };
   conversationIdFilter = conversationListPanelView.conversationIdFilter;
 
+  navHeaderView = new NavHeaderView();
+
+  querySelector('header').append(navHeaderView.navViewElement);
+  navHeaderView.navContent = DivElement()
+    ..append(conversationListSelectView.panel)
+    ..append(otherLoggedInUsers.loggedInUsers);
+  navHeaderView.authHeader = authHeaderView;
+
   querySelector('header')
-      ..insertAdjacentElement('beforeBegin', bannerView.bannerElement)
-      ..append(conversationListSelectView.panel)
-      ..append(new DivElement()..classes.add('flex-fill-gap'))
-      ..append(otherLoggedInUsers.loggedInUsers)
-      ..append(authHeaderView.authElement);
+      ..insertAdjacentElement('beforeBegin', bannerView.bannerElement);
 
   document.onKeyDown.listen(
     (event) => command(UIAction.keyPressed,
