@@ -1994,7 +1994,6 @@ class MarkUnreadActionView {
 
 class UrlView {
 
-  static const String queryDisableRepliesKey = 'disableReplies';
   static const String queryConversationListKey = 'conversation-list';
   static const String queryConversationIdKey = 'conversation-id';
   static const String queryConversationIdFilterKey = 'conversation-id-filter';
@@ -2112,14 +2111,6 @@ class UrlView {
     }
     uri = uri.replace(queryParameters: queryParameters);
     window.history.pushState('', '', uri.toString());
-  }
-
-  bool get shouldDisableReplies {
-    var uri = Uri.parse(window.location.href);
-    if (uri.queryParameters.containsKey(queryDisableRepliesKey)) {
-      return uri.queryParameters[queryDisableRepliesKey].toLowerCase() == 'true';
-    }
-    return false;
   }
 
   String getPageUrlFilterConversationId() {
