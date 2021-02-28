@@ -1,0 +1,71 @@
+.inline-overlay-modal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.33);
+  border-radius: 2px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 10;
+}
+
+.inline-overlay-modal__message {
+  justify-self: center;
+  font-size: 1.2em;
+  font-weight: 400;
+  color: #fff;
+  margin-bottom: 0px;
+  text-shadow: 0 0 20px black;
+}
+
+.inline-overlay-modal__actions {
+  justify-self: center;
+}
+
+.inline-overlay-modal__actions__action {
+  width: 50px;
+  height: 25px;
+  justify-self: center;
+  margin: 0 10px;
+}
+
+
+.popup-modal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: auto;
+  max-width: 400px;
+  height: auto;
+  background: rgba(0, 0, 0, 0.33);
+  border-radius: 2px;
+  position: absolute;
+  top: 0;
+  right: 0;
+  border-top: 19px solid rgba(0, 0, 0, 0.33);
+  z-index: 5;
+}
+
+.popup-modal__message {
+  justify-self: center;
+  font-size: 1.2em;
+  font-weight: 400;
+  color: #fff;
+  margin-bottom: 0px;
+  text-shadow: 0 0 1px black;
+}
+
+.popup-modal__actions {
+  justify-self: center;
+}
+
+.popup-modal__actions__action {
+  width: 50px;
+  height: 25px;
+  justify-self: center;
+  margin: 0 10px;
+}

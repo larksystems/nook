@@ -1,0 +1,122 @@
+.configuration-view {
+  display: flex;
+  flex-direction: column;
+  max-width: 750px;
+  margin: 0 auto;
+  width: 750px;
+}
+
+.configuration-view__back-link {
+  color: #999;
+  margin: 8px 0;
+  cursor: pointer;
+}
+
+.configuration-view__back-link:hover {
+  color: #777;
+}
+
+.configuration-view__back-link:hover {
+  color: #666;
+}
+
+.configuration-view__title {
+  font-size: large;
+  font-weight: bold;
+  padding: 30px 0 30px;
+}
+
+.configuration-actions {
+  display: flex;
+  margin: 20px 0;
+  align-items: center;
+}
+
+.configuration-actions__save-action {
+  width: 130px;
+  height: 40px;
+  font-size: 1.1em;
+  background-color: #499398;
+  color: #ffffff;
+  border: none;
+}
+
+.configuration-actions__save-action__status {
+  font-weight: 400;
+  border: none;
+  display: inline-block;
+  box-sizing: border-box;
+  text-align: center;
+  color: #666;
+  margin-left: 10px;
+
+  /* A little animation on hide and show */
+  visibility: visible;
+  transition: all 0.2s;
+}
+
+
+.standard-messages-group {
+  position: relative;
+  padding: 15px;
+  margin: 15px 0;
+  border: 1px solid #ddd;
+}
+
+.standard-messages-group__title {
+  font-weight: 600;
+  display: inline-block;
+  padding: 0 1px;
+  margin-left: 10px;
+}
+
+.standard-messages-group__title:empty:not(:focus):before {
+  content: attr(title);
+  font-weight: 300;
+  font-style: italic;
+}
+
+.standard-message {
+  display: grid;
+  grid-template-columns: 3% 47% 47%;
+  grid-gap: 1.5%;
+  position: relative;
+}
+
+.standard-message .button {
+  margin-bottom: 20px;
+}
+
+.message {
+  display: grid;
+  margin: 10px 0;
+}
+
+.message__text {
+  overflow-y: scroll;
+  border: 1px solid #ddd;
+  border-radius: 2px;
+  padding: 2px;
+  min-height: 70px;
+  margin-bottom: 0px;
+  width: 100%;
+  font: inherit;
+  font-size: 0.9em;
+  resize: none;
+}
+
+.message__text--alert {
+  border-color: #fa8072;
+  outline-color: #fa8072;
+  margin-bottom: 16px;
+}
+
+.message__length-indicator {
+  justify-self: flex-end;
+  font-size: 0.8em;
+}
+
+.message__length-indicator--alert {
+  color: #fa8072;
+  outline-color: #fa8072;
+}

@@ -1,0 +1,239 @@
+@charset "utf-8";
+
+.button {
+  display: inline-block;
+  align-self: center;
+  vertical-align: middle;
+  background-color: #fff;
+  border-radius: 2px;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  outline: none;
+}
+
+.button:hover {
+  background-color: #eee;
+  border-color: #ccc;
+}
+
+.button:active {
+  background-color: #ddd;
+  border-color: #ccc;
+}
+
+.button--text {
+  border: 1px solid #ddd;
+  padding: 3px;
+}
+
+
+.button--outline {
+  padding: 8px;
+  border: 1px solid #5c2196;
+  color: #5c2196;
+}
+
+.button--outline:hover {
+  border: 1px solid #5c2196;
+}
+
+.button--outline:active {
+  border: 1px solid #5c2196;
+}
+
+
+.button--contained {
+  padding: 8px;
+  background-color: #5c2196;
+  color: #ffffff;
+  font-weight: lighter;
+}
+
+.button--contained:hover {
+  background-color: #5c2196;
+  opacity: 0.8;
+}
+
+.button--contained:active {
+  background-color: #5c2196;
+  opacity: 0.6;
+}
+
+
+/* A simple x button to add a new tag */
+
+.button--remove {
+  width: 16px;
+  height: 16px;
+  margin: 2px;
+}
+
+.button--remove:before,
+.button--remove:after {
+  position: relative;
+  left: 7px;
+  top: 1px;
+  content: ' ';
+  height: 14px;
+  width: 2px;
+  background-color: #ccc;
+  display: block;
+}
+
+.button--remove:before {
+  transform: rotate(45deg);
+}
+
+.button--remove:after {
+  top: -13px;
+  transform: rotate(-45deg);
+}
+
+.tag:hover .button--remove {
+  opacity: 0.7;
+}
+
+.button--remove:hover:before,
+.button--remove:hover:after {
+  background-color: #888;
+}
+
+.button--remove:active:before,
+.button--remove:active:after {
+  background-color: #333;
+}
+
+/* A simple plus button to add a new tag */
+
+.button--add {
+  width: 16px;
+  height: 16px;
+  margin: 2px;
+}
+
+.button--add:before,
+.button--add:after {
+  position: relative;
+  left: 7px;
+  top: 1px;
+  content: ' ';
+  height: 14px;
+  width: 2px;
+  background-color: #ccc;
+  display: block;
+}
+
+.button--add:before {
+  transform: rotate(90deg);
+}
+
+.button--add:after {
+  top: -13px;
+}
+
+.message__tags:hover .button--add {
+  opacity: 0.7;
+}
+
+.button--add:hover:before,
+.button--add:hover:after {
+  background-color: #888;
+}
+
+.button--add:active:before,
+.button--add:active:after {
+  background-color: #333;
+}
+
+/* A simple tick button to add a new tag */
+
+.button--confirm {
+  width: 16px;
+  height: 16px;
+  margin: 2px;
+}
+
+.button--confirm:before,
+.button--confirm:after {
+  position: relative;
+  left: 7px;
+  top: 1px;
+  content: ' ';
+  height: 14px;
+  width: 2px;
+  background-color: #ccc;
+  display: block;
+}
+
+.button--confirm:before {
+  left: 10px;
+  height: 12px;
+  transform: rotate(40deg);
+}
+
+.button--confirm:after {
+  left: 4px;
+  top: -7px;
+  height: 7px;
+  transform: rotate(310deg);
+}
+
+.button--confirm:hover:before,
+.button--confirm:hover:after {
+  background-color: #888;
+}
+
+.button--confirm:active:before,
+.button--confirm:active:after {
+  background-color: #333;
+}
+
+
+/* A simple pencil button to edit something */
+
+.button--edit {
+  width: 16px;
+  height: 16px;
+  opacity: 0.6;
+  margin: 2px;
+}
+
+.button--edit:before {
+  content: '✎';
+  display: block;
+}
+
+.button--green:before,
+.button--green:after {
+  background-color: #006400;
+}
+.button--green:hover:before,
+.button--green:hover:after,
+.button--on-hover-green:hover:before,
+.button--on-hover-green:hover:after {
+  background-color: #004b00;
+}
+.button--green:active:before,
+.button--green:active:after,
+.button--on-hover-green:active:before,
+.button--on-hover-green:active:after {
+  background-color: #002d00;
+}
+
+.button--red:before,
+.button--red:after {
+  background-color: #c00000;
+}
+.button--red:hover:before,
+.button--red:hover:after,
+.button--on-hover-red:hover::before,
+.button--on-hover-red:hover::after {
+  background-color: #a00000;
+}
+.button--red:active:before,
+.button--red:active:after,
+.button--on-hover-red:active:before,
+.button--on-hover-red:active:after {
+  background-color: #990000;
+}

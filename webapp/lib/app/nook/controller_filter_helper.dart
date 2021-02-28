@@ -26,17 +26,17 @@ class ConversationFilter {
 
   ConversationFilter.fromUrl() {
     filterTags = {
-      TagFilterType.include: _getTagsFromUrl(TagFilterType.include, conversationTagIdsToTags),
-      TagFilterType.exclude: _getTagsFromUrl(TagFilterType.exclude, conversationTagIdsToTags),
-      TagFilterType.lastInboundTurn: _getTagsFromUrl(TagFilterType.lastInboundTurn, messageTagIdsToTags),
+      TagFilterType.include: _getTagsFromUrl(TagFilterType.include, controller.conversationTagIdsToTags),
+      TagFilterType.exclude: _getTagsFromUrl(TagFilterType.exclude, controller.conversationTagIdsToTags),
+      TagFilterType.lastInboundTurn: _getTagsFromUrl(TagFilterType.lastInboundTurn, controller.messageTagIdsToTags),
     };
 
     afterDateFilter = {
-      TagFilterType.include: view.urlView.getPageUrlFilterAfterDate(TagFilterType.include),
-      TagFilterType.exclude: view.urlView.getPageUrlFilterAfterDate(TagFilterType.exclude),
+      TagFilterType.include: _view.urlView.getPageUrlFilterAfterDate(TagFilterType.include),
+      TagFilterType.exclude: _view.urlView.getPageUrlFilterAfterDate(TagFilterType.exclude),
     };
 
-    conversationIdFilter = view.urlView.getPageUrlFilterConversationId() ?? "";
+    conversationIdFilter = _view.urlView.getPageUrlFilterConversationId() ?? "";
   }
 
   bool get isEmpty => filterTags[TagFilterType.include].isEmpty
@@ -58,14 +58,14 @@ class ConversationFilter {
     if (afterDateFilter[TagFilterType.include] != null && conversation.messages.last.datetime.isBefore(afterDateFilter[TagFilterType.include])) return false;
     if (afterDateFilter[TagFilterType.exclude] != null && conversation.messages.last.datetime.isAfter(afterDateFilter[TagFilterType.exclude])) return false;
 
-    var tags = tagIdsToTags(conversation.tagIds, conversationTagIdsToTags);
-    var unifierTags = tags.map((t) => unifierTagForTag(t, conversationTagIdsToTags));
+    var tags = tagIdsToTags(conversation.tagIds, controller.conversationTagIdsToTags);
+    var unifierTags = tags.map((t) => unifierTagForTag(t, controller.conversationTagIdsToTags));
     var unifierTagIds = tagsToTagIds(unifierTags).toSet();
     if (!unifierTagIds.containsAll(filterTagIds[TagFilterType.include])) return false;
     if (unifierTagIds.intersection(filterTagIds[TagFilterType.exclude]).isNotEmpty) return false;
 
-    tags = tagIdsToTags(conversation.lastInboundTurnTagIds, messageTagIdsToTags);
-    unifierTags = tags.map((t) => unifierTagForTag(t, messageTagIdsToTags));
+    tags = tagIdsToTags(conversation.lastInboundTurnTagIds, controller.messageTagIdsToTags);
+    unifierTags = tags.map((t) => unifierTagForTag(t, controller.messageTagIdsToTags));
     unifierTagIds = tagsToTagIds(unifierTags).toSet();
     if (!unifierTagIds.containsAll(filterTagIds[TagFilterType.lastInboundTurn])) return false;
 
@@ -75,12 +75,12 @@ class ConversationFilter {
   }
 
   Set<model.Tag> _getTagsFromUrl(TagFilterType type, Map<String, model.Tag> tags) {
-    Set<String> filterTagIds = view.urlView.getPageUrlFilterTags(type);
+    Set<String> filterTagIds = _view.urlView.getPageUrlFilterTags(type);
     var filterTags = tagIdsToTags(filterTagIds, tags);
     var unifierFilterTags = filterTags.map((t) => unifierTagForTag(t, tags));
     // Reset the URL to make sure it uses the unifier tags
     // This will be unnecessary after we have moved everyone to using the new unifier tags
-    view.urlView.setPageUrlFilterTags(type, tagsToTagIds(filterTags).toSet());
+    _view.urlView.setPageUrlFilterTags(type, tagsToTagIds(filterTags).toSet());
     return unifierFilterTags.toSet();
   }
 }

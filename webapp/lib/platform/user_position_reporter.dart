@@ -1,4 +1,4 @@
-import 'package:nook/model.dart' as model;
+import 'package:nook/model/model.dart' as model;
 import 'platform.dart' as platform;
 
 class UserPositionReporter {
