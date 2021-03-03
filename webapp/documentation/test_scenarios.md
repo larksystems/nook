@@ -12,6 +12,7 @@
 
 # Banner
  - [ ] If the user doesn't have access to the data set, a banner should appear at the top
+   - [ ] Test by removing your email address from the `users` collection in firebase
 
 # User permissions
  - Toggle the following flag to see the nook UI reacting to it
