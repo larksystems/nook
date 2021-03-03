@@ -8,7 +8,7 @@
     - [ ] Style: Nav bar shouldn't hide any of the content below
 
   - Signed out state
-    - [ ] Navbar should contain only sign-in button, should log in via the first domain name
+    - [ ] Navbar should not be shown
 
 # Banner
  - [ ] If the user doesn't have access to the data set, a banner should appear at the top
