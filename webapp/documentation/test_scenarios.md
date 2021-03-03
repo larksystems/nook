@@ -15,7 +15,7 @@
 
 # User permissions
  - Toggle the following flag to see the nook UI reacting to it
-   - [ ] `replies_panel_visibility` should toggle suggested replies section on the right. If the `edit_notes_enabled` is present, the notes text area should take up the whole height of the sidebar.
+   - [ ] `replies_panel_visibility` should toggle suggested replies section on the right. If the `edit_notes_enabled` is `true`, the notes text area should take up the whole height of the sidebar.
    - [ ] `edit_notes_enabled` should toggle the notes text area.
    - [ ] if both `replies_panel_visibility` and `edit_notes_enabled` are `false`, the whole sidebar panel should not be visible.
 
