@@ -15,12 +15,12 @@ enum TagReceiver {
 // Functions to populate the views with model objects.
 
 void _populateConversationListPanelView(Set<model.Conversation> conversations, bool updateList) {
-  view.conversationListPanelView.hideLoadSpinner();
-  view.conversationListPanelView.hideSelectConversationListMessage();
+  _view.conversationListPanelView.hideLoadSpinner();
+  _view.conversationListPanelView.hideSelectConversationListMessage();
   if (conversations.isEmpty || !updateList) {
-    view.conversationListPanelView.clearConversationList();
+    _view.conversationListPanelView.clearConversationList();
   }
-  view.conversationListPanelView.updateConversationList(conversations);
+  _view.conversationListPanelView.updateConversationList(conversations);
 }
 
 void _populateConversationPanelView(model.Conversation conversation, {bool updateInPlace: false}) {
@@ -28,46 +28,46 @@ void _populateConversationPanelView(model.Conversation conversation, {bool updat
     _updateConversationPanelView(conversation);
     return;
   }
-  view.conversationPanelView.clear();
-  view.conversationPanelView
+  _view.conversationPanelView.clear();
+  _view.conversationPanelView
     ..deidentifiedPhoneNumber = conversation.docId
     ..deidentifiedPhoneNumberShort = conversation.shortDeidentifiedPhoneNumber
     ..demographicsInfo = conversation.demographicsInfo.values.join(', ');
-  for (var tag in tagIdsToTags(conversation.tagIds, conversationTagIdsToTags)) {
-    view.conversationPanelView.addTags(new view.ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
+  for (var tag in tagIdsToTags(conversation.tagIds, controller.conversationTagIdsToTags)) {
+    _view.conversationPanelView.addTags(new ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
   }
 
   for (var message in conversation.messages) {
-    view.MessageView messageView = _generateMessageView(message, conversation);
-    view.conversationPanelView.addMessage(messageView);
+    MessageView messageView = _generateMessageView(message, conversation);
+    _view.conversationPanelView.addMessage(messageView);
   }
 }
 
 void _updateConversationPanelView(model.Conversation conversation) {
-  view.conversationPanelView
+  _view.conversationPanelView
     ..deidentifiedPhoneNumber = conversation.docId
     ..deidentifiedPhoneNumberShort = conversation.shortDeidentifiedPhoneNumber
     ..demographicsInfo = conversation.demographicsInfo.values.join(', ');
-  view.conversationPanelView.removeTags();
-  for (var tag in tagIdsToTags(conversation.tagIds, conversationTagIdsToTags)) {
-    view.conversationPanelView.addTags(new view.ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
+  _view.conversationPanelView.removeTags();
+  for (var tag in tagIdsToTags(conversation.tagIds, controller.conversationTagIdsToTags)) {
+    _view.conversationPanelView.addTags(new ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
   }
 
-  view.conversationPanelView.padOrTrimMessageViews(conversation.messages.length);
+  _view.conversationPanelView.padOrTrimMessageViews(conversation.messages.length);
   for (int i = 0; i < conversation.messages.length; i++) {
-    view.MessageView messageView = _generateMessageView(conversation.messages[i], conversation);
-    view.conversationPanelView.updateMessage(messageView, i);
+    MessageView messageView = _generateMessageView(conversation.messages[i], conversation);
+    _view.conversationPanelView.updateMessage(messageView, i);
   }
 }
 
-view.MessageView _generateMessageView(model.Message message, model.Conversation conversation) {
-  List<view.TagView> tags = [];
-  for (var tag in tagIdsToTags(message.tagIds, messageTagIdsToTags)) {
-    bool shouldHighlightTag = conversationFilter.filterTagIds[TagFilterType.include].contains(tag.tagId);
-    shouldHighlightTag = shouldHighlightTag || conversationFilter.filterTagIds[TagFilterType.lastInboundTurn].contains(tag.tagId);
-    tags.add(new view.MessageTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type), shouldHighlightTag));
+MessageView _generateMessageView(model.Message message, model.Conversation conversation) {
+  List<TagView> tags = [];
+  for (var tag in tagIdsToTags(message.tagIds, controller.messageTagIdsToTags)) {
+    bool shouldHighlightTag = controller.conversationFilter.filterTagIds[TagFilterType.include].contains(tag.tagId);
+    shouldHighlightTag = shouldHighlightTag || controller.conversationFilter.filterTagIds[TagFilterType.lastInboundTurn].contains(tag.tagId);
+    tags.add(new MessageTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type), shouldHighlightTag));
   }
-  var messageView = new view.MessageView(
+  var messageView = new MessageView(
       message.text,
       message.datetime,
       conversation.docId,
@@ -77,38 +77,38 @@ view.MessageView _generateMessageView(model.Message message, model.Conversation 
       tags: tags,
       status: message.status
     );
-  messageView.enableEditableTranslations(currentConfig.editTranslationsEnabled);
+  messageView.enableEditableTranslations(controller.currentConfig.editTranslationsEnabled);
   return messageView;
 }
 
 void _populateReplyPanelView(List<model.SuggestedReply> replies) {
   Map<String, List<model.SuggestedReply>> repliesByGroups = _groupRepliesIntoGroups(replies);
-  view.replyPanelView.clear();
+  _view.replyPanelView.clear();
   String buttonText = SEND_REPLY_BUTTON_TEXT;
   for (var groupId in repliesByGroups.keys) {
     var repliesInGroup = repliesByGroups[groupId];
-    List<view.ReplyActionView> views = [];
+    List<ReplyActionView> views = [];
     var groupDescription = "";
     for (var reply in repliesInGroup) {
       groupDescription = reply.groupDescription;
       int replyIndex = replies.indexOf(reply);
-      var replyView = new view.ReplyActionView(reply.text, reply.translation, reply.shortcut, replyIndex, buttonText);
-      replyView.showShortcut(currentConfig.repliesKeyboardShortcutsEnabled);
-      replyView.showButtons(currentConfig.sendMessagesEnabled);
+      var replyView = new ReplyActionView(reply.text, reply.translation, reply.shortcut, replyIndex, buttonText);
+      replyView.showShortcut(controller.currentConfig.repliesKeyboardShortcutsEnabled);
+      replyView.showButtons(controller.currentConfig.sendMessagesEnabled);
       views.add(replyView);
     }
     if (views.length == 1) {
-      view.replyPanelView.addReply(views.first);
+      _view.replyPanelView.addReply(views.first);
       continue;
     }
-    var replyGroupView = new view.ReplyActionGroupView(groupId, groupDescription, buttonText + " all", views);
-    view.replyPanelView.addReply(replyGroupView);
+    var replyGroupView = new ReplyActionGroupView(groupId, groupDescription, buttonText + " all", views);
+    _view.replyPanelView.addReply(replyGroupView);
   }
 }
 
 void _populateTagPanelView(List<model.Tag> tags, TagReceiver tagReceiver) {
   tags = _filterDemogsTagsIfNeeded(tags);
-  view.tagPanelView.clear();
+  _view.tagPanelView.clear();
   String buttonText = '';
   switch (tagReceiver) {
     case TagReceiver.Conversation:
@@ -139,24 +139,24 @@ void _populateTagPanelView(List<model.Tag> tags, TagReceiver tagReceiver) {
   });
 
   for (var tag in tags) {
-    var tagView = new view.TagActionView(tag.text, tag.shortcut, tag.tagId, buttonText);
-    tagView.showShortcut(currentConfig.tagsKeyboardShortcutsEnabled);
+    var tagView = new TagActionView(tag.text, tag.shortcut, tag.tagId, buttonText);
+    tagView.showShortcut(controller.currentConfig.tagsKeyboardShortcutsEnabled);
     switch (tagReceiver) {
       case TagReceiver.Conversation:
-        tagView.showButtons(currentConfig.tagConversationsEnabled);
+        tagView.showButtons(controller.currentConfig.tagConversationsEnabled);
         break;
       case TagReceiver.Message:
-        tagView.showButtons(currentConfig.tagMessagesEnabled);
+        tagView.showButtons(controller.currentConfig.tagMessagesEnabled);
         break;
     }
-    view.tagPanelView.addTag(tagView);
+    _view.tagPanelView.addTag(tagView);
   }
 }
 
 void _removeTagsFromFilterMenu(Map<String, List<model.Tag>> tagsByCategory, TagFilterType filterType) {
   for (var category in tagsByCategory.keys.toList()..sort()) {
     for (var tag in tagsByCategory[category]) {
-      view.conversationFilter[filterType].removeMenuTag(new view.FilterMenuTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type), filterType), category);
+      _view.conversationFilter[filterType].removeMenuTag(new FilterMenuTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type), filterType), category);
     }
   }
 }
@@ -164,7 +164,7 @@ void _removeTagsFromFilterMenu(Map<String, List<model.Tag>> tagsByCategory, TagF
 void _addTagsToFilterMenu(Map<String, List<model.Tag>> tagsByCategory, TagFilterType filterType) {
   for (var category in tagsByCategory.keys.toList()..sort()) {
     for (var tag in tagsByCategory[category]) {
-      view.conversationFilter[filterType].addMenuTag(new view.FilterMenuTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type), filterType), category);
+      _view.conversationFilter[filterType].addMenuTag(new FilterMenuTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type), filterType), category);
     }
   }
 }
@@ -172,38 +172,38 @@ void _addTagsToFilterMenu(Map<String, List<model.Tag>> tagsByCategory, TagFilter
 void _modifyTagsInFilterMenu(Map<String, List<model.Tag>> tagsByCategory, TagFilterType filterType) {
   for (var category in tagsByCategory.keys.toList()..sort()) {
     for (var tag in tagsByCategory[category]) {
-      view.conversationFilter[filterType].modifyMenuTag(new view.FilterMenuTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type), filterType), category);
+      _view.conversationFilter[filterType].modifyMenuTag(new FilterMenuTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type), filterType), category);
     }
   }
 }
 
 void _addDateTagToFilterMenu(TagFilterType filterType) {
-  view.conversationFilter[filterType].addMenuTag(view.AfterDateFilterMenuTagView(filterType), "Date");
+  _view.conversationFilter[filterType].addMenuTag(AfterDateFilterMenuTagView(filterType), "Date");
 }
 
 void _populateSelectedFilterTags(Set<model.Tag> tags, TagFilterType filterType) {
-  view.conversationFilter[filterType].clearSelectedTags();
+  _view.conversationFilter[filterType].clearSelectedTags();
   for (var tag in tags) {
-    view.conversationFilter[filterType].addFilterTag(new view.FilterTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type), filterType));
+    _view.conversationFilter[filterType].addFilterTag(new FilterTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type), filterType));
   }
 }
 
 void _populateSelectedAfterDateFilterTag(DateTime afterDateFilter, TagFilterType filterType) {
-  view.conversationFilter[filterType].removeFilterTag(view.AFTER_DATE_TAG_ID);
+  _view.conversationFilter[filterType].removeFilterTag(AFTER_DATE_TAG_ID);
   if (afterDateFilter != null) {
-    view.conversationFilter[filterType].addFilterTag(new view.AfterDateFilterTagView(afterDateFilter, filterType));
+    _view.conversationFilter[filterType].addFilterTag(new AfterDateFilterTagView(afterDateFilter, filterType));
   }
 }
 
-view.TagStyle tagTypeToStyle(model.TagType tagType) {
+TagStyle tagTypeToStyle(model.TagType tagType) {
   switch (tagType) {
     case model.TagType.Important:
-      return view.TagStyle.Important;
+      return TagStyle.Important;
     default:
       if (tagType == model.NotFoundTagType.NotFound) {
-        return view.TagStyle.Yellow;
+        return TagStyle.Yellow;
       }
-      return view.TagStyle.None;
+      return TagStyle.None;
   }
 }
 
@@ -223,7 +223,7 @@ Map<String, List<model.SuggestedReply>> _groupRepliesIntoGroups(List<model.Sugge
   Map<String, List<model.SuggestedReply>> result = {};
   for (model.SuggestedReply reply in replies) {
     // TODO (mariana): once we've transitioned to using groups, we can remove the sequence number fix
-    String groupId = currentConfig.suggestedRepliesGroupsEnabled ?
+    String groupId = controller.currentConfig.suggestedRepliesGroupsEnabled ?
         reply.groupId ?? reply.seqNumber.toString() :
         reply.seqNumber.toString();
     if (!result.containsKey(groupId)) {

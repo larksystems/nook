@@ -1,0 +1,18 @@
+.auth-main {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    align-content: flex-start;
+    width: 600px;
+    margin: 100px auto;
+}
+
+.auth-main__partner-logo {
+    height: 100px;
+    margin: 16px;
+}
+
+.auth-main__project-description {
+    text-align: center;
+}

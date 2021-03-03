@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:firebase/firestore.dart' as firestore;
 
 import 'package:katikati_ui_lib/components/logger.dart';
-import 'model.dart';
+import 'package:nook/model/model.dart';
 
 Logger log = Logger('model_firebase.dart');
 

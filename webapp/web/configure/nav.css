@@ -1,0 +1,67 @@
+.nav {
+  display: grid;
+  grid-template-columns: 10% 20% auto 20%;
+  grid-gap: 5px;
+  width: 100%;
+  border-bottom: 1px solid #ddd;
+  box-shadow: 0px 1px #ddd;
+  position: fixed;
+  background: #ffffff;
+  z-index: 10;
+}
+
+.nav__app-logo {
+  width: 100%;
+  height: 42px;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.nav__app-logo img {
+  margin: 4px;
+}
+
+.nav-links {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-self: center;
+  justify-content: flex-start;
+  grid-gap: 5px;
+}
+
+.nav-links__back-btn {
+  height: 30px;
+  font-size: 1.5em;
+  color: #499398;
+  background: none;
+  border: none;
+  outline: none;
+  cursor: pointer;
+}
+
+.nav-links__all-projects-link {
+  align-self: center;
+  color: #499398;
+  text-decoration: none;
+  font-size: 1.5em;
+}
+
+
+.nav-project-details {
+  display: grid;
+  grid-template-columns: auto auto;
+}
+
+.nav-project-details__title {
+    font-size: 1.2rem;
+    white-space: nowrap;
+    align-self: center;
+    justify-self: center;
+}
+
+.nav-project-details__organization {
+  font-size: 1.2rem;
+  white-space: nowrap;
+  justify-self: flex-end;
+}

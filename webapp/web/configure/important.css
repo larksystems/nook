@@ -1,0 +1,22 @@
+.hidden {
+    visibility: hidden;
+    display: none;
+    width: 0;
+    height: 0;
+}
+
+.foldable::before {
+    content: "▼";
+    font-size: .6em;
+    font-weight: bold;
+    padding-right: 7px;
+    padding-top: 5px;
+}
+
+.foldable.folded::before {
+    content: "▷";
+}
+
+.foldable:hover .button {
+    opacity: 0.6;
+}

@@ -1,3 +1,5 @@
+import 'package:uuid/uuid.dart' as uuid;
+
 import 'model.g.dart' as g;
 export 'model.g.dart' hide
   MessageDirection_fromStringOverride,
@@ -140,3 +142,8 @@ class User {
   String userName;
   String userEmail;
 }
+
+
+final uuid.Uuid uuidGenerator = new uuid.Uuid();
+
+String generateTagId() => 'tag-${uuidGenerator.v4().substring(0, 8)}';

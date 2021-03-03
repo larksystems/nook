@@ -19,10 +19,6 @@ main {
     height: 100%;
 }
 
-header {
-    height: 43px;
-}
-
 .content {
     display: grid;
     width: 100vw;
@@ -30,22 +26,20 @@ header {
     margin-top: 50px;
 }
 
-.config-page-options {
-    display: grid;
-    grid-template-columns: max-content auto;
-    column-gap: 12px;
-    row-gap: 12px;
+.editable-widget {
+    display: flex;
+    align-items: center;
 }
 
-.config-page-option {
-    padding: 8px;
+.editable-widget .button {
+    opacity: 0;
 }
 
-.config-page-option__description {
-    padding: 8px;
+.editable-widget.editable-widget--always-show-buttons .button {
+    opacity: 0.3;
 }
 
-.config-page-option__action.config-page-option__action--disabled {
-    background: #bbbbbb;
-    pointer-events: none;
+.editable-widget:hover .button,
+.editable-widget .button:hover {
+    opacity: 1;
 }
