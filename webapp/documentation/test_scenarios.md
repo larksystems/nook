@@ -4,7 +4,7 @@
     - [ ] User presence: when another user concurrently uses nook, the person indicator (colored dots) appears. Clicking on them should take to the respective conversation.
         - Test by adding a conversation id and the time stamp under `user_presence > user email`
     - [ ] Conversation list panel: A dropdown appears when there are more than 1 conversation shards present.
-	- Test by adding a conversation name in firebase under `nook_conversation_shards > shard-n > name (field), conversations (collection)`
+	- If the test project doesn't already have 2 shards, test by setting the field `nook_conversation_shards > shard-0 > num_shards: 2` and adding a second conversation shard with a name `nook_conversation_shards > shard-1 > name: "Conversation list #2"`
     - [ ] Style: Nav bar shouldn't hide any of the content below
 
   - Signed out state
