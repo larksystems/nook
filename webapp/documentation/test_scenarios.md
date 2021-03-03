@@ -17,7 +17,7 @@
  - Toggle the following flag to see the nook UI reacting to it
    - [ ] `replies_panel_visibility` should toggle suggested replies section on the right. If the `edit_notes_enabled` is present, the notes text area should take up the whole height of the sidebar.
    - [ ] `edit_notes_enabled` should toggle notes text area.
-   - [ ] `replies_panel_visibility && edit_notes_enabled` are disabled, the whole sidebar panel should not be visible.
+   - [ ] if both `replies_panel_visibility` and `edit_notes_enabled` are `false`, the whole sidebar panel should not be visible.
 
 # Conversation list
 - User presence: when another user concurrently uses nook, the person indicator (colored dots) appears against the conversation.
