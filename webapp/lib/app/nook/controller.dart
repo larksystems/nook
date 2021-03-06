@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:collection';
 import 'package:firebase/firebase.dart' show FirebaseError;
 
+import 'package:katikati_ui_lib/components/url_view/url_view.dart';
 import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
 import 'package:katikati_ui_lib/components/logger.dart';
 import 'package:nook/controller.dart';
