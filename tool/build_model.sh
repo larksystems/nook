@@ -20,7 +20,7 @@ cd "$CODEGEN"
 # add the following line to generate python export script
 #   --export-script "$FIREBASEDIR/export_nook_model.g.py" \
 dart bin/generate_firebase_model.dart \
-    "$OUTDIR/model.yaml"
+    "$OUTDIR/model/model.yaml"
 
 # assert that the generated file is valid Dart
-dartanalyzer --packages "$PROJDIR/webapp/.packages" "$OUTDIR/model.g.dart"
+dartanalyzer --packages "$PROJDIR/webapp/.packages" "$OUTDIR/model/model.g.dart"
