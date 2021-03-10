@@ -88,11 +88,14 @@ class NookPageView extends PageView {
 
   var layout = ['1', '1'];
 
-  void showPanels(showReplyPanel, showTagPanel) {
-    replyPanelView.replyPanel.classes.toggle('hidden', !showReplyPanel);
+  void showPanels(showReplyPanel, showEditNotesPanel, showTagPanel) {
+    var showReplyNotesPanel = showReplyPanel || showEditNotesPanel;
+    replyPanelView.replyPanel.classes.toggle('hidden', !showReplyNotesPanel);
+    showReplyPanel ? replyPanelView.enableReplies() : replyPanelView.disableReplies();
+    replyPanelView.enableEditableNotes(showEditNotesPanel);
     tagPanelView.tagPanel.classes.toggle('hidden', !showTagPanel);
 
-    String layoutKey = '$showReplyPanel-$showTagPanel';
+    String layoutKey = '$showReplyNotesPanel-$showTagPanel';
 
     // Remove previous w-* classes
     conversationListPanelView.conversationListPanel.classes.removeWhere((element) => element.startsWith('w-'));
