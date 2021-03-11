@@ -1,11 +1,5 @@
 part of controller;
 
-enum TagFilterType {
-  include,
-  exclude,
-  lastInboundTurn
-}
-
 class ConversationFilter {
   Map<TagFilterType, Set<model.Tag>> filterTags;
   Map<TagFilterType, DateTime> afterDateFilter;
@@ -32,7 +26,11 @@ class ConversationFilter {
     };
 
     afterDateFilter = {
-      TagFilterType.include: _view.urlView.getPageUrlFilterAfterDate(TagFilterType.include),
+      TagFilterType.include: _view.urlView.getPageUrlFilterAfterDate(TagFilterType.include, onError: (Exception e){
+        var message = e is FormatException ? e.message : "Unknown format";
+        _view.appController
+            .command(UIAction.showSnackbar, new SnackbarData("Invalid date/time format for filter in URL: ${message}", SnackbarNotificationType.error));
+      }),
       TagFilterType.exclude: _view.urlView.getPageUrlFilterAfterDate(TagFilterType.exclude),
     };
 
