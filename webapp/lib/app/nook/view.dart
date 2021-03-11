@@ -1436,7 +1436,7 @@ class ReplyPanelView {
     replyPanel = new DivElement()
       ..classes.add('reply-panel');
 
-    var _panelTitle = new DivElement()
+    _panelTitle = new DivElement()
       ..classes.add('panel-title')
       ..classes.add('panel-title--multiple-cols');
     replyPanel.append(_panelTitle);
