@@ -4,6 +4,7 @@
   max-width: 750px;
   margin: 0 auto;
   width: 750px;
+  padding: 12px;
 }
 
 .configuration-view__back-link {
@@ -23,7 +24,7 @@
 .configuration-view__title {
   font-size: large;
   font-weight: bold;
-  padding: 30px 0 30px;
+  padding: 30px 0 12px 0;
 }
 
 .configuration-actions {

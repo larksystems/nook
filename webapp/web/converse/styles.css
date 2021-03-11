@@ -33,6 +33,11 @@ main {
     overflow: hidden;
 }
 
+.nav-content__grid-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+}
+
 .conversation-list-panel,
 .conversation-panel,
 .reply-panel,
