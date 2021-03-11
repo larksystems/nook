@@ -26,9 +26,10 @@ class ConversationFilter {
     };
 
     afterDateFilter = {
-      TagFilterType.include: _view.urlView.getPageUrlFilterAfterDate(TagFilterType.include, onError: (FormatException e){
+      TagFilterType.include: _view.urlView.getPageUrlFilterAfterDate(TagFilterType.include, onError: (Exception e){
+        var message = e is FormatException ? e.message : "Unknown format";
         _view.appController
-            .command(UIAction.showSnackbar, new SnackbarData("Invalid date/time format for filter in URL: ${e.message}", SnackbarNotificationType.error));
+            .command(UIAction.showSnackbar, new SnackbarData("Invalid date/time format for filter in URL: ${message}", SnackbarNotificationType.error));
       }),
       TagFilterType.exclude: _view.urlView.getPageUrlFilterAfterDate(TagFilterType.exclude),
     };
