@@ -1146,14 +1146,6 @@ class ConversationFilter {
     _tagGroupsContainers[category].style.setProperty('grid-template-columns', 'repeat(auto-fill, ${columnWidth}px)');
   }
 
-  void modifyMenuTag(FilterMenuTagView tag, String category) {
-    int index = _tagGroups[category].indexWhere((t) => t.tag.dataset["id"] == tag.tag.dataset["id"]);
-    _tagGroups[category][index].tag.remove();
-    _tagGroups[category].removeAt(index);
-    _tagGroups[category].insert(index, tag);
-    _tagGroupsContainers[category].children.insert(index, tag.tag);
-  }
-
   void removeMenuTag(FilterMenuTagView tag, String category) {
     int index = _tagGroups[category].indexWhere((t) => t.tag.dataset["id"] == tag.tag.dataset["id"]);
     _tagGroups[category][index].tag.remove();
