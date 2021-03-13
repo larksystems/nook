@@ -137,6 +137,13 @@ class StandardMessageView {
       ..classes.add('standard-message')
       ..dataset['id'] = '$id';
 
+    var textView = new MessageView(
+        0, text, (index, text) => _view.appController.command(MessagesConfigAction.updateStandardMessage, new StandardMessageData(id, text: text)));
+    var translationView = new MessageView(0, translation,
+        (index, translation) => _view.appController.command(MessagesConfigAction.updateStandardMessage, new StandardMessageData(id, translation: translation)));
+    _standardMessageElement..append(textView.renderElement)..append(translationView.renderElement);
+    _makeStandardMessageViewTextareasSynchronisable([textView, translationView]);
+
     var removeButton = new Button(ButtonType.remove, hoverText: 'Remove standard message', onClick: (_) {
       var removeWarningModal;
       removeWarningModal = new InlineOverlayModal('Are you sure you want to remove this message?', [
@@ -147,13 +154,6 @@ class StandardMessageView {
       removeWarningModal.parent = _standardMessageElement;
     });
     removeButton.parent = _standardMessageElement;
-
-    var textView = new MessageView(
-        0, text, (index, text) => _view.appController.command(MessagesConfigAction.updateStandardMessage, new StandardMessageData(id, text: text)));
-    var translationView = new MessageView(0, translation,
-        (index, translation) => _view.appController.command(MessagesConfigAction.updateStandardMessage, new StandardMessageData(id, translation: translation)));
-    _standardMessageElement..append(textView.renderElement)..append(translationView.renderElement);
-    _makeStandardMessageViewTextareasSynchronisable([textView, translationView]);
   }
 
   Element get renderElement => _standardMessageElement;
