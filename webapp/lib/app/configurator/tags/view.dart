@@ -239,7 +239,7 @@ class SampleMessagesTooltip {
       ..classes.add('tooltip__title')
       ..text = title);
 
-    var removeButton = new Button(ButtonType.remove, hoverText: 'Close sample messages tooltip', onClick: (_) => remove());
+    var removeButton = new Button(ButtonType.text, hoverText: 'Close sample messages tooltip', onClick: (_) => remove(), buttonText: "Close");
     removeButton.renderElement.style
       ..position = 'absolute'
       ..top = '0'
