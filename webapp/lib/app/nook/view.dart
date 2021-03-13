@@ -162,7 +162,8 @@ void makeEditable(Element element, {void onChange(e), void onEnter(e)}) {
     });
 }
 
-const REPLY_PANEL_TITLE = 'Suggested responses';
+const REPLY_PANEL_TITLE = 'Standard messages';
+const NOTES_PANEL_TITLE = 'Notes';
 const TAG_PANEL_TITLE = 'Tags';
 const ADD_REPLY_INFO = 'Add new suggested response';
 const ADD_TAG_INFO = 'Add new tag';
@@ -1522,13 +1523,15 @@ class ReplyPanelView {
 
   void disableReplies() {
     _replies.remove();
-    _panelTitle.children.clear();
-    _panelTitle.text = 'Notes';
+    _panelTitle
+      ..children.clear()
+      ..append(new DivElement()..text = NOTES_PANEL_TITLE);
     _notes.classes.toggle('notes-box--fullscreen', true);
   }
 
   void enableReplies() {
     _panelTitle
+      ..children.clear()
       ..append(new DivElement()..text = REPLY_PANEL_TITLE)
       ..append(_replyCategories);
     replyPanel.insertBefore(_replies, _notes);
