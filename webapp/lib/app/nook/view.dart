@@ -70,6 +70,7 @@ class NookPageView extends PageView {
     }, onError: (_) { /* Do nothing */ });
 
     navHeaderView.navContent = new DivElement()
+      ..style.display = 'flex'
       ..append(conversationListSelectView.panel)
       ..append(new DivElement()..classes.add('flex-fill-gap'))
       ..append(otherLoggedInUsers.loggedInUsers);
