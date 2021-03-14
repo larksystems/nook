@@ -4,7 +4,7 @@ import 'package:firebase/firebase.dart' as firebase;
 
 import 'package:nook/controller.dart' as controller;
 import 'package:katikati_ui_lib/components/logger.dart';
-import 'package:nook/model/model.dart';
+import 'package:katikati_ui_lib/components/model/model.dart';
 import 'model_firebase.dart';
 import 'package:katikati_ui_lib/components/platform/platform_constants.dart' as platform_constants;
 import 'package:katikati_ui_lib/components/platform/platform.dart' as platform;

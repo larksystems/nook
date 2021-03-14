@@ -7,8 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:katikati_ui_lib/components/url_view/url_view.dart';
 import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
 import 'package:katikati_ui_lib/components/logger.dart';
-
-import 'package:nook/model/model.dart';
+import 'package:katikati_ui_lib/components/model/model.dart';
 import 'package:nook/view.dart';
 
 import 'controller.dart';

@@ -9,7 +9,7 @@ import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
 import 'package:katikati_ui_lib/components/logger.dart';
 import 'package:nook/controller.dart';
 export 'package:nook/controller.dart';
-import 'package:nook/model/model.dart' as model;
+import 'package:katikati_ui_lib/components/model/model.dart' as model;
 import 'package:nook/platform/platform.dart';
 import 'package:nook/platform/pubsub.dart' show PubSubException;
 import 'package:nook/platform/user_position_reporter.dart';

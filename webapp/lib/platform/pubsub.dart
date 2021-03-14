@@ -7,7 +7,7 @@ import 'package:http/http.dart';
 
 import 'package:katikati_ui_lib/components/logger.dart';
 import 'package:katikati_ui_lib/components/platform/platform_constants.dart' as platform_constants;
-import 'package:nook/model/model.dart' show DocPubSubUpdate;
+import 'package:katikati_ui_lib/components/model/model.dart' show DocPubSubUpdate;
 
 Logger log = new Logger('pubsub.dart');
 
