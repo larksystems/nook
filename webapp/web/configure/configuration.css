@@ -78,13 +78,14 @@
 
 .standard-message {
   display: grid;
-  grid-template-columns: 3% 47% 47%;
+  grid-template-columns: 47% 47% 3%;
   grid-gap: 1.5%;
   position: relative;
 }
 
 .standard-message .button {
-  margin-bottom: 20px;
+  align-self: flex-start;
+  margin-top: 10px;
 }
 
 .message {
