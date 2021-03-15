@@ -365,6 +365,8 @@ class NookController extends Controller {
 
     platform.listenForConversationTags(
       (added, modified, removed) {
+        var modifiedIds = modified.map((t) => t.tagId).toList();
+        var previousModified = conversationTags.where((tag) => modifiedIds.contains(tag.tagId)).toList();
         var updatedIds = new Set()
           ..addAll(added.map((t) => t.tagId))
           ..addAll(modified.map((t) => t.tagId))
@@ -380,12 +382,14 @@ class NookController extends Controller {
         filterTagsByCategory = _groupTagsIntoCategories(conversationTags);
 
         _removeTagsFromFilterMenu(_groupTagsIntoCategories(removed), TagFilterType.include);
+        _removeTagsFromFilterMenu(_groupTagsIntoCategories(previousModified), TagFilterType.include);
         _addTagsToFilterMenu(_groupTagsIntoCategories(added), TagFilterType.include);
-        _modifyTagsInFilterMenu(_groupTagsIntoCategories(modified), TagFilterType.include);
+        _addTagsToFilterMenu(_groupTagsIntoCategories(modified), TagFilterType.include);
 
         _removeTagsFromFilterMenu(_groupTagsIntoCategories(removed), TagFilterType.exclude);
+        _removeTagsFromFilterMenu(_groupTagsIntoCategories(previousModified), TagFilterType.exclude);
         _addTagsToFilterMenu(_groupTagsIntoCategories(added), TagFilterType.exclude);
-        _modifyTagsInFilterMenu(_groupTagsIntoCategories(modified), TagFilterType.exclude);
+        _addTagsToFilterMenu(_groupTagsIntoCategories(modified), TagFilterType.exclude);
 
         // Update the conversation tags by group map
         conversationTagsByGroup = _groupTagsIntoCategories(conversationTags);
@@ -424,6 +428,8 @@ class NookController extends Controller {
 
     platform.listenForMessageTags(
       (added, modified, removed) {
+        var modifiedIds = modified.map((t) => t.tagId).toList();
+        var previousModified = messageTags.where((tag) => modifiedIds.contains(tag.tagId)).toList();
         var updatedIds = new Set()
           ..addAll(added.map((t) => t.tagId))
           ..addAll(modified.map((t) => t.tagId))
@@ -437,8 +443,9 @@ class NookController extends Controller {
 
         filterLastInboundTurnTagsByCategory = _groupTagsIntoCategories(messageTags);
         _removeTagsFromFilterMenu(_groupTagsIntoCategories(removed), TagFilterType.lastInboundTurn);
+        _removeTagsFromFilterMenu(_groupTagsIntoCategories(previousModified), TagFilterType.lastInboundTurn);
         _addTagsToFilterMenu(_groupTagsIntoCategories(added), TagFilterType.lastInboundTurn);
-        _modifyTagsInFilterMenu(_groupTagsIntoCategories(modified), TagFilterType.lastInboundTurn);
+        _addTagsToFilterMenu(_groupTagsIntoCategories(modified), TagFilterType.lastInboundTurn);
 
         // Update the message tags by group map
         messageTagsByGroup = _groupTagsIntoCategories(messageTags);

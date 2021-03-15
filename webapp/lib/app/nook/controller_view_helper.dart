@@ -169,14 +169,6 @@ void _addTagsToFilterMenu(Map<String, List<model.Tag>> tagsByCategory, TagFilter
   }
 }
 
-void _modifyTagsInFilterMenu(Map<String, List<model.Tag>> tagsByCategory, TagFilterType filterType) {
-  for (var category in tagsByCategory.keys.toList()..sort()) {
-    for (var tag in tagsByCategory[category]) {
-      _view.conversationFilter[filterType].modifyMenuTag(new FilterMenuTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type), filterType), category);
-    }
-  }
-}
-
 void _addDateTagToFilterMenu(TagFilterType filterType) {
   _view.conversationFilter[filterType].addMenuTag(AfterDateFilterMenuTagView(filterType), "Date");
 }
