@@ -26,10 +26,10 @@ class ConfigurationPageView extends PageView {
   ConfigurationPageView(ConfiguratorController controller) : super(controller) {
     renderElement = new DivElement()..classes.add('configuration-view');
 
-    var backPageLink = new Element.a()
+    var backPageLink = new AnchorElement()
+      ..href = "/"
       ..classes.add('configuration-view__back-link')
-      ..text = 'Back to the main configuration page'
-      ..onClick.listen((event) => controller.routeToPage(Page.homepage));
+      ..text = '← Back to the main configuration page';
     renderElement.append(backPageLink);
 
     configurationTitle = new DivElement()..classes.add('configuration-view__title');

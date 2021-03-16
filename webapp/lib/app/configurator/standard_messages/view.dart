@@ -62,7 +62,7 @@ class MessagesConfigurationPageView extends ConfigurationPageView {
     for (var category in categories) {
       _categories.append(new OptionElement()
         ..value = category
-        ..text = category);
+        ..text = category.isEmpty ? 'Unnamed group' : category);
     }
   }
 
@@ -84,15 +84,15 @@ class StandardMessagesGroupView {
   DivElement _standardMessagesContainer;
 
   Map<String, StandardMessageView> messagesById = {};
-  List<String> expandedIds = [];
+  List<String> collapsedIds = [];
 
   StandardMessagesGroupView(String id, String name) {
     // group
     _standardMessagesGroupElement = new DivElement()..classes.add('standard-messages-group');
 
     // fold button
-    _foldButton = new Button(ButtonType.text, buttonText: "▷", hoverText: 'Toggle collapse', onClick: (_) {
-      expandedIds.add(id);
+    _foldButton = new Button(ButtonType.text, buttonText: "▼", hoverText: 'Toggle collapse', onClick: (_) {
+      collapsedIds.add(id);
     });
     _foldButton.renderElement.className = "button--fold-collapsed";
 
@@ -119,16 +119,18 @@ class StandardMessagesGroupView {
 
     _standardMessagesGroupElement.append(_foldButton.renderElement);
     _standardMessagesGroupElement.append(_title);
-    _removeButton.parent = _standardMessagesGroupElement;
-    // _standardMessagesGroupElement.append(_removeButton.renderElement);
+    _standardMessagesGroupElement.append(_removeButton.renderElement);
 
+    // messages
     _standardMessagesContainer = new DivElement()..classes.add('standard-message-container');
     _standardMessagesGroupElement.append(_standardMessagesContainer);
 
+    // add new message
     var addButton = new Button(ButtonType.add,
         hoverText: 'Add new standard message',
         onClick: (_) => _view.appController.command(MessagesConfigAction.addStandardMessage, new StandardMessageData(null, groupId: id)));
-    addButton.parent = _standardMessagesGroupElement;
+    addButton.renderElement.classes.add('standard-messages-add__button');
+    _standardMessagesGroupElement.append(addButton.renderElement);
   }
 
   Element get renderElement => _standardMessagesGroupElement;
@@ -154,9 +156,9 @@ class StandardMessageView {
       ..classes.add('standard-message')
       ..dataset['id'] = '$id';
 
-    var textView = new MessageView(
-        0, text, (index, text) => _view.appController.command(MessagesConfigAction.updateStandardMessage, new StandardMessageData(id, text: text)));
-    var translationView = new MessageView(0, translation,
+    var textView = new MessageView(0, text, 'Message ...',
+        (index, text) => _view.appController.command(MessagesConfigAction.updateStandardMessage, new StandardMessageData(id, text: text)));
+    var translationView = new MessageView(0, translation, 'Translation ...',
         (index, translation) => _view.appController.command(MessagesConfigAction.updateStandardMessage, new StandardMessageData(id, translation: translation)));
     _standardMessageElement..append(textView.renderElement)..append(translationView.renderElement);
     _makeStandardMessageViewTextareasSynchronisable([textView, translationView]);
@@ -182,10 +184,10 @@ class MessageView {
   Function onMessageUpdateCallback;
   Function _onTextareaHeightChangeCallback;
 
-  MessageView(int index, String message, this.onMessageUpdateCallback) {
+  MessageView(int index, String message, String placeholder, this.onMessageUpdateCallback) {
     _messageElement = new DivElement()..classes.add('message');
 
-    var textLengthIndicator = new SpanElement()
+    var textLengthIndicator = new DivElement()
       ..classes.add('message__length-indicator')
       ..classes.toggle('message__length-indicator--alert', message.length > 160)
       ..text = '${message.length}/160';
@@ -196,6 +198,7 @@ class MessageView {
       ..text = message != null ? message : ''
       ..contentEditable = 'true'
       ..dataset['index'] = '$index'
+      ..placeholder = placeholder
       ..onBlur.listen((event) => onMessageUpdateCallback(index, (event.target as TextAreaElement).value))
       ..onInput.listen((event) {
         int count = _messageText.value.split('').length;

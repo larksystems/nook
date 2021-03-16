@@ -1,8 +1,6 @@
 @charset "utf-8";
 
 .button {
-  display: inline-block;
-  align-self: center;
   vertical-align: middle;
   background-color: #fff;
   border-radius: 2px;
@@ -66,7 +64,6 @@
 .button--remove {
   width: 16px;
   height: 16px;
-  margin: 2px;
 }
 
 .button--remove:before,
@@ -244,4 +241,5 @@
   width: 16px;
   border: none;
   padding: 1px;
+  background-color: #fff;
 }
