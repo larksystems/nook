@@ -237,3 +237,11 @@
 .button--on-hover-red:active:after {
   background-color: #990000;
 }
+
+.button--fold-collapsed {
+  font-size: 10px;
+  height: 16px;
+  width: 16px;
+  border: none;
+  padding: 1px;
+}

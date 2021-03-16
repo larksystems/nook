@@ -1,6 +1,4 @@
 .configuration-view {
-  display: flex;
-  flex-direction: column;
   max-width: 750px;
   margin: 0 auto;
   width: 750px;
@@ -57,7 +55,6 @@
 
 
 .standard-messages-group {
-  position: relative;
   padding: 15px;
   margin: 15px 0;
   border: 1px solid #ddd;
@@ -66,8 +63,8 @@
 .standard-messages-group__title {
   font-weight: 600;
   display: inline-block;
-  padding: 0 1px;
-  margin-left: 10px;
+  padding: 0 6px;
+  min-width: 30px;
 }
 
 .standard-messages-group__title:empty:not(:focus):before {

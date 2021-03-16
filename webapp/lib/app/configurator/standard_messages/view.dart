@@ -24,8 +24,8 @@ class MessagesConfigurationPageView extends ConfigurationPageView {
     configurationTitle.text = 'What do you want to say?';
 
     _categories = new SelectElement();
-    _categories.onChange.listen(
-        (_) => controller.command(MessagesConfigAction.changeStandardMessagesCategory, new StandardMessagesCategoryData(_categories.value)));
+    _categories.onChange
+        .listen((_) => controller.command(MessagesConfigAction.changeStandardMessagesCategory, new StandardMessagesCategoryData(_categories.value)));
     configurationContent.append(_categories);
 
     _standardMessagesContainer = new DivElement();
@@ -77,33 +77,50 @@ class MessagesConfigurationPageView extends ConfigurationPageView {
 }
 
 class StandardMessagesGroupView {
+  Button _foldButton;
+  Button _removeButton;
   DivElement _standardMessagesGroupElement;
-  DivElement _standardMessagesContainer;
   SpanElement _title;
+  DivElement _standardMessagesContainer;
 
   Map<String, StandardMessageView> messagesById = {};
+  List<String> expandedIds = [];
 
   StandardMessagesGroupView(String id, String name) {
+    // group
     _standardMessagesGroupElement = new DivElement()..classes.add('standard-messages-group');
-    var removeButton = new Button(ButtonType.remove, hoverText: 'Remove standard messages group', onClick: (_) {
+
+    // fold button
+    _foldButton = new Button(ButtonType.text, buttonText: "▷", hoverText: 'Toggle collapse', onClick: (_) {
+      expandedIds.add(id);
+    });
+    _foldButton.renderElement.className = "button--fold-collapsed";
+
+    // title
+    _title = new SpanElement()
+      ..classes.add('standard-messages-group__title')
+      ..text = name
+      ..title = '[Group name]'
+      ..contentEditable = 'true'
+      ..onBlur.listen((_) => _view.appController
+          .command(MessagesConfigAction.updateStandardMessagesGroup, new StandardMessagesGroupData(id, groupName: name, newGroupName: _title.text)));
+
+    // remove button
+    _removeButton = new Button(ButtonType.remove, hoverText: 'Remove standard messages group', onClick: (_) {
       var removeWarningModal;
       removeWarningModal = new InlineOverlayModal('Are you sure you want to remove this group?', [
         new Button(ButtonType.text,
-            buttonText: 'Yes', onClick: (_) => _view.appController.command(MessagesConfigAction.removeStandardMessagesGroup, new StandardMessagesGroupData(id))),
+            buttonText: 'Yes',
+            onClick: (_) => _view.appController.command(MessagesConfigAction.removeStandardMessagesGroup, new StandardMessagesGroupData(id))),
         new Button(ButtonType.text, buttonText: 'No', onClick: (_) => removeWarningModal.remove()),
       ]);
       removeWarningModal.parent = _standardMessagesGroupElement;
     });
-    removeButton.parent = _standardMessagesGroupElement;
 
-    _title = new SpanElement()
-      ..classes.add('standard-messages-group__title')
-      ..text = name
-      ..title = '<group name>'
-      ..contentEditable = 'true'
-      ..onBlur.listen((_) => _view.appController.command(
-          MessagesConfigAction.updateStandardMessagesGroup, new StandardMessagesGroupData(id, groupName: name, newGroupName: _title.text)));
+    _standardMessagesGroupElement.append(_foldButton.renderElement);
     _standardMessagesGroupElement.append(_title);
+    _removeButton.parent = _standardMessagesGroupElement;
+    // _standardMessagesGroupElement.append(_removeButton.renderElement);
 
     _standardMessagesContainer = new DivElement()..classes.add('standard-message-container');
     _standardMessagesGroupElement.append(_standardMessagesContainer);
