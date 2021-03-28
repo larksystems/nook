@@ -118,6 +118,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
         var standardMessage = standardMessagesManager.getStandardMessageById(messageData.id);
         standardMessagesManager.removeStandardMessage(standardMessage);
         _view.groups[standardMessage.groupId].removeMessage(standardMessage.suggestedReplyId);
+        editedStandardMessages.remove(standardMessage.suggestedReplyId);
         removedStandardMessages[standardMessage.suggestedReplyId] = standardMessage;
         break;
 
