@@ -46,7 +46,7 @@ class StandardMessagesGroupData extends Data {
 
   @override
   String toString() {
-    return "StandardMessagesGroupData($groupName, $newGroupName)";
+    return "StandardMessagesGroupData($groupId, '$groupName', '$newGroupName')";
   }
 }
 
@@ -66,7 +66,8 @@ MessagesConfigurationPageView get _view => _controller.view;
 class MessagesConfiguratorController extends ConfiguratorController {
   StandardMessagesManager standardMessagesManager = new StandardMessagesManager();
   String selectedStandardMessagesCategory;
-  Set<String> editedStandardMessageIds = {};
+  Map<String, model.SuggestedReply> editedStandardMessages = {};
+  Map<String, model.SuggestedReply> removedStandardMessages = {};
 
   MessagesConfiguratorController() : super() {
     _controller = this;
@@ -96,10 +97,8 @@ class MessagesConfiguratorController extends ConfiguratorController {
         standardMessagesManager.addStandardMessage(newStandardMessage);
 
         var newStandardMessageView = new StandardMessageView(newStandardMessage.docId, newStandardMessage.text, newStandardMessage.translation);
-        _view
-            .groups[messageData.groupId]
-            .addMessage(newStandardMessage.suggestedReplyId, newStandardMessageView);
-        editedStandardMessageIds.add(newStandardMessage.docId);
+        _view.groups[messageData.groupId].addMessage(newStandardMessage.suggestedReplyId, newStandardMessageView);
+        editedStandardMessages[newStandardMessage.docId] = newStandardMessage;
         break;
 
       case MessagesConfigAction.updateStandardMessage:
@@ -111,7 +110,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
         if (messageData.translation != null) {
           standardMessage.translation = messageData.translation;
         }
-        editedStandardMessageIds.add(messageData.id);
+        editedStandardMessages[standardMessage.docId] = standardMessage;
         break;
 
       case MessagesConfigAction.removeStandardMessage:
@@ -119,14 +118,14 @@ class MessagesConfiguratorController extends ConfiguratorController {
         var standardMessage = standardMessagesManager.getStandardMessageById(messageData.id);
         standardMessagesManager.removeStandardMessage(standardMessage);
         _view.groups[standardMessage.groupId].removeMessage(standardMessage.suggestedReplyId);
-        // TODO: queue suggested messages for removal once the backend infrastructure can handle removing them
+        editedStandardMessages.remove(standardMessage.suggestedReplyId);
+        removedStandardMessages[standardMessage.suggestedReplyId] = standardMessage;
         break;
 
       case MessagesConfigAction.addStandardMessagesGroup:
         var newGroupId = standardMessagesManager.nextStandardMessagesGroupId;
         standardMessagesManager.emptyGroups[newGroupId] = '';
         var standardMessagesGroupView = new StandardMessagesGroupView(newGroupId, standardMessagesManager.emptyGroups[newGroupId]);
-        // TODO: This will only work when the view is active, async updates will cause a
         _view.addGroup(newGroupId, standardMessagesGroupView);
         break;
 
@@ -138,8 +137,13 @@ class MessagesConfiguratorController extends ConfiguratorController {
 
       case MessagesConfigAction.removeStandardMessagesGroup:
         StandardMessagesGroupData groupData = data;
+        List<model.SuggestedReply> standardMessagesToRemove = standardMessagesManager.standardMessages.where((r) => r.groupId == groupData.groupId).toList();
         standardMessagesManager.removeStandardMessagesGroup(groupData.groupId);
         _view.removeGroup(groupData.groupId);
+        for (var message in standardMessagesToRemove) {
+          editedStandardMessages.remove(message.suggestedReplyId);
+          removedStandardMessages[message.suggestedReplyId] = message;
+        }
         break;
 
       case MessagesConfigAction.changeStandardMessagesCategory:
@@ -174,12 +178,27 @@ class MessagesConfiguratorController extends ConfiguratorController {
 
   @override
   void saveConfiguration() {
-    List<model.SuggestedReply> messagesToSave =
-        editedStandardMessageIds.map((standardMessageId) => standardMessagesManager.getStandardMessageById(standardMessageId)).toList();
     _view.showSaveStatus('Saving...');
-    platform.updateSuggestedReplies(messagesToSave).then((value) {
-      _view.showSaveStatus('Saved!');
-      messagesToSave.clear();
+    bool otherPartSaved = false;
+
+    platform.updateSuggestedReplies(editedStandardMessages.values.toList()).then((value) {
+      editedStandardMessages.clear();
+      if (otherPartSaved) {
+        _view.showSaveStatus('Saved!');
+        return;
+      }
+      otherPartSaved = true;
+    }, onError: (error, stacktrace) {
+      _view.showSaveStatus('Unable to save. Please check your connection and try again. If the issue persists, please contact your project administrator');
+    });
+
+    platform.deleteSuggestedReplies(removedStandardMessages.values.toList()).then((value) {
+      removedStandardMessages.clear();
+      if (otherPartSaved) {
+        _view.showSaveStatus('Saved!');
+        return;
+      }
+      otherPartSaved = true;
     }, onError: (error, stacktrace) {
       _view.showSaveStatus('Unable to save. Please check your connection and try again. If the issue persists, please contact your project administrator');
     });

@@ -308,17 +308,27 @@ class Platform {
     List<Future> futures = [];
 
     for (SuggestedReply suggestedReply in replies) {
-      futures.add(_pubsubInstance.publishAddOpinion('nook/set_suggested_reply', {
-        "__id": suggestedReply.suggestedReplyId,
-        "text": suggestedReply.text,
-        "translation": suggestedReply.translation,
-        "shortcut": suggestedReply.shortcut,
-        "seq_no": suggestedReply.seqNumber,
-        "category": suggestedReply.category,
-        "group_id": suggestedReply.groupId,
-        "group_description": suggestedReply.groupDescription,
-        "index_in_group": suggestedReply.indexInGroup
-      }));
+      futures.add(_pubsubInstance.publishAddOpinion('nook/set_suggested_reply', suggestedReply.toData()..putIfAbsent('__id', () => suggestedReply.suggestedReplyId)));
+    }
+
+    return Future.wait(futures);
+  }
+
+  Future<void> deleteTags(List<Tag> tags) {
+    List<Future> futures = [];
+
+    for (Tag tag in tags) {
+      futures.add(_pubsubInstance.publishAddOpinion('nook/del_tag', tag.toData()..putIfAbsent('__id', () => tag.tagId)));
+    }
+
+    return Future.wait(futures);
+  }
+
+  Future<void> deleteSuggestedReplies(List<SuggestedReply> replies) {
+    List<Future> futures = [];
+
+    for (SuggestedReply suggestedReply in replies) {
+      futures.add(_pubsubInstance.publishAddOpinion('nook/del_suggested_reply', suggestedReply.toData()..putIfAbsent('__id', () => suggestedReply.suggestedReplyId)));
     }
 
     return Future.wait(futures);
