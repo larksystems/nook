@@ -59,7 +59,6 @@ enum UIAction {
   deselectAllConversations,
   updateSuggestedRepliesCategory,
   updateDisplayedTagsGroup,
-  hideAgeTags,
   showSnackbar,
   updateConversationIdFilter,
   goToUser,
@@ -267,14 +266,6 @@ class UpdateFilterTagsCategoryData extends Data {
   String toString() => 'UpdateFilterTagsCategoryData: {category: $category}';
 }
 
-class ToggleData extends Data {
-  bool toggleValue;
-  ToggleData(this.toggleValue);
-
-  @override
-  String toString() => 'ToggleData: {toggleValue: $toggleValue}';
-}
-
 class SnackbarData extends Data {
   String text;
   SnackbarNotificationType type;
@@ -330,8 +321,6 @@ class NookController extends Controller {
   Map<String, Timer> otherUserPresenceTimersByUserId = {};
   Map<String, model.UserPresence> otherUserPresenceByUserId = {};
 
-  bool hideDemogsTags;
-
   NookController() : super() {
     controller = this;
 
@@ -356,7 +345,6 @@ class NookController extends Controller {
     selectedSuggestedRepliesCategory = '';
     selectedConversationTagsGroup = '';
     selectedMessageTagsGroup = '';
-    hideDemogsTags = true;
 
     // Get any filter tags from the url
     conversationFilter = new ConversationFilter.fromUrl();
@@ -887,7 +875,7 @@ class NookController extends Controller {
         action != UIAction.addFilterTag && action != UIAction.removeFilterTag &&
         action != UIAction.promptAfterDateFilter && action != UIAction.updateAfterDateFilter &&
         action != UIAction.updateSuggestedRepliesCategory &&
-        action != UIAction.updateDisplayedTagsGroup && action != UIAction.hideAgeTags &&
+        action != UIAction.updateDisplayedTagsGroup &&
         action != UIAction.selectAllConversations && action != UIAction.deselectAllConversations &&
         action != UIAction.showSnackbar && action != UIAction.updateConversationIdFilter) {
       return;
@@ -1216,7 +1204,7 @@ class NookController extends Controller {
           case UIActionObject.conversation:
             // Early exit if tagging conversations is disabled
             if (!currentConfig.tagConversationsEnabled) return;
-            var selectedTag = _filterDemogsTagsIfNeeded(conversationTags).where((tag) => tag.shortcut == keyPressData.key);
+            var selectedTag = conversationTags.where((tag) => tag.shortcut == keyPressData.key);
             if (selectedTag.isEmpty) break;
             assert (selectedTag.length == 1);
             setConversationTag(selectedTag.first, activeConversation);
@@ -1232,7 +1220,7 @@ class NookController extends Controller {
           case UIActionObject.message:
             // Early exit if tagging messages is disabled
             if (!currentConfig.tagConversationsEnabled) return;
-            var selectedTag = _filterDemogsTagsIfNeeded(messageTags).where((tag) => tag.shortcut == keyPressData.key);
+            var selectedTag = messageTags.where((tag) => tag.shortcut == keyPressData.key);
             if (selectedTag.isEmpty) break;
             assert (selectedTag.length == 1);
             setMessageTag(selectedTag.first, selectedMessage, activeConversation);
@@ -1289,24 +1277,6 @@ class NookController extends Controller {
           case UIActionObject.loadingConversations:
             selectedConversationTagsGroup = updateGroupData.group;
             _populateTagPanelView(conversationTagsByGroup[selectedConversationTagsGroup], TagReceiver.Conversation);
-            break;
-          default:
-            break;
-        }
-        break;
-      case UIAction.hideAgeTags:
-        ToggleData toggleData = data;
-        hideDemogsTags = toggleData.toggleValue;
-        switch (actionObjectState) {
-          case UIActionObject.conversation:
-            _view.tagPanelView.selectedGroup = selectedConversationTagsGroup;
-            _populateTagPanelView(conversationTagsByGroup[selectedConversationTagsGroup], TagReceiver.Conversation);
-            break;
-          case UIActionObject.message:
-            _view.tagPanelView.selectedGroup = selectedMessageTagsGroup;
-            _populateTagPanelView(messageTagsByGroup[selectedMessageTagsGroup], TagReceiver.Message);
-            break;
-          case UIActionObject.loadingConversations:
             break;
           default:
             break;
@@ -1747,29 +1717,6 @@ model.Tag unifierTagForTag(model.Tag tag, Map<String, model.Tag> allTags) {
   if (tag.isUnifier) return tag;
   if (tag.unifierTagId == null) return tag;
   return tagIdToTag(tag.unifierTagId, allTags);
-}
-
-List<model.Tag> _filterDemogsTagsIfNeeded(List<model.Tag> tagList) {
-  if (controller.hideDemogsTags == false)
-    return tagList;
-  return tagList.where((model.Tag tag) => !_isDemogTag(tag)).toList();
-}
-
-bool _isDemogTag(model.Tag tag) {
-  if (int.tryParse(tag.text) != null) {
-    return true;
-  }
-
-  const TAG_LIST = [
-    "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62", "63", "64", "65", "66", "67", "68", "69", "70", "71", "72", "73", "74", "75", "76", "77", "78", "79", "80", "81", "82", "83", "84", "85", "86", "87", "88", "89", "90", "91", "92", "93", "94", "95", "96", "97", "98", "99",
-    "ainabkoi", "ainamoi", "aldai", "alego_usonga", "awendo", "bahati", "balambala", "banissa", "baringo_central", "baringo_north", "baringo_south", "belgut", "bobasi", "bomachoge_borabu", "bomachoge_chache", "bomet_central", "bomet_east", "bonchari", "bondo", "borabu", "budalangi", "bumula", "bura", "bureti", "butere", "butula", "buuri", "central_imenti", "changamwe", "chepalungu", "cherangany", "chesumei", "dadaab", "dagoretti_north", "dagoretti_south", "eldama_ravine", "eldas", "embakasi_central", "embakasi_east", "embakasi_north", "embakasi_south", "embakasi_west", "emgwen", "emuhaya", "emurua_dikirr", "endebess", "fafi", "funyula", "galole", "ganze", "garissa_township", "garsen", "gatanga", "gatundu_north", "gatundu_south", "gem", "gichugu", "gilgil", "githunguri", "hamisi", "homa_bay_town", "igambang_ombe", "igembe_central", "igembe_north", "igembe_south", "ijara", "ikolomani", "isiolo_north", "isiolo_south", "jomvu", "juja", "kabete", "kabondo_kasipul", "kabuchai", "kacheliba", "kaimbaa", "kaiti", "kajiado_central", "kajiado_east", "kajiado_north", "kajiado_south", "kajiado_west", "kaloleni", "kamukunji", "kandara", "kanduyi", "kangema", "kangundo", "kapenguria", "kapseret", "karachuonyo", "kasarani", "kasipul", "kathiani", "keiyo_north", "keiyo_south", "kesses", "khwisero", "kiambu", "kibra", "kibwezi_east", "kibwezi_west", "kieni", "kigumo", "kiharu", "kikuyu", "kilgoris", "kilifi_north", "kilifi_south", "kilome", "kimilili", "kiminini", "kinango", "kinangop", "kipipiri", "kipkelion_east", "kipkelion_west", "kirinyaga_central", "kisauni", "kisumu_central", "kisumu_east", "kisumu_west", "kitui_central", "kitui_east", "kitui_rural", "kitui_south", "kitui_west", "kitutu_chache_north", "kitutu_chache_south", "kitutu_masaba", "konoin", "kuresoi_north", "kuresoi_south", "kuria_east", "kuria_west", "kwanza", "lafey", "lagdera", "laikipia_east", "laikipia_north", "laikipia_west", "laisamis", "lamu_east", "lamu_west", "lang'ata", "lari", "likoni", "likuyani", "limuru", "loima", "luanda", "lugari", "lunga_lunga", "lurambi", "maara", "machakos_town", "magarini", "makadara", "makueni", "malava", "malindi", "mandera_east", "mandera_north", "mandera_south", "mandera_west", "manyatta", "maragwa", "marakwet_east", "marakwet_west", "masinga", "matayos", "mathare", "mathioya", "mathira", "matuga", "matungu", "matungulu", "mavoko", "mbeere_north", "mbeere_south", "mbita", "mbooni", "mogotio", "moiben", "molo", "mosop", "moyale", "msambweni", "mt_elgon", "muhoroni", "mukurweini", "mumias_east", "mumias_west", "mvita", "mwala", "mwatate", "mwea", "mwingi_central", "mwingi_north", "mwingi_west", "naivasha", "nakuru_town_east", "nakuru_town_west", "nambale", "nandi_hills", "narok_east", "narok_north", "narok_south", "narok_west", "navakholo", "ndaragwa", "ndhiwa", "ndia", "njoro", "north_horr", "north_imenti", "north_mugirango", "nyakach", "nyali", "nyando", "nyaribari_chache", "nyaribari_masaba", "nyatike", "nyeri_town", "ol_jorok", "ol_kalou", "othaya", "pokot_south", "rabai", "rangwe", "rarieda", "rongai", "rongo", "roysambu", "ruaraka", "ruiru", "runyenjes", "sabatia", "saboti", "saku", "samburu_east", "samburu_north", "samburu_west", "seme", "shinyalu", "sigor", "sigowet_soin", "sirisia", "sotik", "south_imenti", "south_mugirango", "soy", "starehe", "suba", "subukia", "suna_east", "suna_west", "tarbaj", "taveta ", "teso_north", "teso_south", "tetu", "tharaka", "thika_town", "tiaty", "tigania_east", "tigania_west", "tinderet", "tongaren", "turbo", "turkana_central", "turkana_east", "turkana_north", "turkana_south", "turkana_west", "ugenya", "ugunja", "uriri", "vihiga", "voi", "wajir-south", "wajir_east", "wajir_north", "wajir_west", "webuye_east", "webuye_west", "west_mugirango", "westlands", "wundanyi", "yatta",
-    "baringo", "bomet", "bungoma", "busia", "elgeyo_marakwet", "embu", "garissa", "homa_bay", "isiolo", "kajiado", "kakamega", "kericho", "kiambu", "kilifi", "kirinyaga", "kisii", "kisumu", "kitui", "kwale", "laikipia", "lamu", "machakos", "makueni", "mandera", "marsabit", "meru", "migori", "mombasa", "muranga", "nairobi", "nakuru", "nandi", "narok", "nyamira", "nyandarua", "nyeri", "samburu", "siaya", "taita_taveta", "tana_river", "tharaka_nithi", "trans_nzoia", "turkana", "uasin_gishu", "vihiga", "wajir", "west_pokot",
-    "female", "male"
-  ];
-  if (TAG_LIST.contains(tag.text))
-    return true;
-
-  return false;
 }
 
 typedef Future<dynamic> SaveText(String newText);
