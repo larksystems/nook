@@ -107,7 +107,6 @@ void _populateReplyPanelView(List<model.SuggestedReply> replies) {
 }
 
 void _populateTagPanelView(List<model.Tag> tags, TagReceiver tagReceiver) {
-  tags = _filterDemogsTagsIfNeeded(tags);
   _view.tagPanelView.clear();
   String buttonText = '';
   switch (tagReceiver) {

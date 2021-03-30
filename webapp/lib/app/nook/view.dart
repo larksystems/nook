@@ -1554,7 +1554,6 @@ class TagPanelView {
   DivElement _tags;
   DivElement _tagList;
   DivElement _statusPanel;
-  InputElement _hideTagsCheckbox;
   Text _statusText;
 
   AddActionView _addTag;
@@ -1571,16 +1570,7 @@ class TagPanelView {
     _tagGroups = new SelectElement()
       ..onChange.listen((_) => _view.appController.command(UIAction.updateDisplayedTagsGroup, new UpdateTagsGroupData(_tagGroups.value)));
 
-    _hideTagsCheckbox = new InputElement(type: 'checkbox')
-      ..checked = true
-      ..onChange.listen((_) => _view.appController.command(UIAction.hideAgeTags, new ToggleData(_hideTagsCheckbox.checked)));
-
-    panelTitle
-      ..append(_tagGroups)
-      ..append(
-        new DivElement()
-          ..append(_hideTagsCheckbox)
-          ..append(new SpanElement()..text = 'Hide demog tags'));
+    panelTitle.append(_tagGroups);
 
     _tags = new DivElement()
       ..classes.add('tags')
