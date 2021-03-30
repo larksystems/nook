@@ -49,7 +49,8 @@ TagsConfigurationPageView get _view => _controller.view;
 
 class TagsConfiguratorController extends ConfiguratorController {
   TagManager tagManager = new TagManager();
-  Set<String> editedTagIds = {};
+  Map<String, model.Tag> editedTags = {};
+  Map<String, model.Tag> removedTags = {};
 
   TagsConfiguratorController() : super() {
     _controller = this;
@@ -81,15 +82,14 @@ class TagsConfiguratorController extends ConfiguratorController {
         _addTagsToView({
           tagData.groupId: [newTag]
         });
-        editedTagIds.add(newTag.docId);
+        editedTags[newTag.tagId] = newTag;
         break;
 
       case TagsConfigAction.renameTag:
         TagData tagData = data;
         model.Tag tag = tagManager.getTagById(tagData.id);
         tag.text = tagData.text;
-        print(tagData.text);
-        editedTagIds.add(tagData.id);
+        editedTags[tag.tagId] = tag;
         _modifyTagsInView(Map.fromEntries(tag.groups.map((g) => new MapEntry(g, [tag]))));
         break;
 
@@ -98,7 +98,7 @@ class TagsConfiguratorController extends ConfiguratorController {
         model.Tag tag = tagManager.getTagById(tagData.id);
         tag.groups.remove(tagData.groupId);
         tag.groups.add(tagData.newGroupId);
-        editedTagIds.add(tagData.id);
+        editedTags[tag.tagId] = tag;
         _removeTagsFromView({
           tagData.groupId: [tag]
         });
@@ -115,9 +115,10 @@ class TagsConfiguratorController extends ConfiguratorController {
           tagData.groupId: [tag]
         });
         if (tag.groups.isEmpty) {
-          // handle removals
+          editedTags.remove(tag.tagId);
+          removedTags[tag.tagId] = tag;
         } else {
-          editedTagIds.add(tagData.id);
+          editedTags[tag.tagId] = tag;
         }
         break;
 
@@ -128,12 +129,30 @@ class TagsConfiguratorController extends ConfiguratorController {
         break;
       case TagsConfigAction.updateTagGroup:
         TagGroupData groupData = data;
-
+        List<model.Tag> tagsToEdit = tagManager.tags.where((r) => r.groups.contains(groupData.groupName)).toList();
+        for (var tag in tagsToEdit) {
+          tag.groups.remove(groupData.groupName);
+          tag.groups.add(groupData.newGroupName);
+          editedTags[tag.tagId] = tag;
+        }
+        var groupView = _view.groups[groupData.groupName];
+        groupView.name = groupData.newGroupName;
+        _view.groups.remove(groupData.groupName);
+        _view.groups[groupData.newGroupName] = groupView;
         break;
       case TagsConfigAction.removeTagGroup:
+        TagGroupData groupData = data;
 
-        // throw "Not implemented";
-        // TODO: Handle this case.
+        List<model.Tag> tagsToRemove = tagManager.tags.where((r) => r.groups.contains(groupData.groupName) && r.groups.length == 1).toList();
+        removedTags.addEntries(tagsToRemove.map((e) => MapEntry(e.tagId, e)));
+
+        List<model.Tag> tagsToEdit = tagManager.tags.where((r) => r.groups.contains(groupData.groupName) && r.groups.length > 1).toList();
+        for (var tag in tagsToEdit) {
+          tag.groups.remove(groupData.groupName);
+          tag.groups.add(groupData.newGroupName);
+          editedTags[tag.tagId] = tag;
+        }
+        _view.removeTagGroup(groupData.groupName);
         break;
       default:
     }
@@ -154,11 +173,27 @@ class TagsConfiguratorController extends ConfiguratorController {
 
   @override
   void saveConfiguration() {
-    List<model.Tag> tagsToSave = editedTagIds.map((tagId) => tagManager.getTagById(tagId)).toList();
     _view.showSaveStatus('Saving...');
-    platform.updateTags(tagsToSave).then((value) {
-      _view.showSaveStatus('Saved!');
-      tagsToSave.clear();
+    bool otherPartSaved = false;
+
+    platform.updateTags(editedTags.values.toList()).then((value) {
+      editedTags.clear();
+      if (otherPartSaved) {
+        _view.showSaveStatus('Saved!');
+        return;
+      }
+      otherPartSaved = true;
+    }, onError: (error, stacktrace) {
+      _view.showSaveStatus('Unable to save. Please check your connection and try again. If the issue persists, please contact your project administrator');
+    });
+
+    platform.deleteTags(removedTags.values.toList()).then((value) {
+      removedTags.clear();
+      if (otherPartSaved) {
+        _view.showSaveStatus('Saved!');
+        return;
+      }
+      otherPartSaved = true;
     }, onError: (error, stacktrace) {
       _view.showSaveStatus('Unable to save. Please check your connection and try again. If the issue persists, please contact your project administrator');
     });
