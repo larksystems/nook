@@ -195,11 +195,6 @@ main {
     margin: 16px 8px auto;
 }
 
-.conversation-list-header__mark-unread {
-    flex: 0 0 auto;
-    padding: 12px;
-}
-
 .select-conversation-list-message {
     margin: auto;
     padding-top: 50px;

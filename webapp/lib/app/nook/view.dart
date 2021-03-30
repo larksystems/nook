@@ -167,8 +167,6 @@ const NOTES_PANEL_TITLE = 'Notes';
 const TAG_PANEL_TITLE = 'Tags';
 const ADD_REPLY_INFO = 'Add new suggested response';
 const ADD_TAG_INFO = 'Add new tag';
-const MARK_UNREAD_INFO = 'Mark unread';
-const MARK_SELECTED_UNREAD_INFO = 'Mark selected unread';
 
 class ConversationPanelView {
   // HTML elements
@@ -862,7 +860,6 @@ class ConversationListSelectHeader {
 class ConversationListPanelView {
   DivElement conversationListPanel;
   DivElement _conversationPanelTitle;
-  MarkUnreadActionView _markUnread;
   LazyListViewModel _conversationList;
   CheckboxInputElement _selectAllCheckbox;
   DivElement _loadSpinner;
@@ -903,11 +900,6 @@ class ConversationListPanelView {
       ..classes.add('conversation-list-header__title')
       ..text = _conversationPanelTitleText;
     panelHeader.append(_conversationPanelTitle);
-
-    _markUnread = MarkUnreadActionView();
-    panelHeader.append(new DivElement()
-      ..classes.add('conversation-list-header__mark-unread')
-      ..append(_markUnread.markUnreadAction));
 
     _loadSpinner = new DivElement()
       ..classes.add('load-spinner');
@@ -1039,7 +1031,6 @@ class ConversationListPanelView {
   void uncheckAllConversations() => _phoneToConversations.forEach((_, conversation) => conversation._uncheck());
   void showCheckboxes(bool show) {
     _selectAllCheckbox.hidden = !show;
-    _markUnread.multiSelectMode(show);
     _phoneToConversations.forEach((_, conversation) => conversation._showCheckbox(show));
   }
 
@@ -1932,32 +1923,5 @@ class AddTagActionView extends AddActionView {
     // No translation for tags
     _newActionTranslation.remove();
     _newActionTranslationLabel.remove();
-  }
-}
-
-class MarkUnreadActionView {
-  DivElement markUnreadAction;
-
-  MarkUnreadActionView() {
-    markUnreadAction = new DivElement()
-      ..classes.add('add-action__button')
-      ..onClick.listen(markConversationsUnread);
-    multiSelectMode(false);
-  }
-
-  void markConversationsUnread([_]) {
-    _view.appController.command(UIAction.markConversationUnread, ConversationData((_view.appController as NookController).activeConversation.docId));
-  }
-
-  void multiSelectMode(bool enabled) {
-    if (enabled) {
-      markUnreadAction
-        ..title = 'Mark selected conversations unread'
-        ..text = MARK_SELECTED_UNREAD_INFO;
-    } else {
-      markUnreadAction
-        ..title = 'Mark current conversation unread'
-        ..text = MARK_UNREAD_INFO;
-    }
   }
 }
