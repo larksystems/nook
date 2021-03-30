@@ -142,7 +142,7 @@ class TagGroupView {
 
   void removeTags(List<String> ids) {
     for (var id in ids) {
-      tagViewsById[id].renderElement.remove();
+      tagViewsById[id]?.renderElement?.remove();
       tagViewsById.remove(id);
     }
   }
