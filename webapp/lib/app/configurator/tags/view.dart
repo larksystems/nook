@@ -90,7 +90,7 @@ class TagGroupView {
           event.stopPropagation();
         },
         onSave: (_) {
-          _view.appController.command(TagsConfigAction.updateTagGroup, new TagGroupData(groupName, newGroupName: _title.text));
+          _view.appController.command(TagsConfigAction.updateTagGroup, new TagGroupData(_editableTitle.textBeforeEdit, newGroupName: name));
         },
         onRemove: (_) {
           _title.classes.toggle('folded', false); // show the tag group before deletion
@@ -125,7 +125,8 @@ class TagGroupView {
 
   Element get renderElement => _tagsGroupElement;
 
-  void set name(String name) => _titleText.text = name;
+  void set name(String text) => _titleText.text = text;
+  String get name => _titleText.text;
 
   void addTags(Map<String, TagView> tags) {
     for (var tag in tags.keys) {

@@ -203,6 +203,8 @@ class EditableText {
 
   void set parent(Element value) => value.append(editableWrapper);
   void remove() => editableWrapper.remove();
+
+  String get textBeforeEdit => _textBeforeEdit;
 }
 
 void _makeEditable(Element element, {OnEventCallback onBlur, OnEventCallback onEnter, OnEventCallback onEsc}) {
