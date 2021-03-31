@@ -74,7 +74,7 @@ class TagGroupView {
       tag.remove();
     });
 
-    DivElement _title = new DivElement()
+    _title = new DivElement()
       ..classes.add('tags-group__title')
       ..classes.add('foldable');
     _tagsGroupElement.append(_title);
