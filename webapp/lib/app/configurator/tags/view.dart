@@ -84,13 +84,15 @@ class TagGroupView {
       ..text = groupName;
     _editableTitle = new EditableText(_titleText,
         onEditStart: (_) => _title.classes.add('foldable--disabled'),
-        onEditEnd: (_) => _title.classes.add('foldable--disabled'),
+        onEditEnd: (event) {
+          _title.classes.remove('foldable--disabled');
+          event.preventDefault();
+          event.stopPropagation();
+        },
         onSave: (_) {
-          _title.classes.add('foldable--disabled');
-          _view.appController.command(TagsConfigAction.updateTagGroup, new TagGroupData(groupName, newGroupName: _title.text));
+          _view.appController.command(TagsConfigAction.updateTagGroup, new TagGroupData(_editableTitle.textBeforeEdit, newGroupName: name));
         },
         onRemove: (_) {
-          _title.classes.add('foldable--disabled');
           _title.classes.toggle('folded', false); // show the tag group before deletion
           var warningModal;
           warningModal = new InlineOverlayModal('Are you sure you want to remove this group?', [
@@ -123,7 +125,8 @@ class TagGroupView {
 
   Element get renderElement => _tagsGroupElement;
 
-  void set name(String name) => _title.text = name;
+  void set name(String text) => _titleText.text = text;
+  String get name => _titleText.text;
 
   void addTags(Map<String, TagView> tags) {
     for (var tag in tags.keys) {
