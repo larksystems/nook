@@ -68,8 +68,14 @@ class NookPageView extends PageView {
       showNormalStatus('signed in: ${latestCommitHash.substring(0, 8)}...');
     }, onError: (_) { /* Do nothing */ });
 
+    var backPageLink = new AnchorElement()
+      ..href = "/"
+      ..classes.add('back-page-link')
+      ..text = '← Back to the main configuration page';
+
     navHeaderView.navContent = new DivElement()
       ..style.display = 'flex'
+      ..append(backPageLink)
       ..append(conversationListSelectView.panel)
       ..append(new DivElement()..classes.add('flex-fill-gap'))
       ..append(otherLoggedInUsers.loggedInUsers);

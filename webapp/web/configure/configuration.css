@@ -6,20 +6,6 @@
   width: 750px;
 }
 
-.configuration-view__back-link {
-  color: #999;
-  margin: 8px 0;
-  cursor: pointer;
-}
-
-.configuration-view__back-link:hover {
-  color: #777;
-}
-
-.configuration-view__back-link:hover {
-  color: #666;
-}
-
 .configuration-view__title {
   font-size: large;
   font-weight: bold;
