@@ -1,8 +1,6 @@
 @charset "utf-8";
 
 .button {
-  display: inline-block;
-  align-self: center;
   vertical-align: middle;
   background-color: #fff;
   border-radius: 2px;
@@ -66,7 +64,6 @@
 .button--remove {
   width: 16px;
   height: 16px;
-  margin: 2px;
 }
 
 .button--remove:before,
@@ -109,7 +106,6 @@
 .button--add {
   width: 16px;
   height: 16px;
-  margin: 2px;
 }
 
 .button--add:before,
@@ -236,4 +232,18 @@
 .button--on-hover-red:active:before,
 .button--on-hover-red:active:after {
   background-color: #990000;
+}
+
+.button--fold-collapsed {
+  font-size: 10px;
+  height: 16px;
+  width: 16px;
+  border: none;
+  padding: 1px;
+  background-color: #fff;
+  cursor: pointer;
+}
+
+.button--fold-collapsed:hover {
+  background-color: #eee;
 }
