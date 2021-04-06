@@ -22,6 +22,8 @@ enum MessagesConfigAction {
   updateStandardMessagesGroup,
   removeStandardMessage,
   removeStandardMessagesGroup,
+  toggleStandardMessagesGroup,
+  expandStandardMessagesGroup,
   changeStandardMessagesCategory,
 }
 
@@ -68,6 +70,8 @@ class MessagesConfiguratorController extends ConfiguratorController {
   String selectedStandardMessagesCategory;
   Map<String, model.SuggestedReply> editedStandardMessages = {};
   Map<String, model.SuggestedReply> removedStandardMessages = {};
+  Set<String> collapsedMessageGroupIds = {};
+  bool formDirty = false;
 
   MessagesConfiguratorController() : super() {
     _controller = this;
@@ -99,6 +103,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
         var newStandardMessageView = new StandardMessageView(newStandardMessage.docId, newStandardMessage.text, newStandardMessage.translation);
         _view.groups[messageData.groupId].addMessage(newStandardMessage.suggestedReplyId, newStandardMessageView);
         editedStandardMessages[newStandardMessage.docId] = newStandardMessage;
+        formDirty = true;
         break;
 
       case MessagesConfigAction.updateStandardMessage:
@@ -111,6 +116,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
           standardMessage.translation = messageData.translation;
         }
         editedStandardMessages[standardMessage.docId] = standardMessage;
+        formDirty = true;
         break;
 
       case MessagesConfigAction.removeStandardMessage:
@@ -120,6 +126,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
         _view.groups[standardMessage.groupId].removeMessage(standardMessage.suggestedReplyId);
         editedStandardMessages.remove(standardMessage.suggestedReplyId);
         removedStandardMessages[standardMessage.suggestedReplyId] = standardMessage;
+        formDirty = true;
         break;
 
       case MessagesConfigAction.addStandardMessagesGroup:
@@ -127,12 +134,14 @@ class MessagesConfiguratorController extends ConfiguratorController {
         standardMessagesManager.emptyGroups[newGroupId] = '';
         var standardMessagesGroupView = new StandardMessagesGroupView(newGroupId, standardMessagesManager.emptyGroups[newGroupId]);
         _view.addGroup(newGroupId, standardMessagesGroupView);
+        formDirty = true;
         break;
 
       case MessagesConfigAction.updateStandardMessagesGroup:
         StandardMessagesGroupData groupData = data;
         standardMessagesManager.updateStandardMessagesGroupDescription(groupData.groupId, groupData.newGroupName);
         _view.groups[groupData.groupId].name = groupData.newGroupName;
+        formDirty = true;
         break;
 
       case MessagesConfigAction.removeStandardMessagesGroup:
@@ -146,13 +155,43 @@ class MessagesConfiguratorController extends ConfiguratorController {
         }
         break;
 
+      case MessagesConfigAction.toggleStandardMessagesGroup:
+        StandardMessagesGroupData groupData = data;
+        var groupId = groupData.groupId;
+        var collapsed = collapsedMessageGroupIds.contains(groupId);
+        if (collapsed) {
+          collapsedMessageGroupIds.remove(groupId);
+          _view.groups[groupId].expand();
+        } else {
+          collapsedMessageGroupIds.add(groupId);
+          _view.groups[groupId].collapse();
+        }
+        break;
+
+      case MessagesConfigAction.expandStandardMessagesGroup:
+        StandardMessagesGroupData groupData = data;
+        var groupId = groupData.groupId;
+        var collapsed = collapsedMessageGroupIds.contains(groupId);
+        if (collapsed) {
+          collapsedMessageGroupIds.remove(groupId);
+          _view.groups[groupId].expand();
+        }
+        break;
+
       case MessagesConfigAction.changeStandardMessagesCategory:
         StandardMessagesCategoryData groupData = data;
         selectedStandardMessagesCategory = groupData.category;
+        collapsedMessageGroupIds.clear();
         _populateStandardMessagesConfigPage(standardMessagesManager.standardMessagesByCategory[selectedStandardMessagesCategory]);
         break;
 
       default:
+    }
+
+    if (formDirty) {
+      _view.enableSaveButton();
+    } else {
+      _view.disableSaveButton();
     }
   }
 
@@ -185,6 +224,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
       editedStandardMessages.clear();
       if (otherPartSaved) {
         _view.showSaveStatus('Saved!');
+        _view.disableSaveButton();
         return;
       }
       otherPartSaved = true;
@@ -196,6 +236,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
       removedStandardMessages.clear();
       if (otherPartSaved) {
         _view.showSaveStatus('Saved!');
+        _view.disableSaveButton();
         return;
       }
       otherPartSaved = true;
