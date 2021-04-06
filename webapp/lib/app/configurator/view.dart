@@ -26,10 +26,10 @@ class ConfigurationPageView extends PageView {
   ConfigurationPageView(ConfiguratorController controller) : super(controller) {
     renderElement = new DivElement()..classes.add('configuration-view');
 
-    var backPageLink = new Element.a()
-      ..classes.add('configuration-view__back-link')
-      ..text = 'Back to the main configuration page'
-      ..onClick.listen((event) => controller.routeToPage(Page.homepage));
+    var backPageLink = new AnchorElement()
+      ..href = "/"
+      ..classes.add('back-page-link')
+      ..text = '← Back to the main configuration page';
     renderElement.append(backPageLink);
 
     configurationTitle = new DivElement()..classes.add('configuration-view__title');
@@ -42,6 +42,7 @@ class ConfigurationPageView extends PageView {
     renderElement.append(configurationActions);
 
     saveConfigurationButton = new ButtonElement()
+      ..disabled = true
       ..classes.add('configuration-actions__save-action')
       ..text = 'Save Configuration'
       ..onClick.listen((_) => controller.command(ConfigAction.saveConfiguration));
@@ -73,6 +74,19 @@ class ConfigurationPageView extends PageView {
     saveStatusElement.classes.toggle('hidden', true);
     // Remove the contents after the animation ends
     new Timer(new Duration(milliseconds: _ANIMATION_LENGTH_MS), () => saveStatusElement.text = '');
+  }
+
+  void enableSaveButton() {
+    saveConfigurationButton.removeAttribute('disabled');
+    configurationActions.classes.toggle('sticky', true);
+  }
+
+  void disableSaveButton() {
+    saveConfigurationButton.setAttribute('disabled', 'true');
+    new Timer(new Duration(milliseconds: 10 * _ANIMATION_LENGTH_MS), () {
+      saveStatusElement.text = '';
+      configurationActions.classes.toggle('sticky', false);
+    });
   }
 }
 
