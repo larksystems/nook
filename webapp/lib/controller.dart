@@ -57,11 +57,11 @@ class UserData extends Data {
 }
 
 class SignInData extends Data {
-  SignInDomain domain;
-  SignInData(this.domain);
+  SignInDomainInfo info;
+  SignInData(this.info);
 
   @override
-  String toString() => 'SignInData: {domain: $domain}';
+  String toString() => 'SignInData: {domain: ${info.domain}}';
 }
 
 class SystemMessagesData extends Data {
@@ -103,7 +103,7 @@ class Controller {
 
       case BaseAction.signInButtonClicked:
         SignInData signInData = data;
-        platform.signIn(domain: signInDomainsInfo[signInData.domain]['domain']);
+        platform.signIn(domain: signInData.info.domain);
         break;
 
       case BaseAction.signOutButtonClicked:

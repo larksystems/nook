@@ -72,8 +72,9 @@ class LoginPage {
   AuthMainView authView;
 
   LoginPage() {
-    authView = new AuthMainView(Brand.katikati, '', '', [SignInDomain.katikati, SignInDomain.lark],
-        (SignInDomain domain) => _pageView.appController.command(BaseAction.signInButtonClicked, new SignInData(domain)));
+    authView = new AuthMainView(Brand.katikati, '', '',
+        [KATIKATI_DOMAIN_INFO, LARK_DOMAIN_INFO],
+        (SignInDomainInfo domainInfo) => _pageView.appController.command(BaseAction.signInButtonClicked, new SignInData(domainInfo)));
   }
 
   DivElement get renderElement => authView.authElement;
