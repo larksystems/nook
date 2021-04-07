@@ -2,7 +2,7 @@ import 'dart:html';
 
 import 'package:katikati_ui_lib/components/auth/auth.dart';
 import 'package:katikati_ui_lib/components/auth/auth_header.dart';
-import 'package:katikati_ui_lib/components/brand_asset/brand_asset.dart';
+import 'package:katikati_ui_lib/components/brand_asset/brand_asset.dart' as brand;
 import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
 import 'package:katikati_ui_lib/components/banner/banner.dart';
 import 'package:katikati_ui_lib/components/logger.dart';
@@ -72,7 +72,7 @@ class LoginPage {
   AuthMainView authView;
 
   LoginPage() {
-    authView = new AuthMainView(Brand.katikati, '', '',
+    authView = new AuthMainView(brand.KATIKATI, '', '',
     [KATIKATI_DOMAIN_INFO, LARK_DOMAIN_INFO],
         (SignInDomainInfo domain) => _pageView.appController.command(BaseAction.signInButtonClicked, new SignInData(domain)));
   }
