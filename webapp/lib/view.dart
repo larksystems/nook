@@ -14,6 +14,7 @@ Logger log = new Logger('view.dart');
 
 Element get headerElement => querySelector('header');
 Element get mainElement => querySelector('main');
+Element get bodyElement => querySelector('body');
 Element get footerElement => querySelector('footer');
 
 PageView _pageView;

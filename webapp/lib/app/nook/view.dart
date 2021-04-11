@@ -55,12 +55,24 @@ class NookPageView extends PageView {
   void initSignedInView(String displayName, String photoUrl) {
     super.initSignedInView(displayName, photoUrl);
 
+    var conversationListColumn = DivElement()..classes = ["nook-column-wrapper", "nook-column-wrapper--conversation-list"];
+    var messagesViewColumn = DivElement()..classes = ["nook-column-wrapper", "nook-column-wrapper--messages-view"];
+    var configureColumn = DivElement()..classes = ["nook-column-wrapper", "nook-column-wrapper--configure-view"];
+    var miscColumn = DivElement()..classes = ["nook-column-wrapper", "nook-column-wrapper--misc"];
+
     mainElement
-      ..append(conversationListPanelView.conversationListPanel)
-      ..append(conversationPanelView.conversationPanel)
-      ..append(replyPanelView.replyPanel)
-      ..append(tagPanelView.tagPanel)
-      ..append(snackbarView.snackbarElement);
+      ..append(conversationListColumn)
+      ..append(messagesViewColumn)
+      ..append(configureColumn)
+      ..append(miscColumn);
+
+    conversationListColumn.append(conversationListPanelView.conversationListPanel);
+    messagesViewColumn.append(conversationPanelView.conversationPanel);
+    configureColumn.append(replyPanelView.replyPanel);
+    miscColumn.append(tagPanelView.tagPanel);
+
+    bodyElement.append(snackbarView.snackbarElement);
+
     showNormalStatus('signed in');
 
     HttpRequest.getString('/assets/latest_commit_hash.json').then((latestCommitHashConfigJson) {
@@ -102,19 +114,7 @@ class NookPageView extends PageView {
     replyPanelView.enableEditableNotes(showEditNotesPanel);
     tagPanelView.tagPanel.classes.toggle('hidden', !showTagPanel);
 
-    String layoutKey = '$showReplyNotesPanel-$showTagPanel';
-
-    // Remove previous w-* classes
-    conversationListPanelView.conversationListPanel.classes.removeWhere((element) => element.startsWith('w-'));
-    conversationPanelView.conversationPanel.classes.removeWhere((element) => element.startsWith('w-'));
-    replyPanelView.replyPanel.classes.removeWhere((element) => element.startsWith('w-'));
-    tagPanelView.tagPanel.classes.removeWhere((element) => element.startsWith('w-'));
-
-    // Set the classes based on the new layout
-    conversationListPanelView.conversationListPanel.classes.toggle(layouts[layoutKey]['conversationListPanel'], true);
-    conversationPanelView.conversationPanel.classes.toggle(layouts[layoutKey]['conversationPanel'], true);
-    replyPanelView.replyPanel.classes.toggle(layouts[layoutKey]['replyPanel'], true);
-    tagPanelView.tagPanel.classes.toggle(layouts[layoutKey]['tagPanel'], true);
+    // todo: handle this along with tabs
   }
 
   bool sendingMultiMessagesUserConfirmation(int noMessages) {
@@ -865,7 +865,7 @@ class ConversationListSelectHeader {
 
 class ConversationListPanelView {
   DivElement conversationListPanel;
-  DivElement _conversationPanelTitle;
+  SpanElement _conversationPanelTitle;
   LazyListViewModel _conversationList;
   CheckboxInputElement _selectAllCheckbox;
   DivElement _loadSpinner;
@@ -901,8 +901,8 @@ class ConversationListPanelView {
       ..onClick.listen((_) => _selectAllCheckbox.checked ? _view.appController.command(UIAction.selectAllConversations, null) : _view.appController.command(UIAction.deselectAllConversations, null));
     panelHeader.append(_selectAllCheckbox);
 
-    _conversationPanelTitle = new DivElement()
-      ..classes.add('panel-title')
+    _conversationPanelTitle = new SpanElement()
+      // ..classes.add('panel-title')
       ..classes.add('conversation-list-header__title')
       ..text = _conversationPanelTitleText;
     panelHeader.append(_conversationPanelTitle);
@@ -922,17 +922,21 @@ class ConversationListPanelView {
     _conversationList = new LazyListViewModel(conversationListElement);
     conversationListPanel.append(conversationListElement);
 
+    var panelFilters = new DivElement()
+      ..classes.add('conversation-list-filters');
+    conversationListPanel.append(panelFilters);
+
     conversationIdFilter = new ConversationIdFilter();
-    conversationListPanel.append(conversationIdFilter.conversationFilter);
+    panelFilters.append(conversationIdFilter.conversationFilter);
 
     conversationIncludeFilter = new ConversationIncludeFilter();
-    conversationListPanel.append(conversationIncludeFilter.conversationFilter);
+    panelFilters.append(conversationIncludeFilter.conversationFilter);
 
     conversationExcludeFilter = new ConversationExcludeFilter();
-    conversationListPanel.append(conversationExcludeFilter.conversationFilter);
+    panelFilters.append(conversationExcludeFilter.conversationFilter);
 
     conversationTurnsFilter = new ConversationTurnsFilter();
-    conversationListPanel.append(conversationTurnsFilter.conversationFilter);
+    panelFilters.append(conversationTurnsFilter.conversationFilter);
   }
 
   void updateConversationList(Set<Conversation> conversations) {
@@ -1199,7 +1203,7 @@ class ConversationTurnsFilter extends ConversationFilter{
 
 class ConversationIdFilter {
   DivElement conversationFilter;
-  DivElement _descriptionText;
+  SpanElement _descriptionText;
   TextInputElement _idInput;
 
   ConversationIdFilter() {
@@ -1207,7 +1211,7 @@ class ConversationIdFilter {
       ..classes.add('conversation-filter')
       ..classes.add('conversation-filter--id-filter');
 
-    _descriptionText = new DivElement()
+    _descriptionText = new SpanElement()
       ..classes.add('conversation-filter__description')
       ..text = 'Filter by ID:';
     conversationFilter.append(_descriptionText);
@@ -1533,6 +1537,7 @@ class ReplyPanelView {
     _notesTextArea.remove();
     _notesTextArea = new TextAreaElement()
       ..classes.add('notes-box__textarea')
+      ..placeholder = "Notes..."
       ..value = text;
     if (enable) {
       makeEditable(_notesTextArea, onChange: (_) {
