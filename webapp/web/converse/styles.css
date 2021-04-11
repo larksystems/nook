@@ -204,9 +204,10 @@ main {
 .conversation-list__item {
     display: flex;
     border-bottom: 1px solid lightgray;
-    border-left: 5px solid #fff;
+    border-left: 5px solid transparent;
     word-break: break-word;
     position: relative;
+    border-right: 5px solid transparent;
 }
 
 .conversation-list__item:hover {
@@ -214,8 +215,8 @@ main {
 }
 
 .conversation-list__item--selected {
-    border-left: 5px solid #555;
-    background: #f9f9f9;
+    border: 1px solid black;
+    border-right: 5px solid black;
 }
 
 .conversation-list__item--unread {
