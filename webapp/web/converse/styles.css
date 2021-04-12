@@ -20,7 +20,6 @@ body {
 header {
     width: 100%;
     height: 30px;
-    border-bottom: 1px solid #ddd;
     display: flex;
     align-items: stretch;
     flex-direction: row;
@@ -28,9 +27,38 @@ header {
 }
 
 main {
-    flex: 1 1 auto;
     display: flex;
-    overflow: hidden;
+    flex-direction: row;
+    padding: 6px;
+}
+
+.nook-column-wrapper {
+    height: calc(100vh - 42px);
+    border: 1px solid #ccc;
+    overflow-y: scroll;
+    flex-basis: 0;
+    border-radius: 3px;
+}
+
+.nook-column-wrapper--conversation-list {
+    flex-grow: 1;
+    margin-right: 6px;
+}
+
+.nook-column-wrapper--messages-view {
+    flex-grow: 2;
+    margin-right: 6px;
+    box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.1);
+}
+
+.nook-column-wrapper--configure-view {
+    flex-grow: 1;
+    margin-right: 6px;
+}
+
+.nook-column-wrapper--misc {
+    flex-grow: 1;
+    border: none;
 }
 
 .conversation-list-panel,
@@ -39,17 +67,17 @@ main {
 .tag-panel {
     display: flex;
     flex-direction: column;
+    height: 100%;
 }
 
+/* Conversation list panel */
+
 .conversation-list {
-    flex: 1 1 auto;
-    overflow: scroll;
+    flex: 1;
+    overflow-y: scroll;
 }
 
 .conversation-filter {
-    flex: 0 0 auto;
-    display: flex;
-    flex-direction: column;
     padding: 8px 16px 8px 21px;
     border-top: 1px solid #ddd;
     background: #fafafa;
@@ -64,7 +92,7 @@ main {
 }
 
 .tags-menu {
-    position: relative;
+    position: absolute;
     width: 0;
     height: 0;
     visibility: hidden;
@@ -160,20 +188,11 @@ main {
     border-right: 32px solid white;
 }
 
-.conversation-list-panel {
-    border-right: 1px solid #ddd;
-}
-
-.reply-panel,
-.tag-panel {
-    border-left: 1px solid #ddd;
-}
-
-
 .panel-title {
     text-align: left;
     padding: 12px 8px;
     color: #666;
+    border-bottom: 1px solid #ccc;
 }
 
 .panel-title.panel-title--multiple-cols {
@@ -182,17 +201,12 @@ main {
 }
 
 .conversation-list-header {
-    display: flex;
-    border-left: 5px solid #fff;
-}
-
-.conversation-list-header__title {
-    flex: 1 1 auto;
+    padding: 12px;
+    border-bottom: 1px solid #ccc;
 }
 
 .conversation-list-header__checkbox {
-    flex: 0 0 auto;
-    margin: 16px 8px auto;
+    margin: 0 16px 0 0;
 }
 
 .select-conversation-list-message {
@@ -204,7 +218,6 @@ main {
 .conversation-list__item {
     display: flex;
     border-bottom: 1px solid lightgray;
-    border-left: 5px solid #fff;
     word-break: break-word;
     position: relative;
 }
@@ -214,8 +227,20 @@ main {
 }
 
 .conversation-list__item--selected {
-    border-left: 5px solid #555;
-    background: #f9f9f9;
+    border: 1px solid black;
+    position: relative;
+    overflow: auto;
+}
+
+.conversation-list__item--selected::after {
+    content: '';
+    position:absolute;
+    z-index: 1;
+    border-right: 5px solid black;
+    display: block;
+    top: 0;
+    right: 0;
+    height: 100%;
 }
 
 .conversation-list__item--unread {
@@ -269,23 +294,16 @@ main {
 }
 
 .messages {
-    flex: 1 1 auto;
-    display: flex;
-    flex-direction: column;
-    overflow: scroll;
-    margin: 0 16px;
-    border-top: 1px solid #ddd;
+    flex: 1;
+    overflow: auto;
 }
 
 .after-date-prompt {
-    height: 0px;
-    display: flex;
-    flex-direction: row;
-    visibility: hidden;
+    display: none;
 }
 
 .after-date-prompt__visible {
-    visibility: visible;
+    display: block;
     height: 24px;
 }
 
@@ -318,6 +336,7 @@ main {
 .conversation-summary {
     text-align: center;
     padding: 4px;
+    border-bottom: 1px solid #ccc;
 }
 
 .conversation-summary__title {
@@ -383,7 +402,6 @@ main {
     height: 150px;
     display: flex;
     flex-direction: row;
-    margin-top: 8px;
     overflow-y: scroll;
 }
 
