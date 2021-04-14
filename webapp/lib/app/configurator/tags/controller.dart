@@ -51,6 +51,7 @@ class TagsConfiguratorController extends ConfiguratorController {
   TagManager tagManager = new TagManager();
   Map<String, model.Tag> editedTags = {};
   Map<String, model.Tag> removedTags = {};
+  bool formDirty = false;
 
   TagsConfiguratorController() : super() {
     _controller = this;
@@ -83,6 +84,7 @@ class TagsConfiguratorController extends ConfiguratorController {
           tagData.groupId: [newTag]
         });
         editedTags[newTag.tagId] = newTag;
+        formDirty = true;
         break;
 
       case TagsConfigAction.renameTag:
@@ -91,6 +93,7 @@ class TagsConfiguratorController extends ConfiguratorController {
         tag.text = tagData.text;
         editedTags[tag.tagId] = tag;
         _modifyTagsInView(Map.fromEntries(tag.groups.map((g) => new MapEntry(g, [tag]))));
+        formDirty = true;
         break;
 
       case TagsConfigAction.moveTag:
@@ -105,6 +108,7 @@ class TagsConfiguratorController extends ConfiguratorController {
         _addTagsToView({
           tagData.newGroupId: [tag]
         });
+        formDirty = true;
         break;
 
       case TagsConfigAction.removeTag:
@@ -120,6 +124,7 @@ class TagsConfiguratorController extends ConfiguratorController {
         } else {
           editedTags[tag.tagId] = tag;
         }
+        formDirty = true;
         break;
 
       case TagsConfigAction.addTagGroup:
@@ -127,6 +132,7 @@ class TagsConfiguratorController extends ConfiguratorController {
         tagManager.namesOfEmptyGroups.add(newGroupName);
         _addTagsToView({newGroupName: []});
         break;
+
       case TagsConfigAction.updateTagGroup:
         TagGroupData groupData = data;
         List<model.Tag> tagsToEdit = tagManager.tags.where((r) => r.groups.contains(groupData.groupName)).toList();
@@ -139,7 +145,9 @@ class TagsConfiguratorController extends ConfiguratorController {
         groupView.name = groupData.newGroupName;
         _view.groups.remove(groupData.groupName);
         _view.groups[groupData.newGroupName] = groupView;
+        formDirty = true;
         break;
+
       case TagsConfigAction.removeTagGroup:
         TagGroupData groupData = data;
 
@@ -153,8 +161,16 @@ class TagsConfiguratorController extends ConfiguratorController {
           editedTags[tag.tagId] = tag;
         }
         _view.removeTagGroup(groupData.groupName);
+        formDirty = true;
         break;
+
       default:
+    }
+
+    if (formDirty) {
+      _view.enableSaveButton();
+    } else {
+      _view.disableSaveButton();
     }
   }
 
@@ -180,6 +196,8 @@ class TagsConfiguratorController extends ConfiguratorController {
       editedTags.clear();
       if (otherPartSaved) {
         _view.showSaveStatus('Saved!');
+        formDirty = false;
+        _view.disableSaveButton();
         return;
       }
       otherPartSaved = true;
@@ -191,6 +209,8 @@ class TagsConfiguratorController extends ConfiguratorController {
       removedTags.clear();
       if (otherPartSaved) {
         _view.showSaveStatus('Saved!');
+        formDirty = false;
+        _view.disableSaveButton();
         return;
       }
       otherPartSaved = true;

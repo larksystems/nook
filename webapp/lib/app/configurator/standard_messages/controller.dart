@@ -153,6 +153,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
           editedStandardMessages.remove(message.suggestedReplyId);
           removedStandardMessages[message.suggestedReplyId] = message;
         }
+        formDirty = true;
         break;
 
       case MessagesConfigAction.toggleStandardMessagesGroup:
@@ -224,6 +225,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
       editedStandardMessages.clear();
       if (otherPartSaved) {
         _view.showSaveStatus('Saved!');
+        formDirty = false;
         _view.disableSaveButton();
         return;
       }
@@ -236,6 +238,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
       removedStandardMessages.clear();
       if (otherPartSaved) {
         _view.showSaveStatus('Saved!');
+        formDirty = false;
         _view.disableSaveButton();
         return;
       }
