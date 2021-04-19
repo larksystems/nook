@@ -299,10 +299,6 @@ class NookController extends Controller {
   Map<String, List<model.Tag>> conversationTagsByGroup;
   Map<String, model.Tag> conversationTagIdsToTags;
   String selectedConversationTagsGroup;
-  List<model.Tag> messageTags;
-  Map<String, List<model.Tag>> messageTagsByGroup;
-  Map<String, model.Tag> messageTagIdsToTags;
-  String selectedMessageTagsGroup;
   ConversationFilter conversationFilter;
   Map<String, List<model.Tag>> filterTagsByCategory;
   Map<String, List<model.Tag>> filterLastInboundTurnTagsByCategory;
@@ -338,13 +334,10 @@ class NookController extends Controller {
     suggestedReplies = [];
     conversationTags = [];
     conversationTagIdsToTags = {};
-    messageTags = [];
-    messageTagIdsToTags = {};
     selectedConversations = [];
     activeConversation = null;
     selectedSuggestedRepliesCategory = '';
     selectedConversationTagsGroup = '';
-    selectedMessageTagsGroup = '';
 
     // Get any filter tags from the url
     conversationFilter = new ConversationFilter.fromUrl();
@@ -395,10 +388,8 @@ class NookController extends Controller {
           selectedConversationTagsGroup = groups.first;
         }
 
-        if (actionObjectState == UIActionObject.conversation || actionObjectState == UIActionObject.loadingConversations) {
-          _view.tagPanelView.selectedGroup = selectedConversationTagsGroup;
-          _populateTagPanelView(conversationTagsByGroup[selectedConversationTagsGroup], TagReceiver.Conversation);
-        }
+        _view.tagPanelView.selectedGroup = selectedConversationTagsGroup;
+        _populateTagPanelView(conversationTagsByGroup[selectedConversationTagsGroup]);
 
         // Re-read the conversation filter from the URL since we now have the names of the tags
         conversationFilter = new ConversationFilter.fromUrl();
@@ -413,59 +404,6 @@ class NookController extends Controller {
 
     _addDateTagToFilterMenu(TagFilterType.include);
     _addDateTagToFilterMenu(TagFilterType.exclude);
-
-    platform.listenForMessageTags(
-      (added, modified, removed) {
-        var modifiedIds = modified.map((t) => t.tagId).toList();
-        var previousModified = messageTags.where((tag) => modifiedIds.contains(tag.tagId)).toList();
-        var updatedIds = new Set()
-          ..addAll(added.map((t) => t.tagId))
-          ..addAll(modified.map((t) => t.tagId))
-          ..addAll(removed.map((t) => t.tagId));
-        messageTags.removeWhere((tag) => updatedIds.contains(tag.tagId));
-        messageTags
-          ..addAll(added)
-          ..addAll(modified);
-
-        messageTagIdsToTags = Map.fromEntries(messageTags.map((t) => MapEntry(t.tagId, t)));
-
-        filterLastInboundTurnTagsByCategory = _groupTagsIntoCategories(messageTags);
-        _removeTagsFromFilterMenu(_groupTagsIntoCategories(removed), TagFilterType.lastInboundTurn);
-        _removeTagsFromFilterMenu(_groupTagsIntoCategories(previousModified), TagFilterType.lastInboundTurn);
-        _addTagsToFilterMenu(_groupTagsIntoCategories(added), TagFilterType.lastInboundTurn);
-        _addTagsToFilterMenu(_groupTagsIntoCategories(modified), TagFilterType.lastInboundTurn);
-
-        // Update the message tags by group map
-        messageTagsByGroup = _groupTagsIntoCategories(messageTags);
-        // Empty sublist if there are no tags to show
-        if (messageTagsByGroup.isEmpty) {
-          messageTagsByGroup[''] = [];
-        }
-        // Sort tags alphabetically
-        for (var tags in messageTagsByGroup.values) {
-          tags.sort((t1, t2) => t1.text.compareTo(t2.text));
-        }
-        List<String> groups = messageTagsByGroup.keys.toList();
-        groups.sort((c1, c2) => c1.compareTo(c2));
-        // Replace list of groups in the UI selector
-        _view.tagPanelView.groups = groups;
-        // If the groups have changed under us and the selected one no longer exists,
-        // default to the first group, whichever it is
-        if (!groups.contains(selectedMessageTagsGroup)) {
-          selectedMessageTagsGroup = groups.first;
-        }
-
-        if (actionObjectState == UIActionObject.message || actionObjectState == UIActionObject.addTagInline) {
-          _view.tagPanelView.selectedGroup = selectedMessageTagsGroup;
-          _populateTagPanelView(messageTagsByGroup[selectedMessageTagsGroup], TagReceiver.Message);
-        }
-
-        // Re-read the conversation filter from the URL since we now have the names of the tags
-        conversationFilter = new ConversationFilter.fromUrl();
-        if (currentConfig.conversationalTurnsEnabled) {
-          _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.lastInboundTurn], TagFilterType.lastInboundTurn);
-        }
-      }, showAndLogError);
 
     platform.listenForSuggestedReplies(
       (added, modified, removed) {
@@ -762,13 +700,12 @@ class NookController extends Controller {
 
         _view.conversationListPanelView.totalConversations = conversations.length;
 
-        updateMissingTagIds(conversations, conversationTags, [TagFilterType.include, TagFilterType.exclude]);
-        updateMissingTagIds(conversations, messageTags, [TagFilterType.lastInboundTurn]);
+        updateMissingTagIds(conversations, conversationTags, [TagFilterType.include, TagFilterType.exclude, TagFilterType.lastInboundTurn]);
 
         if (actionObjectState == UIActionObject.loadingConversations) {
           actionObjectState = UIActionObject.conversation;
           _view.tagPanelView.selectedGroup = selectedConversationTagsGroup;
-          _populateTagPanelView(conversationTagsByGroup[selectedConversationTagsGroup], TagReceiver.Conversation);
+          _populateTagPanelView(conversationTagsByGroup[selectedConversationTagsGroup]);
         }
 
         // TODO even though they are unlikely to happen, we should also handle the removals in the UI for consistency
@@ -972,7 +909,7 @@ class NookController extends Controller {
             setMultiConversationTag(tag, selectedConversations);
             break;
           case UIActionObject.message:
-            model.Tag tag = messageTags.singleWhere((tag) => tag.tagId == tagData.tagId);
+            model.Tag tag = conversationTags.singleWhere((tag) => tag.tagId == tagData.tagId);
             setMessageTag(tag, selectedMessage, activeConversation);
             break;
           case UIActionObject.loadingConversations:
@@ -984,9 +921,8 @@ class NookController extends Controller {
         break;
       case UIAction.addFilterTag:
         FilterTagData tagData = data;
-        var allTagsCollection = tagData.filterType == TagFilterType.lastInboundTurn ? messageTagIdsToTags : conversationTagIdsToTags;
-        model.Tag tag = tagIdToTag(tagData.tagId, allTagsCollection);
-        model.Tag unifierTag = unifierTagForTag(tag, allTagsCollection);
+        model.Tag tag = tagIdToTag(tagData.tagId, conversationTagIdsToTags);
+        model.Tag unifierTag = unifierTagForTag(tag, conversationTagIdsToTags);
         var added = conversationFilter.filterTags[tagData.filterType].add(unifierTag);
         if (!added) return; // Trying to add an existing tag, nothing to do here
         _view.urlView.setPageUrlFilterTags(tagData.filterType, conversationFilter.filterTagIds[tagData.filterType]);
@@ -1014,8 +950,7 @@ class NookController extends Controller {
         break;
       case UIAction.removeFilterTag:
         FilterTagData tagData = data;
-        var allTagsCollection = tagData.filterType == TagFilterType.lastInboundTurn ? messageTagIdsToTags : conversationTagIdsToTags;
-        model.Tag tag = tagIdToTag(tagData.tagId, allTagsCollection);
+        model.Tag tag = tagIdToTag(tagData.tagId, conversationTagIdsToTags);
         conversationFilter.filterTags[tagData.filterType].removeWhere((t) => t.tagId == tag.tagId);
         _view.urlView.setPageUrlFilterTags(tagData.filterType, conversationFilter.filterTagIds[tagData.filterType]);
         _view.conversationFilter[tagData.filterType].removeFilterTag(tag.tagId);
@@ -1049,35 +984,13 @@ class NookController extends Controller {
         MessageData messageData = data;
         selectedMessage = activeConversation.messages[messageData.messageIndex];
         _view.conversationPanelView.selectMessage(messageData.messageIndex);
-        _view.tagPanelView.selectedGroup = selectedMessageTagsGroup;
-        _populateTagPanelView(messageTagsByGroup[selectedMessageTagsGroup], TagReceiver.Message);
-        switch (actionObjectState) {
-          case UIActionObject.conversation:
-            actionObjectState = UIActionObject.message;
-            break;
-          case UIActionObject.message:
-            break;
-          case UIActionObject.loadingConversations:
-            break;
-          default:
-            break;
-        }
+        actionObjectState = UIActionObject.message;
         break;
       case UIAction.deselectMessage:
-        switch (actionObjectState) {
-          case UIActionObject.conversation:
-            break;
-          case UIActionObject.message:
-            selectedMessage = null;
-            _view.conversationPanelView.deselectMessage();
-            _view.tagPanelView.selectedGroup = selectedConversationTagsGroup;
-            _populateTagPanelView(conversationTagsByGroup[selectedConversationTagsGroup], TagReceiver.Conversation);
-            actionObjectState = UIActionObject.conversation;
-            break;
-          case UIActionObject.loadingConversations:
-            break;
-          default:
-            break;
+        if (actionObjectState == UIActionObject.message) {
+          selectedMessage = null;
+          _view.conversationPanelView.deselectMessage();
+          actionObjectState = UIActionObject.conversation;
         }
         break;
       case UIAction.markConversationRead:
@@ -1220,7 +1133,7 @@ class NookController extends Controller {
           case UIActionObject.message:
             // Early exit if tagging messages is disabled
             if (!currentConfig.tagConversationsEnabled) return;
-            var selectedTag = messageTags.where((tag) => tag.shortcut == keyPressData.key);
+            var selectedTag = conversationTags.where((tag) => tag.shortcut == keyPressData.key);
             if (selectedTag.isEmpty) break;
             assert (selectedTag.length == 1);
             setMessageTag(selectedTag.first, selectedMessage, activeConversation);
@@ -1265,22 +1178,8 @@ class NookController extends Controller {
         break;
       case UIAction.updateDisplayedTagsGroup:
         UpdateTagsGroupData updateGroupData = data;
-        switch (actionObjectState) {
-          case UIActionObject.conversation:
-            selectedConversationTagsGroup = updateGroupData.group;
-            _populateTagPanelView(conversationTagsByGroup[selectedConversationTagsGroup], TagReceiver.Conversation);
-            break;
-          case UIActionObject.message:
-            selectedMessageTagsGroup = updateGroupData.group;
-            _populateTagPanelView(messageTagsByGroup[selectedMessageTagsGroup], TagReceiver.Message);
-            break;
-          case UIActionObject.loadingConversations:
-            selectedConversationTagsGroup = updateGroupData.group;
-            _populateTagPanelView(conversationTagsByGroup[selectedConversationTagsGroup], TagReceiver.Conversation);
-            break;
-          default:
-            break;
-        }
+        selectedConversationTagsGroup = updateGroupData.group;
+        _populateTagPanelView(conversationTagsByGroup[selectedConversationTagsGroup]);
         break;
 
       case UIAction.showSnackbar:
@@ -1338,7 +1237,7 @@ class NookController extends Controller {
             _view.conversationPanelView
                 .messageViewAtIndex(conversation.messages.indexOf(message))
                 .removeTag(newTagToAdd.tagId);
-            messageTags.add(newTagToAdd);
+            conversationTags.add(newTagToAdd);
 
             setMessageTag(newTagToAdd, message, conversation);
             newTagToAdd = null;
@@ -1435,19 +1334,9 @@ class NookController extends Controller {
     _populateConversationPanelView(conversation, updateInPlace: updateInPlace);
     _view.replyPanelView.noteText = conversation.notes;
     // Deselect message if selected
-    switch (actionObjectState) {
-      case UIActionObject.conversation:
-        break;
-      case UIActionObject.message:
-        selectedMessage = null;
-        _view.conversationPanelView.deselectMessage();
-        _view.tagPanelView.selectedGroup = selectedConversationTagsGroup;
-        _populateTagPanelView(conversationTagsByGroup[selectedConversationTagsGroup], TagReceiver.Conversation);
-        break;
-      case UIActionObject.loadingConversations:
-        break;
-      default:
-        break;
+    if (actionObjectState == UIActionObject.message) {
+      selectedMessage = null;
+      _view.conversationPanelView.deselectMessage();
     }
     _selectConversationInView(conversation);
     if (!filteredConversations.contains(conversation)) {
