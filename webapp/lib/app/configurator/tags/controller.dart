@@ -30,18 +30,33 @@ class TagData extends Data {
   /// Used when renaming a tag
   String text;
 
-  /// Used when removing, or moving a tag
+  /// Used when removing or moving a tag
   String groupId;
 
   /// Used when moving a tag
   String newGroupId;
+
   TagData(this.id, {this.text, this.groupId, this.newGroupId});
+
+  @override
+  String toString() {
+    return 'TagData($id, {$text, $groupId, $newGroupId})';
+  }
 }
 
 class TagGroupData extends Data {
+  // Used when renaming or removing a tag group
   String groupName;
+
+  // Used when renaming a tag group
   String newGroupName;
+
   TagGroupData(this.groupName, {this.newGroupName});
+
+  @override
+  String toString() {
+    return 'TagData($groupName, {$newGroupName})';
+  }
 }
 
 TagsConfiguratorController _controller;
@@ -79,6 +94,7 @@ class TagsConfiguratorController extends ConfiguratorController {
           ..type = model.TagType.Normal;
 
         tagManager.addTag(newTag);
+        tagManager.namesOfEmptyGroups.removeWhere((element) => element == tagData.groupId);
 
         _addTagsToView({
           tagData.groupId: [newTag]
@@ -99,9 +115,17 @@ class TagsConfiguratorController extends ConfiguratorController {
       case TagsConfigAction.moveTag:
         TagData tagData = data;
         model.Tag tag = tagManager.getTagById(tagData.id);
+        // Update the groups of the tag
         tag.groups.remove(tagData.groupId);
         tag.groups.add(tagData.newGroupId);
+        // Update the list of empty groups that the tag manager maintains
+        tagManager.namesOfEmptyGroups.removeWhere((element) => element == tagData.groupId);
+        if (tagManager.tags.where((element) => element.groups.contains(tagData.groupId)).isEmpty) {
+          tagManager.namesOfEmptyGroups.removeWhere((element) => element == tagData.newGroupId);
+        }
+        // mark the tag as edited
         editedTags[tag.tagId] = tag;
+        // update the view
         _removeTagsFromView({
           tagData.groupId: [tag]
         });
@@ -115,6 +139,7 @@ class TagsConfiguratorController extends ConfiguratorController {
         TagData tagData = data;
         model.Tag tag = tagManager.getTagById(tagData.id);
         tag.groups.remove(tagData.groupId);
+        tagManager.namesOfEmptyGroups.removeWhere((element) => element == tagData.groupId);
         _removeTagsFromView({
           tagData.groupId: [tag]
         });
@@ -135,6 +160,11 @@ class TagsConfiguratorController extends ConfiguratorController {
 
       case TagsConfigAction.updateTagGroup:
         TagGroupData groupData = data;
+        if (tagManager.namesOfEmptyGroups.contains(groupData.groupName)) {
+          tagManager.namesOfEmptyGroups.remove(groupData.groupName);
+          tagManager.namesOfEmptyGroups.add(groupData.newGroupName);
+          return;
+        }
         List<model.Tag> tagsToEdit = tagManager.tags.where((r) => r.groups.contains(groupData.groupName)).toList();
         for (var tag in tagsToEdit) {
           tag.groups.remove(groupData.groupName);
