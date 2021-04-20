@@ -3,14 +3,8 @@ part of controller;
 const SEND_REPLY_BUTTON_TEXT = 'SEND';
 
 const TAG_CONVERSATION_BUTTON_TEXT = 'TAG';
-const TAG_MESSAGE_BUTTON_TEXT = 'TAG';
 
 const SMS_MAX_LENGTH = 160;
-
-enum TagReceiver {
-  Conversation,
-  Message
-}
 
 // Functions to populate the views with model objects.
 
@@ -62,7 +56,7 @@ void _updateConversationPanelView(model.Conversation conversation) {
 
 MessageView _generateMessageView(model.Message message, model.Conversation conversation) {
   List<TagView> tags = [];
-  for (var tag in tagIdsToTags(message.tagIds, controller.messageTagIdsToTags)) {
+  for (var tag in tagIdsToTags(message.tagIds, controller.conversationTagIdsToTags)) {
     bool shouldHighlightTag = controller.conversationFilter.filterTagIds[TagFilterType.include].contains(tag.tagId);
     shouldHighlightTag = shouldHighlightTag || controller.conversationFilter.filterTagIds[TagFilterType.lastInboundTurn].contains(tag.tagId);
     tags.add(new MessageTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type), shouldHighlightTag));
@@ -106,17 +100,8 @@ void _populateReplyPanelView(List<model.SuggestedReply> replies) {
   }
 }
 
-void _populateTagPanelView(List<model.Tag> tags, TagReceiver tagReceiver) {
+void _populateTagPanelView(List<model.Tag> tags) {
   _view.tagPanelView.clear();
-  String buttonText = '';
-  switch (tagReceiver) {
-    case TagReceiver.Conversation:
-      buttonText = TAG_CONVERSATION_BUTTON_TEXT;
-      break;
-    case TagReceiver.Message:
-      buttonText = TAG_MESSAGE_BUTTON_TEXT;
-      break;
-  }
 
   // Important tags first, then sort by text string
   tags.sort((t1, t2) {
@@ -138,16 +123,9 @@ void _populateTagPanelView(List<model.Tag> tags, TagReceiver tagReceiver) {
   });
 
   for (var tag in tags) {
-    var tagView = new TagActionView(tag.text, tag.shortcut, tag.tagId, buttonText);
+    var tagView = new TagActionView(tag.text, tag.shortcut, tag.tagId, TAG_CONVERSATION_BUTTON_TEXT);
     tagView.showShortcut(controller.currentConfig.tagsKeyboardShortcutsEnabled);
-    switch (tagReceiver) {
-      case TagReceiver.Conversation:
-        tagView.showButtons(controller.currentConfig.tagConversationsEnabled);
-        break;
-      case TagReceiver.Message:
-        tagView.showButtons(controller.currentConfig.tagMessagesEnabled);
-        break;
-    }
+    tagView.showButtons(controller.currentConfig.tagConversationsEnabled);
     _view.tagPanelView.addTag(tagView);
   }
 }

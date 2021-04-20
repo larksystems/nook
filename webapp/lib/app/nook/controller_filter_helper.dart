@@ -22,7 +22,7 @@ class ConversationFilter {
     filterTags = {
       TagFilterType.include: _getTagsFromUrl(TagFilterType.include, controller.conversationTagIdsToTags),
       TagFilterType.exclude: _getTagsFromUrl(TagFilterType.exclude, controller.conversationTagIdsToTags),
-      TagFilterType.lastInboundTurn: _getTagsFromUrl(TagFilterType.lastInboundTurn, controller.messageTagIdsToTags),
+      TagFilterType.lastInboundTurn: _getTagsFromUrl(TagFilterType.lastInboundTurn, controller.conversationTagIdsToTags),
     };
 
     afterDateFilter = {
@@ -61,10 +61,6 @@ class ConversationFilter {
     var unifierTagIds = tagsToTagIds(unifierTags).toSet();
     if (!unifierTagIds.containsAll(filterTagIds[TagFilterType.include])) return false;
     if (unifierTagIds.intersection(filterTagIds[TagFilterType.exclude]).isNotEmpty) return false;
-
-    tags = tagIdsToTags(conversation.lastInboundTurnTagIds, controller.messageTagIdsToTags);
-    unifierTags = tags.map((t) => unifierTagForTag(t, controller.messageTagIdsToTags));
-    unifierTagIds = tagsToTagIds(unifierTags).toSet();
     if (!unifierTagIds.containsAll(filterTagIds[TagFilterType.lastInboundTurn])) return false;
 
     if (!conversation.docId.startsWith(conversationIdFilter) && !conversation.shortDeidentifiedPhoneNumber.startsWith(conversationIdFilter)) return false;
