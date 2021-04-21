@@ -232,7 +232,7 @@ class Platform {
     return Conversation.listen(_docStorage, listener, collectionRoot: conversationListRoot, onErrorListener: onErrorListener);
   }
 
-  void listenForConversationTags(TagCollectionListener listener, [OnErrorListener onErrorListener]) =>
+  void listenForTags(TagCollectionListener listener, [OnErrorListener onErrorListener]) =>
       Tag.listen(_docStorage, listener, "/conversationTags", onErrorListener: onErrorListener);
 
   void listenForSuggestedReplies(SuggestedReplyCollectionListener listener, [OnErrorListener onErrorListener]) =>

@@ -27,7 +27,7 @@ void _populateConversationPanelView(model.Conversation conversation, {bool updat
     ..deidentifiedPhoneNumber = conversation.docId
     ..deidentifiedPhoneNumberShort = conversation.shortDeidentifiedPhoneNumber
     ..demographicsInfo = conversation.demographicsInfo.values.join(', ');
-  for (var tag in tagIdsToTags(conversation.tagIds, controller.conversationTagIdsToTags)) {
+  for (var tag in convertTagIdsToTags(conversation.tagIds, controller.tagIdsToTags)) {
     _view.conversationPanelView.addTags(new ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
   }
 
@@ -43,7 +43,7 @@ void _updateConversationPanelView(model.Conversation conversation) {
     ..deidentifiedPhoneNumberShort = conversation.shortDeidentifiedPhoneNumber
     ..demographicsInfo = conversation.demographicsInfo.values.join(', ');
   _view.conversationPanelView.removeTags();
-  for (var tag in tagIdsToTags(conversation.tagIds, controller.conversationTagIdsToTags)) {
+  for (var tag in convertTagIdsToTags(conversation.tagIds, controller.tagIdsToTags)) {
     _view.conversationPanelView.addTags(new ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
   }
 
@@ -56,7 +56,7 @@ void _updateConversationPanelView(model.Conversation conversation) {
 
 MessageView _generateMessageView(model.Message message, model.Conversation conversation) {
   List<TagView> tags = [];
-  for (var tag in tagIdsToTags(message.tagIds, controller.conversationTagIdsToTags)) {
+  for (var tag in convertTagIdsToTags(message.tagIds, controller.tagIdsToTags)) {
     bool shouldHighlightTag = controller.conversationFilter.filterTagIds[TagFilterType.include].contains(tag.tagId);
     shouldHighlightTag = shouldHighlightTag || controller.conversationFilter.filterTagIds[TagFilterType.lastInboundTurn].contains(tag.tagId);
     tags.add(new MessageTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type), shouldHighlightTag));

@@ -160,7 +160,7 @@ class TagsConfiguratorController extends ConfiguratorController {
 
   @override
   void setUpOnLogin() {
-    platform.listenForConversationTags((added, modified, removed) {
+    platform.listenForTags((added, modified, removed) {
       tagManager.addTags(added);
       tagManager.updateTags(modified);
       tagManager.removeTags(removed);
