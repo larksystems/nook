@@ -30,6 +30,9 @@ void _populateConversationPanelView(model.Conversation conversation, {bool updat
   for (var tag in convertTagIdsToTags(conversation.tagIds, controller.tagIdsToTags)) {
     _view.conversationPanelView.addTags(new ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
   }
+  for (var tag in convertTagIdsToTags(conversation.suggestedTagIds, controller.tagIdsToTags)) {
+    _view.conversationPanelView.addTags(new SuggestedConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
+  }
 
   for (var message in conversation.messages) {
     MessageView messageView = _generateMessageView(message, conversation);
@@ -60,6 +63,11 @@ MessageView _generateMessageView(model.Message message, model.Conversation conve
     bool shouldHighlightTag = controller.conversationFilter.filterTagIds[TagFilterType.include].contains(tag.tagId);
     shouldHighlightTag = shouldHighlightTag || controller.conversationFilter.filterTagIds[TagFilterType.lastInboundTurn].contains(tag.tagId);
     tags.add(new MessageTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type), shouldHighlightTag));
+  }
+  for (var tag in convertTagIdsToTags(message.suggestedTagIds, controller.tagIdsToTags)) {
+    bool shouldHighlightTag = controller.conversationFilter.filterTagIds[TagFilterType.include].contains(tag.tagId);
+    shouldHighlightTag = shouldHighlightTag || controller.conversationFilter.filterTagIds[TagFilterType.lastInboundTurn].contains(tag.tagId);
+    tags.add(new SuggestedMessageTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type), shouldHighlightTag));
   }
   var messageView = new MessageView(
       message.text,

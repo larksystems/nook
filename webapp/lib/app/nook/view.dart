@@ -674,12 +674,24 @@ class MessageTagView extends TagView {
   }
 }
 
+class SuggestedMessageTagView extends MessageTagView {
+  SuggestedMessageTagView(String text, String tagId, TagStyle tagStyle, [bool highlight = false]) : super(text, tagId, tagStyle) {
+    tag.classes.add('tag--suggested');
+  }
+}
+
 class ConversationTagView extends TagView {
   ConversationTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle) {
     _removeButton.onClick.listen((_) {
       DivElement messageSummary = getAncestors(tag).firstWhere((e) => e.classes.contains('conversation-summary'));
       _view.appController.command(UIAction.removeConversationTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
     });
+  }
+}
+
+class SuggestedConversationTagView extends ConversationTagView {
+  SuggestedConversationTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle) {
+    tag.classes.add('tag--suggested');
   }
 }
 
