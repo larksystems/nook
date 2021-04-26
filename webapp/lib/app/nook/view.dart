@@ -503,14 +503,15 @@ class MessageView {
     _messageBubble.append(_messageTranslation);
 
     _messageTags = new DivElement()
-      ..classes.add('message__tags');
+      ..classes.add('message__tags')
+      ..classes.add('hover-parent');
     tags.forEach((tag) => _messageTags.append(tag.tag));
     message.append(_messageTags);
 
     _addMessageTagButton = new DivElement()
-      ..classes.add('message__add-tag-button')
       ..classes.add('tag__add')
-      ..classes.add('tag--hover-only-btn')
+      ..classes.add('btn')
+      ..classes.add('btn--hover-only')
       ..onClick.listen((e) {
         e.stopPropagation();
         _view.appController.command(UIAction.selectMessage, new MessageData(conversationId, messageIndex));
@@ -628,6 +629,7 @@ abstract class TagView {
   TagView(String text, String tagId, TagStyle tagStyle) {
     tag = new DivElement()
       ..classes.add('tag')
+      ..classes.add('hover-parent')
       ..dataset['id'] = tagId;
     switch (tagStyle) {
       case TagStyle.Green:
@@ -653,7 +655,8 @@ abstract class TagView {
 
     _removeButton = new SpanElement()
       ..classes.add('tag__remove')
-      ..classes.add('tag--hover-only-btn');
+      ..classes.add('btn')
+      ..classes.add('btn--hover-only');
     tag.append(_removeButton);
   }
 
@@ -674,9 +677,20 @@ class MessageTagView extends TagView {
   }
 }
 
-class SuggestedMessageTagView extends MessageTagView {
+class SuggestedMessageTagView extends MessageTagView with AutomaticSuggestionIndicator {
   SuggestedMessageTagView(String text, String tagId, TagStyle tagStyle, [bool highlight = false]) : super(text, tagId, tagStyle) {
+    tag.insertBefore(automaticSuggestionIndicator, _removeButton);
     tag.classes.add('tag--suggested');
+
+    var confirmButton = new SpanElement()
+      ..classes.add('tag__confirm')
+      ..classes.add('btn')
+      ..classes.add('btn--hover-only')
+      ..onClick.listen((_) {
+        DivElement message = getAncestors(tag).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
+        _view.appController.command(UIAction.confirmMessageTag, new MessageTagData(tagId, int.parse(message.dataset['message-index'])));
+      });
+    tag.insertBefore(confirmButton, _removeButton);
   }
 }
 
@@ -689,8 +703,13 @@ class ConversationTagView extends TagView {
   }
 }
 
-class SuggestedConversationTagView extends ConversationTagView {
+mixin AutomaticSuggestionIndicator {
+  SpanElement get automaticSuggestionIndicator => new Element.html('<span class="automated-action-indicator">🤖</span>');
+}
+
+class SuggestedConversationTagView extends ConversationTagView with AutomaticSuggestionIndicator {
   SuggestedConversationTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle) {
+    tag.insertBefore(automaticSuggestionIndicator, _removeButton);
     tag.classes.add('tag--suggested');
   }
 }

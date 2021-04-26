@@ -4,6 +4,7 @@
   font-size: 12px;
   font-style: italic;
   display: flex;
+  position: relative;
 }
 
 .tag__name {
@@ -14,7 +15,6 @@
   /* overflow: hidden; */
   text-overflow: ellipsis;
   max-width: 200px;
-  position: relative;
 }
 
 .tag--highlighted .tag__name {
@@ -68,11 +68,11 @@
   border: 1px solid black;
 }
 
-.tag--suggested .tag__name:after {
-  content: "🤖";
-  position: absolute;
+.automated-action-indicator {
+  position: relative;
   top: -10px;
-  z-index: 10;
+  left: -5px;
+  width: 0;
   font-style: normal;
 }
 
@@ -215,20 +215,12 @@
 
 /* hover-only buttons */
 
-.tag .tag__remove.tag--hover-only-btn {
+.hover-parent > .btn {
   opacity: 0;
 }
-.tag:hover .tag__remove.tag--hover-only-btn {
+.hover-parent:hover > .btn.btn--hover-only {
   opacity: 1;
 }
-
-.message__tags .tag__add.tag--hover-only-btn {
-  opacity: 0;
-}
-.message__tags:hover .tag__add.tag--hover-only-btn {
-  opacity: 1;
-}
-
 
 
 /* tag colours for the transitory tag editing */
