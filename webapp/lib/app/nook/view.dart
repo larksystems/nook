@@ -6,9 +6,11 @@ import 'dart:svg' as svg;
 import 'package:intl/intl.dart';
 import 'package:katikati_ui_lib/components/url_view/url_view.dart';
 import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
+import 'package:katikati_ui_lib/components/nav/button_links.dart';
 import 'package:katikati_ui_lib/components/logger.dart';
 import 'package:katikati_ui_lib/components/model/model.dart';
 import 'package:nook/view.dart';
+import 'package:nook/app/utils.dart';
 
 import 'controller.dart';
 import 'dom_utils.dart';
@@ -80,14 +82,11 @@ class NookPageView extends PageView {
       showNormalStatus('signed in: ${latestCommitHash.substring(0, 8)}...');
     }, onError: (_) { /* Do nothing */ });
 
-    var backPageLink = new AnchorElement()
-      ..href = "/"
-      ..classes.add('back-page-link')
-      ..text = '← Back to the main configuration page';
+    var links = ButtonLinksView(navLinks, window.location.pathname);    
 
     navHeaderView.navContent = new DivElement()
       ..style.display = 'flex'
-      ..append(backPageLink)
+      ..append(links.renderElement)
       ..append(conversationListSelectView.panel)
       ..append(new DivElement()..classes.add('flex-fill-gap'))
       ..append(otherLoggedInUsers.loggedInUsers);
