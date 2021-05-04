@@ -71,8 +71,7 @@
 .automated-action-indicator {
   position: relative;
   top: -10px;
-  left: -5px;
-  width: 0;
+  left: -8px;
   font-style: normal;
 }
 

@@ -8,6 +8,7 @@ import 'package:katikati_ui_lib/components/url_view/url_view.dart';
 import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
 import 'package:katikati_ui_lib/components/logger.dart';
 import 'package:katikati_ui_lib/components/model/model.dart';
+import 'package:katikati_ui_lib/components/nav/sidebar_icons.dart';
 import 'package:nook/view.dart';
 
 import 'controller.dart';
@@ -704,7 +705,7 @@ class ConversationTagView extends TagView {
 }
 
 mixin AutomaticSuggestionIndicator {
-  SpanElement get automaticSuggestionIndicator => new Element.html('<span class="automated-action-indicator">🤖</span>');
+  ImageElement get automaticSuggestionIndicator => ImageElement(src: '/packages/katikati_ui_lib/globals/assets/automated-action.svg', width: 16)..className = 'automated-action-indicator';
 }
 
 class SuggestedConversationTagView extends ConversationTagView with AutomaticSuggestionIndicator {
