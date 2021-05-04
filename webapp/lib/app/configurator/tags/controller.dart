@@ -64,9 +64,6 @@ TagsConfigurationPageView get _view => _controller.view;
 
 class TagsConfiguratorController extends ConfiguratorController {
   TagManager tagManager = new TagManager();
-  Map<String, model.Tag> editedTags = {};
-  Map<String, model.Tag> removedTags = {};
-  bool formDirty = false;
 
   TagsConfiguratorController() : super() {
     _controller = this;
@@ -83,121 +80,63 @@ class TagsConfiguratorController extends ConfiguratorController {
     switch (action) {
       case TagsConfigAction.addTag:
         TagData tagData = data;
-        var newTag = new model.Tag()
-          ..docId = model.generateTagId()
-          ..filterable = true
-          ..groups = [tagData.groupId]
-          ..isUnifier = false
-          ..text = ''
-          ..shortcut = ''
-          ..visible = true
-          ..type = model.TagType.Normal;
-
-        tagManager.addTag(newTag);
-        tagManager.namesOfEmptyGroups.removeWhere((element) => element == tagData.groupId);
-
+        var tag = tagManager.createTag(tagData.groupId);
         _addTagsToView({
-          tagData.groupId: [newTag]
+          tagData.groupId: [tag]
         });
-        editedTags[newTag.tagId] = newTag;
-        formDirty = true;
         break;
 
       case TagsConfigAction.renameTag:
         TagData tagData = data;
-        model.Tag tag = tagManager.getTagById(tagData.id);
-        tag.text = tagData.text;
-        editedTags[tag.tagId] = tag;
+        var tag = tagManager.modifyTag(tagData.id, text: tagData.text);
         _modifyTagsInView(Map.fromEntries(tag.groups.map((g) => new MapEntry(g, [tag]))));
-        formDirty = true;
         break;
 
       case TagsConfigAction.moveTag:
         TagData tagData = data;
-        model.Tag tag = tagManager.getTagById(tagData.id);
-        // Update the groups of the tag
-        tag.groups.remove(tagData.groupId);
-        tag.groups.add(tagData.newGroupId);
-        // Update the list of empty groups that the tag manager maintains
-        tagManager.namesOfEmptyGroups.removeWhere((element) => element == tagData.groupId);
-        if (tagManager.tags.where((element) => element.groups.contains(tagData.groupId)).isEmpty) {
-          tagManager.namesOfEmptyGroups.removeWhere((element) => element == tagData.newGroupId);
-        }
-        // mark the tag as edited
-        editedTags[tag.tagId] = tag;
-        // update the view
+        model.Tag tag = tagManager.modifyTag(tagData.id, group: tagData.newGroupId);
+        // update the view by removing the tag and then adding it
         _removeTagsFromView({
           tagData.groupId: [tag]
         });
         _addTagsToView({
           tagData.newGroupId: [tag]
         });
-        formDirty = true;
         break;
 
       case TagsConfigAction.removeTag:
         TagData tagData = data;
-        model.Tag tag = tagManager.getTagById(tagData.id);
-        tag.groups.remove(tagData.groupId);
-        tagManager.namesOfEmptyGroups.removeWhere((element) => element == tagData.groupId);
+        model.Tag tag = tagManager.deleteTag(tagData.id);
         _removeTagsFromView({
           tagData.groupId: [tag]
         });
-        if (tag.groups.isEmpty) {
-          editedTags.remove(tag.tagId);
-          removedTags[tag.tagId] = tag;
-        } else {
-          editedTags[tag.tagId] = tag;
-        }
-        formDirty = true;
         break;
 
       case TagsConfigAction.addTagGroup:
-        var newGroupName = tagManager.nextTagGroupName;
-        tagManager.namesOfEmptyGroups.add(newGroupName);
+        var newGroupName = tagManager.createTagGroup();
         _addTagsToView({newGroupName: []});
         break;
 
       case TagsConfigAction.updateTagGroup:
         TagGroupData groupData = data;
-        if (tagManager.namesOfEmptyGroups.contains(groupData.groupName)) {
-          tagManager.namesOfEmptyGroups.remove(groupData.groupName);
-          tagManager.namesOfEmptyGroups.add(groupData.newGroupName);
-          return;
-        }
-        List<model.Tag> tagsToEdit = tagManager.tags.where((r) => r.groups.contains(groupData.groupName)).toList();
-        for (var tag in tagsToEdit) {
-          tag.groups.remove(groupData.groupName);
-          tag.groups.add(groupData.newGroupName);
-          editedTags[tag.tagId] = tag;
-        }
+        tagManager.renameTagGroup(groupData.groupName, groupData.newGroupName);
+
         var groupView = _view.groups[groupData.groupName];
         groupView.name = groupData.newGroupName;
         _view.groups.remove(groupData.groupName);
         _view.groups[groupData.newGroupName] = groupView;
-        formDirty = true;
         break;
 
       case TagsConfigAction.removeTagGroup:
         TagGroupData groupData = data;
-
-        List<model.Tag> tagsToRemove = tagManager.tags.where((r) => r.groups.contains(groupData.groupName) && r.groups.length == 1).toList();
-        removedTags.addEntries(tagsToRemove.map((e) => MapEntry(e.tagId, e)));
-
-        List<model.Tag> tagsToEdit = tagManager.tags.where((r) => r.groups.contains(groupData.groupName) && r.groups.length > 1).toList();
-        for (var tag in tagsToEdit) {
-          tag.groups.remove(groupData.groupName);
-          tag.groups.add(groupData.newGroupName);
-          editedTags[tag.tagId] = tag;
-        }
+        tagManager.deleteTagGroup(groupData.groupName);
         _view.removeTagGroup(groupData.groupName);
-        formDirty = true;
         break;
 
       default:
     }
 
-    if (formDirty) {
+    if (tagManager.hasUnsavedTags) {
       _view.enableSaveButton();
     } else {
       _view.disableSaveButton();
@@ -207,13 +146,13 @@ class TagsConfiguratorController extends ConfiguratorController {
   @override
   void setUpOnLogin() {
     platform.listenForConversationTags((added, modified, removed) {
-      tagManager.addTags(added);
-      tagManager.updateTags(modified);
-      tagManager.removeTags(removed);
+      var tagsAdded = tagManager.addTags(added);
+      var tagsModified = tagManager.updateTags(modified);
+      var tagsDeleted = tagManager.removeTags(removed);
 
-      _addTagsToView(_groupTagsIntoCategories(added));
-      _modifyTagsInView(_groupTagsIntoCategories(modified));
-      _removeTagsFromView(_groupTagsIntoCategories(removed));
+      _addTagsToView(_groupTagsIntoCategories(tagsAdded));
+      _modifyTagsInView(_groupTagsIntoCategories(tagsModified));
+      _removeTagsFromView(_groupTagsIntoCategories(tagsDeleted));
     });
   }
 
@@ -222,11 +161,10 @@ class TagsConfiguratorController extends ConfiguratorController {
     _view.showSaveStatus('Saving...');
     bool otherPartSaved = false;
 
-    platform.updateTags(editedTags.values.toList()).then((value) {
-      editedTags.clear();
+    platform.updateTags(tagManager.editedTags.values.toList()).then((value) {
+      tagManager.editedTags.clear();
       if (otherPartSaved) {
         _view.showSaveStatus('Saved!');
-        formDirty = false;
         _view.disableSaveButton();
         return;
       }
@@ -235,11 +173,10 @@ class TagsConfiguratorController extends ConfiguratorController {
       _view.showSaveStatus('Unable to save. Please check your connection and try again. If the issue persists, please contact your project administrator');
     });
 
-    platform.deleteTags(removedTags.values.toList()).then((value) {
-      removedTags.clear();
+    platform.deleteTags(tagManager.deletedTags.values.toList()).then((value) {
+      tagManager.deletedTags.clear();
       if (otherPartSaved) {
         _view.showSaveStatus('Saved!');
-        formDirty = false;
         _view.disableSaveButton();
         return;
       }
