@@ -40,6 +40,8 @@ enum UIAction {
   removeMessageTag,
   confirmConversationTag,
   confirmMessageTag,
+  rejectConversationTag,
+  rejectMessageTag,
   removeFilterTag,
   promptAfterDateFilter,
   updateAfterDateFilter,
@@ -961,6 +963,18 @@ class NookController extends Controller {
         MessageTagData messageTagData = data;
         var message = activeConversation.messages[messageTagData.messageIndex];
         platform.confirmMessageTag(activeConversation, message, messageTagData.tagId).catchError(showAndLogError);
+        break;
+
+      case UIAction.rejectConversationTag:
+        ConversationTagData conversationTagData = data;
+        model.Tag tag = tags.singleWhere((tag) => tag.tagId == conversationTagData.tagId);
+        platform.rejectConversationTag(activeConversation, tag.tagId).catchError(showAndLogError);
+        break;
+
+      case UIAction.rejectMessageTag:
+        MessageTagData messageTagData = data;
+        var message = activeConversation.messages[messageTagData.messageIndex];
+        platform.rejectMessageTag(activeConversation, message, messageTagData.tagId).catchError(showAndLogError);
         break;
 
       case UIAction.removeFilterTag:

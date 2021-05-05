@@ -678,8 +678,13 @@ class MessageTagView extends TagView {
   }
 }
 
-class SuggestedMessageTagView extends MessageTagView with AutomaticSuggestionIndicator {
+class SuggestedMessageTagView extends TagView with AutomaticSuggestionIndicator {
   SuggestedMessageTagView(String text, String tagId, TagStyle tagStyle, [bool highlight = false]) : super(text, tagId, tagStyle) {
+    _removeButton.onClick.listen((_) {
+      DivElement message = getAncestors(tag).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
+      _view.appController.command(UIAction.rejectMessageTag, new MessageTagData(tagId, int.parse(message.dataset['message-index'])));
+    });
+
     tag.insertBefore(automaticSuggestionIndicator, _removeButton);
     tag.classes.add('tag--suggested');
 
@@ -692,6 +697,10 @@ class SuggestedMessageTagView extends MessageTagView with AutomaticSuggestionInd
         _view.appController.command(UIAction.confirmMessageTag, new MessageTagData(tagId, int.parse(message.dataset['message-index'])));
       });
     tag.insertBefore(confirmButton, _removeButton);
+
+    if (highlight) {
+      tag.classes.add('tag--highlighted');
+    }
   }
 }
 
@@ -704,15 +713,30 @@ class ConversationTagView extends TagView {
   }
 }
 
-mixin AutomaticSuggestionIndicator {
-  ImageElement get automaticSuggestionIndicator => ImageElement(src: '/packages/katikati_ui_lib/globals/assets/automated-action.svg', width: 16)..className = 'automated-action-indicator';
-}
-
-class SuggestedConversationTagView extends ConversationTagView with AutomaticSuggestionIndicator {
+class SuggestedConversationTagView extends TagView with AutomaticSuggestionIndicator {
   SuggestedConversationTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle) {
+    _removeButton.onClick.listen((_) {
+      DivElement messageSummary = getAncestors(tag).firstWhere((e) => e.classes.contains('conversation-summary'));
+      _view.appController.command(UIAction.rejectConversationTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
+    });
+
     tag.insertBefore(automaticSuggestionIndicator, _removeButton);
     tag.classes.add('tag--suggested');
+
+    var confirmButton = new SpanElement()
+      ..classes.add('tag__confirm')
+      ..classes.add('btn')
+      ..classes.add('btn--hover-only')
+      ..onClick.listen((_) {
+        DivElement messageSummary = getAncestors(tag).firstWhere((e) => e.classes.contains('conversation-summary'));
+        _view.appController.command(UIAction.confirmConversationTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
+      });
+    tag.insertBefore(confirmButton, _removeButton);
   }
+}
+
+mixin AutomaticSuggestionIndicator {
+  ImageElement get automaticSuggestionIndicator => ImageElement(src: '/packages/katikati_ui_lib/globals/assets/automated-action.svg', width: 16)..className = 'automated-action-indicator';
 }
 
 class EditableTagView extends TagView {
