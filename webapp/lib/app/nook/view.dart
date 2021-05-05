@@ -175,7 +175,7 @@ const TAG_PANEL_TITLE = 'Tags';
 const ADD_REPLY_INFO = 'Add new suggested response';
 const ADD_TAG_INFO = 'Add new tag';
 
-class ConversationPanelView {
+class ConversationPanelView with AutomaticSuggestionIndicator {
   // HTML elements
   DivElement conversationPanel;
   DivElement _messages;
@@ -186,9 +186,12 @@ class ConversationPanelView {
   DivElement _tags;
   DivElement _newMessageBox;
   TextAreaElement _newMessageTextArea;
+  DivElement _suggestedMessages;
+  DivElement _suggestedMessagesActions;
   AfterDateFilterView _afterDateFilterView;
 
   List<MessageView> _messageViews = [];
+  List<SuggestedMessageView> _suggestedMessageViews = [];
 
   ConversationPanelView() {
     conversationPanel = new DivElement()
@@ -230,9 +233,13 @@ class ConversationPanelView {
       ..classes.add('messages');
     conversationPanel.append(_messages);
 
+    DivElement customMessagePanel = new DivElement()
+      ..classes.add('custom-message-panel');
+    conversationPanel.append(customMessagePanel);
+
     _newMessageBox = new DivElement()
       ..classes.add('new-message-box');
-    conversationPanel.append(_newMessageBox);
+    customMessagePanel.append(_newMessageBox);
 
     _newMessageTextArea = new TextAreaElement()
       ..classes.add('new-message-box__textarea');
@@ -247,7 +254,7 @@ class ConversationPanelView {
 
     var buttonElement = new DivElement()
       ..classes.add('new-message-box__send-button')
-      ..text = SEND_REPLY_BUTTON_TEXT
+      ..text = SEND_CUSTOM_REPLY_BUTTON_TEXT
       ..onClick.listen((_) {
         if (_newMessageTextArea.value.length >= SMS_MAX_LENGTH) {
           _view.showWarningStatus('Message needs to be under $SMS_MAX_LENGTH characters.');
@@ -256,6 +263,34 @@ class ConversationPanelView {
         _view.appController.command(UIAction.sendManualMessage, new ManualReplyData(_newMessageTextArea.value));
       });
     _newMessageBox.append(buttonElement);
+
+    var suggestedMessagesPanel = DivElement()
+      ..classes.add('suggested-message-panel');
+    conversationPanel.append(suggestedMessagesPanel);
+
+    _suggestedMessages = DivElement()
+      ..classes.add('suggested-message-panel__messages');
+    suggestedMessagesPanel.append(_suggestedMessages);
+
+    _suggestedMessagesActions = DivElement()
+      ..classes.add('suggested-message-panel__actions')
+      ..classes.add('hidden');
+    suggestedMessagesPanel.append(_suggestedMessagesActions);
+
+    var sendSuggestedMessages = DivElement()
+      ..text = SEND_SUGGESTED_REPLY_BUTTON_TEXT
+      ..classes.add('suggested-message-panel__action')
+      ..onClick.listen((_) => _view.appController.command(UIAction.confirmSuggestedMessages, null));
+    _suggestedMessagesActions.append(sendSuggestedMessages);
+
+    var deleteSuggestedMessages = DivElement()
+      ..text = DELETE_SUGGESTED_REPLY_BUTTON_TEXT
+      ..classes.add('action--delete')
+      ..classes.add('suggested-message-panel__action')
+      ..onClick.listen((_) => _view.appController.command(UIAction.rejectSuggestedMessages, null));
+    _suggestedMessagesActions.append(deleteSuggestedMessages);
+
+    _suggestedMessagesActions.append(automaticSuggestionIndicator..classes.add('absolute'));
 
     _afterDateFilterView = AfterDateFilterView();
     conversationPanel.append(_afterDateFilterView.panel);
@@ -330,9 +365,11 @@ class ConversationPanelView {
     _conversationIdCopy.dataset['copy-value'] = '';
     _info.text = '';
     _messageViews = [];
+    _suggestedMessageViews = [];
     removeTags();
     clearNewMessageBox();
     clearWarning();
+    setSuggestedMessages([]);
 
     int messagesNo = _messages.children.length;
     for (int i = 0; i < messagesNo; i++) {
@@ -370,6 +407,14 @@ class ConversationPanelView {
   void clearWarning() {
     _conversationWarning.title = '';
     _conversationWarning.classes.add('hidden');
+  }
+
+  void setSuggestedMessages(List<SuggestedMessageView> messages) {
+    _suggestedMessages.children.clear();
+    for (var message in messages) {
+      _suggestedMessages.append(message.message);
+    }
+    _suggestedMessagesActions.classes.toggle('hidden', _suggestedMessages.children.isEmpty);
   }
 }
 
@@ -590,6 +635,33 @@ class MessageView {
   }
 }
 
+class SuggestedMessageView {
+  DivElement message;
+  DivElement _messageBubble;
+  DivElement _messageText;
+  DivElement _messageTranslation;
+
+  SuggestedMessageView(String text, {String translation = ''}) {
+    message = new DivElement()
+      ..classes.add('message')
+      ..classes.add('message--suggested');
+
+    _messageBubble = new DivElement()
+      ..classes.add('message__bubble');
+    message.append(_messageBubble);
+
+    _messageText = new DivElement()
+      ..classes.add('message__text')
+      ..text = text;
+    _messageBubble.append(_messageText);
+
+    _messageTranslation = new DivElement()
+      ..classes.add('message__translation')
+      ..text = translation;
+    _messageBubble.append(_messageTranslation);
+  }
+}
+
 final DateFormat _dateFormat = new DateFormat('E d MMM y');
 final DateFormat _dateFormatNoYear = new DateFormat('E d MMM');
 final DateFormat _hourFormat = new DateFormat('HH:mm');
@@ -685,7 +757,7 @@ class SuggestedMessageTagView extends TagView with AutomaticSuggestionIndicator 
       _view.appController.command(UIAction.rejectMessageTag, new MessageTagData(tagId, int.parse(message.dataset['message-index'])));
     });
 
-    tag.insertBefore(automaticSuggestionIndicator, _removeButton);
+    tag.insertBefore(automaticSuggestionIndicator..classes.add('relative'), _removeButton);
     tag.classes.add('tag--suggested');
 
     var confirmButton = new SpanElement()
@@ -720,7 +792,7 @@ class SuggestedConversationTagView extends TagView with AutomaticSuggestionIndic
       _view.appController.command(UIAction.rejectConversationTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
     });
 
-    tag.insertBefore(automaticSuggestionIndicator, _removeButton);
+    tag.insertBefore(automaticSuggestionIndicator..classes.add('relative'), _removeButton);
     tag.classes.add('tag--suggested');
 
     var confirmButton = new SpanElement()
@@ -736,7 +808,7 @@ class SuggestedConversationTagView extends TagView with AutomaticSuggestionIndic
 }
 
 mixin AutomaticSuggestionIndicator {
-  ImageElement get automaticSuggestionIndicator => ImageElement(src: '/packages/katikati_ui_lib/globals/assets/automated-action.svg', width: 16)..className = 'automated-action-indicator';
+  ImageElement get automaticSuggestionIndicator => ImageElement(src: '/packages/katikati_ui_lib/globals/assets/automated-action.svg')..className = 'automated-action-indicator';
 }
 
 class EditableTagView extends TagView {

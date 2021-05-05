@@ -1,6 +1,9 @@
 part of controller;
 
 const SEND_REPLY_BUTTON_TEXT = 'SEND';
+const SEND_CUSTOM_REPLY_BUTTON_TEXT = 'SEND custom message';
+const SEND_SUGGESTED_REPLY_BUTTON_TEXT = 'SEND suggested messages';
+const DELETE_SUGGESTED_REPLY_BUTTON_TEXT = 'DELETE suggested messages';
 
 const TAG_CONVERSATION_BUTTON_TEXT = 'TAG';
 
@@ -38,6 +41,12 @@ void _populateConversationPanelView(model.Conversation conversation, {bool updat
     MessageView messageView = _generateMessageView(message, conversation);
     _view.conversationPanelView.addMessage(messageView);
   }
+
+  List<SuggestedMessageView> suggestedMessages = [];
+  for (var message in conversation.suggestedMessages) {
+    suggestedMessages.add(new SuggestedMessageView(message.text, translation: message.translation));
+  }
+  _view.conversationPanelView.setSuggestedMessages(suggestedMessages);
 }
 
 void _updateConversationPanelView(model.Conversation conversation) {
@@ -58,6 +67,12 @@ void _updateConversationPanelView(model.Conversation conversation) {
     MessageView messageView = _generateMessageView(conversation.messages[i], conversation);
     _view.conversationPanelView.updateMessage(messageView, i);
   }
+
+  List<SuggestedMessageView> suggestedMessages = [];
+  for (var message in conversation.suggestedMessages) {
+    suggestedMessages.add(new SuggestedMessageView(message.text, translation: message.translation));
+  }
+  _view.conversationPanelView.setSuggestedMessages(suggestedMessages);
 }
 
 MessageView _generateMessageView(model.Message message, model.Conversation conversation) {
