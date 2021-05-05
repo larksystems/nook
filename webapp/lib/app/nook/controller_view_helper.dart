@@ -49,6 +49,9 @@ void _updateConversationPanelView(model.Conversation conversation) {
   for (var tag in convertTagIdsToTags(conversation.tagIds, controller.tagIdsToTags)) {
     _view.conversationPanelView.addTags(new ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
   }
+  for (var tag in convertTagIdsToTags(conversation.suggestedTagIds, controller.tagIdsToTags)) {
+    _view.conversationPanelView.addTags(new SuggestedConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
+  }
 
   _view.conversationPanelView.padOrTrimMessageViews(conversation.messages.length);
   for (int i = 0; i < conversation.messages.length; i++) {
