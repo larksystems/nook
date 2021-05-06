@@ -1626,6 +1626,8 @@ Map<String, model.Tag> _notFoundTagIds = {};
 
 UnmodifiableListView<model.Tag> convertTagIdsToTags(Iterable<String> tagIds, Map<String, model.Tag> allTags) {
   var tags = <model.Tag>[];
+  if (tagIds == null) return UnmodifiableListView(tags);
+
   for (var id in tagIds) {
     tags.add(tagIdToTag(id, allTags));
   }
