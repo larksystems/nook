@@ -131,9 +131,12 @@
 }
 
 .suggested-message-panel__action.action--delete {
-  color: salmon;
   font-size: 9px;
   text-decoration-line: none;
+}
+
+.suggested-message-panel__action.action--delete:hover {
+  color: salmon;
 }
 
 .suggested-message-panel__messages {
