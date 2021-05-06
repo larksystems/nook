@@ -109,6 +109,7 @@
 
 .suggested-message-panel {
   display: flex;
+  align-self: flex-end;
 }
 
 .suggested-message-panel__actions {
