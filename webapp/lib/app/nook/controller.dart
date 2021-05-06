@@ -1478,7 +1478,7 @@ class NookController extends Controller {
     }
 
     log.verbose('Sending ${textReplies.length} replies "${repliesStr}" to conversation ${conversation.docId}');
-    platform.sendMessages(conversation.docId, textReplies, wasSuggested: true, onError: (error) {
+    platform.sendMessages(conversation.docId, textReplies, wasSuggested: wasSuggested, onError: (error) {
       log.error('${textReplies.length} replies "${repliesStr}" failed to be sent to conversation ${conversation.docId}');
       log.error('Error: ${error}');
       command(UIAction.showSnackbar, new SnackbarData('Send Reply Failed', SnackbarNotificationType.error));
