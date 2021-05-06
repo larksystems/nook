@@ -92,14 +92,6 @@
   background: none;
 }
 
-.suggested-message-box {
-  height: 50px;
-  margin: 12px 24px 12px 56px;
-  border: 1px dashed #AAAAAA;
-  box-sizing: border-box;
-  display: flex;
-}
-
 .message.message--suggested {
   font-size: 0.8em;
   background: #fbfbfb;
@@ -107,12 +99,21 @@
   margin: 4px 0;
 }
 
-.suggested-message-panel {
+.message.message--scheduled {
+  font-size: 0.8em;
+  background: #fbfbfb;
+  border: 1px solid #f0f0f0;
+  margin: 4px 0;
+}
+
+.suggested-message-panel,
+.scheduled-message-panel {
   display: flex;
   align-self: flex-end;
 }
 
-.suggested-message-panel__actions {
+.suggested-message-panel__actions,
+.scheduled-message-panel__actions {
   flex: 0 0 auto;
   align-self: center;
   padding: 4px;
@@ -122,7 +123,8 @@
   position: relative;
 }
 
-.suggested-message-panel__action {
+.suggested-message-panel__action,
+.scheduled-message-panel__action {
   font-size: 10px;
   align-self: center;
   margin: 2px 0;
@@ -131,17 +133,29 @@
   cursor: pointer;
 }
 
-.suggested-message-panel__action.action--delete {
+.suggested-message-panel__action.action--delete,
+.scheduled-message-panel__action.action--delete {
   font-size: 9px;
   text-decoration-line: none;
 }
 
-.suggested-message-panel__action.action--delete:hover {
+.suggested-message-panel__action.action--delete:hover,
+.scheduled-message-panel__action.action--delete:hover {
   color: salmon;
 }
 
-.suggested-message-panel__messages {
+.suggested-message-panel__messages,
+.scheduled-message-panel__messages {
   margin: 0 0 12px 56px;
   max-height: 100px;
   overflow: scroll;
+}
+
+.scheduled-message-panel .message__datetime {
+  display: inline;
+}
+
+.message__bubble .scheduled-indicator {
+  height: 9px;
+  padding-right: 3px;
 }

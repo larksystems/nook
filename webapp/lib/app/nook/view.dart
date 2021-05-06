@@ -175,7 +175,7 @@ const TAG_PANEL_TITLE = 'Tags';
 const ADD_REPLY_INFO = 'Add new suggested response';
 const ADD_TAG_INFO = 'Add new tag';
 
-class ConversationPanelView with AutomaticSuggestionIndicator {
+class ConversationPanelView with AutomaticSuggestionIndicator, ScheduledIndicator {
   // HTML elements
   DivElement conversationPanel;
   DivElement _messages;
@@ -188,10 +188,13 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
   TextAreaElement _newMessageTextArea;
   DivElement _suggestedMessages;
   DivElement _suggestedMessagesActions;
+  DivElement _scheduledMessages;
+  DivElement _scheduledMessagesActions;
   AfterDateFilterView _afterDateFilterView;
 
   List<MessageView> _messageViews = [];
   List<SuggestedMessageView> _suggestedMessageViews = [];
+  List<ScheduledMessageView> _scheduledMessageViews = [];
 
   ConversationPanelView() {
     conversationPanel = new DivElement()
@@ -291,6 +294,35 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
     _suggestedMessagesActions.append(deleteSuggestedMessages);
 
     _suggestedMessagesActions.append(automaticSuggestionIndicator..classes.add('absolute'));
+
+    var scheduledMessagesPanel = DivElement()
+      ..classes.add('scheduled-message-panel');
+    conversationPanel.append(scheduledMessagesPanel);
+
+    _scheduledMessages = DivElement()
+      ..classes.add('scheduled-message-panel__messages');
+    scheduledMessagesPanel.append(_scheduledMessages);
+
+    _scheduledMessagesActions = DivElement()
+      ..classes.add('scheduled-message-panel__actions')
+      ..classes.add('hidden');
+    scheduledMessagesPanel.append(_scheduledMessagesActions);
+
+    var sendScheduledMessages = DivElement()
+      ..text = SEND_SCHEDULED_REPLY_BUTTON_TEXT
+      ..classes.add('scheduled-message-panel__action')
+      ..onClick.listen((_) => _view.appController.command(UIAction.sendNowScheduledMessages, null));
+    _scheduledMessagesActions.append(sendScheduledMessages);
+
+    var deleteScheduledMessages = DivElement()
+      ..text = DELETE_SCHEDULED_REPLY_BUTTON_TEXT
+      ..classes.add('action--delete')
+      ..classes.add('scheduled-message-panel__action')
+      ..onClick.listen((_) => _view.appController.command(UIAction.cancelScheduledMessages, null));
+    _scheduledMessagesActions.append(deleteScheduledMessages);
+
+    _scheduledMessagesActions.append(scheduledIndicator..classes.add('absolute'));
+
 
     _afterDateFilterView = AfterDateFilterView();
     conversationPanel.append(_afterDateFilterView.panel);
@@ -412,9 +444,19 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
   void setSuggestedMessages(List<SuggestedMessageView> messages) {
     _suggestedMessages.children.clear();
     for (var message in messages) {
+      _suggestedMessageViews.add(message);
       _suggestedMessages.append(message.message);
     }
     _suggestedMessagesActions.classes.toggle('hidden', _suggestedMessages.children.isEmpty);
+  }
+
+  void setScheduledMessages(List<ScheduledMessageView> messages) {
+    _scheduledMessages.children.clear();
+    for (var message in messages) {
+      _scheduledMessageViews.add(message);
+      _scheduledMessages.append(message.message);
+    }
+    _scheduledMessagesActions.classes.toggle('hidden', _scheduledMessages.children.isEmpty);
   }
 }
 
@@ -662,13 +704,48 @@ class SuggestedMessageView {
   }
 }
 
+class ScheduledMessageView with ScheduledIndicator {
+  DivElement message;
+  DivElement _messageBubble;
+  DivElement _messageDateTime;
+  DivElement _messageText;
+  DivElement _messageTranslation;
+
+  ScheduledMessageView(String text, DateTime dateTime, {String translation = ''}) {
+    message = new DivElement()
+      ..classes.add('message')
+      ..classes.add('message--scheduled');
+
+    _messageBubble = new DivElement()
+      ..classes.add('message__bubble');
+    message.append(_messageBubble);
+
+    _messageBubble.append(scheduledIndicator);
+
+    _messageDateTime = new DivElement()
+      ..classes.add('message__datetime')
+      ..text = _formatDateTime(dateTime);
+    _messageBubble.append(_messageDateTime);
+
+    _messageText = new DivElement()
+      ..classes.add('message__text')
+      ..text = text;
+    _messageBubble.append(_messageText);
+
+    _messageTranslation = new DivElement()
+      ..classes.add('message__translation')
+      ..text = translation;
+    _messageBubble.append(_messageTranslation);
+  }
+}
+
 final DateFormat _dateFormat = new DateFormat('E d MMM y');
 final DateFormat _dateFormatNoYear = new DateFormat('E d MMM');
 final DateFormat _hourFormat = new DateFormat('HH:mm');
 
 String _formatDateTime(DateTime dateTime) {
   DateTime now = DateTime.now();
-  return dateTime.toIso8601String(); // HACK(mariana): Temporary fix to have a sortable timestamp for each message
+  // return dateTime.toIso8601String(); // HACK(mariana): Temporary fix to have a sortable timestamp for each message
   DateTime localDateTime = dateTime.toLocal();
 
   if (_dateFormat.format(now) == _dateFormat.format(localDateTime)) {
@@ -678,6 +755,10 @@ String _formatDateTime(DateTime dateTime) {
   if (_dateFormat.format(now.subtract(new Duration(days: 1))) == _dateFormat.format(localDateTime)) {
     // localDateTime is yesterday, return yesterday and the time
     return 'Yesterday, ${_hourFormat.format(localDateTime)}';
+  }
+  if (_dateFormat.format(now.add(new Duration(days: 1))) == _dateFormat.format(localDateTime)) {
+    // localDateTime is yesterday, return yesterday and the time
+    return 'Tomorrow, ${_hourFormat.format(localDateTime)}';
   }
   if (now.year == localDateTime.year) {
     // localDateTime is this year, return date without year and the time
@@ -809,6 +890,10 @@ class SuggestedConversationTagView extends TagView with AutomaticSuggestionIndic
 
 mixin AutomaticSuggestionIndicator {
   ImageElement get automaticSuggestionIndicator => ImageElement(src: '/packages/katikati_ui_lib/globals/assets/automated-action.svg')..className = 'automated-action-indicator';
+}
+
+mixin ScheduledIndicator {
+  ImageElement get scheduledIndicator => ImageElement(src: '/packages/katikati_ui_lib/globals/assets/clock.svg')..className = 'scheduled-indicator';
 }
 
 class EditableTagView extends TagView {

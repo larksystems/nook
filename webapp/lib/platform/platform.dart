@@ -173,25 +173,25 @@ class Platform {
   bool isUserSignedIn() => platform.isUserSignedIn();
 
 
-  Future<void> sendMessage(String id, String message, {bool wasSuggested = false, onError(dynamic)}) {
+  Future<void> sendMessage(String id, String message, {bool wasSuggested = false, bool wasScheduled = false, onError(dynamic)}) {
     log.verbose("Sending message $id : $message");
 
-    return sendMultiMessage([id], message, wasSuggested: wasSuggested, onError: onError);
+    return sendMultiMessage([id], message, wasSuggested: wasSuggested, wasScheduled: wasScheduled, onError: onError);
   }
 
-  Future<void> sendMultiMessage(List<String> ids, String message, {bool wasSuggested = false, onError(dynamic)}) async {
+  Future<void> sendMultiMessage(List<String> ids, String message, {bool wasSuggested = false, bool wasScheduled = false, onError(dynamic)}) async {
     log.verbose("Sending multi-message $ids : $message");
 
-    return sendMultiMessages(ids, [message], wasSuggested: wasSuggested, onError: onError);
+    return sendMultiMessages(ids, [message], wasSuggested: wasSuggested, wasScheduled: wasScheduled, onError: onError);
   }
 
-  Future<void> sendMessages(String id, List<String> messages, {bool wasSuggested = false, onError(dynamic)}) {
+  Future<void> sendMessages(String id, List<String> messages, {bool wasSuggested = false, bool wasScheduled = false, onError(dynamic)}) {
     log.verbose("Sending message $id : $messages");
 
-    return sendMultiMessages([id], messages, wasSuggested: wasSuggested, onError: onError);
+    return sendMultiMessages([id], messages, wasSuggested: wasSuggested, wasScheduled: wasScheduled, onError: onError);
   }
 
-  Future<void> sendMultiMessages(List<String> ids, List<String> messages, {bool wasSuggested = false, onError(dynamic)}) async {
+  Future<void> sendMultiMessages(List<String> ids, List<String> messages, {bool wasSuggested = false, bool wasScheduled = false, onError(dynamic)}) async {
     log.verbose("Sending multi-message $ids : $messages");
 
     //  {
@@ -206,6 +206,7 @@ class Platform {
         'ids' : ids,
         'messages' : messages,
         'was_suggested' : wasSuggested,
+        'was_scheduled' : wasScheduled,
       };
 
     try {
@@ -308,6 +309,11 @@ class Platform {
   Future<void> rejectSuggestedMessages(Conversation conversation) {
     log.verbose("Removing suggested messages from ${conversation.docId}");
     return conversation.removeSuggestedMessages(_pubsubInstance);
+  }
+
+  Future<void> cancelScheduledMessages(Conversation conversation) {
+    log.verbose("Removing suggested messages from ${conversation.docId}");
+    return conversation.cancelScheduledMessages(_pubsubInstance);
   }
 
   Future<void> addTag(Tag tag) {

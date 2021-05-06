@@ -4,6 +4,8 @@ const SEND_REPLY_BUTTON_TEXT = 'SEND';
 const SEND_CUSTOM_REPLY_BUTTON_TEXT = 'SEND custom message';
 const SEND_SUGGESTED_REPLY_BUTTON_TEXT = 'SEND suggested messages';
 const DELETE_SUGGESTED_REPLY_BUTTON_TEXT = 'DELETE suggested messages';
+const SEND_SCHEDULED_REPLY_BUTTON_TEXT = 'SEND NOW scheduled messages';
+const DELETE_SCHEDULED_REPLY_BUTTON_TEXT = 'CANCEL scheduled messages';
 
 const TAG_CONVERSATION_BUTTON_TEXT = 'TAG';
 
@@ -47,6 +49,12 @@ void _populateConversationPanelView(model.Conversation conversation, {bool updat
     suggestedMessages.add(new SuggestedMessageView(message.text, translation: message.translation));
   }
   _view.conversationPanelView.setSuggestedMessages(suggestedMessages);
+
+  List<ScheduledMessageView> scheduledMessages = [];
+  for (var message in conversation.scheduledMessages) {
+    scheduledMessages.add(new ScheduledMessageView(message.text, message.datetime, translation: message.translation));
+  }
+  _view.conversationPanelView.setScheduledMessages(scheduledMessages);
 }
 
 void _updateConversationPanelView(model.Conversation conversation) {
@@ -73,6 +81,12 @@ void _updateConversationPanelView(model.Conversation conversation) {
     suggestedMessages.add(new SuggestedMessageView(message.text, translation: message.translation));
   }
   _view.conversationPanelView.setSuggestedMessages(suggestedMessages);
+
+  List<ScheduledMessageView> scheduledMessages = [];
+  for (var message in conversation.scheduledMessages) {
+    scheduledMessages.add(new ScheduledMessageView(message.text, message.datetime, translation: message.translation));
+  }
+  _view.conversationPanelView.setScheduledMessages(scheduledMessages);
 }
 
 MessageView _generateMessageView(model.Message message, model.Conversation conversation) {

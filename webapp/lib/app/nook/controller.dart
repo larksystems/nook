@@ -36,6 +36,8 @@ enum UIAction {
   sendManualMessage,
   confirmSuggestedMessages,
   rejectSuggestedMessages,
+  sendNowScheduledMessages,
+  cancelScheduledMessages,
   addTag,
   addFilterTag,
   removeConversationTag,
@@ -917,6 +919,22 @@ class NookController extends Controller {
         _view.conversationPanelView.setSuggestedMessages([]);
         break;
 
+      case UIAction.sendNowScheduledMessages:
+        List<model.SuggestedReply> repliesToSend = [];
+        for (var scheduledMessage in activeConversation.scheduledMessages) {
+          var reply = new model.SuggestedReply()
+            ..text = scheduledMessage.text
+            ..translation = scheduledMessage.translation;
+          repliesToSend.add(reply);
+        }
+        sendReplyGroup(repliesToSend, activeConversation, wasScheduled: true);
+        break;
+
+      case UIAction.cancelScheduledMessages:
+        platform.cancelScheduledMessages(conversation).catchError(showAndLogError);
+        _view.conversationPanelView.setScheduledMessages([]);
+        break;
+
       case UIAction.addTag:
         TagData tagData = data;
         switch (actionObjectState) {
@@ -1456,7 +1474,7 @@ class NookController extends Controller {
     log.verbose('Reply "${reply.text}" queued for sending to conversations ${conversationIds}');
   }
 
-  void sendReplyGroup(List<model.SuggestedReply> replies, model.Conversation conversation, {bool wasSuggested = false}) {
+  void sendReplyGroup(List<model.SuggestedReply> replies, model.Conversation conversation, {bool wasSuggested = false, bool wasScheduled = false}) {
     List<String> textReplies = replies.map((r) => r.text).toList();
     String repliesStr = textReplies.join("; ");
     log.verbose('Preparing to send ${textReplies.length} replies "${repliesStr}" to conversation ${conversation.docId}');
@@ -1478,7 +1496,7 @@ class NookController extends Controller {
     }
 
     log.verbose('Sending ${textReplies.length} replies "${repliesStr}" to conversation ${conversation.docId}');
-    platform.sendMessages(conversation.docId, textReplies, wasSuggested: true, onError: (error) {
+    platform.sendMessages(conversation.docId, textReplies, wasSuggested: wasSuggested, wasScheduled: wasScheduled, onError: (error) {
       log.error('${textReplies.length} replies "${repliesStr}" failed to be sent to conversation ${conversation.docId}');
       log.error('Error: ${error}');
       command(UIAction.showSnackbar, new SnackbarData('Send Reply Failed', SnackbarNotificationType.error));

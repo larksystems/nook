@@ -475,14 +475,19 @@ main {
 .automated-action-indicator {
     width: 16px;
 }
+.scheduled-indicator {
+    width: 14px;
+}
 
-.automated-action-indicator.relative {
+.automated-action-indicator.relative,
+.scheduled-indicator.relative {
     position: relative;
-    top: -10px;
+    top: -8px;
     left: -8px;
 }
 
-.automated-action-indicator.absolute {
+.automated-action-indicator.absolute,
+.scheduled-indicator.absolute {
     position: absolute;
     top: -10px;
     right: -8px;
