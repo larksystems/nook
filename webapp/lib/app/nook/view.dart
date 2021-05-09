@@ -8,6 +8,7 @@ import 'package:katikati_ui_lib/components/url_view/url_view.dart';
 import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
 import 'package:katikati_ui_lib/components/logger.dart';
 import 'package:katikati_ui_lib/components/model/model.dart';
+import 'package:katikati_ui_lib/components/conversation/conversation_item.dart';
 import 'package:nook/view.dart';
 
 import 'controller.dart';
@@ -1233,61 +1234,49 @@ class ConversationIdFilter {
 }
 
 class ConversationSummary with LazyListViewItem, UserPresenceIndicator {
+  ConversationItemView _conversationItem;
+
   CheckboxInputElement _selectCheckbox;
-  DivElement _otherUserPresenceIndicator;
+  DivElement _otherUserPresenceIndicator; // todo: bring back users present
 
   String deidentifiedPhoneNumber;
   String _text;
-  bool _unread;
-  bool _checked = false;
-  bool _selected = false;
-  bool _checkboxHidden = true;
-  bool _warning = false;
+  bool _unread; // todo: bring back
+  bool _checked = false; // ??
+  bool _selected = false; // ?? where is this coming from?
+  bool _checkboxHidden = true; // ?? what is the use of this?
+  bool _warning = false; // ??
+  // ?? will the have any initial state?
 
   Map<String, bool> _presentUsers = {};
 
   ConversationSummary(this.deidentifiedPhoneNumber, this._text, this._unread) {
-    _otherUserPresenceIndicator = new DivElement()
-      ..classes.add('conversation-list__user-indicators')
-      ..classes.add('user-indicators');
+    _otherUserPresenceIndicator = new DivElement()..classes.add('conversation-list__user-indicators')..classes.add('user-indicators');
   }
 
   Element buildElement() {
-    var conversationSummary = new DivElement()
-      ..classes.add('conversation-list__item');
+    // here
 
-    _selectCheckbox = new CheckboxInputElement()
-      ..classes.add('conversation-selector')
-      ..title = 'Select conversation'
-      ..checked = _checked
-      ..hidden = _checkboxHidden
-      ..onClick.listen((_) => _selectCheckbox.checked ? _view.appController.command(UIAction.selectConversation, new ConversationData(deidentifiedPhoneNumber))
-                                                      : _view.appController.command(UIAction.deselectConversation, new ConversationData(deidentifiedPhoneNumber)));
-    conversationSummary.append(_selectCheckbox);
+    _conversationItem = ConversationItemView(_shortDeidentifiedPhoneNumber, _text, ConversationItemStatus.normal)
+      ..onCheck.listen((_) {
+        _view.appController.command(UIAction.selectConversation, new ConversationData(deidentifiedPhoneNumber));
+      })
+      ..onUncheck.listen((_) {
+        _view.appController.command(UIAction.deselectConversation, new ConversationData(deidentifiedPhoneNumber));
+      })
+      ..onSelect.listen((_) {
+        _view.appController.command(UIAction.showConversation, new ConversationData(deidentifiedPhoneNumber));
+      });
 
-    var summaryMessage = new DivElement()
-      ..classes.add('summary-message')
-      ..dataset['id'] = deidentifiedPhoneNumber
-      ..onClick.listen((_) => _view.appController.command(UIAction.showConversation, new ConversationData(deidentifiedPhoneNumber)));
-    if (_selected) conversationSummary.classes.add('conversation-list__item--selected');
-    if (_unread) conversationSummary.classes.add('conversation-list__item--unread');
-    if (_warning) conversationSummary.classes.add('conversation-list__item--warning');
-    summaryMessage
-      ..append(
-        new DivElement()
-          ..classes.add('summary-message__id')
-          ..text = _shortDeidentifiedPhoneNumber)
-      ..append(
-        new DivElement()
-          ..classes.add('summary-message__text')
-          ..text = _text);
-    conversationSummary.append(summaryMessage);
-
-    if (_presentUsers.isNotEmpty) {
-      conversationSummary.append(_otherUserPresenceIndicator);
+    if (_selected) {
+      _conversationItem.select();
     }
 
-    return conversationSummary;
+    if (_warning) {
+      _conversationItem.updateStatus(ConversationItemStatus.failed);
+    }
+
+    return _conversationItem.renderElement;
   }
 
   // HACK(mariana): This should get extracted from the model as it gets computed there for the single conversation view
@@ -1303,36 +1292,39 @@ class ConversationSummary with LazyListViewItem, UserPresenceIndicator {
   }
 
   void _select() {
-    _selected = true;
-    elementOrNull?.classes?.add('conversation-list__item--selected');
+    _conversationItem.select();
   }
+
   void _deselect() {
-    _selected = false;
-    elementOrNull?.classes?.remove('conversation-list__item--selected');
+    _conversationItem.unselect();
   }
+
   void _markRead() {
     _unread = false;
     elementOrNull?.classes?.remove('conversation-list__item--unread');
   }
+
   void _markUnread() {
     _unread = true;
     elementOrNull?.classes?.add('conversation-list__item--unread');
   }
+
   void _check() {
-    _checked = true;
-    if (_selectCheckbox != null) _selectCheckbox.checked = true;
+    _conversationItem.check();
   }
+
   void _uncheck() {
-    _checked = false;
-    if (_selectCheckbox != null) _selectCheckbox.checked = false;
+    _conversationItem.uncheck();
   }
+
   void _showCheckbox(bool show) {
+    // todo: figure out this
     _checkboxHidden = !show;
     if (_selectCheckbox != null) _selectCheckbox.hidden = !show;
   }
+
   void _showWarning(bool show) {
-    _warning = show;
-    elementOrNull?.classes?.toggle('conversation-list__item--warning', show);
+    _conversationItem.updateStatus(ConversationItemStatus.failed);
   }
 
   @override
