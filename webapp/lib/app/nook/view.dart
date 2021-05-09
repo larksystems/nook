@@ -15,6 +15,7 @@ import 'controller.dart';
 import 'dom_utils.dart';
 import 'lazy_list_view_model.dart';
 
+const FREETEXT_SEND_MAX_LEN = 160;
 
 Logger log = new Logger('view.dart');
 
@@ -230,7 +231,7 @@ class ConversationPanelView {
     conversationPanel.append(_messages);
 
     // todo: asset image not working
-    _freetextMessageSendView = FreetextMessageSendView("")..onSend.listen((message) {
+    _freetextMessageSendView = FreetextMessageSendView("", maxLength: FREETEXT_SEND_MAX_LEN)..onSend.listen((message) {
       // todo: restrict to 160 chars, show warning
       _view.appController.command(UIAction.sendManualMessage, new ManualReplyData(message));
     });
