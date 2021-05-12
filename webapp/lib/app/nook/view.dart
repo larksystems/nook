@@ -1241,12 +1241,15 @@ class ConversationSummary with LazyListViewItem, UserPresenceIndicator {
 
   String deidentifiedPhoneNumber;
   String _text;
-  bool _unread; // todo: bring back
-  bool _checked = false; // ??
-  bool _selected = false; // ?? where is this coming from?
-  bool _checkboxHidden = true; // ?? what is the use of this?
-  bool _warning = false; // ??
-  // ?? will the have any initial state?
+  bool _unread;
+  bool _checked = false;
+  bool _selected = false;
+  bool _checkboxHidden = true;
+  bool _warning = false;
+  
+  // HACK(mariana): This should get extracted from the model as it gets computed there for the single conversation view
+  String get _shortDeidentifiedPhoneNumber => deidentifiedPhoneNumber.split('uuid-')[1].split('-')[0];
+  ConversationReadStatus get readStatus => _unread ? ConversationReadStatus.unread : ConversationReadStatus.unread;
 
   Map<String, bool> _presentUsers = {};
 
@@ -1255,9 +1258,7 @@ class ConversationSummary with LazyListViewItem, UserPresenceIndicator {
   }
 
   Element buildElement() {
-    // here
-
-    _conversationItem = ConversationItemView(_shortDeidentifiedPhoneNumber, _text, ConversationItemStatus.normal)
+    _conversationItem = ConversationItemView(_shortDeidentifiedPhoneNumber, _text, ConversationItemStatus.normal, readStatus, allowToCheck: !_checkboxHidden, defaultSelected: _selected)
       ..onCheck.listen((_) {
         _view.appController.command(UIAction.selectConversation, new ConversationData(deidentifiedPhoneNumber));
       })
@@ -1268,19 +1269,12 @@ class ConversationSummary with LazyListViewItem, UserPresenceIndicator {
         _view.appController.command(UIAction.showConversation, new ConversationData(deidentifiedPhoneNumber));
       });
 
-    if (_selected) {
-      _conversationItem.select();
-    }
-
     if (_warning) {
-      _conversationItem.updateStatus(ConversationItemStatus.failed);
+      _conversationItem.setWarnings(Set.from([ConversationWarning.notInFilterResults]));
     }
 
     return _conversationItem.renderElement;
   }
-
-  // HACK(mariana): This should get extracted from the model as it gets computed there for the single conversation view
-  String get _shortDeidentifiedPhoneNumber => deidentifiedPhoneNumber.split('uuid-')[1].split('-')[0];
 
   @override
   void disposeElement() {
@@ -1292,39 +1286,52 @@ class ConversationSummary with LazyListViewItem, UserPresenceIndicator {
   }
 
   void _select() {
+    _selected = true;
     _conversationItem.select();
   }
 
   void _deselect() {
+    _selected = false;
     _conversationItem.unselect();
   }
 
   void _markRead() {
     _unread = false;
-    elementOrNull?.classes?.remove('conversation-list__item--unread');
+    _conversationItem.markAsRead();
   }
 
   void _markUnread() {
     _unread = true;
-    elementOrNull?.classes?.add('conversation-list__item--unread');
+    _conversationItem.markAsUnread();
   }
 
   void _check() {
+    _checked = true;
     _conversationItem.check();
   }
 
   void _uncheck() {
+    _checked = false;
     _conversationItem.uncheck();
   }
 
   void _showCheckbox(bool show) {
     // todo: figure out this
     _checkboxHidden = !show;
-    if (_selectCheckbox != null) _selectCheckbox.hidden = !show;
+    if(show) {
+      _conversationItem.allowToCheck();
+    } else {
+      _conversationItem.disallowToCheck();
+    }
   }
 
   void _showWarning(bool show) {
-    _conversationItem.updateStatus(ConversationItemStatus.failed);
+    _warning = show;
+    if(show) {
+      _conversationItem.setWarnings(Set.from([ConversationWarning.notInFilterResults]));
+    } else {
+      _conversationItem.resetWarnings();
+    }
   }
 
   @override
