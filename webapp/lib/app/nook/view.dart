@@ -1249,7 +1249,7 @@ class ConversationSummary with LazyListViewItem, UserPresenceIndicator {
   
   // HACK(mariana): This should get extracted from the model as it gets computed there for the single conversation view
   String get _shortDeidentifiedPhoneNumber => deidentifiedPhoneNumber.split('uuid-')[1].split('-')[0];
-  ConversationReadStatus get readStatus => _unread ? ConversationReadStatus.unread : ConversationReadStatus.unread;
+  ConversationReadStatus get readStatus => _unread ? ConversationReadStatus.unread : ConversationReadStatus.read;
 
   Map<String, bool> _presentUsers = {};
 
