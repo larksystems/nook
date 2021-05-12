@@ -15,7 +15,7 @@ import 'controller.dart';
 import 'dom_utils.dart';
 import 'lazy_list_view_model.dart';
 
-const FREETEXT_SEND_MAX_LEN = 160;
+const SMS_MAX_LENGTH = 160;
 
 Logger log = new Logger('view.dart');
 
@@ -230,8 +230,8 @@ class ConversationPanelView {
       ..classes.add('messages');
     conversationPanel.append(_messages);
 
-    _freetextMessageSendView = FreetextMessageSendView("", maxLength: FREETEXT_SEND_MAX_LEN)..onSend.listen((message) {
-      _view.appController.command(UIAction.sendManualMessage, new ManualReplyData(message));
+    _freetextMessageSendView = FreetextMessageSendView("", maxLength: SMS_MAX_LENGTH)..onSend.listen((messageText) {
+      _view.appController.command(UIAction.sendManualMessage, new ManualReplyData(messageText));
     });
     conversationPanel.append(_freetextMessageSendView.renderElement);
 
