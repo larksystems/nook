@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:katikati_ui_lib/components/url_view/url_view.dart';
 import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
 import 'package:katikati_ui_lib/components/nav/button_links.dart';
+import 'package:katikati_ui_lib/components/messages/freetext_message_send.dart';
 import 'package:katikati_ui_lib/components/logger.dart';
 import 'package:katikati_ui_lib/components/model/model.dart';
 import 'package:nook/view.dart';
@@ -16,6 +17,7 @@ import 'controller.dart';
 import 'dom_utils.dart';
 import 'lazy_list_view_model.dart';
 
+const SMS_MAX_LENGTH = 160;
 
 Logger log = new Logger('view.dart');
 
@@ -182,8 +184,7 @@ class ConversationPanelView {
   DivElement _conversationIdCopy;
   DivElement _info;
   DivElement _tags;
-  DivElement _newMessageBox;
-  TextAreaElement _newMessageTextArea;
+  FreetextMessageSendView _freetextMessageSendView;
   AfterDateFilterView _afterDateFilterView;
 
   List<MessageView> _messageViews = [];
@@ -228,32 +229,10 @@ class ConversationPanelView {
       ..classes.add('messages');
     conversationPanel.append(_messages);
 
-    _newMessageBox = new DivElement()
-      ..classes.add('new-message-box');
-    conversationPanel.append(_newMessageBox);
-
-    _newMessageTextArea = new TextAreaElement()
-      ..classes.add('new-message-box__textarea');
-    makeEditable(_newMessageTextArea, onChange: (e) {
-      if (_newMessageTextArea.value.length >= SMS_MAX_LENGTH) {
-        _newMessageTextArea.classes.toggle('warning-background', true);
-        return;
-      }
-      _newMessageTextArea.classes.toggle('warning-background', false);
+    _freetextMessageSendView = FreetextMessageSendView("", maxLength: SMS_MAX_LENGTH)..onSend.listen((messageText) {
+      _view.appController.command(UIAction.sendManualMessage, new ManualReplyData(messageText));
     });
-    _newMessageBox.append(_newMessageTextArea);
-
-    var buttonElement = new DivElement()
-      ..classes.add('new-message-box__send-button')
-      ..text = SEND_REPLY_BUTTON_TEXT
-      ..onClick.listen((_) {
-        if (_newMessageTextArea.value.length >= SMS_MAX_LENGTH) {
-          _view.showWarningStatus('Message needs to be under $SMS_MAX_LENGTH characters.');
-          return;
-        }
-        _view.appController.command(UIAction.sendManualMessage, new ManualReplyData(_newMessageTextArea.value));
-      });
-    _newMessageBox.append(buttonElement);
+    conversationPanel.append(_freetextMessageSendView.renderElement);
 
     _afterDateFilterView = AfterDateFilterView();
     conversationPanel.append(_afterDateFilterView.panel);
@@ -339,14 +318,15 @@ class ConversationPanelView {
   }
 
   void clearNewMessageBox() {
-    _newMessageTextArea?.value = '';
+    _freetextMessageSendView.clear();
   }
 
   void showCustomMessageBox(bool show) {
+    // todo: convert to hide / show method under FreetextMessageSendView
     if (show) {
-      _newMessageBox.classes.remove('hidden');
+      _freetextMessageSendView.renderElement.classes.remove('hidden');
     } else {
-      _newMessageBox.classes.add('hidden');
+      _freetextMessageSendView.renderElement.classes.add('hidden');
     }
   }
 
