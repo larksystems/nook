@@ -1287,50 +1287,50 @@ class ConversationSummary with LazyListViewItem, UserPresenceIndicator {
 
   void _select() {
     _selected = true;
-    _conversationItem.select();
+    _conversationItem?.select();
   }
 
   void _deselect() {
     _selected = false;
-    _conversationItem.unselect();
+    _conversationItem?.unselect();
   }
 
   void _markRead() {
     _unread = false;
-    _conversationItem.markAsRead();
+    _conversationItem?.markAsRead();
   }
 
   void _markUnread() {
     _unread = true;
-    _conversationItem.markAsUnread();
+    _conversationItem?.markAsUnread();
   }
 
   void _check() {
     _checked = true;
-    _conversationItem.check();
+    _conversationItem?.check();
   }
 
   void _uncheck() {
     _checked = false;
-    _conversationItem.uncheck();
+    _conversationItem?.uncheck();
   }
 
   void _showCheckbox(bool show) {
     // todo: figure out this
     _checkboxHidden = !show;
     if(show) {
-      _conversationItem.allowToCheck();
+      _conversationItem?.allowToCheck();
     } else {
-      _conversationItem.disallowToCheck();
+      _conversationItem?.disallowToCheck();
     }
   }
 
   void _showWarning(bool show) {
     _warning = show;
     if(show) {
-      _conversationItem.setWarnings(Set.from([ConversationWarning.notInFilterResults]));
+      _conversationItem?.setWarnings(Set.from([ConversationWarning.notInFilterResults]));
     } else {
-      _conversationItem.resetWarnings();
+      _conversationItem?.resetWarnings();
     }
   }
 
