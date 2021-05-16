@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'dart:svg' as svg;
 
 import 'package:intl/intl.dart';
+import 'package:katikati_ui_lib/components/tabs/tabs.dart';
 import 'package:katikati_ui_lib/components/url_view/url_view.dart';
 import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
 import 'package:katikati_ui_lib/components/nav/button_links.dart';
@@ -33,6 +34,7 @@ class NookPageView extends PageView {
   ReplyPanelView replyPanelView;
   TagPanelView tagPanelView;
   UrlView urlView;
+  TabsView tabsView;
 
   NookPageView(NookController controller) : super(controller) {
     _view = this;
@@ -44,6 +46,10 @@ class NookPageView extends PageView {
     replyPanelView = new ReplyPanelView();
     tagPanelView = new TagPanelView();
     urlView = new UrlView();
+    
+    tabsView = new TabsView([
+      TabView("init", "...", DivElement()..innerText = "Loading..."),
+    ]);
 
     conversationFilter = {
       TagFilterType.include: conversationListPanelView.conversationIncludeFilter,
@@ -59,22 +65,26 @@ class NookPageView extends PageView {
   void initSignedInView(String displayName, String photoUrl) {
     super.initSignedInView(displayName, photoUrl);
 
+    tabsView.removeTab("init");
+    var standardMessageTab = TabView('standard_message', "Standard messages", replyPanelView.replyPanel);
+    var tagsTab = TabView('tag', "Tags", tagPanelView.tagPanel);
+    tabsView.addTab(standardMessageTab);
+    tabsView.addTab(tagsTab);
+    tabsView.selectTab("standard_message");
+
     var conversationListColumn = DivElement()..classes = ["nook-column-wrapper", "nook-column-wrapper--conversation-list"];
     var messagesViewColumn = DivElement()..classes = ["nook-column-wrapper", "nook-column-wrapper--messages-view"];
-    var configureColumn = DivElement()..classes = ["nook-column-wrapper", "nook-column-wrapper--configure-view"];
-    var miscColumn = DivElement()..classes = ["nook-column-wrapper", "nook-column-wrapper--misc"];
-
+    var tabsViewColumn = DivElement()..classes = ["nook-column-wrapper", "nook-column-wrapper--tabs-view"];
+    
     mainElement
       ..append(conversationListColumn)
       ..append(messagesViewColumn)
-      ..append(configureColumn)
-      ..append(miscColumn);
-
+      ..append(tabsViewColumn);
+    
     conversationListColumn.append(conversationListPanelView.conversationListPanel);
     messagesViewColumn.append(conversationPanelView.conversationPanel);
-    configureColumn.append(replyPanelView.replyPanel);
-    miscColumn.append(tagPanelView.tagPanel);
-
+    tabsViewColumn.append(tabsView.renderElement);
+    
     bodyElement.append(snackbarView.snackbarElement);
 
     showNormalStatus('signed in');
@@ -99,23 +109,23 @@ class NookPageView extends PageView {
     showNormalStatus('signed out');
   }
 
-  var layouts = {
-    'true-true':   {"conversationListPanel": "w-20", "conversationPanel": "w-40", "replyPanel": "w-25", "tagPanel": "w-15"},
-    'true-false':  {"conversationListPanel": "w-25", "conversationPanel": "w-45", "replyPanel": "w-30", "tagPanel": "w-0" },
-    'false-true':  {"conversationListPanel": "w-30", "conversationPanel": "w-50", "replyPanel": "w-0" , "tagPanel": "w-20"},
-    'false-false': {"conversationListPanel": "w-35", "conversationPanel": "w-65", "replyPanel": "w-0" , "tagPanel": "w-0" },
-  };
-
-  var layout = ['1', '1'];
-
   void showPanels(showReplyPanel, showEditNotesPanel, showTagPanel) {
     var showReplyNotesPanel = showReplyPanel || showEditNotesPanel;
-    replyPanelView.replyPanel.classes.toggle('hidden', !showReplyNotesPanel);
-    showReplyPanel ? replyPanelView.enableReplies() : replyPanelView.disableReplies();
+    // todo: check if already exists before adding as well as remove
+    if(showReplyNotesPanel) {
+      var standardMessageTab = TabView('standard_message', "Standard messages", replyPanelView.replyPanel);
+      tabsView.addTab(standardMessageTab);
+    } else {
+      tabsView.removeTab("standard_message");
+    }
     replyPanelView.enableEditableNotes(showEditNotesPanel);
-    tagPanelView.tagPanel.classes.toggle('hidden', !showTagPanel);
 
-    // todo: handle this along with tabs
+    if(showTagPanel) {
+      var tagsTab = TabView('tag', "Tags", tagPanelView.tagPanel);
+      tabsView.addTab(tagsTab);
+    } else {
+      tabsView.removeTab("tag");
+    }
   }
 
   bool sendingMultiMessagesUserConfirmation(int noMessages) {
