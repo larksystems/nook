@@ -12,7 +12,7 @@ dependencies:
   katikati_ui_lib:
     git:
       url: https://github.com/larksystems/katikati_ui_lib.dart.git
-      ref: a8c0ae0e2a143fb87d4ae7b962c23d57b8308dc7
+      ref: 9ef52352c441db97d5916d0887eb11f90de22717
 
 dev_dependencies:
   build_runner: ^1.7.0

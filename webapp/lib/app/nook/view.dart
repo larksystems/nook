@@ -1237,7 +1237,7 @@ class ConversationSummary with LazyListViewItem, UserPresenceIndicator {
   }
 
   Element buildElement() {
-    _conversationItem = ConversationItemView(_shortDeidentifiedPhoneNumber, _text, ConversationItemStatus.normal, readStatus, allowToCheck: !_checkboxHidden, defaultSelected: _selected)
+    _conversationItem = ConversationItemView(_shortDeidentifiedPhoneNumber, _text, ConversationItemStatus.normal, readStatus, checkEnabled: !_checkboxHidden, defaultSelected: _selected)
       ..onCheck.listen((_) {
         _view.appController.command(UIAction.selectConversation, new ConversationData(deidentifiedPhoneNumber));
       })
@@ -1298,9 +1298,9 @@ class ConversationSummary with LazyListViewItem, UserPresenceIndicator {
     // todo: figure out this
     _checkboxHidden = !show;
     if(show) {
-      _conversationItem?.allowToCheck();
+      _conversationItem?.enableCheckbox();
     } else {
-      _conversationItem?.disallowToCheck();
+      _conversationItem?.disableCheckbox();
     }
   }
 
