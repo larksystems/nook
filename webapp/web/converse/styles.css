@@ -278,13 +278,6 @@ main {
     display: flex;
 }
 
-.user-indicator {
-    width: 10px;
-    height: 10px;
-    border-radius: 5px;
-    margin: 2px;
-}
-
 .conversation-selector {
     flex: 0 0 auto;
     margin: 12px 8px auto;
