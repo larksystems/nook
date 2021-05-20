@@ -6,15 +6,20 @@ import 'dart:svg' as svg;
 import 'package:intl/intl.dart';
 import 'package:katikati_ui_lib/components/url_view/url_view.dart';
 import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
+import 'package:katikati_ui_lib/components/nav/button_links.dart';
+import 'package:katikati_ui_lib/components/messages/freetext_message_send.dart';
 import 'package:katikati_ui_lib/components/logger.dart';
 import 'package:katikati_ui_lib/components/model/model.dart';
-import 'package:katikati_ui_lib/components/nav/sidebar_icons.dart';
+import 'package:katikati_ui_lib/components/conversation/conversation_item.dart';
+import 'package:katikati_ui_lib/components/user_presence/user_presence_indicator.dart';
 import 'package:nook/view.dart';
+import 'package:nook/app/utils.dart';
 
 import 'controller.dart';
 import 'dom_utils.dart';
 import 'lazy_list_view_model.dart';
 
+const SMS_MAX_LENGTH = 160;
 
 Logger log = new Logger('view.dart');
 
@@ -81,14 +86,11 @@ class NookPageView extends PageView {
       showNormalStatus('signed in: ${latestCommitHash.substring(0, 8)}...');
     }, onError: (_) { /* Do nothing */ });
 
-    var backPageLink = new AnchorElement()
-      ..href = "/"
-      ..classes.add('back-page-link')
-      ..text = '← Back to the main configuration page';
+    var links = ButtonLinksView(navLinks, window.location.pathname);
 
     navHeaderView.navContent = new DivElement()
       ..style.display = 'flex'
-      ..append(backPageLink)
+      ..append(links.renderElement)
       ..append(conversationListSelectView.panel)
       ..append(new DivElement()..classes.add('flex-fill-gap'))
       ..append(otherLoggedInUsers.loggedInUsers);
@@ -184,8 +186,7 @@ class ConversationPanelView {
   DivElement _conversationIdCopy;
   DivElement _info;
   DivElement _tags;
-  DivElement _newMessageBox;
-  TextAreaElement _newMessageTextArea;
+  FreetextMessageSendView _freetextMessageSendView;
   AfterDateFilterView _afterDateFilterView;
 
   List<MessageView> _messageViews = [];
@@ -230,32 +231,10 @@ class ConversationPanelView {
       ..classes.add('messages');
     conversationPanel.append(_messages);
 
-    _newMessageBox = new DivElement()
-      ..classes.add('new-message-box');
-    conversationPanel.append(_newMessageBox);
-
-    _newMessageTextArea = new TextAreaElement()
-      ..classes.add('new-message-box__textarea');
-    makeEditable(_newMessageTextArea, onChange: (e) {
-      if (_newMessageTextArea.value.length >= SMS_MAX_LENGTH) {
-        _newMessageTextArea.classes.toggle('warning-background', true);
-        return;
-      }
-      _newMessageTextArea.classes.toggle('warning-background', false);
+    _freetextMessageSendView = FreetextMessageSendView("", maxLength: SMS_MAX_LENGTH)..onSend.listen((messageText) {
+      _view.appController.command(UIAction.sendManualMessage, new ManualReplyData(messageText));
     });
-    _newMessageBox.append(_newMessageTextArea);
-
-    var buttonElement = new DivElement()
-      ..classes.add('new-message-box__send-button')
-      ..text = SEND_REPLY_BUTTON_TEXT
-      ..onClick.listen((_) {
-        if (_newMessageTextArea.value.length >= SMS_MAX_LENGTH) {
-          _view.showWarningStatus('Message needs to be under $SMS_MAX_LENGTH characters.');
-          return;
-        }
-        _view.appController.command(UIAction.sendManualMessage, new ManualReplyData(_newMessageTextArea.value));
-      });
-    _newMessageBox.append(buttonElement);
+    conversationPanel.append(_freetextMessageSendView.renderElement);
 
     _afterDateFilterView = AfterDateFilterView();
     conversationPanel.append(_afterDateFilterView.panel);
@@ -341,14 +320,15 @@ class ConversationPanelView {
   }
 
   void clearNewMessageBox() {
-    _newMessageTextArea?.value = '';
+    _freetextMessageSendView.clear();
   }
 
   void showCustomMessageBox(bool show) {
+    // todo: convert to hide / show method under FreetextMessageSendView
     if (show) {
-      _newMessageBox.classes.remove('hidden');
+      _freetextMessageSendView.renderElement.classes.remove('hidden');
     } else {
-      _newMessageBox.classes.add('hidden');
+      _freetextMessageSendView.renderElement.classes.add('hidden');
     }
   }
 
@@ -1289,8 +1269,9 @@ class ConversationIdFilter {
 }
 
 class ConversationSummary with LazyListViewItem, UserPresenceIndicator {
+  ConversationItemView _conversationItem;
+
   CheckboxInputElement _selectCheckbox;
-  DivElement _otherUserPresenceIndicator;
 
   String deidentifiedPhoneNumber;
   String _text;
@@ -1300,54 +1281,34 @@ class ConversationSummary with LazyListViewItem, UserPresenceIndicator {
   bool _checkboxHidden = true;
   bool _warning = false;
 
+  // HACK(mariana): This should get extracted from the model as it gets computed there for the single conversation view
+  String get _shortDeidentifiedPhoneNumber => deidentifiedPhoneNumber.split('uuid-')[1].split('-')[0];
+  ConversationReadStatus get readStatus => _unread ? ConversationReadStatus.unread : ConversationReadStatus.read;
+
   Map<String, bool> _presentUsers = {};
 
   ConversationSummary(this.deidentifiedPhoneNumber, this._text, this._unread) {
-    _otherUserPresenceIndicator = new DivElement()
-      ..classes.add('conversation-list__user-indicators')
-      ..classes.add('user-indicators');
+    otherUserPresenceIndicator = new DivElement()..classes.add('conversation-list__user-indicators')..classes.add('user-indicators');
   }
 
   Element buildElement() {
-    var conversationSummary = new DivElement()
-      ..classes.add('conversation-list__item');
+    _conversationItem = ConversationItemView(_shortDeidentifiedPhoneNumber, _text, ConversationItemStatus.normal, readStatus, checkEnabled: !_checkboxHidden, defaultSelected: _selected)
+      ..onCheck.listen((_) {
+        _view.appController.command(UIAction.selectConversation, new ConversationData(deidentifiedPhoneNumber));
+      })
+      ..onUncheck.listen((_) {
+        _view.appController.command(UIAction.deselectConversation, new ConversationData(deidentifiedPhoneNumber));
+      })
+      ..onSelect.listen((_) {
+        _view.appController.command(UIAction.showConversation, new ConversationData(deidentifiedPhoneNumber));
+      });
 
-    _selectCheckbox = new CheckboxInputElement()
-      ..classes.add('conversation-selector')
-      ..title = 'Select conversation'
-      ..checked = _checked
-      ..hidden = _checkboxHidden
-      ..onClick.listen((_) => _selectCheckbox.checked ? _view.appController.command(UIAction.selectConversation, new ConversationData(deidentifiedPhoneNumber))
-                                                      : _view.appController.command(UIAction.deselectConversation, new ConversationData(deidentifiedPhoneNumber)));
-    conversationSummary.append(_selectCheckbox);
-
-    var summaryMessage = new DivElement()
-      ..classes.add('summary-message')
-      ..dataset['id'] = deidentifiedPhoneNumber
-      ..onClick.listen((_) => _view.appController.command(UIAction.showConversation, new ConversationData(deidentifiedPhoneNumber)));
-    if (_selected) conversationSummary.classes.add('conversation-list__item--selected');
-    if (_unread) conversationSummary.classes.add('conversation-list__item--unread');
-    if (_warning) conversationSummary.classes.add('conversation-list__item--warning');
-    summaryMessage
-      ..append(
-        new DivElement()
-          ..classes.add('summary-message__id')
-          ..text = _shortDeidentifiedPhoneNumber)
-      ..append(
-        new DivElement()
-          ..classes.add('summary-message__text')
-          ..text = _text);
-    conversationSummary.append(summaryMessage);
-
-    if (_presentUsers.isNotEmpty) {
-      conversationSummary.append(_otherUserPresenceIndicator);
+    if (_warning) {
+      _conversationItem.setWarnings(Set.from([ConversationWarning.notInFilterResults]));
     }
 
-    return conversationSummary;
+    return _conversationItem.renderElement;
   }
-
-  // HACK(mariana): This should get extracted from the model as it gets computed there for the single conversation view
-  String get _shortDeidentifiedPhoneNumber => deidentifiedPhoneNumber.split('uuid-')[1].split('-')[0];
 
   @override
   void disposeElement() {
@@ -1360,91 +1321,67 @@ class ConversationSummary with LazyListViewItem, UserPresenceIndicator {
 
   void _select() {
     _selected = true;
-    elementOrNull?.classes?.add('conversation-list__item--selected');
+    _conversationItem?.select();
   }
+
   void _deselect() {
     _selected = false;
-    elementOrNull?.classes?.remove('conversation-list__item--selected');
+    _conversationItem?.unselect();
   }
+
   void _markRead() {
     _unread = false;
-    elementOrNull?.classes?.remove('conversation-list__item--unread');
+    _conversationItem?.markAsRead();
   }
+
   void _markUnread() {
     _unread = true;
-    elementOrNull?.classes?.add('conversation-list__item--unread');
+    _conversationItem?.markAsUnread();
   }
+
   void _check() {
     _checked = true;
-    if (_selectCheckbox != null) _selectCheckbox.checked = true;
+    _conversationItem?.check();
   }
+
   void _uncheck() {
     _checked = false;
-    if (_selectCheckbox != null) _selectCheckbox.checked = false;
+    _conversationItem?.uncheck();
   }
+
   void _showCheckbox(bool show) {
+    // todo: figure out this
     _checkboxHidden = !show;
-    if (_selectCheckbox != null) _selectCheckbox.hidden = !show;
+    if(show) {
+      _conversationItem?.enableCheckbox();
+    } else {
+      _conversationItem?.disableCheckbox();
+    }
   }
+
   void _showWarning(bool show) {
     _warning = show;
-    elementOrNull?.classes?.toggle('conversation-list__item--warning', show);
+    if(show) {
+      _conversationItem?.setWarnings(Set.from([ConversationWarning.notInFilterResults]));
+    } else {
+      _conversationItem?.resetWarnings();
+    }
   }
 
   @override
   void hideOtherUserPresence(String userId) {
     super.hideOtherUserPresence(userId);
     if (_presentUsers.isEmpty) {
-      _otherUserPresenceIndicator.remove();
+      otherUserPresenceIndicator.remove();
     }
   }
 
   @override
   void showOtherUserPresence(String userId, bool recent) {
     if (_presentUsers.isEmpty) {
-      elementOrNull?.append(_otherUserPresenceIndicator);
+      elementOrNull?.append(otherUserPresenceIndicator);
     }
     super.showOtherUserPresence(userId, recent);
-  }
-}
-
-mixin UserPresenceIndicator {
-  DivElement _otherUserPresenceIndicator;
-  Map<String, bool> _presentUsers = {};
-
-  void hideOtherUserPresence(String userId) {
-    var indicator = _otherUserPresenceIndicator.querySelector('[data-id="$userId"]');
-    indicator?.remove();
-    _presentUsers.remove(userId);
-
-    if (_presentUsers.isEmpty) {
-      _otherUserPresenceIndicator.children.clear();
-      _presentUsers = {};
-    }
-  }
-
-  void showOtherUserPresence(String userId, bool recent) {
-    if (_presentUsers.containsKey(userId)) {
-      var previousIndicator = _otherUserPresenceIndicator.querySelector('[data-id="$userId"]');
-      previousIndicator.remove();
-    }
-
-    _otherUserPresenceIndicator.append(_generateOtherUserPresenceIndicator(userId, recent));
-    _presentUsers[userId] = recent;
-  }
-
-  DivElement _generateOtherUserPresenceIndicator(String userId, bool recent) {
-    return DivElement()
-      ..classes.add('user-indicator')
-      ..title = userId
-      ..dataset['id'] = userId
-      ..style.backgroundColor = _generateColourForId(userId, recent);
-  }
-
-  String _generateColourForId(String userId, bool recent) {
-    var hue = userId.hashCode % 360;
-    var light = recent ? 50 : 80;
-    return 'hsl($hue, 60%, $light%)';
   }
 }
 
@@ -1455,17 +1392,17 @@ class OtherLoggedInUsers with UserPresenceIndicator {
     loggedInUsers = new DivElement()
       ..classes.add('header__other-users');
 
-    _otherUserPresenceIndicator = new DivElement()
+    otherUserPresenceIndicator = new DivElement()
       ..classes.add('user-indicators');
 
-    loggedInUsers.append(_otherUserPresenceIndicator);
+    loggedInUsers.append(otherUserPresenceIndicator);
   }
 
   @override
   void showOtherUserPresence(String userId, bool recent) {
     super.showOtherUserPresence(userId, recent);
 
-    var userIndicator = _otherUserPresenceIndicator.querySelector('[data-id="$userId"]');
+    var userIndicator = otherUserPresenceIndicator.querySelector('[data-id="$userId"]');
     userIndicator.onClick.listen((event) => _view.appController.command(UIAction.goToUser, OtherUserData(userId)));
   }
 }
