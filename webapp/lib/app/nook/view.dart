@@ -736,7 +736,7 @@ class SuggestedConversationTagView extends TagView with AutomaticSuggestionIndic
 }
 
 mixin AutomaticSuggestionIndicator {
-  ImageElement get automaticSuggestionIndicator => ImageElement(src: '/packages/katikati_ui_lib/globals/assets/automated-action.svg', width: 16)..className = 'automated-action-indicator';
+  Element get automaticSuggestionIndicator => Element.html('<i class="fas fa-robot automated-action-indicator"></i>');
 }
 
 class EditableTagView extends TagView {

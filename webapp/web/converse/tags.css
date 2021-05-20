@@ -70,9 +70,8 @@
 
 .automated-action-indicator {
   position: relative;
-  top: -10px;
+  top: -6px;
   left: -8px;
-  font-style: normal;
 }
 
 /* A simple x button to add a new tag */
