@@ -68,6 +68,12 @@
   border: 1px solid black;
 }
 
+.automated-action-indicator {
+  position: relative;
+  top: -6px;
+  left: -8px;
+}
+
 /* A simple x button to add a new tag */
 
 .tag__remove {

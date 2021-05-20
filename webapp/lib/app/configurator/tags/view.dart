@@ -70,7 +70,7 @@ class TagGroupView {
       var tag = event.draggableElement;
       var tagId = tag.dataset['id'];
       var groupId = tag.dataset['group-id'];
-      _view.appController.command(TagsConfigAction.moveTag, new TagData(tagId, groupId: groupId, newGroupId: groupName));
+      _view.appController.command(TagsConfigAction.moveTag, new TagData(tagId, groupId: groupId, newGroupId: name));
       tag.remove();
     });
 
@@ -97,7 +97,7 @@ class TagGroupView {
           var warningModal;
           warningModal = new InlineOverlayModal('Are you sure you want to remove this group?', [
             new Button(ButtonType.text,
-                buttonText: 'Yes', onClick: (_) => _view.appController.command(TagsConfigAction.removeTagGroup, new TagGroupData(groupName))),
+                buttonText: 'Yes', onClick: (_) => _view.appController.command(TagsConfigAction.removeTagGroup, new TagGroupData(name))),
             new Button(ButtonType.text, buttonText: 'No', onClick: (_) => warningModal.remove()),
           ]);
           warningModal.parent = _tagsGroupElement;
@@ -108,7 +108,7 @@ class TagGroupView {
     _tagsGroupElement.append(_tagsContainer);
 
     _addTagButton = new Button(ButtonType.add,
-        hoverText: 'Add new tag', onClick: (_) => _view.appController.command(TagsConfigAction.addTag, new TagData(null, groupId: groupName)));
+        hoverText: 'Add new tag', onClick: (_) => _view.appController.command(TagsConfigAction.addTag, new TagData(null, groupId: name)));
     _addTagButton.parent = _tagsContainer;
 
     _title.onClick.listen((event) {

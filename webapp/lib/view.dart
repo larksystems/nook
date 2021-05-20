@@ -3,10 +3,12 @@ import 'dart:html';
 import 'package:katikati_ui_lib/components/auth/auth.dart';
 import 'package:katikati_ui_lib/components/auth/auth_header.dart';
 import 'package:katikati_ui_lib/components/brand_asset/brand_asset.dart' as brand;
+import 'package:katikati_ui_lib/components/nav/button_links.dart';
 import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
 import 'package:katikati_ui_lib/components/banner/banner.dart';
 import 'package:katikati_ui_lib/components/logger.dart';
 import 'package:katikati_ui_lib/components/nav/nav_header.dart';
+import 'package:nook/app/utils.dart';
 
 import 'package:nook/controller.dart';
 
@@ -59,6 +61,7 @@ class PageView {
 
   initSignedInView(String displayName, String photoUrl) {
     authHeaderView.signIn(displayName, photoUrl);
+    navHeaderView.navContent = ButtonLinksView(navLinks, window.location.pathname).renderElement;
     headerElement.append(navHeaderView.navViewElement);
     headerElement.insertBefore(bannerView.bannerElement, navHeaderView.navViewElement);
 
