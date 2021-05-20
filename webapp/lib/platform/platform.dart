@@ -251,6 +251,16 @@ class Platform {
     return message.removeTagId(_pubsubInstance, conversation, tagId);
   }
 
+  Future<void> confirmMessageTag(Conversation conversation, Message message, String tagId) {
+    log.verbose("Confirming suggested tag $tagId from message in conversation ${conversation.docId}");
+    return message.addTagId(_pubsubInstance, conversation, tagId, wasSuggested: true);
+  }
+
+  Future<void> rejectMessageTag(Conversation conversation, Message message, String tagId) {
+    log.verbose("Removing suggested tag $tagId from message in conversation ${conversation.docId}");
+    return message.removeTagId(_pubsubInstance, conversation, tagId, wasSuggested: true);
+  }
+
   Future<void> setMessageTranslation(Conversation conversation, Message message, String translation) {
     log.verbose("Set translation for message in conversation ${conversation.docId}");
     return message.setTranslation(_pubsubInstance, conversation, translation);
@@ -282,6 +292,16 @@ class Platform {
   Future<void> removeConversationTag(Conversation conversation, String tagId) {
     log.verbose("Removing tag $tagId from ${conversation.docId}");
     return conversation.removeTagIds(_pubsubInstance, [tagId]);
+  }
+
+  Future<void> confirmConversationTag(Conversation conversation, String tagId) {
+    log.verbose("Confirming suggested tag $tagId to ${conversation.docId}");
+    return conversation.addTagIds(_pubsubInstance, [tagId], wasSuggested: true);
+  }
+
+  Future<void> rejectConversationTag(Conversation conversation, String tagId) {
+    log.verbose("Removing suggested tag $tagId from ${conversation.docId}");
+    return conversation.removeTagIds(_pubsubInstance, [tagId], wasSuggested: true);
   }
 
   Future<void> addTag(Tag tag) {
