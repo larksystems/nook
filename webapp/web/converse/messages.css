@@ -81,3 +81,67 @@
 .status-line-warning {
   color: #c8c832;
 }
+
+
+.new-message-box__textarea {
+  resize: none;
+  border: none;
+  outline: none;
+  padding: 8px;
+  box-sizing: border-box;
+  background: none;
+}
+
+.suggested-message-box {
+  height: 50px;
+  margin: 12px 24px 12px 56px;
+  border: 1px dashed #AAAAAA;
+  box-sizing: border-box;
+  display: flex;
+}
+
+.message.message--suggested {
+  font-size: 0.8em;
+  background: #fbfbfb;
+  border: 1px dashed #000;
+  margin: 4px 0;
+}
+
+.suggested-message-panel {
+  display: flex;
+  align-self: flex-end;
+}
+
+.suggested-message-panel__actions {
+  flex: 0 0 auto;
+  align-self: center;
+  padding: 4px;
+  border-radius: 3px;
+  border: 1px solid #bbb;
+  margin: 8px 24px 8px 8px;
+  position: relative;
+}
+
+.suggested-message-panel__action {
+  font-size: 10px;
+  align-self: center;
+  margin: 2px 0;
+  padding: 1px 0;
+  text-decoration-line: underline;
+  cursor: pointer;
+}
+
+.suggested-message-panel__action.action--delete {
+  font-size: 9px;
+  text-decoration-line: none;
+}
+
+.suggested-message-panel__action.action--delete:hover {
+  color: salmon;
+}
+
+.suggested-message-panel__messages {
+  margin: 0 0 12px 56px;
+  max-height: 100px;
+  overflow: scroll;
+}

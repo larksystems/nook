@@ -34,6 +34,8 @@ enum UIAction {
   sendMessage,
   sendMessageGroup,
   sendManualMessage,
+  confirmSuggestedMessages,
+  rejectSuggestedMessages,
   addTag,
   addFilterTag,
   removeConversationTag,
@@ -898,6 +900,23 @@ class NookController extends Controller {
         sendMultiReply(oneoffReply, selectedConversations);
         _view.conversationPanelView.clearNewMessageBox();
         break;
+
+      case UIAction.confirmSuggestedMessages:
+        List<model.SuggestedReply> repliesToSend = [];
+        for (var suggestedMessage in activeConversation.suggestedMessages) {
+          var reply = new model.SuggestedReply()
+            ..text = suggestedMessage.text
+            ..translation = suggestedMessage.translation;
+          repliesToSend.add(reply);
+        }
+        sendReplyGroup(repliesToSend, activeConversation, wasSuggested: true);
+        break;
+
+      case UIAction.rejectSuggestedMessages:
+        platform.rejectSuggestedMessages(conversation).catchError(showAndLogError);
+        _view.conversationPanelView.setSuggestedMessages([]);
+        break;
+
       case UIAction.addTag:
         TagData tagData = data;
         switch (actionObjectState) {
@@ -1437,7 +1456,7 @@ class NookController extends Controller {
     log.verbose('Reply "${reply.text}" queued for sending to conversations ${conversationIds}');
   }
 
-  void sendReplyGroup(List<model.SuggestedReply> replies, model.Conversation conversation) {
+  void sendReplyGroup(List<model.SuggestedReply> replies, model.Conversation conversation, {bool wasSuggested = false}) {
     List<String> textReplies = replies.map((r) => r.text).toList();
     String repliesStr = textReplies.join("; ");
     log.verbose('Preparing to send ${textReplies.length} replies "${repliesStr}" to conversation ${conversation.docId}');
@@ -1459,7 +1478,7 @@ class NookController extends Controller {
     }
 
     log.verbose('Sending ${textReplies.length} replies "${repliesStr}" to conversation ${conversation.docId}');
-    platform.sendMessages(conversation.docId, textReplies, onError: (error) {
+    platform.sendMessages(conversation.docId, textReplies, wasSuggested: wasSuggested, onError: (error) {
       log.error('${textReplies.length} replies "${repliesStr}" failed to be sent to conversation ${conversation.docId}');
       log.error('Error: ${error}');
       command(UIAction.showSnackbar, new SnackbarData('Send Reply Failed', SnackbarNotificationType.error));
@@ -1607,6 +1626,8 @@ Map<String, model.Tag> _notFoundTagIds = {};
 
 UnmodifiableListView<model.Tag> convertTagIdsToTags(Iterable<String> tagIds, Map<String, model.Tag> allTags) {
   var tags = <model.Tag>[];
+  if (tagIds == null) return UnmodifiableListView(tags);
+
   for (var id in tagIds) {
     tags.add(tagIdToTag(id, allTags));
   }
