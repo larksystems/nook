@@ -68,10 +68,16 @@
   border: 1px solid black;
 }
 
-.automated-action-indicator {
+.automated-action-indicator.relative {
   position: relative;
   top: -6px;
   left: -8px;
+}
+
+.automated-action-indicator.absolute {
+  position: absolute;
+  top: -10px;
+  right: -8px;
 }
 
 /* A simple x button to add a new tag */

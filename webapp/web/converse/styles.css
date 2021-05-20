@@ -464,19 +464,3 @@ main {
 .flex-fill-gap {
     flex: 1 1 auto;
 }
-
-.automated-action-indicator {
-    width: 16px;
-}
-
-.automated-action-indicator.relative {
-    position: relative;
-    top: -10px;
-    left: -8px;
-}
-
-.automated-action-indicator.absolute {
-    position: absolute;
-    top: -10px;
-    right: -8px;
-}
