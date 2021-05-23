@@ -54,28 +54,6 @@ main {
 .nook-column-wrapper--tabs-view {
     flex-grow: 1;
     border: none;
-
-	background:
-		/* Shadow covers */
-		linear-gradient(white 30%, transparent),
-		linear-gradient(transparent, white 70%) 0 100%,
-		
-		/* Shadows */
-		radial-gradient(50% 0, farthest-side, rgba(0,0,0,.4), transparent),
-		radial-gradient(50% 100%,farthest-side, rgba(0,0,0,.4), transparent) 0 100%;
-	background:
-		/* Shadow covers */
-		linear-gradient(white 30%, transparent),
-		linear-gradient(transparent, white 70%) 0 100%,
-		
-		/* Shadows */
-		radial-gradient(farthest-side at 50% 0, rgba(0,0,0,.4), transparent),
-		radial-gradient(farthest-side at 50% 100%, rgba(0,0,0,.4), transparent) 0 100%;
-	background-repeat: no-repeat;
-	background-size: 100% 40px, 100% 40px, 100% 14px, 100% 14px;
-	
-	/* Opera doesn't support this in the shorthand */
-	background-attachment: local, local, scroll, scroll;
 }
 
 .conversation-list-panel,
@@ -405,11 +383,15 @@ main {
     justify-content: center;
 }
 
+.notes-panel {
+    height: 100%;
+}
+
 .notes-box,
 .new-message-box {
     flex: 0 0 auto;
     width: 100%;
-    height: 150px;
+    height: 100%;
     display: flex;
     flex-direction: row;
     overflow-y: scroll;

@@ -13,6 +13,7 @@ import 'package:katikati_ui_lib/components/logger.dart';
 import 'package:katikati_ui_lib/components/model/model.dart';
 import 'package:katikati_ui_lib/components/conversation/conversation_item.dart';
 import 'package:katikati_ui_lib/components/user_presence/user_presence_indicator.dart';
+import 'package:katikati_ui_lib/components/scroll_indicator/scroll_indicator.dart';
 import 'package:nook/view.dart';
 import 'package:nook/app/utils.dart';
 
@@ -34,6 +35,7 @@ class NookPageView extends PageView {
   Map<TagFilterType, ConversationFilter> conversationFilter;
   ConversationPanelView conversationPanelView;
   ReplyPanelView replyPanelView;
+  NotesPanelView notesPanelView;
   TagPanelView tagPanelView;
   UrlView urlView;
   TabsView tabsView;
@@ -46,12 +48,11 @@ class NookPageView extends PageView {
     conversationListPanelView = new ConversationListPanelView();
     conversationPanelView = new ConversationPanelView();
     replyPanelView = new ReplyPanelView();
+    notesPanelView = new NotesPanelView();
     tagPanelView = new TagPanelView();
     urlView = new UrlView();
     
-    tabsView = new TabsView([
-      TabView("init", "...", DivElement()..innerText = "Loading..."),
-    ]);
+    tabsView = new TabsView([]);
 
     conversationFilter = {
       TagFilterType.include: conversationListPanelView.conversationIncludeFilter,
@@ -66,13 +67,6 @@ class NookPageView extends PageView {
 
   void initSignedInView(String displayName, String photoUrl) {
     super.initSignedInView(displayName, photoUrl);
-
-    tabsView.removeTab("init");
-    var standardMessageTab = TabView('standard_message', "Standard messages", replyPanelView.replyPanel);
-    var tagsTab = TabView('tag', "Tags", tagPanelView.tagPanel);
-    tabsView.addTab(standardMessageTab);
-    tabsView.addTab(tagsTab);
-    tabsView.selectTab("standard_message");
 
     var conversationListColumn = DivElement()..classes = ["nook-column-wrapper", "nook-column-wrapper--conversation-list"];
     var messagesViewColumn = DivElement()..classes = ["nook-column-wrapper", "nook-column-wrapper--messages-view"];
@@ -111,23 +105,26 @@ class NookPageView extends PageView {
     showNormalStatus('signed out');
   }
 
-  void showPanels(showReplyPanel, showEditNotesPanel, showTagPanel) {
-    var showReplyNotesPanel = showReplyPanel || showEditNotesPanel;
-    // todo: check if already exists before adding as well as remove
-    if(showReplyNotesPanel) {
+  void showPanels(showReplyPanel, enableEditNotesPanel, showTagPanel) {
+    List<TabView> tabsToSet = [];
+
+    if(showReplyPanel) {
       var standardMessageTab = TabView('standard_message', "Standard messages", replyPanelView.replyPanel);
-      tabsView.addTab(standardMessageTab);
-    } else {
-      tabsView.removeTab("standard_message");
+      tabsToSet.add(standardMessageTab);
     }
-    replyPanelView.enableEditableNotes(showEditNotesPanel);
+
+    if(enableEditNotesPanel) {
+      var notesTab = TabView('notes', "Notes", notesPanelView.notesPanel);
+      tabsToSet.add(notesTab);
+      notesPanelView.enableEditableNotes(enableEditNotesPanel);
+    }
 
     if(showTagPanel) {
       var tagsTab = TabView('tag', "Tags", tagPanelView.tagPanel);
-      tabsView.addTab(tagsTab);
-    } else {
-      tabsView.removeTab("tag");
+      tabsToSet.add(tagsTab);
     }
+
+    tabsView.setTabs(tabsToSet);
   }
 
   bool sendingMultiMessagesUserConfirmation(int noMessages) {
@@ -1362,17 +1359,54 @@ class OtherLoggedInUsers with UserPresenceIndicator {
   }
 }
 
+class NotesPanelView {
+  DivElement notesPanel;
+  DivElement _notes;
+  TextAreaElement _notesTextArea;
+
+  NotesPanelView() {
+    notesPanel = DivElement()
+      ..classes.add('notes-panel');
+    _notes = DivElement()
+      ..classes.add('notes-box');
+
+    _notesTextArea = TextAreaElement()
+      ..classes.add('notes-box__textarea');
+    _notes.append(_notesTextArea);
+
+    notesPanel.append(_notes);
+  }
+
+  set noteText(String text) => _notesTextArea.value = text;
+
+  void enableEditableNotes(bool enable) {
+    // Just replace the notes HTML element with new one and call [makeEditable] on it, or disable it.
+    var text = _notesTextArea.value;
+    _notesTextArea.remove();
+    _notesTextArea = new TextAreaElement()
+      ..classes.add('notes-box__textarea')
+      ..placeholder = "Notes..."
+      ..value = text;
+    if (enable) {
+      makeEditable(_notesTextArea, onChange: (_) {
+        _view.appController.command(UIAction.updateNote, new NoteData(_notesTextArea.value));
+      });
+    } else {
+      _notesTextArea.disabled = true;
+    }
+    _notes.append(_notesTextArea);
+  }
+}
+
 class ReplyPanelView {
   DivElement replyPanel;
   DivElement _panelTitle;
   SelectElement _replyCategories;
   DivElement _replies;
   DivElement _replyList;
-  DivElement _notes;
-  TextAreaElement _notesTextArea;
-
   AddActionView _addReply;
   List<ActionView> _replyViews;
+  ScrollOverflowIndicator _repliesScrollContainer;
 
   ReplyPanelView() {
     replyPanel = new DivElement()
@@ -1393,7 +1427,9 @@ class ReplyPanelView {
     _replies = new DivElement()
       ..classes.add('replies')
       ..classes.add('action-list');
-    replyPanel.append(_replies);
+    _repliesScrollContainer = ScrollOverflowIndicator();
+    _repliesScrollContainer.setContent(_replies);
+    replyPanel.append(_repliesScrollContainer.container);
 
     _replyList = new DivElement();
     _replies.append(_replyList);
@@ -1402,18 +1438,8 @@ class ReplyPanelView {
     // _addReply = new AddReplyActionView(ADD_REPLY_INFO);
     // _replies.append(_addReply.addAction);
 
-    _notes = new DivElement()
-      ..classes.add('notes-box');
-    replyPanel.append(_notes);
-
-    _notesTextArea = new TextAreaElement()
-      ..classes.add('notes-box__textarea');
-    _notes.append(_notesTextArea);
-
     _replyViews = [];
   }
-
-  set noteText(String text) => _notesTextArea.value = text;
 
   set selectedCategory(String category) {
     int index = _replyCategories.children.indexWhere((Element option) => (option as OptionElement).value == category);
@@ -1439,6 +1465,7 @@ class ReplyPanelView {
   void addReply(ActionView action) {
     _replyViews.add(action);
     _replyList.append(action.action);
+    _repliesScrollContainer.updateShadows();
   }
 
   void clear() {
@@ -1467,7 +1494,6 @@ class ReplyPanelView {
     _panelTitle
       ..children.clear()
       ..append(new DivElement()..text = NOTES_PANEL_TITLE);
-    _notes.classes.toggle('notes-box--fullscreen', true);
   }
 
   void enableReplies() {
@@ -1475,27 +1501,9 @@ class ReplyPanelView {
       ..children.clear()
       ..append(new DivElement()..text = REPLY_PANEL_TITLE)
       ..append(_replyCategories);
-    replyPanel.insertBefore(_replies, _notes);
-    _notes.classes.toggle('notes-box--fullscreen', false);
+    replyPanel.append(_replies);
   }
 
-  void enableEditableNotes(bool enable) {
-    // Just replace the notes HTML element with new one and call [makeEditable] on it, or disable it.
-    var text = _notesTextArea.value;
-    _notesTextArea.remove();
-    _notesTextArea = new TextAreaElement()
-      ..classes.add('notes-box__textarea')
-      ..placeholder = "Notes..."
-      ..value = text;
-    if (enable) {
-      makeEditable(_notesTextArea, onChange: (_) {
-        _view.appController.command(UIAction.updateNote, new NoteData(_notesTextArea.value));
-      });
-    } else {
-      _notesTextArea.disabled = true;
-    }
-    _notes.append(_notesTextArea);
-  }
 }
 
 class TagPanelView {
