@@ -399,6 +399,10 @@ main {
 
 .new-message-box {
     height: 50px;
+    margin: 12px 24px 12px 56px;
+    border: 1px dashed #AAAAAA;
+    box-sizing: border-box;
+    display: flex;
 }
 
 .notes-box--fullscreen {

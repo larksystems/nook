@@ -1,6 +1,9 @@
 part of controller;
 
 const SEND_REPLY_BUTTON_TEXT = 'SEND';
+const SEND_CUSTOM_REPLY_BUTTON_TEXT = 'SEND custom message';
+const SEND_SUGGESTED_REPLY_BUTTON_TEXT = 'SEND suggested messages';
+const DELETE_SUGGESTED_REPLY_BUTTON_TEXT = 'DELETE suggested messages';
 
 const TAG_CONVERSATION_BUTTON_TEXT = 'TAG';
 
@@ -30,11 +33,20 @@ void _populateConversationPanelView(model.Conversation conversation, {bool updat
   for (var tag in convertTagIdsToTags(conversation.tagIds, controller.tagIdsToTags)) {
     _view.conversationPanelView.addTags(new ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
   }
+  for (var tag in convertTagIdsToTags(conversation.suggestedTagIds, controller.tagIdsToTags)) {
+    _view.conversationPanelView.addTags(new SuggestedConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
+  }
 
   for (var message in conversation.messages) {
     MessageView messageView = _generateMessageView(message, conversation);
     _view.conversationPanelView.addMessage(messageView);
   }
+
+  List<SuggestedMessageView> suggestedMessages = [];
+  for (var message in conversation.suggestedMessages) {
+    suggestedMessages.add(new SuggestedMessageView(message.text, translation: message.translation));
+  }
+  _view.conversationPanelView.setSuggestedMessages(suggestedMessages);
 }
 
 void _updateConversationPanelView(model.Conversation conversation) {
@@ -46,12 +58,21 @@ void _updateConversationPanelView(model.Conversation conversation) {
   for (var tag in convertTagIdsToTags(conversation.tagIds, controller.tagIdsToTags)) {
     _view.conversationPanelView.addTags(new ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
   }
+  for (var tag in convertTagIdsToTags(conversation.suggestedTagIds, controller.tagIdsToTags)) {
+    _view.conversationPanelView.addTags(new SuggestedConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
+  }
 
   _view.conversationPanelView.padOrTrimMessageViews(conversation.messages.length);
   for (int i = 0; i < conversation.messages.length; i++) {
     MessageView messageView = _generateMessageView(conversation.messages[i], conversation);
     _view.conversationPanelView.updateMessage(messageView, i);
   }
+
+  List<SuggestedMessageView> suggestedMessages = [];
+  for (var message in conversation.suggestedMessages) {
+    suggestedMessages.add(new SuggestedMessageView(message.text, translation: message.translation));
+  }
+  _view.conversationPanelView.setSuggestedMessages(suggestedMessages);
 }
 
 MessageView _generateMessageView(model.Message message, model.Conversation conversation) {
@@ -60,6 +81,11 @@ MessageView _generateMessageView(model.Message message, model.Conversation conve
     bool shouldHighlightTag = controller.conversationFilter.filterTagIds[TagFilterType.include].contains(tag.tagId);
     shouldHighlightTag = shouldHighlightTag || controller.conversationFilter.filterTagIds[TagFilterType.lastInboundTurn].contains(tag.tagId);
     tags.add(new MessageTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type), shouldHighlightTag));
+  }
+  for (var tag in convertTagIdsToTags(message.suggestedTagIds, controller.tagIdsToTags)) {
+    bool shouldHighlightTag = controller.conversationFilter.filterTagIds[TagFilterType.include].contains(tag.tagId);
+    shouldHighlightTag = shouldHighlightTag || controller.conversationFilter.filterTagIds[TagFilterType.lastInboundTurn].contains(tag.tagId);
+    tags.add(new SuggestedMessageTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type), shouldHighlightTag));
   }
   var messageView = new MessageView(
       message.text,

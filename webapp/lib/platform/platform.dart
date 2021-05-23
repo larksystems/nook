@@ -173,25 +173,25 @@ class Platform {
   bool isUserSignedIn() => platform.isUserSignedIn();
 
 
-  Future<void> sendMessage(String id, String message, {onError(dynamic)}) {
+  Future<void> sendMessage(String id, String message, {bool wasSuggested = false, onError(dynamic)}) {
     log.verbose("Sending message $id : $message");
 
-    return sendMultiMessage([id], message, onError: onError);
+    return sendMultiMessage([id], message, wasSuggested: wasSuggested, onError: onError);
   }
 
-  Future<void> sendMultiMessage(List<String> ids, String message, {onError(dynamic)}) async {
+  Future<void> sendMultiMessage(List<String> ids, String message, {bool wasSuggested = false, onError(dynamic)}) async {
     log.verbose("Sending multi-message $ids : $message");
 
-    return sendMultiMessages(ids, [message], onError: onError);
+    return sendMultiMessages(ids, [message], wasSuggested: wasSuggested, onError: onError);
   }
 
-  Future<void> sendMessages(String id, List<String> messages, {onError(dynamic)}) {
+  Future<void> sendMessages(String id, List<String> messages, {bool wasSuggested = false, onError(dynamic)}) {
     log.verbose("Sending message $id : $messages");
 
-    return sendMultiMessages([id], messages, onError: onError);
+    return sendMultiMessages([id], messages, wasSuggested: wasSuggested, onError: onError);
   }
 
-  Future<void> sendMultiMessages(List<String> ids, List<String> messages, {onError(dynamic)}) async {
+  Future<void> sendMultiMessages(List<String> ids, List<String> messages, {bool wasSuggested = false, onError(dynamic)}) async {
     log.verbose("Sending multi-message $ids : $messages");
 
     //  {
@@ -204,7 +204,8 @@ class Platform {
       {
         'action' : _SEND_MESSAGES_TO_IDS_ACTION,
         'ids' : ids,
-        'messages' : messages
+        'messages' : messages,
+        'was_suggested' : wasSuggested,
       };
 
     try {
@@ -251,6 +252,16 @@ class Platform {
     return message.removeTagId(_pubsubInstance, conversation, tagId);
   }
 
+  Future<void> confirmMessageTag(Conversation conversation, Message message, String tagId) {
+    log.verbose("Confirming suggested tag $tagId from message in conversation ${conversation.docId}");
+    return message.addTagId(_pubsubInstance, conversation, tagId, wasSuggested: true);
+  }
+
+  Future<void> rejectMessageTag(Conversation conversation, Message message, String tagId) {
+    log.verbose("Removing suggested tag $tagId from message in conversation ${conversation.docId}");
+    return message.removeTagId(_pubsubInstance, conversation, tagId, wasSuggested: true);
+  }
+
   Future<void> setMessageTranslation(Conversation conversation, Message message, String translation) {
     log.verbose("Set translation for message in conversation ${conversation.docId}");
     return message.setTranslation(_pubsubInstance, conversation, translation);
@@ -282,6 +293,21 @@ class Platform {
   Future<void> removeConversationTag(Conversation conversation, String tagId) {
     log.verbose("Removing tag $tagId from ${conversation.docId}");
     return conversation.removeTagIds(_pubsubInstance, [tagId]);
+  }
+
+  Future<void> confirmConversationTag(Conversation conversation, String tagId) {
+    log.verbose("Confirming suggested tag $tagId to ${conversation.docId}");
+    return conversation.addTagIds(_pubsubInstance, [tagId], wasSuggested: true);
+  }
+
+  Future<void> rejectConversationTag(Conversation conversation, String tagId) {
+    log.verbose("Removing suggested tag $tagId from ${conversation.docId}");
+    return conversation.removeTagIds(_pubsubInstance, [tagId], wasSuggested: true);
+  }
+
+  Future<void> rejectSuggestedMessages(Conversation conversation) {
+    log.verbose("Removing suggested messages from ${conversation.docId}");
+    return conversation.removeSuggestedMessages(_pubsubInstance);
   }
 
   Future<void> addTag(Tag tag) {

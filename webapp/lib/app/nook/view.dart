@@ -90,7 +90,7 @@ class NookPageView extends PageView {
       showNormalStatus('signed in: ${latestCommitHash.substring(0, 8)}...');
     }, onError: (_) { /* Do nothing */ });
 
-    var links = ButtonLinksView(navLinks, window.location.pathname);    
+    var links = ButtonLinksView(navLinks, window.location.pathname);
 
     navHeaderView.navContent = new DivElement()
       ..style.display = 'flex'
@@ -184,7 +184,7 @@ const TAG_PANEL_TITLE = 'Tags';
 const ADD_REPLY_INFO = 'Add new suggested response';
 const ADD_TAG_INFO = 'Add new tag';
 
-class ConversationPanelView {
+class ConversationPanelView with AutomaticSuggestionIndicator {
   // HTML elements
   DivElement conversationPanel;
   DivElement _messages;
@@ -194,9 +194,12 @@ class ConversationPanelView {
   DivElement _info;
   DivElement _tags;
   FreetextMessageSendView _freetextMessageSendView;
+  DivElement _suggestedMessages;
+  DivElement _suggestedMessagesActions;
   AfterDateFilterView _afterDateFilterView;
 
   List<MessageView> _messageViews = [];
+  List<SuggestedMessageView> _suggestedMessageViews = [];
 
   ConversationPanelView() {
     conversationPanel = new DivElement()
@@ -242,6 +245,34 @@ class ConversationPanelView {
       _view.appController.command(UIAction.sendManualMessage, new ManualReplyData(messageText));
     });
     conversationPanel.append(_freetextMessageSendView.renderElement);
+
+    var suggestedMessagesPanel = DivElement()
+      ..classes.add('suggested-message-panel');
+    conversationPanel.append(suggestedMessagesPanel);
+
+    _suggestedMessages = DivElement()
+      ..classes.add('suggested-message-panel__messages');
+    suggestedMessagesPanel.append(_suggestedMessages);
+
+    _suggestedMessagesActions = DivElement()
+      ..classes.add('suggested-message-panel__actions')
+      ..classes.add('hidden');
+    suggestedMessagesPanel.append(_suggestedMessagesActions);
+
+    var sendSuggestedMessages = DivElement()
+      ..text = SEND_SUGGESTED_REPLY_BUTTON_TEXT
+      ..classes.add('suggested-message-panel__action')
+      ..onClick.listen((_) => _view.appController.command(UIAction.confirmSuggestedMessages, null));
+    _suggestedMessagesActions.append(sendSuggestedMessages);
+
+    var deleteSuggestedMessages = DivElement()
+      ..text = DELETE_SUGGESTED_REPLY_BUTTON_TEXT
+      ..classes.add('action--delete')
+      ..classes.add('suggested-message-panel__action')
+      ..onClick.listen((_) => _view.appController.command(UIAction.rejectSuggestedMessages, null));
+    _suggestedMessagesActions.append(deleteSuggestedMessages);
+
+    _suggestedMessagesActions.append(automaticSuggestionIndicator..classes.add('absolute'));
 
     _afterDateFilterView = AfterDateFilterView();
     conversationPanel.append(_afterDateFilterView.panel);
@@ -316,9 +347,11 @@ class ConversationPanelView {
     _conversationIdCopy.dataset['copy-value'] = '';
     _info.text = '';
     _messageViews = [];
+    _suggestedMessageViews = [];
     removeTags();
     clearNewMessageBox();
     clearWarning();
+    setSuggestedMessages([]);
 
     int messagesNo = _messages.children.length;
     for (int i = 0; i < messagesNo; i++) {
@@ -357,6 +390,14 @@ class ConversationPanelView {
   void clearWarning() {
     _conversationWarning.title = '';
     _conversationWarning.classes.add('hidden');
+  }
+
+  void setSuggestedMessages(List<SuggestedMessageView> messages) {
+    _suggestedMessages.children.clear();
+    for (var message in messages) {
+      _suggestedMessages.append(message.message);
+    }
+    _suggestedMessagesActions.classes.toggle('hidden', _suggestedMessages.children.isEmpty);
   }
 }
 
@@ -491,14 +532,15 @@ class MessageView {
     _messageBubble.append(_messageTranslation);
 
     _messageTags = new DivElement()
-      ..classes.add('message__tags');
+      ..classes.add('message__tags')
+      ..classes.add('hover-parent');
     tags.forEach((tag) => _messageTags.append(tag.tag));
     message.append(_messageTags);
 
     _addMessageTagButton = new DivElement()
-      ..classes.add('message__add-tag-button')
       ..classes.add('tag__add')
-      ..classes.add('tag--hover-only-btn')
+      ..classes.add('btn')
+      ..classes.add('btn--hover-only')
       ..onClick.listen((e) {
         e.stopPropagation();
         _view.appController.command(UIAction.selectMessage, new MessageData(conversationId, messageIndex));
@@ -576,6 +618,33 @@ class MessageView {
   }
 }
 
+class SuggestedMessageView {
+  DivElement message;
+  DivElement _messageBubble;
+  DivElement _messageText;
+  DivElement _messageTranslation;
+
+  SuggestedMessageView(String text, {String translation = ''}) {
+    message = new DivElement()
+      ..classes.add('message')
+      ..classes.add('message--suggested');
+
+    _messageBubble = new DivElement()
+      ..classes.add('message__bubble');
+    message.append(_messageBubble);
+
+    _messageText = new DivElement()
+      ..classes.add('message__text')
+      ..text = text;
+    _messageBubble.append(_messageText);
+
+    _messageTranslation = new DivElement()
+      ..classes.add('message__translation')
+      ..text = translation;
+    _messageBubble.append(_messageTranslation);
+  }
+}
+
 final DateFormat _dateFormat = new DateFormat('E d MMM y');
 final DateFormat _dateFormatNoYear = new DateFormat('E d MMM');
 final DateFormat _hourFormat = new DateFormat('HH:mm');
@@ -616,6 +685,7 @@ abstract class TagView {
   TagView(String text, String tagId, TagStyle tagStyle) {
     tag = new DivElement()
       ..classes.add('tag')
+      ..classes.add('hover-parent')
       ..dataset['id'] = tagId;
     switch (tagStyle) {
       case TagStyle.Green:
@@ -641,7 +711,8 @@ abstract class TagView {
 
     _removeButton = new SpanElement()
       ..classes.add('tag__remove')
-      ..classes.add('tag--hover-only-btn');
+      ..classes.add('btn')
+      ..classes.add('btn--hover-only');
     tag.append(_removeButton);
   }
 
@@ -662,6 +733,32 @@ class MessageTagView extends TagView {
   }
 }
 
+class SuggestedMessageTagView extends TagView with AutomaticSuggestionIndicator {
+  SuggestedMessageTagView(String text, String tagId, TagStyle tagStyle, [bool highlight = false]) : super(text, tagId, tagStyle) {
+    _removeButton.onClick.listen((_) {
+      DivElement message = getAncestors(tag).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
+      _view.appController.command(UIAction.rejectMessageTag, new MessageTagData(tagId, int.parse(message.dataset['message-index'])));
+    });
+
+    tag.insertBefore(automaticSuggestionIndicator..classes.add('relative'), _removeButton);
+    tag.classes.add('tag--suggested');
+
+    var confirmButton = new SpanElement()
+      ..classes.add('tag__confirm')
+      ..classes.add('btn')
+      ..classes.add('btn--hover-only')
+      ..onClick.listen((_) {
+        DivElement message = getAncestors(tag).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
+        _view.appController.command(UIAction.confirmMessageTag, new MessageTagData(tagId, int.parse(message.dataset['message-index'])));
+      });
+    tag.insertBefore(confirmButton, _removeButton);
+
+    if (highlight) {
+      tag.classes.add('tag--highlighted');
+    }
+  }
+}
+
 class ConversationTagView extends TagView {
   ConversationTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle) {
     _removeButton.onClick.listen((_) {
@@ -669,6 +766,32 @@ class ConversationTagView extends TagView {
       _view.appController.command(UIAction.removeConversationTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
     });
   }
+}
+
+class SuggestedConversationTagView extends TagView with AutomaticSuggestionIndicator {
+  SuggestedConversationTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle) {
+    _removeButton.onClick.listen((_) {
+      DivElement messageSummary = getAncestors(tag).firstWhere((e) => e.classes.contains('conversation-summary'));
+      _view.appController.command(UIAction.rejectConversationTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
+    });
+
+    tag.insertBefore(automaticSuggestionIndicator..classes.add('relative'), _removeButton);
+    tag.classes.add('tag--suggested');
+
+    var confirmButton = new SpanElement()
+      ..classes.add('tag__confirm')
+      ..classes.add('btn')
+      ..classes.add('btn--hover-only')
+      ..onClick.listen((_) {
+        DivElement messageSummary = getAncestors(tag).firstWhere((e) => e.classes.contains('conversation-summary'));
+        _view.appController.command(UIAction.confirmConversationTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
+      });
+    tag.insertBefore(confirmButton, _removeButton);
+  }
+}
+
+mixin AutomaticSuggestionIndicator {
+  Element get automaticSuggestionIndicator => Element.html('<i class="fas fa-robot automated-action-indicator"></i>');
 }
 
 class EditableTagView extends TagView {
@@ -1232,7 +1355,7 @@ class ConversationSummary with LazyListViewItem, UserPresenceIndicator {
   bool _selected = false;
   bool _checkboxHidden = true;
   bool _warning = false;
-  
+
   // HACK(mariana): This should get extracted from the model as it gets computed there for the single conversation view
   String get _shortDeidentifiedPhoneNumber => deidentifiedPhoneNumber.split('uuid-')[1].split('-')[0];
   ConversationReadStatus get readStatus => _unread ? ConversationReadStatus.unread : ConversationReadStatus.read;
