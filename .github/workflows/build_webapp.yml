@@ -17,9 +17,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Install dependencies
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
+        mkdir -p ~/.ssh
+        ssh-keyscan -H github.com >> ~/.ssh/known_hosts
         cd webapp
         pub get
     - name: Build Release
