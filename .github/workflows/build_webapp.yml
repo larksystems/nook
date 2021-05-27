@@ -19,7 +19,7 @@ jobs:
     - name: Install dependencies
       run: |
         cd webapp
-        ls -alF ~/.ssh/
+        ls -alF ~/.pub-cache/
         pub get
     - name: Build Release
       run: |
