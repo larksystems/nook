@@ -22,8 +22,6 @@ jobs:
         ssh-keyscan -H github.com >> ~/.ssh/known_hosts
         mkdir -p ~/.pub-cache
         git clone --mirror git@github.com:larksystems/katikati_ui_lib.dart.git /github/home/.pub-cache/git/cache/katikati_ui_lib.dart-3bb29a7278798a4357cb8d178854b7206d1897e5
-        cd webapp
-        pub get
     - name: Build Release
       run: |
         cd webapp
