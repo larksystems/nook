@@ -27,7 +27,7 @@ jobs:
         echo ssh test
         set +e
         #ssh -o UserKnownHostsFile=~/.ssh/known_hosts -o StrictHostKeyChecking=no -T git@github.com
-        ssh -vvvvvvvvvvvvv -T git@github.com
+        ssh -vvvvvvvvvvvvv -o UserKnownHostsFile=~/.ssh/known_hosts -T git@github.com
         set -e
         cat ~/.ssh/known_hosts
         echo fingerprint 2
