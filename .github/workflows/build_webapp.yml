@@ -21,12 +21,19 @@ jobs:
         mkdir -p ~/.ssh
         ssh-keyscan github.com >> ~/.ssh/known_hosts
         cat ~/.ssh/known_hosts
-        echo fingerprint
+        echo fingerprint 1
         ssh-keygen -lf ~/.ssh/known_hosts
+
         echo ssh test
+        set +e
         ssh -o UserKnownHostsFile=~/.ssh/known_hosts -o StrictHostKeyChecking=no -T git@github.com
-        mkdir -p ~/.pub-cache
+        set -e
+        cat ~/.ssh/known_hosts
+        echo fingerprint 2
+        ssh-keygen -lf ~/.ssh/known_hosts
+
         echo git clone test
+        mkdir -p ~/.pub-cache
         git clone --mirror git@github.com:larksystems/katikati_ui_lib.dart.git /github/home/.pub-cache/git/cache/katikati_ui_lib.dart-3bb29a7278798a4357cb8d178854b7206d1897e5
     - name: Build Release
       run: |
