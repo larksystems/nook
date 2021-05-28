@@ -15,25 +15,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-#        cat /etc/ssh/ssh_config
-#        echo HOME is $HOME
-#
-#        echo known hosts
-#        mkdir -p ~/.ssh
-#        ssh-keyscan github.com >> ~/.ssh/known_hosts
-#        cat ~/.ssh/known_hosts
-#        echo fingerprint 1
-#        ssh-keygen -lf ~/.ssh/known_hosts
-#
-#        echo ssh test
-#        set +e
-#        #ssh -o UserKnownHostsFile=~/.ssh/known_hosts -o StrictHostKeyChecking=no -T git@github.com
-#        ssh -vvvvvvvvvvvvv -o UserKnownHostsFile=~/.ssh/known_hosts -T git@github.com
-#        set -e
-#        cat ~/.ssh/known_hosts
-#        echo fingerprint 2
-#        ssh-keygen -lf ~/.ssh/known_hosts
-
+        echo HOME is $HOME
         echo git clone test
         mkdir -p ~/.pub-cache
         git clone --mirror git@github.com:larksystems/katikati_ui_lib.dart.git $HOME/.pub-cache/git/cache/katikati_ui_lib.dart-3bb29a7278798a4357cb8d178854b7206d1897e5
