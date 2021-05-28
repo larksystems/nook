@@ -21,6 +21,8 @@ jobs:
         mkdir -p ~/.ssh
         ssh-keyscan github.com >> ~/.ssh/known_hosts
         cat ~/.ssh/known_hosts
+        echo fingerprint
+        ssh-keygen -lf ~/.ssh/known_hosts
         echo ssh test
         ssh -o UserKnownHostsFile=~/.ssh/known_hosts -T git@github.com
         mkdir -p ~/.pub-cache
