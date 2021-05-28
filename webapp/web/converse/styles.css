@@ -51,12 +51,7 @@ main {
     box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.1);
 }
 
-.nook-column-wrapper--configure-view {
-    flex-grow: 1;
-    margin-right: 6px;
-}
-
-.nook-column-wrapper--misc {
+.nook-column-wrapper--tabs-view {
     flex-grow: 1;
     border: none;
 }
@@ -388,10 +383,15 @@ main {
     justify-content: center;
 }
 
-.notes-box {
+.notes-panel {
+    height: 100%;
+}
+
+.notes-box,
+.new-message-box {
     flex: 0 0 auto;
     width: 100%;
-    height: 150px;
+    height: 100%;
     display: flex;
     flex-direction: row;
     overflow-y: scroll;
@@ -403,11 +403,6 @@ main {
     border: 1px dashed #AAAAAA;
     box-sizing: border-box;
     display: flex;
-}
-
-.notes-box--fullscreen {
-    flex: 1 1 auto;
-    height: auto;
 }
 
 .notes-box__textarea,

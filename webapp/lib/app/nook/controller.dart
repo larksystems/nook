@@ -623,7 +623,7 @@ class NookController extends Controller {
     }
 
     if (oldConfig.editNotesEnabled != newConfig.editNotesEnabled) {
-      _view.replyPanelView.enableEditableNotes(newConfig.editNotesEnabled);
+      _view.notesPanelView.enableEditableNotes(newConfig.editNotesEnabled);
     }
 
     if (oldConfig.conversationalTurnsEnabled != newConfig.conversationalTurnsEnabled) {
@@ -1080,7 +1080,7 @@ class NookController extends Controller {
         actionObjectState = UIActionObject.loadingConversations;
         _view.conversationListPanelView.clearConversationList();
         _view.conversationPanelView.clear();
-        _view.replyPanelView.noteText = '';
+        _view.notesPanelView.noteText = '';
         activeConversation = null;
         if (conversationListData.conversationListRoot == ConversationListData.NONE) {
           _view.conversationListPanelView.showSelectConversationListMessage();
@@ -1347,7 +1347,7 @@ class NookController extends Controller {
         return activeConversation;
       }
       _view.conversationPanelView.clear();
-      _view.replyPanelView.noteText = '';
+      _view.notesPanelView.noteText = '';
       actionObjectState = UIActionObject.conversation;
       return null;
     }
@@ -1356,7 +1356,7 @@ class NookController extends Controller {
       model.Conversation conversationToSelect = conversations.first;
       _selectConversationInView(conversationToSelect);
       _populateConversationPanelView(conversationToSelect);
-      _view.replyPanelView.noteText = conversationToSelect.notes;
+      _view.notesPanelView.noteText = conversationToSelect.notes;
       actionObjectState = UIActionObject.conversation;
       return conversationToSelect;
     }
@@ -1380,7 +1380,7 @@ class NookController extends Controller {
     if (conversation == null) return;
     // Replace the previous conversation in the conversation panel
     _populateConversationPanelView(conversation, updateInPlace: updateInPlace);
-    _view.replyPanelView.noteText = conversation.notes;
+    _view.notesPanelView.noteText = conversation.notes;
     // Deselect message if selected
     if (actionObjectState == UIActionObject.message) {
       selectedMessage = null;
