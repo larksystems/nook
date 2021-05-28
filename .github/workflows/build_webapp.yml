@@ -12,10 +12,16 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - uses: dart-lang/setup-dart@v1
+      with:
+        sdk: 2.10.4
 
     - name: Install dependencies
+      env:
+        SSH_KEY: ${{ secrets.PUBLIC_REPOS_SSH_KEY }}
       run: |
         echo HOME is $HOME
+        mkdir -p $HOME/.ssh
+        cat "$SSH_KEY" > $HOME/id_rsa
         echo git clone test
         mkdir -p ~/.pub-cache
         git clone --mirror git@github.com:larksystems/katikati_ui_lib.dart.git $HOME/.pub-cache/git/cache/katikati_ui_lib.dart-3bb29a7278798a4357cb8d178854b7206d1897e5
