@@ -35,8 +35,8 @@ class NookPageView extends PageView {
   Map<TagFilterType, ConversationFilter> conversationFilter;
   ConversationPanelView conversationPanelView;
   ReplyPanelView replyPanelView;
-  NotesPanelView notesPanelView;
   TagPanelView tagPanelView;
+  NotesPanelView notesPanelView;
   UrlView urlView;
   TabsView tabsView;
 
@@ -48,8 +48,8 @@ class NookPageView extends PageView {
     conversationListPanelView = new ConversationListPanelView();
     conversationPanelView = new ConversationPanelView();
     replyPanelView = new ReplyPanelView();
-    notesPanelView = new NotesPanelView();
     tagPanelView = new TagPanelView();
+    notesPanelView = new NotesPanelView();
     urlView = new UrlView();
     
     tabsView = new TabsView([]);
@@ -108,20 +108,20 @@ class NookPageView extends PageView {
   void showPanels(showReplyPanel, enableEditNotesPanel, showTagPanel) {
     List<TabView> tabsToSet = [];
 
-    if(showReplyPanel) {
-      var standardMessageTab = TabView('standard_message', "Standard messages", replyPanelView.replyPanel);
-      tabsToSet.add(standardMessageTab);
+    if (showReplyPanel) {
+      var standardMessagesTab = TabView('standard_messages', "Standard messages", replyPanelView.replyPanel);
+      tabsToSet.add(standardMessagesTab);
     }
 
-    if(enableEditNotesPanel) {
+    if (showTagPanel) {
+      var tagsTab = TabView('tag', "Tags", tagPanelView.tagPanel);
+      tabsToSet.add(tagsTab);
+    }
+
+    if (enableEditNotesPanel) {
       var notesTab = TabView('notes', "Notes", notesPanelView.notesPanel);
       tabsToSet.add(notesTab);
       notesPanelView.enableEditableNotes(enableEditNotesPanel);
-    }
-
-    if(showTagPanel) {
-      var tagsTab = TabView('tag', "Tags", tagPanelView.tagPanel);
-      tabsToSet.add(tagsTab);
     }
 
     tabsView.setTabs(tabsToSet);
