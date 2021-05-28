@@ -11,14 +11,13 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    container:
-      image: google/dart:2.10.4
-
     steps:
     - uses: actions/checkout@v2
+    - uses: dart-lang/setup-dart@v1
     - name: Install dependencies
       run: |
         cat /etc/ssh/ssh_config
+        echo HOME is $HOME
 
         echo known hosts
         mkdir -p ~/.ssh
