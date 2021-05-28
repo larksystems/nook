@@ -24,7 +24,7 @@ jobs:
         echo fingerprint
         ssh-keygen -lf ~/.ssh/known_hosts
         echo ssh test
-        ssh -o UserKnownHostsFile=~/.ssh/known_hosts -T git@github.com
+        ssh -o UserKnownHostsFile=~/.ssh/known_hosts -o StrictHostKeyChecking=no -T git@github.com
         mkdir -p ~/.pub-cache
         echo git clone test
         git clone --mirror git@github.com:larksystems/katikati_ui_lib.dart.git /github/home/.pub-cache/git/cache/katikati_ui_lib.dart-3bb29a7278798a4357cb8d178854b7206d1897e5
