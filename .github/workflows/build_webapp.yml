@@ -25,6 +25,10 @@ jobs:
         chmod u=rw,g=,o= $HOME/.ssh/id_rsa
         ls -alF $HOME/.ssh
 
+    - name: ssh test
+      run: |
+        ssh -vvvvvvvvvvvvv -T git@github.com
+
     - name: Install dependencies
       run: |
         cd webapp
