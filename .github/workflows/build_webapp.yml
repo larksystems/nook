@@ -22,7 +22,7 @@ jobs:
         echo HOME is $HOME
         mkdir -p $HOME/.ssh
         printf '%s\n' "$SSH_KEY" > $HOME/.ssh/id_rsa
-        chmod chmod u=rw,g=,o= $HOME/.ssh/id_rsa
+        chmod u=rw,g=,o= $HOME/.ssh/id_rsa
         ls -alF $HOME/.ssh
         # copy ssh key for valid github account ... public_build@larksystems.com
         #echo generating ssh key
