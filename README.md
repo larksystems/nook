@@ -1,2 +1,2 @@
 # Nook
-![Build Status](https://img.shields.io/github/workflow/status/larksystems/nook/Nook%20CI)
+![Build Status](https://github.com/larksystems/nook/actions/workflows/build_webapp.yml/badge.svg)
