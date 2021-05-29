@@ -15,23 +15,15 @@ jobs:
       with:
         sdk: 2.10.4
 
-    - name: setup ssh
+    - name: Setup ssh
       env:
-        SSH_KEY: ${{ secrets.KKBUILDPUBLIC_KEY }}
+        SSH_KEY: ${{ secrets.KK_PUBLIC_BUILD_SSH_KEY }}
       run: |
         echo HOME is $HOME
         mkdir -p $HOME/.ssh
         printf '%s\n' "$SSH_KEY" > $HOME/.ssh/id_rsa
         chmod u=rw,g=,o= $HOME/.ssh/id_rsa
         ls -alF $HOME/.ssh
-        # copy ssh key for valid github account ... public_build@larksystems.com
-        #echo generating ssh key
-        #ssh-keygen -t rsa -b 4096 -C "public@larksystems.com" -f $HOME/.ssh/id_rsa -N ''
-
-    - name: git clone test
-      run: |
-        mkdir -p ~/.pub-cache
-        git clone --mirror git@github.com:larksystems/katikati_ui_lib.dart.git $HOME/.pub-cache/git/cache/katikati_ui_lib.dart-3bb29a7278798a4357cb8d178854b7206d1897e5
 
     - name: Install dependencies
       run: |
