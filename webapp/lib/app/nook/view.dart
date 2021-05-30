@@ -14,6 +14,7 @@ import 'package:katikati_ui_lib/components/model/model.dart';
 import 'package:katikati_ui_lib/components/conversation/conversation_item.dart';
 import 'package:katikati_ui_lib/components/user_presence/user_presence_indicator.dart';
 import 'package:katikati_ui_lib/components/scroll_indicator/scroll_indicator.dart';
+import 'package:katikati_ui_lib/components/tag/tag.dart' as kk;
 import 'package:nook/view.dart';
 import 'package:nook/app/utils.dart';
 
@@ -1899,10 +1900,8 @@ class TagActionView implements ActionView {
       ..text = shortcut;
     action.append(_shortcutElement);
 
-    var textElement = new DivElement()
-      ..classes.add('action__description')
-      ..text = text;
-    action.append(textElement);
+    var tagElement = kk.TagView(text, "");
+    action.append(tagElement.renderElement);
 
     _buttonElement = new DivElement()
       ..classes.add('action__button')
