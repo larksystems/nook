@@ -179,7 +179,7 @@ void _addDateTagToFilterMenu(TagFilterType filterType) {
 void _populateSelectedFilterTags(Set<model.Tag> tags, TagFilterType filterType) {
   _view.conversationFilter[filterType].clearSelectedTags();
   for (var tag in tags) {
-    _view.conversationFilter[filterType].addFilterTag(new FilterTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type), filterType));
+    _view.conversationFilter[filterType].addFilterTag(new FilterTagView(tag.text, tag.tagId, tagTypeToKKStyle(tag.type), filterType));
   }
 }
 
@@ -199,6 +199,19 @@ TagStyle tagTypeToStyle(model.TagType tagType) {
         return TagStyle.Yellow;
       }
       return TagStyle.None;
+  }
+}
+
+
+kk.TagStyle tagTypeToKKStyle(model.TagType tagType) {
+  switch (tagType) {
+    case model.TagType.Important:
+      return kk.TagStyle.Important;
+    default:
+      if (tagType == model.NotFoundTagType.NotFound) {
+        return kk.TagStyle.Yellow;
+      }
+      return kk.TagStyle.None;
   }
 }
 

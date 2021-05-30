@@ -852,15 +852,13 @@ class FilterMenuTagView extends TagView {
   }
 }
 
-class FilterTagView extends TagView {
+class FilterTagView extends kk.TagView {
   TagFilterType _filterType;
-  FilterTagView(String text, String tagId, TagStyle tagStyle, TagFilterType filterType) : super(text, tagId, tagStyle) {
-    _removeButton.onClick.listen((_) => handleClicked(tagId));
+  FilterTagView(String text, String tagId, kk.TagStyle tagStyle, TagFilterType filterType) : super(text, tagId, tagStyle: tagStyle, removable: true) {
     _filterType = filterType;
-  }
-
-  void handleClicked(String tagId) {
-    _view.appController.command(UIAction.removeFilterTag, new FilterTagData(tagId, _filterType));
+    onDelete = () {
+      _view.appController.command(UIAction.removeFilterTag, new FilterTagData(tagId, _filterType));
+    };
   }
 }
 
@@ -876,7 +874,7 @@ class AfterDateFilterMenuTagView extends FilterMenuTagView {
 }
 
 class AfterDateFilterTagView extends FilterTagView {
-  AfterDateFilterTagView(DateTime dateTime, TagFilterType filterType) : super(filterText(dateTime), AFTER_DATE_TAG_ID, TagStyle.None, filterType);
+  AfterDateFilterTagView(DateTime dateTime, TagFilterType filterType) : super(filterText(dateTime), AFTER_DATE_TAG_ID, kk.TagStyle.None, filterType);
 
   static String filterText(DateTime dateTime) {
     return "after date ${afterDateFilterFormat.format(dateTime)}";
@@ -1267,7 +1265,7 @@ class ConversationFilter {
   }
 
   void addFilterTag(FilterTagView tag) {
-    _tagsContainer.append(tag.tag);
+    _tagsContainer.append(tag.renderElement);
   }
 
   void removeFilterTag(String tagId) {

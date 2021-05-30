@@ -6,6 +6,7 @@ import 'package:firebase/firebase.dart' show FirebaseError;
 
 import 'package:katikati_ui_lib/components/url_view/url_view.dart';
 import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
+import 'package:katikati_ui_lib/components/tag/tag.dart' as kk;
 import 'package:katikati_ui_lib/components/logger.dart';
 import 'package:nook/controller.dart';
 export 'package:nook/controller.dart';
@@ -949,7 +950,7 @@ class NookController extends Controller {
         var added = conversationFilter.filterTags[tagData.filterType].add(unifierTag);
         if (!added) return; // Trying to add an existing tag, nothing to do here
         _view.urlView.setPageUrlFilterTags(tagData.filterType, conversationFilter.filterTagIds[tagData.filterType]);
-        _view.conversationFilter[tagData.filterType].addFilterTag(new FilterTagView(unifierTag.text, unifierTag.tagId, tagTypeToStyle(unifierTag.type), tagData.filterType));
+        _view.conversationFilter[tagData.filterType].addFilterTag(new FilterTagView(unifierTag.text, unifierTag.tagId, tagTypeToKKStyle(unifierTag.type), tagData.filterType));
         if (actionObjectState == UIActionObject.loadingConversations) return;
         updateFilteredAndSelectedConversationLists();
         updateViewForConversation(activeConversation, updateInPlace: true);
