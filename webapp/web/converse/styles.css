@@ -378,7 +378,6 @@ main {
     display: flex;
     flex-wrap: wrap;
     max-height: 90px;
-    overflow-y: scroll;
     align-items: center;
     justify-content: center;
 }

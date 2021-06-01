@@ -316,8 +316,8 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
     _messageViews[index] = message;
   }
 
-  void addTags(TagView tag) {
-    _tags.append(tag.tag);
+  void addTags(kk.TagView tag) {
+    _tags.append(tag.renderElement);
   }
 
   void removeTag(String tagId) {
@@ -760,34 +760,27 @@ class SuggestedMessageTagView extends TagView with AutomaticSuggestionIndicator 
   }
 }
 
-class ConversationTagView extends TagView {
-  ConversationTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle) {
-    _removeButton.onClick.listen((_) {
-      DivElement messageSummary = getAncestors(tag).firstWhere((e) => e.classes.contains('conversation-summary'));
+class ConversationTagView extends kk.TagView {
+  ConversationTagView(String text, String tagId, kk.TagStyle tagStyle) : super(text, tagId, tagStyle: tagStyle, removable: true) {
+    onDelete = () {
+      // todo: pass the actual ID
+      DivElement messageSummary = getAncestors(renderElement).firstWhere((e) => e.classes.contains('conversation-summary'));
       _view.appController.command(UIAction.removeConversationTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
-    });
+    };
   }
 }
 
-class SuggestedConversationTagView extends TagView with AutomaticSuggestionIndicator {
-  SuggestedConversationTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle) {
-    _removeButton.onClick.listen((_) {
-      DivElement messageSummary = getAncestors(tag).firstWhere((e) => e.classes.contains('conversation-summary'));
+class SuggestedConversationTagView extends kk.TagView with AutomaticSuggestionIndicator {
+  SuggestedConversationTagView(String text, String tagId, kk.TagStyle tagStyle) : super(text, tagId, tagStyle: tagStyle, removable: true, acceptable: true, suggested: true) {
+    onDelete = () {
+      DivElement messageSummary = getAncestors(renderElement).firstWhere((e) => e.classes.contains('conversation-summary'));
       _view.appController.command(UIAction.rejectConversationTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
-    });
+    };
 
-    tag.insertBefore(automaticSuggestionIndicator..classes.add('relative'), _removeButton);
-    tag.classes.add('tag--suggested');
-
-    var confirmButton = new SpanElement()
-      ..classes.add('tag__confirm')
-      ..classes.add('btn')
-      ..classes.add('btn--hover-only')
-      ..onClick.listen((_) {
-        DivElement messageSummary = getAncestors(tag).firstWhere((e) => e.classes.contains('conversation-summary'));
+    onAccept = () {
+      DivElement messageSummary = getAncestors(renderElement).firstWhere((e) => e.classes.contains('conversation-summary'));
         _view.appController.command(UIAction.confirmConversationTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
-      });
-    tag.insertBefore(confirmButton, _removeButton);
+    };
   }
 }
 
@@ -835,20 +828,13 @@ class EditableTagView extends TagView {
   }
 }
 
-class FilterMenuTagView extends TagView {
+class FilterMenuTagView extends kk.TagView {
   TagFilterType _filterType;
-  FilterMenuTagView(String text, String tagId, TagStyle tagStyle, TagFilterType filterType) : super(text, tagId, tagStyle) {
-    _removeButton.remove();
-    _tagText
-      ..classes.add('clickable')
-      ..onClick.listen((_) {
-        handleClicked(tagId);
-      });
+  FilterMenuTagView(String text, String tagId, kk.TagStyle tagStyle, TagFilterType filterType) : super(text, tagId, tagStyle: tagStyle, selectable: true) {
     _filterType = filterType;
-  }
-
-  void handleClicked(String tagId) {
-    _view.appController.command(UIAction.addFilterTag, new FilterTagData(tagId, _filterType));
+    onSelect = () {
+      _view.appController.command(UIAction.addFilterTag, new FilterTagData(tagId, _filterType));
+    };
   }
 }
 
@@ -865,7 +851,7 @@ class FilterTagView extends kk.TagView {
 const AFTER_DATE_TAG_ID = "after-date";
 
 class AfterDateFilterMenuTagView extends FilterMenuTagView {
-  AfterDateFilterMenuTagView(TagFilterType filterType) : super("after date", AFTER_DATE_TAG_ID, TagStyle.None, filterType);
+  AfterDateFilterMenuTagView(TagFilterType filterType) : super("after date", AFTER_DATE_TAG_ID, kk.TagStyle.None, filterType);
 
   @override
   void handleClicked(String tagId) {
@@ -1245,7 +1231,7 @@ class ConversationFilter {
       newContainerTitle.classes.toggle('folded', true);
 
       return newContainer;
-    }).append(tag.tag);
+    }).append(tag.renderElement);
     bool wasHidden = _tagGroupsContainers[category].classes.remove('hidden'); // briefly override any display settings to make sure we can compute getBoundingClientRect()
     List<num> widths = _tagGroupsContainers[category].querySelectorAll('.tag__name').toList().map((e) => e.getBoundingClientRect().width).toList();
     _tagGroupsContainers[category].classes.toggle('hidden', wasHidden); // clear inline display settings
@@ -1254,13 +1240,13 @@ class ConversationFilter {
     num colSpacing = 10;
     num minColWidth = math.min(avgGridWidth + 2 * colSpacing, 138);
     num containerWidth = _tagsMenuWrapper.getBoundingClientRect().width;
-    num columnWidth = containerWidth / (containerWidth / minColWidth).floor() - colSpacing;
-    _tagGroupsContainers[category].style.setProperty('grid-template-columns', 'repeat(auto-fill, ${columnWidth}px)');
+    // num columnWidth = containerWidth / (containerWidth / minColWidth).floor() - colSpacing;
+    // _tagGroupsContainers[category].style.setProperty('grid-template-columns', 'repeat(auto-fill, ${columnWidth}px)');
   }
 
   void removeMenuTag(FilterMenuTagView tag, String category) {
-    int index = _tagGroups[category].indexWhere((t) => t.tag.dataset["id"] == tag.tag.dataset["id"]);
-    _tagGroups[category][index].tag.remove();
+    int index = _tagGroups[category].indexWhere((t) => t.renderElement.dataset["id"] == tag.renderElement.dataset["id"]);
+    _tagGroups[category][index].renderElement.remove();
     _tagGroups[category].removeAt(index);
   }
 
