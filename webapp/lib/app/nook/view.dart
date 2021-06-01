@@ -770,7 +770,7 @@ class ConversationTagView extends kk.TagView {
   }
 }
 
-class SuggestedConversationTagView extends kk.TagView with AutomaticSuggestionIndicator {
+class SuggestedConversationTagView extends kk.TagView {
   SuggestedConversationTagView(String text, String tagId, kk.TagStyle tagStyle) : super(text, tagId, tagStyle: tagStyle, removable: true, acceptable: true, suggested: true) {
     onDelete = () {
       DivElement messageSummary = getAncestors(renderElement).firstWhere((e) => e.classes.contains('conversation-summary'));
@@ -778,6 +778,7 @@ class SuggestedConversationTagView extends kk.TagView with AutomaticSuggestionIn
     };
 
     onAccept = () {
+      super.markPending(true);
       DivElement messageSummary = getAncestors(renderElement).firstWhere((e) => e.classes.contains('conversation-summary'));
         _view.appController.command(UIAction.confirmConversationTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
     };
@@ -828,13 +829,19 @@ class EditableTagView extends TagView {
   }
 }
 
-class FilterMenuTagView extends kk.TagView {
+class FilterMenuTagView extends TagView {
   TagFilterType _filterType;
-  FilterMenuTagView(String text, String tagId, kk.TagStyle tagStyle, TagFilterType filterType) : super(text, tagId, tagStyle: tagStyle, selectable: true) {
-    _filterType = filterType;
-    onSelect = () {
-      _view.appController.command(UIAction.addFilterTag, new FilterTagData(tagId, _filterType));
-    };
+  FilterMenuTagView(String text, String tagId, TagStyle tagStyle, TagFilterType filterType) : super(text, tagId, tagStyle) {
+    _removeButton.remove();
+    _tagText
+      ..classes.add('clickable')
+      ..onClick.listen((_) {
+        handleClicked(tagId);
+      });
+  }
+
+  void handleClicked(String tagId) {
+    _view.appController.command(UIAction.addFilterTag, new FilterTagData(tagId, _filterType));
   }
 }
 
@@ -851,7 +858,7 @@ class FilterTagView extends kk.TagView {
 const AFTER_DATE_TAG_ID = "after-date";
 
 class AfterDateFilterMenuTagView extends FilterMenuTagView {
-  AfterDateFilterMenuTagView(TagFilterType filterType) : super("after date", AFTER_DATE_TAG_ID, kk.TagStyle.None, filterType);
+  AfterDateFilterMenuTagView(TagFilterType filterType) : super("after date", AFTER_DATE_TAG_ID, TagStyle.None, filterType);
 
   @override
   void handleClicked(String tagId) {
@@ -1231,7 +1238,7 @@ class ConversationFilter {
       newContainerTitle.classes.toggle('folded', true);
 
       return newContainer;
-    }).append(tag.renderElement);
+    }).append(tag.tag);
     bool wasHidden = _tagGroupsContainers[category].classes.remove('hidden'); // briefly override any display settings to make sure we can compute getBoundingClientRect()
     List<num> widths = _tagGroupsContainers[category].querySelectorAll('.tag__name').toList().map((e) => e.getBoundingClientRect().width).toList();
     _tagGroupsContainers[category].classes.toggle('hidden', wasHidden); // clear inline display settings
@@ -1245,8 +1252,8 @@ class ConversationFilter {
   }
 
   void removeMenuTag(FilterMenuTagView tag, String category) {
-    int index = _tagGroups[category].indexWhere((t) => t.renderElement.dataset["id"] == tag.renderElement.dataset["id"]);
-    _tagGroups[category][index].renderElement.remove();
+    int index = _tagGroups[category].indexWhere((t) => t.tag.dataset["id"] == tag.tag.dataset["id"]);
+    _tagGroups[category][index].tag.remove();
     _tagGroups[category].removeAt(index);
   }
 
