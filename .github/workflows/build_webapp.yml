@@ -8,18 +8,28 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
-    container:
-      image: google/dart:2.10.4
-
     steps:
     - uses: actions/checkout@v2
+    - uses: dart-lang/setup-dart@v1
+      with:
+        sdk: 2.10.4
+
+    - name: Setup ssh
+      env:
+        SSH_KEY: ${{ secrets.KK_PUBLIC_BUILD_SSH_KEY }}
+      run: |
+        echo HOME is $HOME
+        mkdir -p $HOME/.ssh
+        printf '%s\n' "$SSH_KEY" > $HOME/.ssh/id_rsa
+        chmod u=rw,g=,o= $HOME/.ssh/id_rsa
+        ls -alF $HOME/.ssh
+
     - name: Install dependencies
       run: |
         cd webapp
         pub get
+
     - name: Build Release
       run: |
         cd webapp
