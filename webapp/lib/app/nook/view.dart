@@ -838,6 +838,7 @@ class FilterMenuTagView extends TagView {
       ..onClick.listen((_) {
         handleClicked(tagId);
       });
+      _filterType = filterType;
   }
 
   void handleClicked(String tagId) {
@@ -1247,8 +1248,8 @@ class ConversationFilter {
     num colSpacing = 10;
     num minColWidth = math.min(avgGridWidth + 2 * colSpacing, 138);
     num containerWidth = _tagsMenuWrapper.getBoundingClientRect().width;
-    // num columnWidth = containerWidth / (containerWidth / minColWidth).floor() - colSpacing;
-    // _tagGroupsContainers[category].style.setProperty('grid-template-columns', 'repeat(auto-fill, ${columnWidth}px)');
+    num columnWidth = containerWidth / (containerWidth / minColWidth).floor() - colSpacing;
+    _tagGroupsContainers[category].style.setProperty('grid-template-columns', 'repeat(auto-fill, ${columnWidth}px)');
   }
 
   void removeMenuTag(FilterMenuTagView tag, String category) {
