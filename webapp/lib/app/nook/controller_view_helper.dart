@@ -87,8 +87,16 @@ MessageView _generateMessageView(model.Message message, model.Conversation conve
     shouldHighlightTag = shouldHighlightTag || controller.conversationFilter.filterTagIds[TagFilterType.lastInboundTurn].contains(tag.tagId);
     tags.add(new SuggestedMessageTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type), shouldHighlightTag));
   }
-  var messageView = new MessageView(message.text, message.datetime, conversation.docId, conversation.messages.indexOf(message),
-      translation: message.translation, incoming: message.direction == model.MessageDirection.In, tags: tags, status: message.status);
+  var messageView = new MessageView(
+      message.text, 
+      message.datetime, 
+      conversation.docId, 
+      conversation.messages.indexOf(message),
+      translation: message.translation, 
+      incoming: message.direction == model.MessageDirection.In, 
+      tags: tags, 
+      status: message.status
+    );
   messageView.enableEditableTranslations(controller.currentConfig.editTranslationsEnabled);
   return messageView;
 }
@@ -222,7 +230,9 @@ Map<String, List<model.SuggestedReply>> _groupRepliesIntoGroups(List<model.Sugge
   Map<String, List<model.SuggestedReply>> result = {};
   for (model.SuggestedReply reply in replies) {
     // TODO (mariana): once we've transitioned to using groups, we can remove the sequence number fix
-    String groupId = controller.currentConfig.suggestedRepliesGroupsEnabled ? reply.groupId ?? reply.seqNumber.toString() : reply.seqNumber.toString();
+    String groupId = controller.currentConfig.suggestedRepliesGroupsEnabled ?
+      reply.groupId ?? reply.seqNumber.toString() :
+      reply.seqNumber.toString();
     if (!result.containsKey(groupId)) {
       result[groupId] = [];
     }

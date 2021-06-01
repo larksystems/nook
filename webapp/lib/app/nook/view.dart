@@ -838,7 +838,7 @@ class FilterMenuTagView extends TagView {
       ..onClick.listen((_) {
         handleClicked(tagId);
       });
-      _filterType = filterType;
+    _filterType = filterType;
   }
 
   void handleClicked(String tagId) {
