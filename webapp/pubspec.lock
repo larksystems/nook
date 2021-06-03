@@ -264,8 +264,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "588ad10003f318653026d50ce575e0afa67b5736"
-      resolved-ref: "588ad10003f318653026d50ce575e0afa67b5736"
+      ref: "5be9dca701c00b426b8d752bac9f1f49c3e5665e"
+      resolved-ref: "5be9dca701c00b426b8d752bac9f1f49c3e5665e"
       url: "git@github.com:larksystems/katikati_ui_lib.dart.git"
     source: git
     version: "0.0.1"
