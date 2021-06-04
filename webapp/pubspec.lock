@@ -263,10 +263,10 @@ packages:
   katikati_ui_lib:
     dependency: "direct main"
     description:
-      path: "."
-      ref: "5be9dca701c00b426b8d752bac9f1f49c3e5665e"
-      resolved-ref: "5be9dca701c00b426b8d752bac9f1f49c3e5665e"
-      url: "git@github.com:larksystems/katikati_ui_lib.dart.git"
+      path: ui
+      ref: affdaddd1b0e8a75949add73185409ffbce458ed
+      resolved-ref: affdaddd1b0e8a75949add73185409ffbce458ed
+      url: "git@github.com:larksystems/katikati_common_lib.git"
     source: git
     version: "0.0.1"
   logging:
