@@ -202,7 +202,7 @@ TagStyle tagTypeToStyle(model.TagType tagType) {
   }
 }
 
-
+// This is temporary method until we remove the kk namespace, tag
 kk.TagStyle tagTypeToKKStyle(model.TagType tagType) {
   switch (tagType) {
     case model.TagType.Important:
