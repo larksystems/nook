@@ -316,8 +316,8 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
     _messageViews[index] = message;
   }
 
-  void addTags(TagView tag) {
-    _tags.append(tag.tag);
+  void addTags(kk.TagView tag) {
+    _tags.append(tag.renderElement);
   }
 
   void removeTag(String tagId) {
@@ -760,34 +760,31 @@ class SuggestedMessageTagView extends TagView with AutomaticSuggestionIndicator 
   }
 }
 
-class ConversationTagView extends TagView {
-  ConversationTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle) {
-    _removeButton.onClick.listen((_) {
-      DivElement messageSummary = getAncestors(tag).firstWhere((e) => e.classes.contains('conversation-summary'));
+class ConversationTagView extends kk.TagView {
+  ConversationTagView(String text, String tagId, kk.TagStyle tagStyle) : super(text, tagId, tagStyle: tagStyle, removable: true) {
+    onDelete = () {
+      DivElement messageSummary = getAncestors(renderElement).firstWhere((e) => e.classes.contains('conversation-summary'));
       _view.appController.command(UIAction.removeConversationTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
-    });
+    };
   }
 }
 
-class SuggestedConversationTagView extends TagView with AutomaticSuggestionIndicator {
-  SuggestedConversationTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle) {
-    _removeButton.onClick.listen((_) {
-      DivElement messageSummary = getAncestors(tag).firstWhere((e) => e.classes.contains('conversation-summary'));
+class SuggestedConversationTagView extends kk.TagView {
+  SuggestedConversationTagView(String text, String tagId, kk.TagStyle tagStyle) : super(text, tagId, tagStyle: tagStyle, removable: true, acceptable: true, suggested: true) {
+    onDelete = () {
+      DivElement messageSummary = getAncestors(renderElement).firstWhere((e) => e.classes.contains('conversation-summary'));
       _view.appController.command(UIAction.rejectConversationTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
-    });
+    };
 
-    tag.insertBefore(automaticSuggestionIndicator..classes.add('relative'), _removeButton);
-    tag.classes.add('tag--suggested');
+    // tag.insertBefore(automaticSuggestionIndicator..classes.add('relative'), _removeButton);
+    // tag.classes.add('tag--suggested');
 
-    var confirmButton = new SpanElement()
-      ..classes.add('tag__confirm')
-      ..classes.add('btn')
-      ..classes.add('btn--hover-only')
-      ..onClick.listen((_) {
-        DivElement messageSummary = getAncestors(tag).firstWhere((e) => e.classes.contains('conversation-summary'));
+    onAccept = () {
+      super.markPending(true);
+      DivElement messageSummary = getAncestors(renderElement).firstWhere((e) => e.classes.contains('conversation-summary'));
         _view.appController.command(UIAction.confirmConversationTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
-      });
-    tag.insertBefore(confirmButton, _removeButton);
+    };
+    // tag.insertBefore(confirmButton, _removeButton);
   }
 }
 

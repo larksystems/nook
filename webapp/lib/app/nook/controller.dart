@@ -1536,7 +1536,7 @@ class NookController extends Controller {
   void setConversationTag(model.Tag tag, model.Conversation conversation) {
     if (!conversation.tagIds.contains(tag.tagId)) {
       platform.addConversationTag(conversation, tag.tagId).catchError(showAndLogError);
-      _view.conversationPanelView.addTags(new ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
+      _view.conversationPanelView.addTags(new ConversationTagView(tag.text, tag.tagId, tagTypeToKKStyle(tag.type)));
     }
   }
 
@@ -1545,7 +1545,7 @@ class NookController extends Controller {
       if (!conversation.tagIds.contains(tag.tagId)) {
         platform.addConversationTag(conversation, tag.tagId).catchError(showAndLogError);
         if (conversation == activeConversation) {
-          _view.conversationPanelView.addTags(new ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
+          _view.conversationPanelView.addTags(new ConversationTagView(tag.text, tag.tagId, tagTypeToKKStyle(tag.type)));
         }
       }
     });
