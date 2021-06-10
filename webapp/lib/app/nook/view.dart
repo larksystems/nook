@@ -776,15 +776,11 @@ class SuggestedConversationTagView extends kk.TagView {
       _view.appController.command(UIAction.rejectConversationTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
     };
 
-    // tag.insertBefore(automaticSuggestionIndicator..classes.add('relative'), _removeButton);
-    // tag.classes.add('tag--suggested');
-
     onAccept = () {
       super.markPending(true);
       DivElement messageSummary = getAncestors(renderElement).firstWhere((e) => e.classes.contains('conversation-summary'));
         _view.appController.command(UIAction.confirmConversationTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
     };
-    // tag.insertBefore(confirmButton, _removeButton);
   }
 }
 
