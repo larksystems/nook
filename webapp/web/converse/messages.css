@@ -70,6 +70,14 @@
   height: 100%;
 }
 
+.message__tags .tag {
+  margin-bottom: 4px;
+}
+
+.message__tags .tag:last-child {
+  margin-bottom: 0;
+}
+
 .status-line {
   margin-right: 6px;
   margin-left: 6px;

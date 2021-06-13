@@ -86,6 +86,14 @@ main {
     align-content: flex-start;
 }
 
+.tags-container .tag {
+    margin-bottom: 4px;
+}
+
+.tags-container .tag:last-child {
+    margin-bottom: 0;
+}
+
 .tags-menu {
     position: absolute;
     width: 0;
@@ -381,6 +389,10 @@ main {
     overflow-y: scroll;
     align-items: center;
     justify-content: center;
+}
+
+.conversation-summary__tags .tag {
+    margin-bottom: 4px;
 }
 
 .notes-panel {
