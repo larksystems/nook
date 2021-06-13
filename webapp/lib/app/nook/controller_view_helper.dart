@@ -31,10 +31,10 @@ void _populateConversationPanelView(model.Conversation conversation, {bool updat
     ..deidentifiedPhoneNumberShort = conversation.shortDeidentifiedPhoneNumber
     ..demographicsInfo = conversation.demographicsInfo.values.join(', ');
   for (var tag in convertTagIdsToTags(conversation.tagIds, controller.tagIdsToTags)) {
-    _view.conversationPanelView.addTags(new ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
+    _view.conversationPanelView.addTags(new ConversationTagView(tag.text, tag.tagId, tagTypeToKKStyle(tag.type)));
   }
   for (var tag in convertTagIdsToTags(conversation.suggestedTagIds, controller.tagIdsToTags)) {
-    _view.conversationPanelView.addTags(new SuggestedConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
+    _view.conversationPanelView.addTags(new SuggestedConversationTagView(tag.text, tag.tagId, tagTypeToKKStyle(tag.type)));
   }
 
   for (var message in conversation.messages) {
@@ -56,10 +56,10 @@ void _updateConversationPanelView(model.Conversation conversation) {
     ..demographicsInfo = conversation.demographicsInfo.values.join(', ');
   _view.conversationPanelView.removeTags();
   for (var tag in convertTagIdsToTags(conversation.tagIds, controller.tagIdsToTags)) {
-    _view.conversationPanelView.addTags(new ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
+    _view.conversationPanelView.addTags(new ConversationTagView(tag.text, tag.tagId, tagTypeToKKStyle(tag.type)));
   }
   for (var tag in convertTagIdsToTags(conversation.suggestedTagIds, controller.tagIdsToTags)) {
-    _view.conversationPanelView.addTags(new SuggestedConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
+    _view.conversationPanelView.addTags(new SuggestedConversationTagView(tag.text, tag.tagId, tagTypeToKKStyle(tag.type)));
   }
 
   _view.conversationPanelView.padOrTrimMessageViews(conversation.messages.length);
@@ -179,7 +179,7 @@ void _addDateTagToFilterMenu(TagFilterType filterType) {
 void _populateSelectedFilterTags(Set<model.Tag> tags, TagFilterType filterType) {
   _view.conversationFilter[filterType].clearSelectedTags();
   for (var tag in tags) {
-    _view.conversationFilter[filterType].addFilterTag(new FilterTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type), filterType));
+    _view.conversationFilter[filterType].addFilterTag(new FilterTagView(tag.text, tag.tagId, tagTypeToKKStyle(tag.type), filterType));
   }
 }
 
@@ -199,6 +199,19 @@ TagStyle tagTypeToStyle(model.TagType tagType) {
         return TagStyle.Yellow;
       }
       return TagStyle.None;
+  }
+}
+
+// This is temporary method until we remove the kk namespace, tag
+kk.TagStyle tagTypeToKKStyle(model.TagType tagType) {
+  switch (tagType) {
+    case model.TagType.Important:
+      return kk.TagStyle.Important;
+    default:
+      if (tagType == model.NotFoundTagType.NotFound) {
+        return kk.TagStyle.Yellow;
+      }
+      return kk.TagStyle.None;
   }
 }
 
