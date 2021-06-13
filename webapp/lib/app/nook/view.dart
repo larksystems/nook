@@ -735,7 +735,7 @@ class MessageTagView extends kk.TagView {
 }
 
 class SuggestedMessageTagView extends kk.TagView {
-  SuggestedMessageTagView(String text, String tagId, kk.TagStyle tagStyle, [bool highlight = false]) : super(text, tagId, tagStyle: tagStyle, removable: true, suggested: true) {
+  SuggestedMessageTagView(String text, String tagId, kk.TagStyle tagStyle, [bool highlight = false]) : super(text, tagId, tagStyle: tagStyle, acceptable: true, removable: true, suggested: true) {
 
     onDelete = () {
       DivElement message = getAncestors(renderElement).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
