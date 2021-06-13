@@ -777,9 +777,9 @@ class SuggestedConversationTagView extends kk.TagView {
     };
 
     onAccept = () {
-      super.markPending(true);
+      markPending(true);
       DivElement messageSummary = getAncestors(renderElement).firstWhere((e) => e.classes.contains('conversation-summary'));
-        _view.appController.command(UIAction.confirmConversationTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
+      _view.appController.command(UIAction.confirmConversationTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
     };
   }
 }
