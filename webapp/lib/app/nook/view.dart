@@ -501,7 +501,7 @@ class MessageView {
 
   static MessageView selectedMessageView;
 
-  MessageView(String text, DateTime dateTime, String conversationId, int messageIndex, {String translation = '', bool incoming = true, List<TagView> tags = const[], MessageStatus status = null}) {
+  MessageView(String text, DateTime dateTime, String conversationId, int messageIndex, {String translation = '', bool incoming = true, List<kk.TagView> tags = const[], MessageStatus status = null}) {
     message = new DivElement()
       ..classes.add('message')
       ..classes.add(incoming ? 'message--incoming' : 'message--outgoing')
@@ -535,7 +535,7 @@ class MessageView {
     _messageTags = new DivElement()
       ..classes.add('message__tags')
       ..classes.add('hover-parent');
-    tags.forEach((tag) => _messageTags.append(tag.tag));
+    tags.forEach((tag) => _messageTags.append(tag.renderElement));
     message.append(_messageTags);
 
     _addMessageTagButton = new DivElement()
@@ -554,11 +554,11 @@ class MessageView {
 
   set translation(String translation) => _messageTranslation.text = translation;
 
-  void addTag(TagView tag, [int position]) {
+  void addTag(kk.TagView tag, [int position]) {
     if (position == null || position >= _messageTags.children.length) {
       // Add at the end
-      _messageTags.insertBefore(tag.tag, _addMessageTagButton);
-      tag.tag.scrollIntoView();
+      _messageTags.insertBefore(tag.renderElement, _addMessageTagButton);
+      tag.renderElement.scrollIntoView();
       return;
     }
     // Add before an existing tag
@@ -566,8 +566,8 @@ class MessageView {
       position = 0;
     }
     Node refChild = _messageTags.children[position];
-    _messageTags.insertBefore(tag.tag, refChild);
-    tag.tag.scrollIntoView();
+    _messageTags.insertBefore(tag.renderElement, refChild);
+    tag.renderElement.scrollIntoView();
   }
 
   void removeTag(String tagId) {
@@ -722,40 +722,33 @@ abstract class TagView {
   }
 }
 
-class MessageTagView extends TagView {
-  MessageTagView(String text, String tagId, TagStyle tagStyle, [bool highlight = false]) : super(text, tagId, tagStyle) {
-    _removeButton.onClick.listen((_) {
-      DivElement message = getAncestors(tag).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
+class MessageTagView extends kk.TagView {
+  MessageTagView(String text, String tagId, kk.TagStyle tagStyle, [bool highlight = false]) : super(text, tagId, tagStyle: tagStyle, removable: true) {
+    onDelete = () {
+      DivElement message = getAncestors(renderElement).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
       _view.appController.command(UIAction.removeMessageTag, new MessageTagData(tagId, int.parse(message.dataset['message-index'])));
-    });
+    };
     if (highlight) {
-      tag.classes.add('tag--highlighted');
+      markHighlighted(true);
     }
   }
 }
 
-class SuggestedMessageTagView extends TagView with AutomaticSuggestionIndicator {
-  SuggestedMessageTagView(String text, String tagId, TagStyle tagStyle, [bool highlight = false]) : super(text, tagId, tagStyle) {
-    _removeButton.onClick.listen((_) {
-      DivElement message = getAncestors(tag).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
+class SuggestedMessageTagView extends kk.TagView {
+  SuggestedMessageTagView(String text, String tagId, kk.TagStyle tagStyle, [bool highlight = false]) : super(text, tagId, tagStyle: tagStyle, removable: true, suggested: true) {
+
+    onDelete = () {
+      DivElement message = getAncestors(renderElement).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
       _view.appController.command(UIAction.rejectMessageTag, new MessageTagData(tagId, int.parse(message.dataset['message-index'])));
-    });
+    };
 
-    tag.insertBefore(automaticSuggestionIndicator..classes.add('relative'), _removeButton);
-    tag.classes.add('tag--suggested');
-
-    var confirmButton = new SpanElement()
-      ..classes.add('tag__confirm')
-      ..classes.add('btn')
-      ..classes.add('btn--hover-only')
-      ..onClick.listen((_) {
-        DivElement message = getAncestors(tag).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
+    onAccept = () {
+      DivElement message = getAncestors(renderElement).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
         _view.appController.command(UIAction.confirmMessageTag, new MessageTagData(tagId, int.parse(message.dataset['message-index'])));
-      });
-    tag.insertBefore(confirmButton, _removeButton);
+    };
 
     if (highlight) {
-      tag.classes.add('tag--highlighted');
+      markHighlighted(true);
     }
   }
 }
@@ -788,43 +781,18 @@ mixin AutomaticSuggestionIndicator {
   Element get automaticSuggestionIndicator => Element.html('<i class="fas fa-robot automated-action-indicator"></i>');
 }
 
-class EditableTagView extends TagView {
-  DivElement _addMessageTagSaveButton;
+class EditableTagView extends kk.TagView {
+  EditableTagView(String text, String tagId, kk.TagStyle tagStyle) : super(text, tagId, tagStyle: tagStyle, removable: true, editable: true) {
+    super.makeEditable();
 
-  EditableTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle) {
-    tag.classes.add('tag--unsaved');
+    onEdit = (value) {
+      _view.appController.command(UIAction.saveTag, new SaveTagData(value, tagId));
+    };
 
-    makeEditable(_tagText, onEnter: (e) {
-      e.stopPropagation();
-      e.preventDefault();
-      _view.appController.command(UIAction.saveTag, new SaveTagData(_tagText.text, tagId));
-    });
-
-    _addMessageTagSaveButton = new DivElement()
-      ..classes.add('edit-tag-widget__save-button')
-      ..classes.add('tag__confirm')
-      ..onClick.listen((e) {
-        e.stopPropagation();
-        _view.appController.command(UIAction.saveTag, new SaveTagData(_tagText.text, tagId));
-      });
-    tag.insertBefore(_addMessageTagSaveButton, _removeButton);
-
-
-    _removeButton
-      ..classes.remove('tag--hover-only-btn')
-      ..classes.add('edit-tag-widget__cancel-button');
-    _removeButton.onClick.listen((e) {
-      e.stopPropagation();
-      DivElement message = getAncestors(tag).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
+    onCancel = () {
+      DivElement message = getAncestors(renderElement).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
       _view.appController.command(UIAction.cancelAddNewTagInline, new MessageTagData(tagId, int.parse(message.dataset['message-index'])));
-    });
-  }
-
-  void focus() => _tagText.focus();
-
-  void markPending() {
-    tag.classes.remove('tag--unsaved');
-    super.markPending();
+    };
   }
 }
 
