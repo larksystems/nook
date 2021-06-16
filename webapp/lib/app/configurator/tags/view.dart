@@ -155,7 +155,7 @@ class TagGroupView {
 
 class ConfigureTagView extends kk.TagView {
   static bool dragInProgress = false;
-  ConfigureTagView(String tagText, String tagId, String groupId, kk.TagStyle tagStyle) : super(tagText, tagId, groupId: groupId, tagStyle: tagStyle, removable: true, editable: true) {
+  ConfigureTagView(String tagText, String tagId, String groupId, kk.TagStyle tagStyle) : super(tagText, tagId, groupId: groupId, tagStyle: tagStyle, deletable: true, editable: true) {
     var draggableTag = new dnd.Draggable(renderElement, avatarHandler: dnd.AvatarHandler.original(), draggingClass: 'tag__text');
     draggableTag
       ..onDragStart.listen((_) => dragInProgress = true)

@@ -9,12 +9,12 @@ void _addTagsToView(Map<String, List<model.Tag>> tagsByCategory, {bool startEdit
     for (var tag in tagsByCategory[category]) {
       tagsById[tag.tagId] = new ConfigureTagView(tag.text, tag.docId, category, _tagTypeToKKStyle(tag.type));
       if (startEditing) {
-        tagsById[tag.tagId].makeEditable();
+        tagsById[tag.tagId].beginEdit();
       }
     }
     _view.groups[category].addTags(tagsById);
     if (startEditing) {
-      tagsById[tagsByCategory[category].last.tagId].focusEditText();
+      tagsById[tagsByCategory[category].last.tagId].focus();
       tagsById[tagsByCategory[category].last.tagId].onCancel = () {
         _view.appController.command(TagsConfigAction.removeTag, new TagData(tagsByCategory[category].last.tagId, groupId: category));
       };
