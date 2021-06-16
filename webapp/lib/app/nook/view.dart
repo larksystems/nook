@@ -670,58 +670,6 @@ String _formatDateTime(DateTime dateTime) {
   return '${_dateFormat.format(localDateTime)}, ${_hourFormat.format(localDateTime)}';
 }
 
-enum TagStyle {
-  None,
-  Green,
-  Yellow,
-  Red,
-  Important,
-}
-
-abstract class TagView {
-  DivElement tag;
-  var _tagText;
-  SpanElement _removeButton;
-
-  TagView(String text, String tagId, TagStyle tagStyle) {
-    tag = new DivElement()
-      ..classes.add('tag')
-      ..classes.add('hover-parent')
-      ..dataset['id'] = tagId;
-    switch (tagStyle) {
-      case TagStyle.Green:
-        tag.classes.add('tag--green');
-        break;
-      case TagStyle.Yellow:
-        tag.classes.add('tag--yellow');
-        break;
-      case TagStyle.Red:
-        tag.classes.add('tag--red');
-        break;
-      case TagStyle.Important:
-        tag.classes.add('tag--important');
-        break;
-      default:
-    }
-
-    _tagText = new SpanElement()
-      ..classes.add('tag__name')
-      ..text = text
-      ..title = text;
-    tag.append(_tagText);
-
-    _removeButton = new SpanElement()
-      ..classes.add('tag__remove')
-      ..classes.add('btn')
-      ..classes.add('btn--hover-only');
-    tag.append(_removeButton);
-  }
-
-  void markPending() {
-    tag.classes.add('tag--pending');
-  }
-}
-
 class MessageTagView extends kk.TagView {
   MessageTagView(String text, String tagId, kk.TagStyle tagStyle, [bool highlight = false]) : super(text, tagId, tagStyle: tagStyle, removable: true) {
     onDelete = () {

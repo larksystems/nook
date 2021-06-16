@@ -190,18 +190,6 @@ void _populateSelectedAfterDateFilterTag(DateTime afterDateFilter, TagFilterType
   }
 }
 
-TagStyle tagTypeToStyle(model.TagType tagType) {
-  switch (tagType) {
-    case model.TagType.Important:
-      return TagStyle.Important;
-    default:
-      if (tagType == model.NotFoundTagType.NotFound) {
-        return TagStyle.Yellow;
-      }
-      return TagStyle.None;
-  }
-}
-
 // This is temporary method until we remove the kk namespace, tag
 kk.TagStyle tagTypeToKKStyle(model.TagType tagType) {
   switch (tagType) {
