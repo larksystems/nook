@@ -5,6 +5,7 @@ import 'package:dnd/dnd.dart' as dnd;
 import 'package:nook/app/configurator/view.dart';
 export 'package:nook/app/configurator/view.dart';
 import 'package:nook/platform/platform.dart' as platform;
+import 'package:katikati_ui_lib/components/tag/tag.dart' as kk;
 
 import 'controller.dart';
 import 'sample_data_helper.dart';
@@ -61,7 +62,7 @@ class TagGroupView {
   EditableText _editableTitle;
   Button _addTagButton;
 
-  Map<String, TagView> tagViewsById;
+  Map<String, kk.TagView> tagViewsById;
 
   TagGroupView(String groupName) {
     _tagsGroupElement = new DivElement()..classes.add('tags-group');
@@ -128,14 +129,14 @@ class TagGroupView {
   void set name(String text) => _titleText.text = text;
   String get name => _titleText.text;
 
-  void addTags(Map<String, TagView> tags) {
+  void addTags(Map<String, kk.TagView> tags) {
     for (var tag in tags.keys) {
       _tagsContainer.insertBefore(tags[tag].renderElement, _addTagButton.renderElement);
       tagViewsById[tag] = tags[tag];
     }
   }
 
-  void modifyTags(Map<String, TagView> tags) {
+  void modifyTags(Map<String, kk.TagView> tags) {
     for (var tag in tags.keys) {
       _tagsContainer.insertBefore(tags[tag].renderElement, tagViewsById[tag].renderElement);
       tagViewsById[tag].renderElement.remove();
@@ -151,84 +152,38 @@ class TagGroupView {
   }
 }
 
-// This enum was adapted from Nook
-enum TagStyle {
-  None,
-  Green,
-  Yellow,
-  Red,
-  Important,
-}
 
-// This class was adapted from Nook
-class TagView {
-  DivElement tag;
-  SpanElement _tagText;
-  EditableText _editableTag;
-  String tagId;
-
+class ConfigureTagView extends kk.TagView {
   static bool dragInProgress = false;
-
-  TagView(String text, String tagId, String groupId, TagStyle tagStyle) {
-    this.tagId = tagId;
-    tag = new DivElement()
-      ..classes.add('tag')
-      ..dataset['id'] = tagId
-      ..dataset['group-id'] = groupId;
-    switch (tagStyle) {
-      case TagStyle.Green:
-        tag.classes.add('tag--green');
-        break;
-      case TagStyle.Yellow:
-        tag.classes.add('tag--yellow');
-        break;
-      case TagStyle.Red:
-        tag.classes.add('tag--red');
-        break;
-      case TagStyle.Important:
-        tag.classes.add('tag--important');
-        break;
-      default:
-    }
-    var draggableTag = new dnd.Draggable(tag, avatarHandler: dnd.AvatarHandler.original(), draggingClass: 'tag__name');
+  ConfigureTagView(String tagText, String tagId, String groupId, kk.TagStyle tagStyle) : super(tagText, tagId, groupId: groupId, tagStyle: tagStyle, removable: true, editable: true) {
+    var draggableTag = new dnd.Draggable(renderElement, avatarHandler: dnd.AvatarHandler.original(), draggingClass: 'tag__text');
     draggableTag
       ..onDragStart.listen((_) => dragInProgress = true)
       ..onDragEnd.listen((_) => dragInProgress = false);
 
-    _tagText = new SpanElement()
-      ..classes.add('tag__name')
-      ..text = text
-      ..title = text;
+    onEdit = (text) {
+      _view.appController.command(TagsConfigAction.renameTag, new TagData(tagId, text: text));
+    };
+    onDelete = () {
+      var warningModal;
+      warningModal = new PopupModal('Are you sure you want to remove this tag?', [
+        new Button(ButtonType.text,
+            buttonText: 'Yes', onClick: (_) => _view.appController.command(TagsConfigAction.removeTag, new TagData(tagId, groupId: groupId))),
+        new Button(ButtonType.text, buttonText: 'No', onClick: (_) => warningModal.remove()),
+      ]);
+      warningModal.parent = renderElement;
+    };
 
-    _editableTag = new EditableText(_tagText, alwaysShowButtons: true,
-        onEditStart: (_) => draggableTag.destroy(),
-        onEditEnd: (_) => new dnd.Draggable(tag, avatarHandler: dnd.AvatarHandler.original(), draggingClass: 'tag__name'),
-        onSave: (_) => _view.appController.command(TagsConfigAction.renameTag, new TagData(tagId, text: _tagText.text)),
-        onRemove: (_) {
-          var warningModal;
-          warningModal = new PopupModal('Are you sure you want to remove this tag?', [
-            new Button(ButtonType.text,
-                buttonText: 'Yes', onClick: (_) => _view.appController.command(TagsConfigAction.removeTag, new TagData(tagId, groupId: groupId))),
-            new Button(ButtonType.text, buttonText: 'No', onClick: (_) => warningModal.remove()),
-          ]);
-          warningModal.parent = tag;
-        });
-    _editableTag.parent = tag;
-
-    var tooltip = new SampleMessagesTooltip('Sample messages for tag "$text"');
-    _tagText.onMouseEnter.listen((event) {
+    var tooltip = new SampleMessagesTooltip('Sample messages for tag "$tagText"');
+    onMouseEnter = () {
       if (dragInProgress) return;
-      tooltip.parent = tag;
-      getSampleMessages(platform.firestoreInstance, this.tagId).then((value) => tooltip.displayMessages(value));
-    });
-    tag.onMouseLeave.listen((event) {
+      tooltip.parent = renderElement;
+      getSampleMessages(platform.firestoreInstance, tagId).then((value) => tooltip.displayMessages(value));
+    };
+    onMouseLeave = () {
       tooltip.remove();
-    });
+    };
   }
-
-  void focus() => _tagText.focus();
-
-  Element get renderElement => tag;
 }
 
 class SampleMessagesTooltip {
