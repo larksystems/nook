@@ -1270,11 +1270,11 @@ class NookController extends Controller {
         conversation = activeConversation;
         message = conversation.messages[messageData.messageIndex];
 
-        var newTagView = new EditableTagView(newTagToAdd.text, newTagToAdd.tagId, tagTypeToStyle(newTagToAdd.type));
+        var newTagView = new EditableTagView(newTagToAdd.text, newTagToAdd.tagId, tagTypeToKKStyle(newTagToAdd.type));
         _view.conversationPanelView
             .messageViewAtIndex(messageData.messageIndex)
             .addTag(newTagView);
-        newTagView.focus();
+        newTagView.focusEditText();
         break;
       case UIAction.saveTag:
         SaveTagData saveTagData = data;
@@ -1555,11 +1555,11 @@ class NookController extends Controller {
     if (!message.tagIds.contains(tag.tagId)) {
       platform.addMessageTag(activeConversation, message, tag.tagId).then(
         (_) {
-          var tagView = new MessageTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type));
+          var tagView = new MessageTagView(tag.text, tag.tagId, tagTypeToKKStyle(tag.type));
           _view.conversationPanelView
             .messageViewAtIndex(conversation.messages.indexOf(message))
             .addTag(tagView);
-          tagView.markPending();
+          tagView.markPending(true);
         }, onError: showAndLogError);
     }
   }
