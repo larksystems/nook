@@ -728,9 +728,7 @@ class MessageTagView extends kk.TagView {
       DivElement message = getAncestors(renderElement).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
       _view.appController.command(UIAction.removeMessageTag, new MessageTagData(tagId, int.parse(message.dataset['message-index'])));
     };
-    if (highlight) {
-      markHighlighted(true);
-    }
+    markHighlighted(highlight);
   }
 }
 
@@ -747,9 +745,7 @@ class SuggestedMessageTagView extends kk.TagView {
         _view.appController.command(UIAction.confirmMessageTag, new MessageTagData(tagId, int.parse(message.dataset['message-index'])));
     };
 
-    if (highlight) {
-      markHighlighted(true);
-    }
+    markHighlighted(highlight);
   }
 }
 
