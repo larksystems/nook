@@ -1,6 +1,6 @@
 part of controller;
 
-void _addTagsToView(Map<String, List<model.Tag>> tagsByCategory, {bool editable = false}) {
+void _addTagsToView(Map<String, List<model.Tag>> tagsByCategory, {bool startEditing = false}) {
   for (var category in tagsByCategory.keys.toList()..sort()) {
     if (!_view.groups.containsKey(category)) {
       _view.addTagCategory(category, new TagGroupView(category));
@@ -8,12 +8,12 @@ void _addTagsToView(Map<String, List<model.Tag>> tagsByCategory, {bool editable 
     Map<String, kk.TagView> tagsById = {};
     for (var tag in tagsByCategory[category]) {
       tagsById[tag.tagId] = new ConfigureTagView(tag.text, tag.docId, category, _tagTypeToKKStyle(tag.type));
-      if (editable) {
+      if (startEditing) {
         tagsById[tag.tagId].makeEditable();
       }
     }
     _view.groups[category].addTags(tagsById);
-    if (editable) {
+    if (startEditing) {
       tagsById[tagsByCategory[category].last.tagId].focusEditText();
       tagsById[tagsByCategory[category].last.tagId].onCancel = () {
         _view.appController.command(TagsConfigAction.removeTag, new TagData(tagsByCategory[category].last.tagId, groupId: category));
