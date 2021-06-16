@@ -828,15 +828,12 @@ class EditableTagView extends TagView {
   }
 }
 
-class FilterMenuTagView extends TagView {
+class FilterMenuTagView extends kk.TagView {
   TagFilterType _filterType;
-  FilterMenuTagView(String text, String tagId, TagStyle tagStyle, TagFilterType filterType) : super(text, tagId, tagStyle) {
-    _removeButton.remove();
-    _tagText
-      ..classes.add('clickable')
-      ..onClick.listen((_) {
-        handleClicked(tagId);
-      });
+  FilterMenuTagView(String text, String tagId, kk.TagStyle tagStyle, TagFilterType filterType) : super(text, tagId, tagStyle: tagStyle) {
+    onSelect = () {
+      handleClicked(tagId);
+    };
     _filterType = filterType;
   }
 
@@ -858,7 +855,7 @@ class FilterTagView extends kk.TagView {
 const AFTER_DATE_TAG_ID = "after-date";
 
 class AfterDateFilterMenuTagView extends FilterMenuTagView {
-  AfterDateFilterMenuTagView(TagFilterType filterType) : super("after date", AFTER_DATE_TAG_ID, TagStyle.None, filterType);
+  AfterDateFilterMenuTagView(TagFilterType filterType) : super("after date", AFTER_DATE_TAG_ID, kk.TagStyle.None, filterType);
 
   @override
   void handleClicked(String tagId) {
@@ -1238,9 +1235,9 @@ class ConversationFilter {
       newContainerTitle.classes.toggle('folded', true);
 
       return newContainer;
-    }).append(tag.tag);
+    }).append(tag.renderElement);
     bool wasHidden = _tagGroupsContainers[category].classes.remove('hidden'); // briefly override any display settings to make sure we can compute getBoundingClientRect()
-    List<num> widths = _tagGroupsContainers[category].querySelectorAll('.tag__name').toList().map((e) => e.getBoundingClientRect().width).toList();
+    List<num> widths = _tagGroupsContainers[category].querySelectorAll('.tag__text').toList().map((e) => e.getBoundingClientRect().width).toList();
     _tagGroupsContainers[category].classes.toggle('hidden', wasHidden); // clear inline display settings
     num avgGridWidth = widths.fold(0, (previousValue, width) => previousValue + width);
     avgGridWidth = avgGridWidth / widths.length;
@@ -1252,8 +1249,8 @@ class ConversationFilter {
   }
 
   void removeMenuTag(FilterMenuTagView tag, String category) {
-    int index = _tagGroups[category].indexWhere((t) => t.tag.dataset["id"] == tag.tag.dataset["id"]);
-    _tagGroups[category][index].tag.remove();
+    int index = _tagGroups[category].indexWhere((t) => t.renderElement.dataset["id"] == tag.renderElement.dataset["id"]);
+    _tagGroups[category][index].renderElement.remove();
     _tagGroups[category].removeAt(index);
   }
 
