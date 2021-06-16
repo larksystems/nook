@@ -84,7 +84,7 @@ class TagsConfiguratorController extends ConfiguratorController {
         var tag = tagManager.createTag(tagData.groupId);
         _addTagsToView({
           tagData.groupId: [tag]
-        }, editable: true);
+        }, startEditing: true);
         break;
 
       case TagsConfigAction.renameTag:
