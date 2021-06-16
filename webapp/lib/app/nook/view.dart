@@ -14,7 +14,7 @@ import 'package:katikati_ui_lib/components/model/model.dart';
 import 'package:katikati_ui_lib/components/conversation/conversation_item.dart';
 import 'package:katikati_ui_lib/components/user_presence/user_presence_indicator.dart';
 import 'package:katikati_ui_lib/components/scroll_indicator/scroll_indicator.dart';
-import 'package:katikati_ui_lib/components/tag/tag.dart' as kk;
+import 'package:katikati_ui_lib/components/tag/tag.dart';
 import 'package:nook/view.dart';
 import 'package:nook/app/utils.dart';
 
@@ -316,7 +316,7 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
     _messageViews[index] = message;
   }
 
-  void addTags(kk.TagView tag) {
+  void addTags(TagView tag) {
     _tags.append(tag.renderElement);
   }
 
@@ -501,7 +501,7 @@ class MessageView {
 
   static MessageView selectedMessageView;
 
-  MessageView(String text, DateTime dateTime, String conversationId, int messageIndex, {String translation = '', bool incoming = true, List<kk.TagView> tags = const[], MessageStatus status = null}) {
+  MessageView(String text, DateTime dateTime, String conversationId, int messageIndex, {String translation = '', bool incoming = true, List<TagView> tags = const[], MessageStatus status = null}) {
     message = new DivElement()
       ..classes.add('message')
       ..classes.add(incoming ? 'message--incoming' : 'message--outgoing')
@@ -554,7 +554,7 @@ class MessageView {
 
   set translation(String translation) => _messageTranslation.text = translation;
 
-  void addTag(kk.TagView tag, [int position]) {
+  void addTag(TagView tag, [int position]) {
     if (position == null || position >= _messageTags.children.length) {
       // Add at the end
       _messageTags.insertBefore(tag.renderElement, _addMessageTagButton);
@@ -670,8 +670,8 @@ String _formatDateTime(DateTime dateTime) {
   return '${_dateFormat.format(localDateTime)}, ${_hourFormat.format(localDateTime)}';
 }
 
-class MessageTagView extends kk.TagView {
-  MessageTagView(String text, String tagId, kk.TagStyle tagStyle, [bool highlight = false]) : super(text, tagId, tagStyle: tagStyle, removable: true) {
+class MessageTagView extends TagView {
+  MessageTagView(String text, String tagId, TagStyle tagStyle, [bool highlight = false]) : super(text, tagId, tagStyle: tagStyle, removable: true) {
     onDelete = () {
       DivElement message = getAncestors(renderElement).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
       _view.appController.command(UIAction.removeMessageTag, new MessageTagData(tagId, int.parse(message.dataset['message-index'])));
@@ -680,8 +680,8 @@ class MessageTagView extends kk.TagView {
   }
 }
 
-class SuggestedMessageTagView extends kk.TagView {
-  SuggestedMessageTagView(String text, String tagId, kk.TagStyle tagStyle, [bool highlight = false]) : super(text, tagId, tagStyle: tagStyle, acceptable: true, removable: true, suggested: true) {
+class SuggestedMessageTagView extends TagView {
+  SuggestedMessageTagView(String text, String tagId, TagStyle tagStyle, [bool highlight = false]) : super(text, tagId, tagStyle: tagStyle, acceptable: true, removable: true, suggested: true) {
 
     onDelete = () {
       DivElement message = getAncestors(renderElement).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
@@ -697,8 +697,8 @@ class SuggestedMessageTagView extends kk.TagView {
   }
 }
 
-class ConversationTagView extends kk.TagView {
-  ConversationTagView(String text, String tagId, kk.TagStyle tagStyle) : super(text, tagId, tagStyle: tagStyle, removable: true) {
+class ConversationTagView extends TagView {
+  ConversationTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle: tagStyle, removable: true) {
     onDelete = () {
       DivElement messageSummary = getAncestors(renderElement).firstWhere((e) => e.classes.contains('conversation-summary'));
       _view.appController.command(UIAction.removeConversationTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
@@ -706,8 +706,8 @@ class ConversationTagView extends kk.TagView {
   }
 }
 
-class SuggestedConversationTagView extends kk.TagView {
-  SuggestedConversationTagView(String text, String tagId, kk.TagStyle tagStyle) : super(text, tagId, tagStyle: tagStyle, removable: true, acceptable: true, suggested: true) {
+class SuggestedConversationTagView extends TagView {
+  SuggestedConversationTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle: tagStyle, removable: true, acceptable: true, suggested: true) {
     onDelete = () {
       DivElement messageSummary = getAncestors(renderElement).firstWhere((e) => e.classes.contains('conversation-summary'));
       _view.appController.command(UIAction.rejectConversationTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
@@ -725,8 +725,8 @@ mixin AutomaticSuggestionIndicator {
   Element get automaticSuggestionIndicator => Element.html('<i class="fas fa-robot automated-action-indicator"></i>');
 }
 
-class EditableTagView extends kk.TagView {
-  EditableTagView(String text, String tagId, kk.TagStyle tagStyle) : super(text, tagId, tagStyle: tagStyle, removable: true, editable: true) {
+class EditableTagView extends TagView {
+  EditableTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle: tagStyle, removable: true, editable: true) {
     super.makeEditable();
 
     onEdit = (value) {
@@ -740,9 +740,9 @@ class EditableTagView extends kk.TagView {
   }
 }
 
-class FilterMenuTagView extends kk.TagView {
+class FilterMenuTagView extends TagView {
   TagFilterType _filterType;
-  FilterMenuTagView(String text, String tagId, kk.TagStyle tagStyle, TagFilterType filterType) : super(text, tagId, tagStyle: tagStyle) {
+  FilterMenuTagView(String text, String tagId, TagStyle tagStyle, TagFilterType filterType) : super(text, tagId, tagStyle: tagStyle) {
     onSelect = () {
       handleClicked(tagId);
     };
@@ -754,9 +754,9 @@ class FilterMenuTagView extends kk.TagView {
   }
 }
 
-class FilterTagView extends kk.TagView {
+class FilterTagView extends TagView {
   TagFilterType _filterType;
-  FilterTagView(String text, String tagId, kk.TagStyle tagStyle, TagFilterType filterType) : super(text, tagId, tagStyle: tagStyle, removable: true) {
+  FilterTagView(String text, String tagId, TagStyle tagStyle, TagFilterType filterType) : super(text, tagId, tagStyle: tagStyle, removable: true) {
     _filterType = filterType;
     onDelete = () {
       _view.appController.command(UIAction.removeFilterTag, new FilterTagData(tagId, _filterType));
@@ -767,7 +767,7 @@ class FilterTagView extends kk.TagView {
 const AFTER_DATE_TAG_ID = "after-date";
 
 class AfterDateFilterMenuTagView extends FilterMenuTagView {
-  AfterDateFilterMenuTagView(TagFilterType filterType) : super("after date", AFTER_DATE_TAG_ID, kk.TagStyle.None, filterType);
+  AfterDateFilterMenuTagView(TagFilterType filterType) : super("after date", AFTER_DATE_TAG_ID, TagStyle.None, filterType);
 
   @override
   void handleClicked(String tagId) {
@@ -776,7 +776,7 @@ class AfterDateFilterMenuTagView extends FilterMenuTagView {
 }
 
 class AfterDateFilterTagView extends FilterTagView {
-  AfterDateFilterTagView(DateTime dateTime, TagFilterType filterType) : super(filterText(dateTime), AFTER_DATE_TAG_ID, kk.TagStyle.None, filterType);
+  AfterDateFilterTagView(DateTime dateTime, TagFilterType filterType) : super(filterText(dateTime), AFTER_DATE_TAG_ID, TagStyle.None, filterType);
 
   static String filterText(DateTime dateTime) {
     return "after date ${afterDateFilterFormat.format(dateTime)}";
@@ -1800,7 +1800,7 @@ class TagActionView implements ActionView {
       ..text = shortcut;
     action.append(_shortcutElement);
 
-    var tagElement = kk.TagView(text, "");
+    var tagElement = TagView(text, "");
     action.append(tagElement.renderElement);
 
     _buttonElement = new DivElement()

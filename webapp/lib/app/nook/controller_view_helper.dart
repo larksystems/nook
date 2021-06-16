@@ -76,7 +76,7 @@ void _updateConversationPanelView(model.Conversation conversation) {
 }
 
 MessageView _generateMessageView(model.Message message, model.Conversation conversation) {
-  List<kk.TagView> tags = [];
+  List<TagView> tags = [];
   for (var tag in convertTagIdsToTags(message.tagIds, controller.tagIdsToTags)) {
     bool shouldHighlightTag = controller.conversationFilter.filterTagIds[TagFilterType.include].contains(tag.tagId);
     shouldHighlightTag = shouldHighlightTag || controller.conversationFilter.filterTagIds[TagFilterType.lastInboundTurn].contains(tag.tagId);
@@ -191,15 +191,15 @@ void _populateSelectedAfterDateFilterTag(DateTime afterDateFilter, TagFilterType
 }
 
 // This is temporary method until we remove the kk namespace, tag
-kk.TagStyle tagTypeToKKStyle(model.TagType tagType) {
+TagStyle tagTypeToKKStyle(model.TagType tagType) {
   switch (tagType) {
     case model.TagType.Important:
-      return kk.TagStyle.Important;
+      return TagStyle.Important;
     default:
       if (tagType == model.NotFoundTagType.NotFound) {
-        return kk.TagStyle.Yellow;
+        return TagStyle.Yellow;
       }
-      return kk.TagStyle.None;
+      return TagStyle.None;
   }
 }
 
