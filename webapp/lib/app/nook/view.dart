@@ -725,6 +725,7 @@ abstract class TagView {
 class MessageTagView extends kk.TagView {
   MessageTagView(String text, String tagId, kk.TagStyle tagStyle, [bool highlight = false]) : super(text, tagId, tagStyle: tagStyle, removable: true) {
     onDelete = () {
+      markPending(true);
       DivElement message = getAncestors(renderElement).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
       _view.appController.command(UIAction.removeMessageTag, new MessageTagData(tagId, int.parse(message.dataset['message-index'])));
     };
@@ -736,11 +737,13 @@ class SuggestedMessageTagView extends kk.TagView {
   SuggestedMessageTagView(String text, String tagId, kk.TagStyle tagStyle, [bool highlight = false]) : super(text, tagId, tagStyle: tagStyle, acceptable: true, removable: true, suggested: true) {
 
     onDelete = () {
+      markPending(true);
       DivElement message = getAncestors(renderElement).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
       _view.appController.command(UIAction.rejectMessageTag, new MessageTagData(tagId, int.parse(message.dataset['message-index'])));
     };
 
     onAccept = () {
+      markPending(true);
       DivElement message = getAncestors(renderElement).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
         _view.appController.command(UIAction.confirmMessageTag, new MessageTagData(tagId, int.parse(message.dataset['message-index'])));
     };
@@ -752,6 +755,7 @@ class SuggestedMessageTagView extends kk.TagView {
 class ConversationTagView extends kk.TagView {
   ConversationTagView(String text, String tagId, kk.TagStyle tagStyle) : super(text, tagId, tagStyle: tagStyle, removable: true) {
     onDelete = () {
+      markPending(true);
       DivElement messageSummary = getAncestors(renderElement).firstWhere((e) => e.classes.contains('conversation-summary'));
       _view.appController.command(UIAction.removeConversationTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
     };
@@ -761,6 +765,7 @@ class ConversationTagView extends kk.TagView {
 class SuggestedConversationTagView extends kk.TagView {
   SuggestedConversationTagView(String text, String tagId, kk.TagStyle tagStyle) : super(text, tagId, tagStyle: tagStyle, removable: true, acceptable: true, suggested: true) {
     onDelete = () {
+      markPending(true);
       DivElement messageSummary = getAncestors(renderElement).firstWhere((e) => e.classes.contains('conversation-summary'));
       _view.appController.command(UIAction.rejectConversationTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
     };
@@ -811,6 +816,7 @@ class FilterTagView extends kk.TagView {
   FilterTagView(String text, String tagId, kk.TagStyle tagStyle, TagFilterType filterType) : super(text, tagId, tagStyle: tagStyle, removable: true) {
     _filterType = filterType;
     onDelete = () {
+      markPending(true);
       _view.appController.command(UIAction.removeFilterTag, new FilterTagData(tagId, _filterType));
     };
   }
