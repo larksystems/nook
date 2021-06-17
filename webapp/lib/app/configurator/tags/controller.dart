@@ -4,6 +4,7 @@ import 'package:katikati_ui_lib/components/logger.dart';
 import 'package:nook/app/configurator/controller.dart';
 export 'package:nook/app/configurator/controller.dart';
 import 'package:katikati_ui_lib/components/model/model.dart' as model;
+import 'package:katikati_ui_lib/components/tag/tag.dart' as kk;
 import 'package:nook/platform/platform.dart';
 import 'view.dart';
 
@@ -83,7 +84,7 @@ class TagsConfiguratorController extends ConfiguratorController {
         var tag = tagManager.createTag(tagData.groupId);
         _addTagsToView({
           tagData.groupId: [tag]
-        });
+        }, startEditing: true);
         break;
 
       case TagsConfigAction.renameTag:

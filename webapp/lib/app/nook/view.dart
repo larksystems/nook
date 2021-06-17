@@ -14,6 +14,7 @@ import 'package:katikati_ui_lib/components/model/model.dart';
 import 'package:katikati_ui_lib/components/conversation/conversation_item.dart';
 import 'package:katikati_ui_lib/components/user_presence/user_presence_indicator.dart';
 import 'package:katikati_ui_lib/components/scroll_indicator/scroll_indicator.dart';
+import 'package:katikati_ui_lib/components/tag/tag.dart' as kk;
 import 'package:nook/view.dart';
 import 'package:nook/app/utils.dart';
 
@@ -315,8 +316,8 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
     _messageViews[index] = message;
   }
 
-  void addTags(TagView tag) {
-    _tags.append(tag.tag);
+  void addTags(kk.TagView tag) {
+    _tags.append(tag.renderElement);
   }
 
   void removeTag(String tagId) {
@@ -500,7 +501,7 @@ class MessageView {
 
   static MessageView selectedMessageView;
 
-  MessageView(String text, DateTime dateTime, String conversationId, int messageIndex, {String translation = '', bool incoming = true, List<TagView> tags = const[], MessageStatus status = null}) {
+  MessageView(String text, DateTime dateTime, String conversationId, int messageIndex, {String translation = '', bool incoming = true, List<kk.TagView> tags = const[], MessageStatus status = null}) {
     message = new DivElement()
       ..classes.add('message')
       ..classes.add(incoming ? 'message--incoming' : 'message--outgoing')
@@ -534,7 +535,7 @@ class MessageView {
     _messageTags = new DivElement()
       ..classes.add('message__tags')
       ..classes.add('hover-parent');
-    tags.forEach((tag) => _messageTags.append(tag.tag));
+    tags.forEach((tag) => _messageTags.append(tag.renderElement));
     message.append(_messageTags);
 
     _addMessageTagButton = new DivElement()
@@ -553,11 +554,11 @@ class MessageView {
 
   set translation(String translation) => _messageTranslation.text = translation;
 
-  void addTag(TagView tag, [int position]) {
+  void addTag(kk.TagView tag, [int position]) {
     if (position == null || position >= _messageTags.children.length) {
       // Add at the end
-      _messageTags.insertBefore(tag.tag, _addMessageTagButton);
-      tag.tag.scrollIntoView();
+      _messageTags.insertBefore(tag.renderElement, _addMessageTagButton);
+      tag.renderElement.scrollIntoView();
       return;
     }
     // Add before an existing tag
@@ -565,8 +566,8 @@ class MessageView {
       position = 0;
     }
     Node refChild = _messageTags.children[position];
-    _messageTags.insertBefore(tag.tag, refChild);
-    tag.tag.scrollIntoView();
+    _messageTags.insertBefore(tag.renderElement, refChild);
+    tag.renderElement.scrollIntoView();
   }
 
   void removeTag(String tagId) {
@@ -721,72 +722,54 @@ abstract class TagView {
   }
 }
 
-class MessageTagView extends TagView {
-  MessageTagView(String text, String tagId, TagStyle tagStyle, [bool highlight = false]) : super(text, tagId, tagStyle) {
-    _removeButton.onClick.listen((_) {
-      DivElement message = getAncestors(tag).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
+class MessageTagView extends kk.TagView {
+  MessageTagView(String text, String tagId, kk.TagStyle tagStyle, [bool highlight = false]) : super(text, tagId, tagStyle: tagStyle, removable: true) {
+    onDelete = () {
+      DivElement message = getAncestors(renderElement).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
       _view.appController.command(UIAction.removeMessageTag, new MessageTagData(tagId, int.parse(message.dataset['message-index'])));
-    });
-    if (highlight) {
-      tag.classes.add('tag--highlighted');
-    }
+    };
+    markHighlighted(highlight);
   }
 }
 
-class SuggestedMessageTagView extends TagView with AutomaticSuggestionIndicator {
-  SuggestedMessageTagView(String text, String tagId, TagStyle tagStyle, [bool highlight = false]) : super(text, tagId, tagStyle) {
-    _removeButton.onClick.listen((_) {
-      DivElement message = getAncestors(tag).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
+class SuggestedMessageTagView extends kk.TagView {
+  SuggestedMessageTagView(String text, String tagId, kk.TagStyle tagStyle, [bool highlight = false]) : super(text, tagId, tagStyle: tagStyle, acceptable: true, removable: true, suggested: true) {
+
+    onDelete = () {
+      DivElement message = getAncestors(renderElement).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
       _view.appController.command(UIAction.rejectMessageTag, new MessageTagData(tagId, int.parse(message.dataset['message-index'])));
-    });
+    };
 
-    tag.insertBefore(automaticSuggestionIndicator..classes.add('relative'), _removeButton);
-    tag.classes.add('tag--suggested');
-
-    var confirmButton = new SpanElement()
-      ..classes.add('tag__confirm')
-      ..classes.add('btn')
-      ..classes.add('btn--hover-only')
-      ..onClick.listen((_) {
-        DivElement message = getAncestors(tag).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
+    onAccept = () {
+      DivElement message = getAncestors(renderElement).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
         _view.appController.command(UIAction.confirmMessageTag, new MessageTagData(tagId, int.parse(message.dataset['message-index'])));
-      });
-    tag.insertBefore(confirmButton, _removeButton);
+    };
 
-    if (highlight) {
-      tag.classes.add('tag--highlighted');
-    }
+    markHighlighted(highlight);
   }
 }
 
-class ConversationTagView extends TagView {
-  ConversationTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle) {
-    _removeButton.onClick.listen((_) {
-      DivElement messageSummary = getAncestors(tag).firstWhere((e) => e.classes.contains('conversation-summary'));
+class ConversationTagView extends kk.TagView {
+  ConversationTagView(String text, String tagId, kk.TagStyle tagStyle) : super(text, tagId, tagStyle: tagStyle, removable: true) {
+    onDelete = () {
+      DivElement messageSummary = getAncestors(renderElement).firstWhere((e) => e.classes.contains('conversation-summary'));
       _view.appController.command(UIAction.removeConversationTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
-    });
+    };
   }
 }
 
-class SuggestedConversationTagView extends TagView with AutomaticSuggestionIndicator {
-  SuggestedConversationTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle) {
-    _removeButton.onClick.listen((_) {
-      DivElement messageSummary = getAncestors(tag).firstWhere((e) => e.classes.contains('conversation-summary'));
+class SuggestedConversationTagView extends kk.TagView {
+  SuggestedConversationTagView(String text, String tagId, kk.TagStyle tagStyle) : super(text, tagId, tagStyle: tagStyle, removable: true, acceptable: true, suggested: true) {
+    onDelete = () {
+      DivElement messageSummary = getAncestors(renderElement).firstWhere((e) => e.classes.contains('conversation-summary'));
       _view.appController.command(UIAction.rejectConversationTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
-    });
+    };
 
-    tag.insertBefore(automaticSuggestionIndicator..classes.add('relative'), _removeButton);
-    tag.classes.add('tag--suggested');
-
-    var confirmButton = new SpanElement()
-      ..classes.add('tag__confirm')
-      ..classes.add('btn')
-      ..classes.add('btn--hover-only')
-      ..onClick.listen((_) {
-        DivElement messageSummary = getAncestors(tag).firstWhere((e) => e.classes.contains('conversation-summary'));
-        _view.appController.command(UIAction.confirmConversationTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
-      });
-    tag.insertBefore(confirmButton, _removeButton);
+    onAccept = () {
+      markPending(true);
+      DivElement messageSummary = getAncestors(renderElement).firstWhere((e) => e.classes.contains('conversation-summary'));
+      _view.appController.command(UIAction.confirmConversationTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
+    };
   }
 }
 
@@ -794,55 +777,27 @@ mixin AutomaticSuggestionIndicator {
   Element get automaticSuggestionIndicator => Element.html('<i class="fas fa-robot automated-action-indicator"></i>');
 }
 
-class EditableTagView extends TagView {
-  DivElement _addMessageTagSaveButton;
+class EditableTagView extends kk.TagView {
+  EditableTagView(String text, String tagId, kk.TagStyle tagStyle) : super(text, tagId, tagStyle: tagStyle, removable: true, editable: true) {
+    super.makeEditable();
 
-  EditableTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle) {
-    tag.classes.add('tag--unsaved');
+    onEdit = (value) {
+      _view.appController.command(UIAction.saveTag, new SaveTagData(value, tagId));
+    };
 
-    makeEditable(_tagText, onEnter: (e) {
-      e.stopPropagation();
-      e.preventDefault();
-      _view.appController.command(UIAction.saveTag, new SaveTagData(_tagText.text, tagId));
-    });
-
-    _addMessageTagSaveButton = new DivElement()
-      ..classes.add('edit-tag-widget__save-button')
-      ..classes.add('tag__confirm')
-      ..onClick.listen((e) {
-        e.stopPropagation();
-        _view.appController.command(UIAction.saveTag, new SaveTagData(_tagText.text, tagId));
-      });
-    tag.insertBefore(_addMessageTagSaveButton, _removeButton);
-
-
-    _removeButton
-      ..classes.remove('tag--hover-only-btn')
-      ..classes.add('edit-tag-widget__cancel-button');
-    _removeButton.onClick.listen((e) {
-      e.stopPropagation();
-      DivElement message = getAncestors(tag).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
+    onCancel = () {
+      DivElement message = getAncestors(renderElement).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
       _view.appController.command(UIAction.cancelAddNewTagInline, new MessageTagData(tagId, int.parse(message.dataset['message-index'])));
-    });
-  }
-
-  void focus() => _tagText.focus();
-
-  void markPending() {
-    tag.classes.remove('tag--unsaved');
-    super.markPending();
+    };
   }
 }
 
-class FilterMenuTagView extends TagView {
+class FilterMenuTagView extends kk.TagView {
   TagFilterType _filterType;
-  FilterMenuTagView(String text, String tagId, TagStyle tagStyle, TagFilterType filterType) : super(text, tagId, tagStyle) {
-    _removeButton.remove();
-    _tagText
-      ..classes.add('clickable')
-      ..onClick.listen((_) {
-        handleClicked(tagId);
-      });
+  FilterMenuTagView(String text, String tagId, kk.TagStyle tagStyle, TagFilterType filterType) : super(text, tagId, tagStyle: tagStyle) {
+    onSelect = () {
+      handleClicked(tagId);
+    };
     _filterType = filterType;
   }
 
@@ -851,22 +806,20 @@ class FilterMenuTagView extends TagView {
   }
 }
 
-class FilterTagView extends TagView {
+class FilterTagView extends kk.TagView {
   TagFilterType _filterType;
-  FilterTagView(String text, String tagId, TagStyle tagStyle, TagFilterType filterType) : super(text, tagId, tagStyle) {
-    _removeButton.onClick.listen((_) => handleClicked(tagId));
+  FilterTagView(String text, String tagId, kk.TagStyle tagStyle, TagFilterType filterType) : super(text, tagId, tagStyle: tagStyle, removable: true) {
     _filterType = filterType;
-  }
-
-  void handleClicked(String tagId) {
-    _view.appController.command(UIAction.removeFilterTag, new FilterTagData(tagId, _filterType));
+    onDelete = () {
+      _view.appController.command(UIAction.removeFilterTag, new FilterTagData(tagId, _filterType));
+    };
   }
 }
 
 const AFTER_DATE_TAG_ID = "after-date";
 
 class AfterDateFilterMenuTagView extends FilterMenuTagView {
-  AfterDateFilterMenuTagView(TagFilterType filterType) : super("after date", AFTER_DATE_TAG_ID, TagStyle.None, filterType);
+  AfterDateFilterMenuTagView(TagFilterType filterType) : super("after date", AFTER_DATE_TAG_ID, kk.TagStyle.None, filterType);
 
   @override
   void handleClicked(String tagId) {
@@ -875,7 +828,7 @@ class AfterDateFilterMenuTagView extends FilterMenuTagView {
 }
 
 class AfterDateFilterTagView extends FilterTagView {
-  AfterDateFilterTagView(DateTime dateTime, TagFilterType filterType) : super(filterText(dateTime), AFTER_DATE_TAG_ID, TagStyle.None, filterType);
+  AfterDateFilterTagView(DateTime dateTime, TagFilterType filterType) : super(filterText(dateTime), AFTER_DATE_TAG_ID, kk.TagStyle.None, filterType);
 
   static String filterText(DateTime dateTime) {
     return "after date ${afterDateFilterFormat.format(dateTime)}";
@@ -1256,9 +1209,9 @@ class ConversationFilter {
       newContainerTitle.classes.toggle('folded', true);
 
       return newContainer;
-    }).append(tag.tag);
+    }).append(tag.renderElement);
     bool wasHidden = _tagGroupsContainers[category].classes.remove('hidden'); // briefly override any display settings to make sure we can compute getBoundingClientRect()
-    List<num> widths = _tagGroupsContainers[category].querySelectorAll('.tag__name').toList().map((e) => e.getBoundingClientRect().width).toList();
+    List<num> widths = _tagGroupsContainers[category].querySelectorAll('.tag__text').toList().map((e) => e.getBoundingClientRect().width).toList();
     _tagGroupsContainers[category].classes.toggle('hidden', wasHidden); // clear inline display settings
     num avgGridWidth = widths.fold(0, (previousValue, width) => previousValue + width);
     avgGridWidth = avgGridWidth / widths.length;
@@ -1270,13 +1223,13 @@ class ConversationFilter {
   }
 
   void removeMenuTag(FilterMenuTagView tag, String category) {
-    int index = _tagGroups[category].indexWhere((t) => t.tag.dataset["id"] == tag.tag.dataset["id"]);
-    _tagGroups[category][index].tag.remove();
+    int index = _tagGroups[category].indexWhere((t) => t.renderElement.dataset["id"] == tag.renderElement.dataset["id"]);
+    _tagGroups[category][index].renderElement.remove();
     _tagGroups[category].removeAt(index);
   }
 
   void addFilterTag(FilterTagView tag) {
-    _tagsContainer.append(tag.tag);
+    _tagsContainer.append(tag.renderElement);
   }
 
   void removeFilterTag(String tagId) {
@@ -1909,10 +1862,8 @@ class TagActionView implements ActionView {
       ..text = shortcut;
     action.append(_shortcutElement);
 
-    var textElement = new DivElement()
-      ..classes.add('action__description')
-      ..text = text;
-    action.append(textElement);
+    var tagElement = kk.TagView(text, "");
+    action.append(tagElement.renderElement);
 
     _buttonElement = new DivElement()
       ..classes.add('action__button')

@@ -6,6 +6,7 @@ import 'package:firebase/firebase.dart' show FirebaseError;
 
 import 'package:katikati_ui_lib/components/url_view/url_view.dart';
 import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
+import 'package:katikati_ui_lib/components/tag/tag.dart' as kk;
 import 'package:katikati_ui_lib/components/logger.dart';
 import 'package:nook/controller.dart';
 export 'package:nook/controller.dart';
@@ -961,7 +962,7 @@ class NookController extends Controller {
         var added = conversationFilter.filterTags[tagData.filterType].add(unifierTag);
         if (!added) return; // Trying to add an existing tag, nothing to do here
         _view.urlView.setPageUrlFilterTags(tagData.filterType, conversationFilter.filterTagIds[tagData.filterType]);
-        _view.conversationFilter[tagData.filterType].addFilterTag(new FilterTagView(unifierTag.text, unifierTag.tagId, tagTypeToStyle(unifierTag.type), tagData.filterType));
+        _view.conversationFilter[tagData.filterType].addFilterTag(new FilterTagView(unifierTag.text, unifierTag.tagId, tagTypeToKKStyle(unifierTag.type), tagData.filterType));
         if (actionObjectState == UIActionObject.loadingConversations) return;
         updateFilteredAndSelectedConversationLists();
         updateViewForConversation(activeConversation, updateInPlace: true);
@@ -1290,11 +1291,11 @@ class NookController extends Controller {
         conversation = activeConversation;
         message = conversation.messages[messageData.messageIndex];
 
-        var newTagView = new EditableTagView(newTagToAdd.text, newTagToAdd.tagId, tagTypeToStyle(newTagToAdd.type));
+        var newTagView = new EditableTagView(newTagToAdd.text, newTagToAdd.tagId, tagTypeToKKStyle(newTagToAdd.type));
         _view.conversationPanelView
             .messageViewAtIndex(messageData.messageIndex)
             .addTag(newTagView);
-        newTagView.focus();
+        newTagView.focusEditText();
         break;
       case UIAction.saveTag:
         SaveTagData saveTagData = data;
@@ -1556,7 +1557,7 @@ class NookController extends Controller {
   void setConversationTag(model.Tag tag, model.Conversation conversation) {
     if (!conversation.tagIds.contains(tag.tagId)) {
       platform.addConversationTag(conversation, tag.tagId).catchError(showAndLogError);
-      _view.conversationPanelView.addTags(new ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
+      _view.conversationPanelView.addTags(new ConversationTagView(tag.text, tag.tagId, tagTypeToKKStyle(tag.type)));
     }
   }
 
@@ -1565,7 +1566,7 @@ class NookController extends Controller {
       if (!conversation.tagIds.contains(tag.tagId)) {
         platform.addConversationTag(conversation, tag.tagId).catchError(showAndLogError);
         if (conversation == activeConversation) {
-          _view.conversationPanelView.addTags(new ConversationTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type)));
+          _view.conversationPanelView.addTags(new ConversationTagView(tag.text, tag.tagId, tagTypeToKKStyle(tag.type)));
         }
       }
     });
@@ -1575,11 +1576,11 @@ class NookController extends Controller {
     if (!message.tagIds.contains(tag.tagId)) {
       platform.addMessageTag(activeConversation, message, tag.tagId).then(
         (_) {
-          var tagView = new MessageTagView(tag.text, tag.tagId, tagTypeToStyle(tag.type));
+          var tagView = new MessageTagView(tag.text, tag.tagId, tagTypeToKKStyle(tag.type));
           _view.conversationPanelView
             .messageViewAtIndex(conversation.messages.indexOf(message))
             .addTag(tagView);
-          tagView.markPending();
+          tagView.markPending(true);
         }, onError: showAndLogError);
     }
   }

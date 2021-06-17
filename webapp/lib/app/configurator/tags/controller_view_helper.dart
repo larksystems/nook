@@ -1,15 +1,24 @@
 part of controller;
 
-void _addTagsToView(Map<String, List<model.Tag>> tagsByCategory) {
+void _addTagsToView(Map<String, List<model.Tag>> tagsByCategory, {bool startEditing = false}) {
   for (var category in tagsByCategory.keys.toList()..sort()) {
     if (!_view.groups.containsKey(category)) {
       _view.addTagCategory(category, new TagGroupView(category));
     }
-    Map<String, TagView> tagsById = {};
+    Map<String, kk.TagView> tagsById = {};
     for (var tag in tagsByCategory[category]) {
-      tagsById[tag.tagId] = new TagView(tag.text, tag.docId, category, _tagTypeToStyle(tag.type));
+      tagsById[tag.tagId] = new ConfigureTagView(tag.text, tag.docId, category, _tagTypeToKKStyle(tag.type));
+      if (startEditing) {
+        tagsById[tag.tagId].makeEditable();
+      }
     }
     _view.groups[category].addTags(tagsById);
+    if (startEditing) {
+      tagsById[tagsByCategory[category].last.tagId].focusEditText();
+      tagsById[tagsByCategory[category].last.tagId].onCancel = () {
+        _view.appController.command(TagsConfigAction.removeTag, new TagData(tagsByCategory[category].last.tagId, groupId: category));
+      };
+    }
   }
 }
 
@@ -21,9 +30,9 @@ void _removeTagsFromView(Map<String, List<model.Tag>> tagsByCategory) {
 
 void _modifyTagsInView(Map<String, List<model.Tag>> tagsByCategory) {
   for (var category in tagsByCategory.keys.toList()..sort()) {
-    Map<String, TagView> tagViewsById = {};
+    Map<String, kk.TagView> tagViewsById = {};
     for (var tag in tagsByCategory[category]) {
-      tagViewsById[tag.tagId] = new TagView(tag.text, tag.docId, category, _tagTypeToStyle(tag.type));
+      tagViewsById[tag.tagId] = new ConfigureTagView(tag.text, tag.docId, category, _tagTypeToKKStyle(tag.type));
     }
     _view.groups[category].modifyTags(tagViewsById);
   }
@@ -51,14 +60,14 @@ Map<String, List<model.Tag>> _groupTagsIntoCategories(List<model.Tag> tags) {
   return result;
 }
 
-TagStyle _tagTypeToStyle(model.TagType tagType) {
+kk.TagStyle _tagTypeToKKStyle(model.TagType tagType) {
   switch (tagType) {
     case model.TagType.Important:
-      return TagStyle.Important;
+      return kk.TagStyle.Important;
     default:
       if (tagType == model.NotFoundTagType.NotFound) {
-        return TagStyle.Yellow;
+        return kk.TagStyle.Yellow;
       }
-      return TagStyle.None;
+      return kk.TagStyle.None;
   }
 }
