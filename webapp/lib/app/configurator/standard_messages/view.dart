@@ -2,6 +2,7 @@ library view;
 
 import 'dart:async';
 import 'dart:html';
+import 'package:katikati_ui_lib/components/accordion/accordion.dart';
 import 'package:nook/app/configurator/view.dart';
 export 'package:nook/app/configurator/view.dart';
 
@@ -9,6 +10,65 @@ import 'controller.dart';
 import 'package:katikati_ui_lib/components/logger.dart';
 
 Logger log = new Logger('view.dart');
+
+class StdMessagesConfigPageView extends ConfigurationPageView {
+  SelectElement _categoryChooser;
+  DivElement _standardMessagesContainer;
+  Accordion groups;
+
+  StdMessagesConfigPageView(MessagesConfiguratorController controller): super(controller) {
+    configurationTitle.text = "What do you want to say?";
+    _categoryChooser = new SelectElement()
+      ..onChange.listen((_) => controller.command(MessagesConfigAction.changeStandardMessagesCategory, new StandardMessagesCategoryData(_categoryChooser.value)));
+    configurationContent.append(_categoryChooser);
+
+    _standardMessagesContainer = new DivElement();
+    configurationContent.append(_standardMessagesContainer);
+
+    groups = new Accordion([]);
+
+    var addButton = new Button(ButtonType.add,
+        hoverText: 'Add a new group of standard messages', onClick: (event) => controller.command(MessagesConfigAction.addStandardMessagesGroup));
+    addButton.parent = configurationContent;
+  }
+
+  void addItem(AccordionItem item) {
+    groups.appendItem(item);
+  }
+
+  void removeItem(String id) {
+    groups.removeItem(id);
+  }
+
+  set selectedCategory(String category) {
+    int index = _categoryChooser.children.indexWhere((Element option) => (option as OptionElement).value == category);
+    if (index == -1) {
+      // Couldn't find category in list of standard messages category, using first
+      _categoryChooser.selectedIndex = 0;
+      _view.appController.command(MessagesConfigAction.changeStandardMessagesCategory, new StandardMessagesCategoryData(_categoryChooser.value));
+      return;
+    }
+    _categoryChooser.selectedIndex = index;
+  }
+
+  set categories(List<String> categories) {
+    _categoryChooser.children.clear();
+    for (var category in categories) {
+      _categoryChooser.append(new OptionElement()
+        ..value = category
+        ..text = category.isEmpty ? '[Unnamed]' : category);
+    }
+  }
+
+  void clear() {
+    int messagesNo = _standardMessagesContainer.children.length;
+    for (int i = 0; i < messagesNo; i++) {
+      _standardMessagesContainer.firstChild.remove();
+    }
+    assert(_standardMessagesContainer.children.length == 0);
+    groups.clear();
+  }
+}
 
 MessagesConfigurationPageView _view;
 
