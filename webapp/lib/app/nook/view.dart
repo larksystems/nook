@@ -15,6 +15,7 @@ import 'package:katikati_ui_lib/components/conversation/conversation_item.dart';
 import 'package:katikati_ui_lib/components/user_presence/user_presence_indicator.dart';
 import 'package:katikati_ui_lib/components/scroll_indicator/scroll_indicator.dart';
 import 'package:katikati_ui_lib/components/tag/tag.dart' as kk;
+import 'package:katikati_ui_lib/components/button/button.dart' as buttons;
 import 'package:nook/view.dart';
 import 'package:nook/app/utils.dart';
 
@@ -974,7 +975,7 @@ class ConversationListPanelView {
 
     _changeSortOrder = ChangeSortOrderActionView();
     panelHeader.append(new DivElement()
-      ..classes.add('conversation-list__sort-order')
+      ..classes.add('conversation-list-header__sort-order')
       ..append(_changeSortOrder.changeSortOrderAction));
 
     _loadSpinner = new DivElement()
@@ -1970,28 +1971,28 @@ class AddTagActionView extends AddActionView {
 class ChangeSortOrderActionView {
   DivElement changeSortOrderAction;
 
+  buttons.Button alphabetically;
+  buttons.Button chronologically;
+
   ChangeSortOrderActionView() {
     changeSortOrderAction = new DivElement()
       ..classes.add('sort-action__button')
       ..onClick.listen((_) => _view.appController.command(UIAction.changeConversationSortOrder));
-    showSortButton(UIConversationSort.alphabeticalById);
+
+    alphabetically = new buttons.Button(buttons.ButtonType("button--icon", iconClassName: "fas fa-sort-alpha-down"));
+    chronologically = new buttons.Button(buttons.ButtonType("button--icon", iconClassName: "fas fa-history"));
+
+    showSortButton(UIConversationSort.mostRecentInMessageFirst);
   }
 
   void showSortButton(UIConversationSort sort) {
-    changeSortOrderAction.classes.removeAll([
-      'sort-action__button--alphabetically',
-      'sort-action__button--chronologically',
-    ]);
+    changeSortOrderAction.children.clear();
     switch (sort) {
       case UIConversationSort.alphabeticalById:
-        changeSortOrderAction
-          ..title = 'Sort conversations alphabetically by ID'
-          ..classes.toggle('sort-action__button--alphabetically');
+        changeSortOrderAction.append(alphabetically.renderElement);
         break;
       case UIConversationSort.mostRecentInMessageFirst:
-        changeSortOrderAction
-          ..title = 'Sort conversations with most recent incoming message at the top'
-          ..classes.toggle('sort-action__button--chronologically');
+        changeSortOrderAction.append(chronologically.renderElement);
         break;
     }
   }

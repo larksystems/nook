@@ -10,11 +10,10 @@ dependencies:
   intl: ^0.16.0
   uuid: ^2.0.0
   katikati_ui_lib:
-    path: ../../katikati_common_lib/ui
-    # git:
-    #   url: git@github.com:larksystems/katikati_common_lib.git
-    #   path: ui
-    #   ref: affdaddd1b0e8a75949add73185409ffbce458ed
+    git:
+      url: git@github.com:larksystems/katikati_common_lib.git
+      path: ui
+      ref: 54d8ecf1d265daadaaa17098529a33e0cbc9e2e2
 
 dev_dependencies:
   build_runner: ^1.7.0
