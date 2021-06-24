@@ -71,11 +71,12 @@ class StandardMessagesGroupView extends AccordionItem {
   String _title;
   DivElement _header;
   DivElement _body;
+  DivElement _standardMessagesContainer;
   Button _addButton;
 
   Map<String, StandardMessageView> messagesById = {};
 
-  StandardMessagesGroupView(this.id, this._title, this._header, this._body): super(id, _header, _body, false) {
+  StandardMessagesGroupView(this.id, this._title, this._header, this._body) : super(id, _header, _body, false) {
     var editableTitle = TextEdit(_title, removable: true)
       ..onEdit = (value) {
         _view.appController.command(MessagesConfigAction.updateStandardMessagesGroup, new StandardMessagesGroupData(id, newGroupName: value));
@@ -83,16 +84,21 @@ class StandardMessagesGroupView extends AccordionItem {
       ..onDelete = () {
         requestToDelete();
       };
-      _header.append(editableTitle.renderElement);
-      _addButton = Button(ButtonType.add);
-      _addButton.renderElement.onClick.listen((e) {
-        _view.appController.command(MessagesConfigAction.addStandardMessage, new StandardMessageData('', groupId: id));
-      });
-      _body.append(_addButton.renderElement);
+    _header.append(editableTitle.renderElement);
+
+    _standardMessagesContainer = DivElement();
+    _body.append(_standardMessagesContainer);
+
+    _addButton = Button(ButtonType.add);
+    _addButton.renderElement.onClick.listen((e) {
+      _view.appController.command(MessagesConfigAction.addStandardMessage, new StandardMessageData('', groupId: id));
+    });
+    
+    _body.append(_addButton.renderElement);
   }
 
   void addMessage(String id, StandardMessageView standardMessageView) {
-    _body.append(standardMessageView.renderElement);
+    _standardMessagesContainer.append(standardMessageView.renderElement);
     messagesById[id] = standardMessageView;
   }
 

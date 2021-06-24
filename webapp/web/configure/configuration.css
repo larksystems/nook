@@ -86,7 +86,7 @@
   grid-template-columns: 1fr 1fr 16px;
   grid-gap: 5px;
   position: relative;
-  margin-top: 15px;
+  margin-bottom: 15px;
 }
 
 .standard-messages-add__button {
