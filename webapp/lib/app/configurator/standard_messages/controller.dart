@@ -164,7 +164,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
         var collapsed = collapsedMessageGroupIds.contains(groupId);
         if (collapsed) {
           collapsedMessageGroupIds.remove(groupId);
-          _view.groups.removeItem(groupId);
+          _view.groups.expandItem(groupId);
         } else {
           collapsedMessageGroupIds.add(groupId);
           _view.groups.collapseItem(groupId);

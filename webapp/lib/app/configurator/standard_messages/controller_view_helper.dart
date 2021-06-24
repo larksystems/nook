@@ -7,7 +7,7 @@ void _populateStandardMessagesConfigPage(List<model.SuggestedReply> messages) {
     var messagesInGroup = messagesByGroups[groupId];
     if (messagesInGroup.isEmpty) continue;
     var groupDescription = messagesInGroup.first.groupDescription;
-    var group = new StandardMessagesGroupView(groupId, groupDescription, DivElement(), DivElement());
+    StandardMessagesGroupView group = new StandardMessagesGroupView(groupId, groupDescription, DivElement(), DivElement());
     for (var message in messagesInGroup) {
       var messageView = new StandardMessageView(message.docId, message.text, message.translation);
       group.addMessage(message.docId, messageView);
