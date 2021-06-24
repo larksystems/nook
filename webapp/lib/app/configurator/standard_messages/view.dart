@@ -12,6 +12,8 @@ import 'package:katikati_ui_lib/components/logger.dart';
 
 Logger log = new Logger('view.dart');
 
+MessagesConfigurationPageView _view;
+
 class MessagesConfigurationPageView extends ConfigurationPageView {
   SelectElement _categories;
   Accordion groups;
@@ -63,8 +65,6 @@ class MessagesConfigurationPageView extends ConfigurationPageView {
     groups.clear();
   }
 }
-
-MessagesConfigurationPageView _view;
 
 class StandardMessagesGroupView extends AccordionItem {
   String id;
