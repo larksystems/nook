@@ -263,9 +263,11 @@ packages:
   katikati_ui_lib:
     dependency: "direct main"
     description:
-      path: "/Users/eb/Documents/lark/katikati_common_lib/ui"
-      relative: false
-    source: path
+      path: ui
+      ref: aa241e9ae71bd894146c4aa640cd8de4b3129485
+      resolved-ref: aa241e9ae71bd894146c4aa640cd8de4b3129485
+      url: "git@github.com:larksystems/katikati_common_lib.git"
+    source: git
     version: "0.0.1"
   logging:
     dependency: transitive

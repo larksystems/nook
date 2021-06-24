@@ -21,8 +21,8 @@ class MessagesConfigurationPageView extends ConfigurationPageView {
   MessagesConfigurationPageView(MessagesConfiguratorController controller) : super(controller) {
     _view = this;
 
-    configurationTitle.text = "What do you want to say?";
-    
+    configurationTitle.text = 'What do you want to say?';
+
     _categories = new SelectElement();
     _categories.onChange.listen(
         (_) => controller.command(MessagesConfigAction.changeStandardMessagesCategory, new StandardMessagesCategoryData(_categories.value)));
