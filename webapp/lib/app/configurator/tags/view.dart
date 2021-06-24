@@ -5,7 +5,7 @@ import 'package:dnd/dnd.dart' as dnd;
 import 'package:nook/app/configurator/view.dart';
 export 'package:nook/app/configurator/view.dart';
 import 'package:nook/platform/platform.dart' as platform;
-import 'package:katikati_ui_lib/components/tag/tag.dart' as kk;
+import 'package:katikati_ui_lib/components/tag/tag.dart';
 
 import 'controller.dart';
 import 'sample_data_helper.dart';
@@ -62,7 +62,7 @@ class TagGroupView {
   EditableText _editableTitle;
   Button _addTagButton;
 
-  Map<String, kk.TagView> tagViewsById;
+  Map<String, TagView> tagViewsById;
 
   TagGroupView(String groupName) {
     _tagsGroupElement = new DivElement()..classes.add('tags-group');
@@ -129,14 +129,14 @@ class TagGroupView {
   void set name(String text) => _titleText.text = text;
   String get name => _titleText.text;
 
-  void addTags(Map<String, kk.TagView> tags) {
+  void addTags(Map<String, TagView> tags) {
     for (var tag in tags.keys) {
       _tagsContainer.insertBefore(tags[tag].renderElement, _addTagButton.renderElement);
       tagViewsById[tag] = tags[tag];
     }
   }
 
-  void modifyTags(Map<String, kk.TagView> tags) {
+  void modifyTags(Map<String, TagView> tags) {
     for (var tag in tags.keys) {
       _tagsContainer.insertBefore(tags[tag].renderElement, tagViewsById[tag].renderElement);
       tagViewsById[tag].renderElement.remove();
@@ -153,9 +153,9 @@ class TagGroupView {
 }
 
 
-class ConfigureTagView extends kk.TagView {
+class ConfigureTagView extends TagView {
   static bool dragInProgress = false;
-  ConfigureTagView(String tagText, String tagId, String groupId, kk.TagStyle tagStyle) : super(tagText, tagId, groupId: groupId, tagStyle: tagStyle, deletable: true, editable: true) {
+  ConfigureTagView(String tagText, String tagId, String groupId, TagStyle tagStyle) : super(tagText, tagId, groupId: groupId, tagStyle: tagStyle, deletable: true, editable: true) {
     var draggableTag = new dnd.Draggable(renderElement, avatarHandler: dnd.AvatarHandler.original(), draggingClass: 'tag__text');
     draggableTag
       ..onDragStart.listen((_) => dragInProgress = true)

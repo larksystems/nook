@@ -5,7 +5,7 @@ void _addTagsToView(Map<String, List<model.Tag>> tagsByCategory, {bool startEdit
     if (!_view.groups.containsKey(category)) {
       _view.addTagCategory(category, new TagGroupView(category));
     }
-    Map<String, kk.TagView> tagsById = {};
+    Map<String, TagView> tagsById = {};
     for (var tag in tagsByCategory[category]) {
       tagsById[tag.tagId] = new ConfigureTagView(tag.text, tag.docId, category, _tagTypeToKKStyle(tag.type));
       if (startEditing) {
@@ -30,7 +30,7 @@ void _removeTagsFromView(Map<String, List<model.Tag>> tagsByCategory) {
 
 void _modifyTagsInView(Map<String, List<model.Tag>> tagsByCategory) {
   for (var category in tagsByCategory.keys.toList()..sort()) {
-    Map<String, kk.TagView> tagViewsById = {};
+    Map<String, TagView> tagViewsById = {};
     for (var tag in tagsByCategory[category]) {
       tagViewsById[tag.tagId] = new ConfigureTagView(tag.text, tag.docId, category, _tagTypeToKKStyle(tag.type));
     }
@@ -60,14 +60,14 @@ Map<String, List<model.Tag>> _groupTagsIntoCategories(List<model.Tag> tags) {
   return result;
 }
 
-kk.TagStyle _tagTypeToKKStyle(model.TagType tagType) {
+TagStyle _tagTypeToKKStyle(model.TagType tagType) {
   switch (tagType) {
     case model.TagType.Important:
-      return kk.TagStyle.Important;
+      return TagStyle.Important;
     default:
       if (tagType == model.NotFoundTagType.NotFound) {
-        return kk.TagStyle.Yellow;
+        return TagStyle.Yellow;
       }
-      return kk.TagStyle.None;
+      return TagStyle.None;
   }
 }
