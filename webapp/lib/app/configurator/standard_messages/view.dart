@@ -13,15 +13,15 @@ import 'package:katikati_ui_lib/components/logger.dart';
 Logger log = new Logger('view.dart');
 
 class MessagesConfigurationPageView extends ConfigurationPageView {
-  SelectElement _categoryChooser;
+  SelectElement _categories;
   Accordion groups;
 
   MessagesConfigurationPageView(MessagesConfiguratorController controller): super(controller) {
     _view = this;
     configurationTitle.text = "What do you want to say?";
-    _categoryChooser = new SelectElement()
-      ..onChange.listen((_) => controller.command(MessagesConfigAction.changeStandardMessagesCategory, new StandardMessagesCategoryData(_categoryChooser.value)));
-    configurationContent.append(_categoryChooser);
+    _categories = new SelectElement()
+      ..onChange.listen((_) => controller.command(MessagesConfigAction.changeStandardMessagesCategory, new StandardMessagesCategoryData(_categories.value)));
+    configurationContent.append(_categories);
 
     groups = new Accordion([]);
     configurationContent.append(groups.renderElement);
@@ -40,20 +40,20 @@ class MessagesConfigurationPageView extends ConfigurationPageView {
   }
 
   set selectedCategory(String category) {
-    int index = _categoryChooser.children.indexWhere((Element option) => (option as OptionElement).value == category);
+    int index = _categories.children.indexWhere((Element option) => (option as OptionElement).value == category);
     if (index == -1) {
       // Couldn't find category in list of standard messages category, using first
-      _categoryChooser.selectedIndex = 0;
-      _view.appController.command(MessagesConfigAction.changeStandardMessagesCategory, new StandardMessagesCategoryData(_categoryChooser.value));
+      _categories.selectedIndex = 0;
+      _view.appController.command(MessagesConfigAction.changeStandardMessagesCategory, new StandardMessagesCategoryData(_categories.value));
       return;
     }
-    _categoryChooser.selectedIndex = index;
+    _categories.selectedIndex = index;
   }
 
   set categories(List<String> categories) {
-    _categoryChooser.children.clear();
+    _categories.children.clear();
     for (var category in categories) {
-      _categoryChooser.append(new OptionElement()
+      _categories.append(new OptionElement()
         ..value = category
         ..text = category.isEmpty ? '[Unnamed]' : category);
     }
