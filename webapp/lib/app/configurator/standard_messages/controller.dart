@@ -135,6 +135,8 @@ class MessagesConfiguratorController extends ConfiguratorController {
         standardMessagesManager.emptyGroups[newGroupId] = '';
         var standardMessagesGroupView = new StandardMessagesGroupView(newGroupId, standardMessagesManager.emptyGroups[newGroupId], DivElement(), DivElement());
         _view.addItem(standardMessagesGroupView);
+        standardMessagesGroupView.editableTitle.beginEdit();
+        standardMessagesGroupView.expand();
         formDirty = true;
         break;
 

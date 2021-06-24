@@ -76,11 +76,12 @@ class StandardMessagesGroupView extends AccordionItem {
   DivElement _body;
   DivElement _standardMessagesContainer;
   Button _addButton;
+  TextEdit editableTitle;
 
   Map<String, StandardMessageView> messagesById = {};
 
   StandardMessagesGroupView(this.id, this._title, this._header, this._body) : super(id, _header, _body, false) {
-    var editableTitle = TextEdit(_title, removable: true)
+    editableTitle = TextEdit(_title, removable: true)
       ..onEdit = (value) {
         _view.appController.command(MessagesConfigAction.updateStandardMessagesGroup, new StandardMessagesGroupData(id, newGroupName: value));
       }
