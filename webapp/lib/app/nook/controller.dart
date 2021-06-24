@@ -6,7 +6,7 @@ import 'package:firebase/firebase.dart' show FirebaseError;
 
 import 'package:katikati_ui_lib/components/url_view/url_view.dart';
 import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
-import 'package:katikati_ui_lib/components/tag/tag.dart' as kk;
+import 'package:katikati_ui_lib/components/tag/tag.dart';
 import 'package:katikati_ui_lib/components/logger.dart';
 import 'package:nook/controller.dart';
 export 'package:nook/controller.dart';
@@ -1295,7 +1295,7 @@ class NookController extends Controller {
         _view.conversationPanelView
             .messageViewAtIndex(messageData.messageIndex)
             .addTag(newTagView);
-        newTagView.focusEditText();
+        newTagView.focus();
         break;
       case UIAction.saveTag:
         SaveTagData saveTagData = data;
