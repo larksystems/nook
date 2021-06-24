@@ -204,6 +204,10 @@ main {
     margin: 0 16px 0 0;
 }
 
+.conversation-list-header__sort-order {
+    float: right;
+}
+
 .select-conversation-list-message {
     margin: auto;
     padding-top: 50px;

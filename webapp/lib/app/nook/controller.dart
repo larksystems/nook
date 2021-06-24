@@ -54,6 +54,7 @@ enum UIAction {
   deselectConversation,
   markConversationRead,
   markConversationUnread,
+  changeConversationSortOrder,
   selectMessage,
   deselectMessage,
   keyPressed,
@@ -69,6 +70,11 @@ enum UIAction {
   showSnackbar,
   updateConversationIdFilter,
   goToUser,
+}
+
+enum UIConversationSort {
+  mostRecentInMessageFirst,
+  alphabeticalById,
 }
 
 class MessageData extends Data {
@@ -295,6 +301,7 @@ NookPageView get _view => controller.view;
 
 class NookController extends Controller {
   UIActionObject actionObjectState = UIActionObject.loadingConversations;
+  UIConversationSort conversationSortOrder = UIConversationSort.mostRecentInMessageFirst;
 
   StreamSubscription conversationListSubscription;
   Set<model.Conversation> conversations;
@@ -336,8 +343,8 @@ class NookController extends Controller {
 
   @override
   void setUpOnLogin() {
-    conversations = emptyConversationsSet;
-    filteredConversations = emptyConversationsSet;
+    conversations = emptyConversationsSet(conversationSortOrder);
+    filteredConversations = emptyConversationsSet(conversationSortOrder);
     suggestedReplies = [];
     tags = [];
     tagIdsToTags = {};
@@ -729,6 +736,7 @@ class NookController extends Controller {
               ..lastInboundTurnTagIds = Set()
               ..notes = ""
               ..messages = []
+              ..suggestedMessages = []
               ..unread = false;
           } else {
             activeConversation = matches.first;
@@ -751,17 +759,21 @@ class NookController extends Controller {
         // Update the active conversation view as needed
         if (updatedIds.contains(activeConversation.docId)) {
           updateViewForConversation(activeConversation, updateInPlace: true);
-          if (!activeConversation.unread) {
-            command(UIAction.markConversationRead, ConversationData(activeConversation.docId));
-          }
         }
       },
       conversationListRoot,
       showAndLogError);
   }
 
-  SplayTreeSet<model.Conversation> get emptyConversationsSet =>
-      SplayTreeSet(model.ConversationUtil.mostRecentInboundFirst);
+  SplayTreeSet<model.Conversation> emptyConversationsSet(UIConversationSort sortOrder) {
+    switch (sortOrder) {
+      case UIConversationSort.alphabeticalById:
+        return SplayTreeSet(model.ConversationUtil.alphabeticalById);
+      case UIConversationSort.mostRecentInMessageFirst:
+      default:
+        return SplayTreeSet(model.ConversationUtil.mostRecentInboundFirst);
+    }
+  }
 
   model.UserConfiguration get baseUserConfiguration => new model.UserConfiguration()
       ..repliesKeyboardShortcutsEnabled = false
@@ -1063,6 +1075,15 @@ class NookController extends Controller {
         }
         platform.updateUnread(markedConversations, true).catchError(showAndLogError);
         break;
+      case UIAction.changeConversationSortOrder:
+        conversationSortOrder = UIConversationSort.values[(UIConversationSort.values.indexOf(conversationSortOrder) + 1) % UIConversationSort.values.length];
+        conversations = emptyConversationsSet(conversationSortOrder)
+          ..addAll(conversations);
+        filteredConversations = emptyConversationsSet(conversationSortOrder)
+          ..addAll(filteredConversations);
+        _view.conversationListPanelView.changeConversationSortOrder(conversationSortOrder);
+        updateFilteredAndSelectedConversationLists();
+        break;
       case UIAction.showConversation:
         ConversationData conversationData = data;
         if (conversationData.deidentifiedPhoneNumber == activeConversation.docId) break;
@@ -1074,8 +1095,8 @@ class NookController extends Controller {
         break;
       case UIAction.selectConversationList:
         ConversationListData conversationListData = data;
-        conversations = emptyConversationsSet;
-        filteredConversations = emptyConversationsSet;
+        conversations = emptyConversationsSet(conversationSortOrder);
+        filteredConversations = emptyConversationsSet(conversationSortOrder);
         selectedConversations.clear();
         activeConversation = null;
         actionObjectState = UIActionObject.loadingConversations;
@@ -1311,7 +1332,7 @@ class NookController extends Controller {
   void updateFilteredAndSelectedConversationLists() {
     filteredConversations = conversations.where((conversation) => conversationFilter.test(conversation)).toSet();
     if (!currentConfig.sendMultiMessageEnabled) {
-      activeConversation = updateViewForConversations(conversationsInView, updateList: true);
+      activeConversation = updateViewForConversations(conversationsInView);
       return;
     }
     // Update the conversation objects in [selectedConversations] in case any of them were replaced
@@ -1320,7 +1341,7 @@ class NookController extends Controller {
 
     // Show both filtered and selected conversations in the list,
     // but mark the selected conversations that don't meet the filter with a warning
-    activeConversation = updateViewForConversations(conversationsInView, updateList: true);
+    activeConversation = updateViewForConversations(conversationsInView);
     _view.conversationListPanelView.showCheckboxes(currentConfig.sendMultiMessageEnabled);
     conversationsInView.forEach((conversation) {
       if (selectedConversations.contains(conversation)) {
@@ -1337,9 +1358,9 @@ class NookController extends Controller {
   /// Shows the list of [conversations] and selects the first conversation
   /// where [updateList] is `true` if this list can be updated in place.
   /// Returns the first conversation in the list, or null if list is empty.
-  model.Conversation updateViewForConversations(Set<model.Conversation> conversations, {bool updateList = false}) {
+  model.Conversation updateViewForConversations(Set<model.Conversation> conversations) {
     // Update conversationListPanelView
-    _populateConversationListPanelView(conversations, updateList);
+    _populateConversationListPanelView(conversations);
 
     // Update conversationPanelView
     if (conversations.isEmpty) {
