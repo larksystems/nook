@@ -64,7 +64,7 @@ class StandardMessagesCategoryData extends Data {
 }
 
 MessagesConfiguratorController _controller;
-MessagesConfigurationPageView get _kkView => _controller.view;
+MessagesConfigurationPageView get _view => _controller.view;
 
 class MessagesConfiguratorController extends ConfiguratorController {
   StandardMessagesManager standardMessagesManager = new StandardMessagesManager();
@@ -102,7 +102,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
         standardMessagesManager.addStandardMessage(newStandardMessage);
 
         var newStandardMessageView = new StandardMessageView(newStandardMessage.docId, newStandardMessage.text, newStandardMessage.translation);
-        (_kkView.groups.queryItem(messageData.groupId) as StandardMessagesGroupView).addMessage(newStandardMessage.suggestedReplyId, newStandardMessageView);
+        (_view.groups.queryItem(messageData.groupId) as StandardMessagesGroupView).addMessage(newStandardMessage.suggestedReplyId, newStandardMessageView);
         editedStandardMessages[newStandardMessage.docId] = newStandardMessage;
         formDirty = true;
         break;
@@ -124,7 +124,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
         StandardMessageData messageData = data;
         var standardMessage = standardMessagesManager.getStandardMessageById(messageData.id);
         standardMessagesManager.removeStandardMessage(standardMessage);
-        (_kkView.groups.queryItem(standardMessage.groupId) as StandardMessagesGroupView).removeMessage(messageData.id);
+        (_view.groups.queryItem(standardMessage.groupId) as StandardMessagesGroupView).removeMessage(messageData.id);
         editedStandardMessages.remove(standardMessage.suggestedReplyId);
         removedStandardMessages[standardMessage.suggestedReplyId] = standardMessage;
         formDirty = true;
@@ -134,7 +134,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
         var newGroupId = standardMessagesManager.nextStandardMessagesGroupId;
         standardMessagesManager.emptyGroups[newGroupId] = '';
         var standardMessagesGroupView = new StandardMessagesGroupView(newGroupId, standardMessagesManager.emptyGroups[newGroupId], DivElement(), DivElement());
-        _kkView.addItem(standardMessagesGroupView);
+        _view.addItem(standardMessagesGroupView);
         formDirty = true;
         break;
 
@@ -150,7 +150,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
         StandardMessagesGroupData groupData = data;
         List<model.SuggestedReply> standardMessagesToRemove = standardMessagesManager.standardMessages.where((r) => r.groupId == groupData.groupId).toList();
         standardMessagesManager.removeStandardMessagesGroup(groupData.groupId);
-        _kkView.groups.removeItem(groupData.groupId);
+        _view.groups.removeItem(groupData.groupId);
         for (var message in standardMessagesToRemove) {
           editedStandardMessages.remove(message.suggestedReplyId);
           removedStandardMessages[message.suggestedReplyId] = message;
@@ -164,10 +164,10 @@ class MessagesConfiguratorController extends ConfiguratorController {
         var collapsed = collapsedMessageGroupIds.contains(groupId);
         if (collapsed) {
           collapsedMessageGroupIds.remove(groupId);
-          _kkView.groups.removeItem(groupId);
+          _view.groups.removeItem(groupId);
         } else {
           collapsedMessageGroupIds.add(groupId);
-          _kkView.groups.collapseItem(groupId);
+          _view.groups.collapseItem(groupId);
         }
         break;
 
@@ -177,7 +177,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
         var collapsed = collapsedMessageGroupIds.contains(groupId);
         if (collapsed) {
           collapsedMessageGroupIds.remove(groupId);
-          _kkView.groups.expandItem(groupId);
+          _view.groups.expandItem(groupId);
         }
         break;
 
@@ -192,9 +192,9 @@ class MessagesConfiguratorController extends ConfiguratorController {
     }
 
     if (formDirty) {
-      _kkView.enableSaveButton();
+      _view.enableSaveButton();
     } else {
-      _kkView.disableSaveButton();
+      _view.disableSaveButton();
     }
   }
 
@@ -206,47 +206,47 @@ class MessagesConfiguratorController extends ConfiguratorController {
       standardMessagesManager.removeStandardMessages(removed);
 
       // Replace list of categories in the UI selector
-      _kkView.categories = standardMessagesManager.categories;
+      _view.categories = standardMessagesManager.categories;
       // If the categories have changed under us and the selected one no longer exists,
       // default to the first category, whichever it is
       if (!standardMessagesManager.categories.contains(selectedStandardMessagesCategory)) {
         selectedStandardMessagesCategory = standardMessagesManager.categories.first;
       }
       // Select the selected category in the UI and add the standard messages for it
-      _kkView.selectedCategory = selectedStandardMessagesCategory;
+      _view.selectedCategory = selectedStandardMessagesCategory;
       _populateStandardMessagesConfigPage(standardMessagesManager.standardMessagesByCategory[selectedStandardMessagesCategory]);
     });
   }
 
   @override
   void saveConfiguration() {
-    _kkView.showSaveStatus('Saving...');
+    _view.showSaveStatus('Saving...');
     bool otherPartSaved = false;
 
     platform.updateSuggestedReplies(editedStandardMessages.values.toList()).then((value) {
       editedStandardMessages.clear();
       if (otherPartSaved) {
-        _kkView.showSaveStatus('Saved!');
+        _view.showSaveStatus('Saved!');
         formDirty = false;
-        _kkView.disableSaveButton();
+        _view.disableSaveButton();
         return;
       }
       otherPartSaved = true;
     }, onError: (error, stacktrace) {
-      _kkView.showSaveStatus('Unable to save. Please check your connection and try again. If the issue persists, please contact your project administrator');
+      _view.showSaveStatus('Unable to save. Please check your connection and try again. If the issue persists, please contact your project administrator');
     });
 
     platform.deleteSuggestedReplies(removedStandardMessages.values.toList()).then((value) {
       removedStandardMessages.clear();
       if (otherPartSaved) {
-        _kkView.showSaveStatus('Saved!');
+        _view.showSaveStatus('Saved!');
         formDirty = false;
-        _kkView.disableSaveButton();
+        _view.disableSaveButton();
         return;
       }
       otherPartSaved = true;
     }, onError: (error, stacktrace) {
-      _kkView.showSaveStatus('Unable to save. Please check your connection and try again. If the issue persists, please contact your project administrator');
+      _view.showSaveStatus('Unable to save. Please check your connection and try again. If the issue persists, please contact your project administrator');
     });
   }
 }

@@ -2,7 +2,7 @@ part of controller;
 
 void _populateStandardMessagesConfigPage(List<model.SuggestedReply> messages) {
   Map<String, List<model.SuggestedReply>> messagesByGroups = _groupMessagesIntoGroups(messages);
-  _kkView.clear();
+  _view.clear();
   for (var groupId in messagesByGroups.keys) {
     var messagesInGroup = messagesByGroups[groupId];
     if (messagesInGroup.isEmpty) continue;
@@ -12,7 +12,7 @@ void _populateStandardMessagesConfigPage(List<model.SuggestedReply> messages) {
       var messageView = new StandardMessageView(message.docId, message.text, message.translation);
       group.addMessage(message.docId, messageView);
     }
-    _kkView.addItem(group);
+    _view.addItem(group);
   }
 }
 

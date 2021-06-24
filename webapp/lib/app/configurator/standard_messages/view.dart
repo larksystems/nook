@@ -17,7 +17,7 @@ class MessagesConfigurationPageView extends ConfigurationPageView {
   Accordion groups;
 
   MessagesConfigurationPageView(MessagesConfiguratorController controller): super(controller) {
-    _kkView = this;
+    _view = this;
     configurationTitle.text = "What do you want to say?";
     _categoryChooser = new SelectElement()
       ..onChange.listen((_) => controller.command(MessagesConfigAction.changeStandardMessagesCategory, new StandardMessagesCategoryData(_categoryChooser.value)));
@@ -44,7 +44,7 @@ class MessagesConfigurationPageView extends ConfigurationPageView {
     if (index == -1) {
       // Couldn't find category in list of standard messages category, using first
       _categoryChooser.selectedIndex = 0;
-      _kkView.appController.command(MessagesConfigAction.changeStandardMessagesCategory, new StandardMessagesCategoryData(_categoryChooser.value));
+      _view.appController.command(MessagesConfigAction.changeStandardMessagesCategory, new StandardMessagesCategoryData(_categoryChooser.value));
       return;
     }
     _categoryChooser.selectedIndex = index;
@@ -64,7 +64,7 @@ class MessagesConfigurationPageView extends ConfigurationPageView {
   }
 }
 
-MessagesConfigurationPageView _kkView;
+MessagesConfigurationPageView _view;
 
 class StandardMessagesGroupView extends AccordionItem {
   String id;
@@ -78,7 +78,7 @@ class StandardMessagesGroupView extends AccordionItem {
   StandardMessagesGroupView(this.id, this._title, this._header, this._body): super(id, _header, _body, false) {
     var editableTitle = TextEdit(_title, removable: true)
       ..onEdit = (value) {
-        _kkView.appController.command(MessagesConfigAction.updateStandardMessagesGroup, new StandardMessagesGroupData(id, newGroupName: value));
+        _view.appController.command(MessagesConfigAction.updateStandardMessagesGroup, new StandardMessagesGroupData(id, newGroupName: value));
       }
       ..onDelete = () {
         requestToDelete();
@@ -86,7 +86,7 @@ class StandardMessagesGroupView extends AccordionItem {
       _header.append(editableTitle.renderElement);
       _addButton = Button(ButtonType.add);
       _addButton.renderElement.onClick.listen((e) {
-        _kkView.appController.command(MessagesConfigAction.addStandardMessage, new StandardMessageData('', groupId: id));
+        _view.appController.command(MessagesConfigAction.addStandardMessage, new StandardMessageData('', groupId: id));
       });
       _body.append(_addButton.renderElement);
   }
@@ -107,7 +107,7 @@ class StandardMessagesGroupView extends AccordionItem {
     var removeWarningModal;
     removeWarningModal = new InlineOverlayModal('Are you sure you want to remove this group?', [
         new Button(ButtonType.text,
-            buttonText: 'Yes', onClick: (_) => _kkView.appController.command(MessagesConfigAction.removeStandardMessagesGroup, standardMessagesGroupData)),
+            buttonText: 'Yes', onClick: (_) => _view.appController.command(MessagesConfigAction.removeStandardMessagesGroup, standardMessagesGroupData)),
         new Button(ButtonType.text, buttonText: 'No', onClick: (_) => removeWarningModal.remove()),
       ]);
     renderElement.append(removeWarningModal.inlineOverlayModal);
@@ -123,9 +123,9 @@ class StandardMessageView {
       ..dataset['id'] = '$id';
 
     var textView = new MessageView(
-        0, text, (index, text) => _kkView.appController.command(MessagesConfigAction.updateStandardMessage, new StandardMessageData(id, text: text)));
+        0, text, (index, text) => _view.appController.command(MessagesConfigAction.updateStandardMessage, new StandardMessageData(id, text: text)));
     var translationView = new MessageView(0, translation,
-        (index, translation) => _kkView.appController.command(MessagesConfigAction.updateStandardMessage, new StandardMessageData(id, translation: translation)));
+        (index, translation) => _view.appController.command(MessagesConfigAction.updateStandardMessage, new StandardMessageData(id, translation: translation)));
     _standardMessageElement..append(textView.renderElement)..append(translationView.renderElement);
     _makeStandardMessageViewTextareasSynchronisable([textView, translationView]);
 
@@ -133,7 +133,7 @@ class StandardMessageView {
       var removeWarningModal;
       removeWarningModal = new InlineOverlayModal('Are you sure you want to remove this message?', [
         new Button(ButtonType.text,
-            buttonText: 'Yes', onClick: (_) => _kkView.appController.command(MessagesConfigAction.removeStandardMessage, new StandardMessageData(id))),
+            buttonText: 'Yes', onClick: (_) => _view.appController.command(MessagesConfigAction.removeStandardMessage, new StandardMessageData(id))),
         new Button(ButtonType.text, buttonText: 'No', onClick: (_) => removeWarningModal.remove()),
       ]);
       removeWarningModal.parent = _standardMessageElement;
