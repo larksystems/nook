@@ -64,7 +64,7 @@ class StandardMessagesCategoryData extends Data {
 }
 
 MessagesConfiguratorController _controller;
-StdMessagesConfigPageView get _kkView => _controller.view;
+MessagesConfigurationPageView get _kkView => _controller.view;
 
 class MessagesConfiguratorController extends ConfiguratorController {
   StandardMessagesManager standardMessagesManager = new StandardMessagesManager();
@@ -76,7 +76,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
 
   MessagesConfiguratorController() : super() {
     _controller = this;
-    view = new StdMessagesConfigPageView(this);
+    view = new MessagesConfigurationPageView(this);
     platform = new Platform(this);
   }
 
@@ -102,7 +102,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
         standardMessagesManager.addStandardMessage(newStandardMessage);
 
         var newStandardMessageView = new StandardMessageView(newStandardMessage.docId, newStandardMessage.text, newStandardMessage.translation);
-        (_kkView.groups.queryItem(messageData.groupId) as StdMessagesGroupView).addMessage(newStandardMessage.suggestedReplyId, newStandardMessageView);
+        (_kkView.groups.queryItem(messageData.groupId) as StandardMessagesGroupView).addMessage(newStandardMessage.suggestedReplyId, newStandardMessageView);
         editedStandardMessages[newStandardMessage.docId] = newStandardMessage;
         formDirty = true;
         break;
@@ -124,7 +124,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
         StandardMessageData messageData = data;
         var standardMessage = standardMessagesManager.getStandardMessageById(messageData.id);
         standardMessagesManager.removeStandardMessage(standardMessage);
-        (_kkView.groups.queryItem(standardMessage.groupId) as StdMessagesGroupView).removeMessage(messageData.id);
+        (_kkView.groups.queryItem(standardMessage.groupId) as StandardMessagesGroupView).removeMessage(messageData.id);
         editedStandardMessages.remove(standardMessage.suggestedReplyId);
         removedStandardMessages[standardMessage.suggestedReplyId] = standardMessage;
         formDirty = true;
@@ -133,7 +133,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
       case MessagesConfigAction.addStandardMessagesGroup:
         var newGroupId = standardMessagesManager.nextStandardMessagesGroupId;
         standardMessagesManager.emptyGroups[newGroupId] = '';
-        var standardMessagesGroupView = new StdMessagesGroupView(newGroupId, standardMessagesManager.emptyGroups[newGroupId], DivElement(), DivElement());
+        var standardMessagesGroupView = new StandardMessagesGroupView(newGroupId, standardMessagesManager.emptyGroups[newGroupId], DivElement(), DivElement());
         _kkView.addItem(standardMessagesGroupView);
         formDirty = true;
         break;

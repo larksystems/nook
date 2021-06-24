@@ -12,11 +12,11 @@ import 'package:katikati_ui_lib/components/logger.dart';
 
 Logger log = new Logger('view.dart');
 
-class StdMessagesConfigPageView extends ConfigurationPageView {
+class MessagesConfigurationPageView extends ConfigurationPageView {
   SelectElement _categoryChooser;
   Accordion groups;
 
-  StdMessagesConfigPageView(MessagesConfiguratorController controller): super(controller) {
+  MessagesConfigurationPageView(MessagesConfiguratorController controller): super(controller) {
     _kkView = this;
     configurationTitle.text = "What do you want to say?";
     _categoryChooser = new SelectElement()
@@ -64,9 +64,9 @@ class StdMessagesConfigPageView extends ConfigurationPageView {
   }
 }
 
-StdMessagesConfigPageView _kkView;
+MessagesConfigurationPageView _kkView;
 
-class StdMessagesGroupView extends AccordionItem {
+class StandardMessagesGroupView extends AccordionItem {
   String id;
   String _title;
   DivElement _header;
@@ -75,7 +75,7 @@ class StdMessagesGroupView extends AccordionItem {
 
   Map<String, StandardMessageView> messagesById = {};
 
-  StdMessagesGroupView(this.id, this._title, this._header, this._body): super(id, _header, _body, false) {
+  StandardMessagesGroupView(this.id, this._title, this._header, this._body): super(id, _header, _body, false) {
     var editableTitle = TextEdit(_title, removable: true)
       ..onEdit = (value) {
         _kkView.appController.command(MessagesConfigAction.updateStandardMessagesGroup, new StandardMessagesGroupData(id, newGroupName: value));
