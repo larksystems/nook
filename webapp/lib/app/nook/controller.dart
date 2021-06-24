@@ -1274,7 +1274,7 @@ class NookController extends Controller {
         _view.conversationPanelView
             .messageViewAtIndex(messageData.messageIndex)
             .addTag(newTagView);
-        newTagView.focusEditText();
+        newTagView.focus();
         break;
       case UIAction.saveTag:
         SaveTagData saveTagData = data;

@@ -671,7 +671,7 @@ String _formatDateTime(DateTime dateTime) {
 }
 
 class MessageTagView extends TagView {
-  MessageTagView(String text, String tagId, TagStyle tagStyle, [bool highlight = false]) : super(text, tagId, tagStyle: tagStyle, removable: true) {
+  MessageTagView(String text, String tagId, TagStyle tagStyle, [bool highlight = false]) : super(text, tagId, tagStyle: tagStyle, deletable: true) {
     onDelete = () {
       DivElement message = getAncestors(renderElement).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
       _view.appController.command(UIAction.removeMessageTag, new MessageTagData(tagId, int.parse(message.dataset['message-index'])));
@@ -681,7 +681,7 @@ class MessageTagView extends TagView {
 }
 
 class SuggestedMessageTagView extends TagView {
-  SuggestedMessageTagView(String text, String tagId, TagStyle tagStyle, [bool highlight = false]) : super(text, tagId, tagStyle: tagStyle, acceptable: true, removable: true, suggested: true) {
+  SuggestedMessageTagView(String text, String tagId, TagStyle tagStyle, [bool highlight = false]) : super(text, tagId, tagStyle: tagStyle, acceptable: true, deletable: true, suggested: true) {
 
     onDelete = () {
       DivElement message = getAncestors(renderElement).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
@@ -698,7 +698,7 @@ class SuggestedMessageTagView extends TagView {
 }
 
 class ConversationTagView extends TagView {
-  ConversationTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle: tagStyle, removable: true) {
+  ConversationTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle: tagStyle, deletable: true) {
     onDelete = () {
       DivElement messageSummary = getAncestors(renderElement).firstWhere((e) => e.classes.contains('conversation-summary'));
       _view.appController.command(UIAction.removeConversationTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
@@ -707,7 +707,7 @@ class ConversationTagView extends TagView {
 }
 
 class SuggestedConversationTagView extends TagView {
-  SuggestedConversationTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle: tagStyle, removable: true, acceptable: true, suggested: true) {
+  SuggestedConversationTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle: tagStyle, deletable: true, acceptable: true, suggested: true) {
     onDelete = () {
       DivElement messageSummary = getAncestors(renderElement).firstWhere((e) => e.classes.contains('conversation-summary'));
       _view.appController.command(UIAction.rejectConversationTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
@@ -726,8 +726,8 @@ mixin AutomaticSuggestionIndicator {
 }
 
 class EditableTagView extends TagView {
-  EditableTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle: tagStyle, removable: true, editable: true) {
-    super.makeEditable();
+  EditableTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle: tagStyle, deletable: true, editable: true) {
+    super.beginEdit();
 
     onEdit = (value) {
       _view.appController.command(UIAction.saveTag, new SaveTagData(value, tagId));
@@ -756,7 +756,7 @@ class FilterMenuTagView extends TagView {
 
 class FilterTagView extends TagView {
   TagFilterType _filterType;
-  FilterTagView(String text, String tagId, TagStyle tagStyle, TagFilterType filterType) : super(text, tagId, tagStyle: tagStyle, removable: true) {
+  FilterTagView(String text, String tagId, TagStyle tagStyle, TagFilterType filterType) : super(text, tagId, tagStyle: tagStyle, deletable: true) {
     _filterType = filterType;
     onDelete = () {
       _view.appController.command(UIAction.removeFilterTag, new FilterTagData(tagId, _filterType));
