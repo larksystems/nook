@@ -1,5 +1,6 @@
 library controller;
 
+import 'dart:html';
 import 'package:katikati_ui_lib/components/logger.dart';
 import 'package:nook/app/configurator/controller.dart';
 export 'package:nook/app/configurator/controller.dart';
@@ -101,7 +102,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
         standardMessagesManager.addStandardMessage(newStandardMessage);
 
         var newStandardMessageView = new StandardMessageView(newStandardMessage.docId, newStandardMessage.text, newStandardMessage.translation);
-        // _view.groups[messageData.groupId].addMessage(newStandardMessage.suggestedReplyId, newStandardMessageView);
+        (_kkView.groups.queryItem(messageData.groupId) as StdMessagesGroupView).addMessage(newStandardMessage.suggestedReplyId, newStandardMessageView);
         editedStandardMessages[newStandardMessage.docId] = newStandardMessage;
         formDirty = true;
         break;
@@ -123,7 +124,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
         StandardMessageData messageData = data;
         var standardMessage = standardMessagesManager.getStandardMessageById(messageData.id);
         standardMessagesManager.removeStandardMessage(standardMessage);
-        // _view.groups[standardMessage.groupId].removeMessage(standardMessage.suggestedReplyId);
+        (_kkView.groups.queryItem(standardMessage.groupId) as StdMessagesGroupView).removeMessage(messageData.id);
         editedStandardMessages.remove(standardMessage.suggestedReplyId);
         removedStandardMessages[standardMessage.suggestedReplyId] = standardMessage;
         formDirty = true;
@@ -132,14 +133,15 @@ class MessagesConfiguratorController extends ConfiguratorController {
       case MessagesConfigAction.addStandardMessagesGroup:
         var newGroupId = standardMessagesManager.nextStandardMessagesGroupId;
         standardMessagesManager.emptyGroups[newGroupId] = '';
-        var standardMessagesGroupView = new StandardMessagesGroupView(newGroupId, standardMessagesManager.emptyGroups[newGroupId]);
-        // _view.addGroup(newGroupId, standardMessagesGroupView);
+        var standardMessagesGroupView = new StdMessagesGroupView(newGroupId, standardMessagesManager.emptyGroups[newGroupId], DivElement(), DivElement());
+        _kkView.addItem(standardMessagesGroupView);
         formDirty = true;
         break;
 
       case MessagesConfigAction.updateStandardMessagesGroup:
         StandardMessagesGroupData groupData = data;
         standardMessagesManager.updateStandardMessagesGroupDescription(groupData.groupId, groupData.newGroupName);
+        // todo: could this be the reason????
         // _view.groups[groupData.groupId].name = groupData.newGroupName;
         formDirty = true;
         break;

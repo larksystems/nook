@@ -2,17 +2,17 @@ part of controller;
 
 void _populateStandardMessagesConfigPage(List<model.SuggestedReply> messages) {
   Map<String, List<model.SuggestedReply>> messagesByGroups = _groupMessagesIntoGroups(messages);
-  // _view.clear();
+  _kkView.clear();
   for (var groupId in messagesByGroups.keys) {
     var messagesInGroup = messagesByGroups[groupId];
     if (messagesInGroup.isEmpty) continue;
     var groupDescription = messagesInGroup.first.groupDescription;
-    StandardMessagesGroupView group = new StandardMessagesGroupView(groupId, groupDescription);
+    var group = new StdMessagesGroupView(groupId, groupDescription, DivElement(), DivElement());
     for (var message in messagesInGroup) {
       var messageView = new StandardMessageView(message.docId, message.text, message.translation);
       group.addMessage(message.docId, messageView);
     }
-    // _view.addGroup(groupId, group);
+    _kkView.addItem(group);
   }
 }
 
