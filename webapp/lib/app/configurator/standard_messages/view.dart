@@ -16,7 +16,7 @@ class MessagesConfigurationPageView extends ConfigurationPageView {
   SelectElement _categories;
   Accordion groups;
 
-  MessagesConfigurationPageView(MessagesConfiguratorController controller): super(controller) {
+  MessagesConfigurationPageView(MessagesConfiguratorController controller) : super(controller) {
     _view = this;
     configurationTitle.text = "What do you want to say?";
     _categories = new SelectElement()
