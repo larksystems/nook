@@ -1,6 +1,6 @@
 part of controller;
 
-void _addTagsToView(Map<String, List<model.Tag>> tagsByCategory, {bool startEditing = false}) {
+void _addTagsToView(Map<String, List<model.Tag>> tagsByCategory, {bool startEditing = false, bool startEditingName = false}) {
   for (var category in tagsByCategory.keys.toList()..sort()) {
     if (!_view.groups.containsKey(category)) {
       _view.addTagCategory(category, new TagGroupView(category));
@@ -18,6 +18,9 @@ void _addTagsToView(Map<String, List<model.Tag>> tagsByCategory, {bool startEdit
       tagsById[tagsByCategory[category].last.tagId].onCancel = () {
         _view.appController.command(TagsConfigAction.removeTag, new TagData(tagsByCategory[category].last.tagId, groupId: category));
       };
+    }
+    if (startEditingName) {
+      _view.groups[category].editableTitle.beginEdit();
     }
   }
 }

@@ -115,7 +115,7 @@ class TagsConfiguratorController extends ConfiguratorController {
 
       case TagsConfigAction.addTagGroup:
         var newGroupName = tagManager.createTagGroup();
-        _addTagsToView({newGroupName: []});
+        _addTagsToView({newGroupName: []}, startEditingName: true);
         break;
 
       case TagsConfigAction.updateTagGroup:

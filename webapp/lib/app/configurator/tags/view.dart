@@ -2,6 +2,7 @@ library view;
 
 import 'dart:html';
 import 'package:dnd/dnd.dart' as dnd;
+import 'package:katikati_ui_lib/components/editable/editable_text.dart';
 import 'package:nook/app/configurator/view.dart';
 export 'package:nook/app/configurator/view.dart';
 import 'package:nook/platform/platform.dart' as platform;
@@ -57,14 +58,15 @@ class TagsConfigurationPageView extends ConfigurationPageView {
 class TagGroupView {
   DivElement _tagsGroupElement;
   DivElement _tagsContainer;
-  DivElement _title;
-  SpanElement _titleText;
-  EditableText _editableTitle;
+  DivElement _tagsHeader;
+  String _groupName;
+  TextEdit editableTitle;
   Button _addTagButton;
 
   Map<String, TagView> tagViewsById;
 
-  TagGroupView(String groupName) {
+  TagGroupView(this._groupName) {
+    _groupName = _groupName ?? '';
     _tagsGroupElement = new DivElement()..classes.add('tags-group');
     var tagsDropzone = new dnd.Dropzone(_tagsGroupElement);
     tagsDropzone.onDrop.listen((event) {
@@ -75,35 +77,26 @@ class TagGroupView {
       tag.remove();
     });
 
-    _title = new DivElement()
+    _tagsHeader = new DivElement()
       ..classes.add('tags-group__title')
       ..classes.add('foldable');
-    _tagsGroupElement.append(_title);
+    _tagsGroupElement.append(_tagsHeader);
 
-    _titleText = new SpanElement()
-      ..classes.add('tags-group__title__text')
-      ..text = groupName;
-    _editableTitle = new EditableText(_titleText,
-        onEditStart: (_) => _title.classes.add('foldable--disabled'),
-        onEditEnd: (event) {
-          _title.classes.remove('foldable--disabled');
-          event.preventDefault();
-          event.stopPropagation();
-        },
-        onSave: (_) {
-          _view.appController.command(TagsConfigAction.updateTagGroup, new TagGroupData(_editableTitle.textBeforeEdit, newGroupName: name));
-        },
-        onRemove: (_) {
-          _title.classes.toggle('folded', false); // show the tag group before deletion
-          var warningModal;
-          warningModal = new InlineOverlayModal('Are you sure you want to remove this group?', [
-            new Button(ButtonType.text,
-                buttonText: 'Yes', onClick: (_) => _view.appController.command(TagsConfigAction.removeTagGroup, new TagGroupData(name))),
-            new Button(ButtonType.text, buttonText: 'No', onClick: (_) => warningModal.remove()),
-          ]);
-          warningModal.parent = _tagsGroupElement;
-        });
-    _editableTitle.parent = _title;
+    editableTitle = new TextEdit(_groupName, removable: true);
+    editableTitle.onEdit = (value) {
+      _view.appController.command(TagsConfigAction.updateTagGroup, new TagGroupData(_groupName, newGroupName: value));
+    };
+    editableTitle.onDelete = () {
+      var warningModal;
+      warningModal = new InlineOverlayModal('Are you sure you want to remove this group?', [
+        new Button(ButtonType.text,
+            buttonText: 'Yes', onClick: (_) => _view.appController.command(TagsConfigAction.removeTagGroup, new TagGroupData(name))),
+        new Button(ButtonType.text, buttonText: 'No', onClick: (_) => warningModal.remove()),
+      ]);
+      _tagsGroupElement.append(warningModal);
+    };
+
+    _tagsHeader.append(editableTitle.renderElement);
 
     _tagsContainer = new DivElement()..classes.add('tags-group__tags');
     _tagsGroupElement.append(_tagsContainer);
@@ -112,22 +105,22 @@ class TagGroupView {
         hoverText: 'Add new tag', onClick: (_) => _view.appController.command(TagsConfigAction.addTag, new TagData(null, groupId: name)));
     _addTagButton.parent = _tagsContainer;
 
-    _title.onClick.listen((event) {
-      if (_title.classes.contains('foldable--disabled')) return;
+    _tagsHeader.onClick.listen((event) {
+      if (_tagsHeader.classes.contains('foldable--disabled')) return;
       _tagsContainer.classes.toggle('hidden');
-      _title.classes.toggle('folded');
+      _tagsHeader.classes.toggle('folded');
     });
     // Start off folded
     _tagsContainer.classes.toggle('hidden', true);
-    _title.classes.toggle('folded', true);
+    _tagsHeader.classes.toggle('folded', true);
 
     tagViewsById = {};
   }
 
   Element get renderElement => _tagsGroupElement;
 
-  void set name(String text) => _titleText.text = text;
-  String get name => _titleText.text;
+  void set name(String text) => _groupName = text;
+  String get name => _groupName;
 
   void addTags(Map<String, TagView> tags) {
     for (var tag in tags.keys) {
