@@ -143,8 +143,6 @@ class MessagesConfiguratorController extends ConfiguratorController {
       case MessagesConfigAction.updateStandardMessagesGroup:
         StandardMessagesGroupData groupData = data;
         standardMessagesManager.updateStandardMessagesGroupDescription(groupData.groupId, groupData.newGroupName);
-        // todo: could this be the reason????
-        // _view.groups[groupData.groupId].name = groupData.newGroupName;
         formDirty = true;
         break;
 
