@@ -15,6 +15,7 @@ import 'package:katikati_ui_lib/components/conversation/conversation_item.dart';
 import 'package:katikati_ui_lib/components/user_presence/user_presence_indicator.dart';
 import 'package:katikati_ui_lib/components/scroll_indicator/scroll_indicator.dart';
 import 'package:katikati_ui_lib/components/tag/tag.dart';
+import 'package:katikati_ui_lib/components/button/button.dart' as buttons;
 import 'package:nook/view.dart';
 import 'package:nook/app/utils.dart';
 
@@ -52,7 +53,7 @@ class NookPageView extends PageView {
     tagPanelView = new TagPanelView();
     notesPanelView = new NotesPanelView();
     urlView = new UrlView();
-    
+
     tabsView = new TabsView([]);
 
     conversationFilter = {
@@ -72,16 +73,16 @@ class NookPageView extends PageView {
     var conversationListColumn = DivElement()..classes = ["nook-column-wrapper", "nook-column-wrapper--conversation-list"];
     var messagesViewColumn = DivElement()..classes = ["nook-column-wrapper", "nook-column-wrapper--messages-view"];
     var tabsViewColumn = DivElement()..classes = ["nook-column-wrapper", "nook-column-wrapper--tabs-view"];
-    
+
     mainElement
       ..append(conversationListColumn)
       ..append(messagesViewColumn)
       ..append(tabsViewColumn);
-    
+
     conversationListColumn.append(conversationListPanelView.conversationListPanel);
     messagesViewColumn.append(conversationPanelView.conversationPanel);
     tabsViewColumn.append(tabsView.renderElement);
-    
+
     bodyElement.append(snackbarView.snackbarElement);
 
     showNormalStatus('signed in');
@@ -673,6 +674,7 @@ String _formatDateTime(DateTime dateTime) {
 class MessageTagView extends TagView {
   MessageTagView(String text, String tagId, TagStyle tagStyle, [bool highlight = false]) : super(text, tagId, tagStyle: tagStyle, deletable: true) {
     onDelete = () {
+      markPending(true);
       DivElement message = getAncestors(renderElement).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
       _view.appController.command(UIAction.removeMessageTag, new MessageTagData(tagId, int.parse(message.dataset['message-index'])));
     };
@@ -684,11 +686,13 @@ class SuggestedMessageTagView extends TagView {
   SuggestedMessageTagView(String text, String tagId, TagStyle tagStyle, [bool highlight = false]) : super(text, tagId, tagStyle: tagStyle, acceptable: true, deletable: true, suggested: true) {
 
     onDelete = () {
+      markPending(true);
       DivElement message = getAncestors(renderElement).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
       _view.appController.command(UIAction.rejectMessageTag, new MessageTagData(tagId, int.parse(message.dataset['message-index'])));
     };
 
     onAccept = () {
+      markPending(true);
       DivElement message = getAncestors(renderElement).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
         _view.appController.command(UIAction.confirmMessageTag, new MessageTagData(tagId, int.parse(message.dataset['message-index'])));
     };
@@ -700,6 +704,7 @@ class SuggestedMessageTagView extends TagView {
 class ConversationTagView extends TagView {
   ConversationTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle: tagStyle, deletable: true) {
     onDelete = () {
+      markPending(true);
       DivElement messageSummary = getAncestors(renderElement).firstWhere((e) => e.classes.contains('conversation-summary'));
       _view.appController.command(UIAction.removeConversationTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
     };
@@ -709,6 +714,7 @@ class ConversationTagView extends TagView {
 class SuggestedConversationTagView extends TagView {
   SuggestedConversationTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle: tagStyle, deletable: true, acceptable: true, suggested: true) {
     onDelete = () {
+      markPending(true);
       DivElement messageSummary = getAncestors(renderElement).firstWhere((e) => e.classes.contains('conversation-summary'));
       _view.appController.command(UIAction.rejectConversationTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
     };
@@ -759,6 +765,7 @@ class FilterTagView extends TagView {
   FilterTagView(String text, String tagId, TagStyle tagStyle, TagFilterType filterType) : super(text, tagId, tagStyle: tagStyle, deletable: true) {
     _filterType = filterType;
     onDelete = () {
+      markPending(true);
       _view.appController.command(UIAction.removeFilterTag, new FilterTagData(tagId, _filterType));
     };
   }
@@ -878,6 +885,7 @@ class ConversationListSelectHeader {
 class ConversationListPanelView {
   DivElement conversationListPanel;
   SpanElement _conversationPanelTitle;
+  ChangeSortOrderActionView _changeSortOrder;
   LazyListViewModel _conversationList;
   CheckboxInputElement _selectAllCheckbox;
   DivElement _loadSpinner;
@@ -918,6 +926,11 @@ class ConversationListPanelView {
       ..classes.add('conversation-list-header__title')
       ..text = _conversationPanelTitleText;
     panelHeader.append(_conversationPanelTitle);
+
+    _changeSortOrder = ChangeSortOrderActionView();
+    panelHeader.append(new DivElement()
+      ..classes.add('conversation-list-header__sort-order')
+      ..append(_changeSortOrder.changeSortOrderAction));
 
     _loadSpinner = new DivElement()
       ..classes.add('load-spinner');
@@ -1039,6 +1052,10 @@ class ConversationListPanelView {
 
   void markConversationUnread(String deidentifiedPhoneNumber) {
     _phoneToConversations[deidentifiedPhoneNumber]?._markUnread();
+  }
+
+  void changeConversationSortOrder(UIConversationSort conversationSort) {
+    _changeSortOrder.showSortButton(conversationSort);
   }
 
   void checkConversation(String deidentifiedPhoneNumber) {
@@ -1902,5 +1919,35 @@ class AddTagActionView extends AddActionView {
     // No translation for tags
     _newActionTranslation.remove();
     _newActionTranslationLabel.remove();
+  }
+}
+
+class ChangeSortOrderActionView {
+  DivElement changeSortOrderAction;
+
+  buttons.Button alphabetically;
+  buttons.Button chronologically;
+
+  ChangeSortOrderActionView() {
+    changeSortOrderAction = new DivElement()
+      ..classes.add('sort-action__button')
+      ..onClick.listen((_) => _view.appController.command(UIAction.changeConversationSortOrder));
+
+    alphabetically = new buttons.Button(buttons.ButtonType("button--icon", iconClassName: "fas fa-sort-alpha-down"));
+    chronologically = new buttons.Button(buttons.ButtonType("button--icon", iconClassName: "fas fa-history"));
+
+    showSortButton(UIConversationSort.mostRecentInMessageFirst);
+  }
+
+  void showSortButton(UIConversationSort sort) {
+    changeSortOrderAction.children.clear();
+    switch (sort) {
+      case UIConversationSort.alphabeticalById:
+        changeSortOrderAction.append(alphabetically.renderElement);
+        break;
+      case UIConversationSort.mostRecentInMessageFirst:
+        changeSortOrderAction.append(chronologically.renderElement);
+        break;
+    }
   }
 }
