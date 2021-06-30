@@ -1,5 +1,6 @@
 library controller;
 
+import 'dart:html';
 import 'package:katikati_ui_lib/components/logger.dart';
 import 'package:nook/app/configurator/controller.dart';
 export 'package:nook/app/configurator/controller.dart';
@@ -101,7 +102,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
         standardMessagesManager.addStandardMessage(newStandardMessage);
 
         var newStandardMessageView = new StandardMessageView(newStandardMessage.docId, newStandardMessage.text, newStandardMessage.translation);
-        _view.groups[messageData.groupId].addMessage(newStandardMessage.suggestedReplyId, newStandardMessageView);
+        (_view.groups.queryItem(messageData.groupId) as StandardMessagesGroupView).addMessage(newStandardMessage.suggestedReplyId, newStandardMessageView);
         editedStandardMessages[newStandardMessage.docId] = newStandardMessage;
         formDirty = true;
         break;
@@ -123,7 +124,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
         StandardMessageData messageData = data;
         var standardMessage = standardMessagesManager.getStandardMessageById(messageData.id);
         standardMessagesManager.removeStandardMessage(standardMessage);
-        _view.groups[standardMessage.groupId].removeMessage(standardMessage.suggestedReplyId);
+        (_view.groups.queryItem(standardMessage.groupId) as StandardMessagesGroupView).removeMessage(messageData.id);
         editedStandardMessages.remove(standardMessage.suggestedReplyId);
         removedStandardMessages[standardMessage.suggestedReplyId] = standardMessage;
         formDirty = true;
@@ -132,15 +133,16 @@ class MessagesConfiguratorController extends ConfiguratorController {
       case MessagesConfigAction.addStandardMessagesGroup:
         var newGroupId = standardMessagesManager.nextStandardMessagesGroupId;
         standardMessagesManager.emptyGroups[newGroupId] = '';
-        var standardMessagesGroupView = new StandardMessagesGroupView(newGroupId, standardMessagesManager.emptyGroups[newGroupId]);
-        _view.addGroup(newGroupId, standardMessagesGroupView);
+        var standardMessagesGroupView = new StandardMessagesGroupView(newGroupId, standardMessagesManager.emptyGroups[newGroupId], DivElement(), DivElement());
+        _view.addItem(standardMessagesGroupView);
+        standardMessagesGroupView.editableTitle.beginEdit();
+        standardMessagesGroupView.expand();
         formDirty = true;
         break;
 
       case MessagesConfigAction.updateStandardMessagesGroup:
         StandardMessagesGroupData groupData = data;
         standardMessagesManager.updateStandardMessagesGroupDescription(groupData.groupId, groupData.newGroupName);
-        _view.groups[groupData.groupId].name = groupData.newGroupName;
         formDirty = true;
         break;
 
@@ -148,7 +150,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
         StandardMessagesGroupData groupData = data;
         List<model.SuggestedReply> standardMessagesToRemove = standardMessagesManager.standardMessages.where((r) => r.groupId == groupData.groupId).toList();
         standardMessagesManager.removeStandardMessagesGroup(groupData.groupId);
-        _view.removeGroup(groupData.groupId);
+        _view.groups.removeItem(groupData.groupId);
         for (var message in standardMessagesToRemove) {
           editedStandardMessages.remove(message.suggestedReplyId);
           removedStandardMessages[message.suggestedReplyId] = message;
@@ -162,10 +164,10 @@ class MessagesConfiguratorController extends ConfiguratorController {
         var collapsed = collapsedMessageGroupIds.contains(groupId);
         if (collapsed) {
           collapsedMessageGroupIds.remove(groupId);
-          _view.groups[groupId].expand();
+          _view.groups.expandItem(groupId);
         } else {
           collapsedMessageGroupIds.add(groupId);
-          _view.groups[groupId].collapse();
+          _view.groups.collapseItem(groupId);
         }
         break;
 
@@ -175,7 +177,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
         var collapsed = collapsedMessageGroupIds.contains(groupId);
         if (collapsed) {
           collapsedMessageGroupIds.remove(groupId);
-          _view.groups[groupId].expand();
+          _view.groups.expandItem(groupId);
         }
         break;
 
