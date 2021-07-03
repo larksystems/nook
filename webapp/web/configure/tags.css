@@ -1,9 +1,5 @@
 @charset "utf-8";
 
-.tags-group-list {
-  border-top: 1px solid #ccc;
-}
-
 .tags-group {
   position: relative;
   border-bottom: 1px solid #ccc;
@@ -23,8 +19,6 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-gap: 10px 10px;
-  margin: 8px;
-  margin-left: 23px;
   margin-bottom: 12px;
 }
 
@@ -123,4 +117,9 @@
   padding: 2px 4px;
   background: #eee;
   border-radius: 5px;
+}
+
+.dropzone--active {
+  border: 1px dashed #888;
+  background-color: rgba(0, 0, 0, 0.03);
 }
