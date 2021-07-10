@@ -1141,7 +1141,7 @@ class ConversationFilter {
 
   void addMenuTag(FilterMenuTagView tag, String category) {
 
-    if(_tagAccordion.queryItem(category) == null) {
+    if (_tagAccordion.queryItem(category) == null) {
       var tagGroup = AccordionItem(category, DivElement()..innerText = category, DivElement()..className = 'tags-menu__container', false, dataId: category);
       _tagAccordion.appendItem(tagGroup);
     }
@@ -1152,14 +1152,14 @@ class ConversationFilter {
     // todo: potentially move this computation to onExpand
     // recompute the grid
     var wasHidden = !currentAccordion.isOpen;
-    if(wasHidden) {
+    if (wasHidden) {
       currentAccordion.expand();
     }
     List<num> widths = currentAccordion.bodyElement.querySelectorAll('.tag__text').toList().map((e) => e.getBoundingClientRect().width).toList();
-    if(wasHidden) {
+    if (wasHidden) {
       currentAccordion.collapse();
     }
-    if(widths.isEmpty) {
+    if (widths.isEmpty) {
       widths.add(1);
     }
     num totalGridWidth = widths.fold(0, (previousValue, width) => previousValue + width);
