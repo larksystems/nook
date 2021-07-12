@@ -50,37 +50,6 @@
   transition: all 0.2s;
 }
 
-
-.standard-messages-group {
-  position: relative;
-  padding: 15px;
-  border: 1px solid #ddd;
-  border-bottom: none;
-}
-
-.standard-messages-group:first-child {
-  margin-top: 15px;
-}
-
-.standard-messages-group:last-child {
-  border: 1px solid #ddd;
-  margin-bottom: 15px;
-}
-
-.standard-messages-group__title {
-  font-weight: 600;
-  display: inline-block;
-  padding: 0 6px;
-  min-width: 30px;
-  margin: 0 2px;
-}
-
-.standard-messages-group__title:empty:not(:focus):before {
-  content: attr(title);
-  font-weight: 300;
-  font-style: italic;
-}
-
 .standard-message {
   display: grid;
   grid-template-columns: 1fr 1fr 16px;
