@@ -1055,25 +1055,27 @@ class NookController extends Controller {
         }
         break;
       case UIAction.markConversationRead:
-        ConversationData conversationData = data;
-        model.Conversation conversation = conversations.singleWhere((c) => c.docId == conversationData.deidentifiedPhoneNumber);
-        _view.conversationListPanelView.markConversationRead(conversation.docId);
-        platform.updateUnread([conversation], false).catchError(showAndLogError);
+        // TODO(mariana): the logic of marking conversations read/unread needs rethinking, likely needs to be using tags
+        // ConversationData conversationData = data;
+        // model.Conversation conversation = conversations.singleWhere((c) => c.docId == conversationData.deidentifiedPhoneNumber);
+        // _view.conversationListPanelView.markConversationRead(conversation.docId);
+        // platform.updateUnread([conversation], false).catchError(showAndLogError);
         break;
       case UIAction.markConversationUnread:
-        if (!currentConfig.sendMultiMessageEnabled || selectedConversations.isEmpty) {
-          _view.conversationListPanelView.markConversationUnread(activeConversation.docId);
-          platform.updateUnread([activeConversation], true).catchError(showAndLogError);
-          return;
-        }
-        var markedConversations = <model.Conversation>[];
-        for (var conversation in selectedConversations) {
-          if (!conversation.unread) {
-            markedConversations.add(conversation);
-            _view.conversationListPanelView.markConversationUnread(conversation.docId);
-          }
-        }
-        platform.updateUnread(markedConversations, true).catchError(showAndLogError);
+        // TODO(mariana): the logic of marking conversations read/unread needs rethinking, likely needs to be using tags
+        // if (!currentConfig.sendMultiMessageEnabled || selectedConversations.isEmpty) {
+        //   _view.conversationListPanelView.markConversationUnread(activeConversation.docId);
+        //   platform.updateUnread([activeConversation], true).catchError(showAndLogError);
+        //   return;
+        // }
+        // var markedConversations = <model.Conversation>[];
+        // for (var conversation in selectedConversations) {
+        //   if (!conversation.unread) {
+        //     markedConversations.add(conversation);
+        //     _view.conversationListPanelView.markConversationUnread(conversation.docId);
+        //   }
+        // }
+        // platform.updateUnread(markedConversations, true).catchError(showAndLogError);
         break;
       case UIAction.changeConversationSortOrder:
         conversationSortOrder = UIConversationSort.values[(UIConversationSort.values.indexOf(conversationSortOrder) + 1) % UIConversationSort.values.length];
@@ -1679,6 +1681,10 @@ model.Tag unifierTagForTag(model.Tag tag, Map<String, model.Tag> allTags) {
   if (tag.unifierTagId == null) return tag;
   return tagIdToTag(tag.unifierTagId, allTags);
 }
+
+// TODO(mariana): this should be picked up from the project configuration
+const OUR_TURN_TAG_ID = 'tag-97a3da54';
+bool isOurTurnInConversation(model.Conversation conversation) => conversation.tagIds.contains(OUR_TURN_TAG_ID);
 
 typedef Future<dynamic> SaveText(String newText);
 
