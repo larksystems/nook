@@ -219,7 +219,7 @@ class Platform {
   }
 
   void listenForUserConfigurations(UserConfigurationCollectionListener listener, [OnErrorListener onErrorListener]) {
-    UserConfiguration.listen(_docStorage, listener, onError: onErrorListener);
+    UserConfiguration.listen(_docStorage, listener, onErrorListener: onErrorListener);
   }
 
   void listenForSystemMessages(SystemMessageCollectionListener listener, [OnErrorListener onErrorListener]) =>
@@ -234,13 +234,13 @@ class Platform {
   }
 
   void listenForTags(TagCollectionListener listener, [OnErrorListener onErrorListener]) =>
-      Tag.listen(_docStorage, listener, onError: onErrorListener, collectionRoot: "/conversationTags");
+      Tag.listen(_docStorage, listener, "/conversationTags", onErrorListener: onErrorListener);
 
   void listenForSuggestedReplies(SuggestedReplyCollectionListener listener, [OnErrorListener onErrorListener]) =>
-      SuggestedReply.listen(_docStorage, listener, onError: onErrorListener);
+      SuggestedReply.listen(_docStorage, listener, onErrorListener: onErrorListener);
 
   void listenForUserPresence(UserPresenceCollectionListener listener, [OnErrorListener onErrorListener]) =>
-      UserPresence.listen(_docStorage, listener, onError: onErrorListener);
+      UserPresence.listen(_docStorage, listener, onErrorListener: onErrorListener);
 
   Future<void> addMessageTag(Conversation conversation, Message message, String tagId) {
     log.verbose("Adding tag $tagId to message in conversation ${conversation.docId}");
