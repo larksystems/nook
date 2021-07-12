@@ -1,5 +1,6 @@
 library controller;
 
+import 'dart:html';
 import 'package:katikati_ui_lib/components/logger.dart';
 import 'package:nook/app/configurator/controller.dart';
 export 'package:nook/app/configurator/controller.dart';
@@ -115,17 +116,15 @@ class TagsConfiguratorController extends ConfiguratorController {
 
       case TagsConfigAction.addTagGroup:
         var newGroupName = tagManager.createTagGroup();
-        _addTagsToView({newGroupName: []});
+        _addTagsToView({newGroupName: []}, startEditingName: true);
         break;
 
       case TagsConfigAction.updateTagGroup:
         TagGroupData groupData = data;
         tagManager.renameTagGroup(groupData.groupName, groupData.newGroupName);
-
-        var groupView = _view.groups[groupData.groupName];
-        groupView.name = groupData.newGroupName;
-        _view.groups.remove(groupData.groupName);
-        _view.groups[groupData.newGroupName] = groupView;
+        var groupView = _view.groups.queryItem(groupData.groupName);
+        groupView?.id = groupData.newGroupName;
+        _view.groups.updateItem(groupData.groupName, groupView);
         break;
 
       case TagsConfigAction.removeTagGroup:

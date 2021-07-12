@@ -1,9 +1,9 @@
 part of controller;
 
-void _addTagsToView(Map<String, List<model.Tag>> tagsByCategory, {bool startEditing = false}) {
+void _addTagsToView(Map<String, List<model.Tag>> tagsByCategory, {bool startEditing = false, bool startEditingName = false}) {
   for (var category in tagsByCategory.keys.toList()..sort()) {
-    if (!_view.groups.containsKey(category)) {
-      _view.addTagCategory(category, new TagGroupView(category));
+    if (!(_view.groups.queryItem(category) != null)) {
+      _view.addTagCategory(category, new TagGroupView(category, category, DivElement(), DivElement()));
     }
     Map<String, TagView> tagsById = {};
     for (var tag in tagsByCategory[category]) {
@@ -12,19 +12,22 @@ void _addTagsToView(Map<String, List<model.Tag>> tagsByCategory, {bool startEdit
         tagsById[tag.tagId].beginEdit();
       }
     }
-    _view.groups[category].addTags(tagsById);
+    (_view.groups.queryItem(category) as TagGroupView).addTags(tagsById);
     if (startEditing) {
       tagsById[tagsByCategory[category].last.tagId].focus();
       tagsById[tagsByCategory[category].last.tagId].onCancel = () {
         _view.appController.command(TagsConfigAction.removeTag, new TagData(tagsByCategory[category].last.tagId, groupId: category));
       };
     }
+    if (startEditingName) {
+      (_view.groups.queryItem(category) as TagGroupView).editableTitle.beginEdit();
+    }
   }
 }
 
 void _removeTagsFromView(Map<String, List<model.Tag>> tagsByCategory) {
   for (var category in tagsByCategory.keys.toList()..sort()) {
-    _view.groups[category].removeTags(tagsByCategory[category].map((t) => t.tagId).toList());
+    (_view.groups.queryItem(category) as TagGroupView).removeTags(tagsByCategory[category].map((t) => t.tagId).toList());
   }
 }
 
@@ -34,7 +37,7 @@ void _modifyTagsInView(Map<String, List<model.Tag>> tagsByCategory) {
     for (var tag in tagsByCategory[category]) {
       tagViewsById[tag.tagId] = new ConfigureTagView(tag.text, tag.docId, category, _tagTypeToKKStyle(tag.type));
     }
-    _view.groups[category].modifyTags(tagViewsById);
+    (_view.groups.queryItem(category) as TagGroupView).modifyTags(tagViewsById);
   }
 }
 
@@ -62,7 +65,7 @@ Map<String, List<model.Tag>> _groupTagsIntoCategories(List<model.Tag> tags) {
 
 TagStyle _tagTypeToKKStyle(model.TagType tagType) {
   switch (tagType) {
-    case model.TagType.Important:
+    case model.TagType.important:
       return TagStyle.Important;
     default:
       if (tagType == model.NotFoundTagType.NotFound) {

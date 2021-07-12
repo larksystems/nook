@@ -127,9 +127,13 @@ main {
     left: 130px;
     box-shadow: 0px 0px 2px 1px #ddd;
     background: white;
-    padding: 8px;
     margin: 16px;
     z-index: 5;
+}
+
+.tags-menu__box .accordion {
+    margin-top: 0;
+    margin-bottom: 0;
 }
 
 .tags-menu__buttress {

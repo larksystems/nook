@@ -2,6 +2,8 @@ library view;
 
 import 'dart:html';
 import 'package:dnd/dnd.dart' as dnd;
+import 'package:katikati_ui_lib/components/accordion/accordion.dart';
+import 'package:katikati_ui_lib/components/editable/editable_text.dart';
 import 'package:nook/app/configurator/view.dart';
 export 'package:nook/app/configurator/view.dart';
 import 'package:nook/platform/platform.dart' as platform;
@@ -20,28 +22,28 @@ class TagsConfigurationPageView extends ConfigurationPageView {
   DivElement _tagsContainer;
   Button addGroupButton;
 
-  Map<String, TagGroupView> groups = {};
+  Accordion groups = new Accordion([]);
 
   TagsConfigurationPageView(TagsConfiguratorController controller) : super(controller) {
     _view = this;
 
     configurationTitle.text = 'How do you want to tag the messages and conversations?';
 
-    _tagsContainer = new DivElement()..classes.add('tags-group-list');
+    _tagsContainer = new DivElement();
     configurationContent.append(_tagsContainer);
 
+    configurationContent.append(groups.renderElement);
     addGroupButton = new Button(ButtonType.add, hoverText: 'Add a new tag group', onClick: (_) => controller.command(TagsConfigAction.addTagGroup));
-    addGroupButton.parent = _tagsContainer;
+    configurationContent.append(addGroupButton.renderElement);
   }
 
   void addTagCategory(String id, TagGroupView tagGroupView) {
-    _tagsContainer.insertBefore(tagGroupView.renderElement, addGroupButton.renderElement);
-    groups[id] = tagGroupView;
+    _tagsContainer.append(tagGroupView.renderElement);
+    groups.appendItem(tagGroupView);
   }
 
   void removeTagGroup(String id) {
-    groups[id].renderElement.remove();
-    groups.remove(id);
+    groups.removeItem(id);
   }
 
   void clear() {
@@ -54,84 +56,74 @@ class TagsConfigurationPageView extends ConfigurationPageView {
   }
 }
 
-class TagGroupView {
-  DivElement _tagsGroupElement;
+class TagGroupView extends AccordionItem {
+  String _groupName;
+  TextEdit editableTitle;
+  DivElement _header;
+  DivElement _body;
   DivElement _tagsContainer;
-  DivElement _title;
-  SpanElement _titleText;
-  EditableText _editableTitle;
-  Button _addTagButton;
+  Button _addButton;
 
   Map<String, TagView> tagViewsById;
 
-  TagGroupView(String groupName) {
-    _tagsGroupElement = new DivElement()..classes.add('tags-group');
-    var tagsDropzone = new dnd.Dropzone(_tagsGroupElement);
+  TagGroupView(id, this._groupName, this._header, this._body) : super(id, _header, _body, false) {
+    _groupName = _groupName ?? '';
+
+    editableTitle = TextEdit(_groupName, removable: true)
+      ..onEdit = (value) {
+        _view.appController.command(TagsConfigAction.updateTagGroup, new TagGroupData(_groupName, newGroupName: value));
+        _groupName = value;
+      }
+      ..onDelete = () {
+        requestToDelete();
+      };
+
+    _header.append(editableTitle.renderElement);
+
+    _tagsContainer = DivElement()..classes.add('tags-group__tags');
+    _body.append(_tagsContainer);
+
+    _addButton = Button(ButtonType.add);
+    _addButton.renderElement.onClick.listen((e) {
+      _view.appController.command(TagsConfigAction.addTag, new TagData(null, groupId: _groupName));
+    });
+    _body.append(_addButton.renderElement);
+
+    var tagsDropzone = new dnd.Dropzone(renderElement);
+    tagsDropzone.onDragOver.listen((event) {
+      renderElement.classes.toggle('dropzone--active', true);
+    });
+    tagsDropzone.onDragLeave.listen((event) {
+      renderElement.classes.toggle('dropzone--active', false);
+    });
     tagsDropzone.onDrop.listen((event) {
       var tag = event.draggableElement;
       var tagId = tag.dataset['id'];
       var groupId = tag.dataset['group-id'];
+      expand();
       _view.appController.command(TagsConfigAction.moveTag, new TagData(tagId, groupId: groupId, newGroupId: name));
       tag.remove();
     });
 
-    _title = new DivElement()
-      ..classes.add('tags-group__title')
-      ..classes.add('foldable');
-    _tagsGroupElement.append(_title);
-
-    _titleText = new SpanElement()
-      ..classes.add('tags-group__title__text')
-      ..text = groupName;
-    _editableTitle = new EditableText(_titleText,
-        onEditStart: (_) => _title.classes.add('foldable--disabled'),
-        onEditEnd: (event) {
-          _title.classes.remove('foldable--disabled');
-          event.preventDefault();
-          event.stopPropagation();
-        },
-        onSave: (_) {
-          _view.appController.command(TagsConfigAction.updateTagGroup, new TagGroupData(_editableTitle.textBeforeEdit, newGroupName: name));
-        },
-        onRemove: (_) {
-          _title.classes.toggle('folded', false); // show the tag group before deletion
-          var warningModal;
-          warningModal = new InlineOverlayModal('Are you sure you want to remove this group?', [
-            new Button(ButtonType.text,
-                buttonText: 'Yes', onClick: (_) => _view.appController.command(TagsConfigAction.removeTagGroup, new TagGroupData(name))),
-            new Button(ButtonType.text, buttonText: 'No', onClick: (_) => warningModal.remove()),
-          ]);
-          warningModal.parent = _tagsGroupElement;
-        });
-    _editableTitle.parent = _title;
-
-    _tagsContainer = new DivElement()..classes.add('tags-group__tags');
-    _tagsGroupElement.append(_tagsContainer);
-
-    _addTagButton = new Button(ButtonType.add,
-        hoverText: 'Add new tag', onClick: (_) => _view.appController.command(TagsConfigAction.addTag, new TagData(null, groupId: name)));
-    _addTagButton.parent = _tagsContainer;
-
-    _title.onClick.listen((event) {
-      if (_title.classes.contains('foldable--disabled')) return;
-      _tagsContainer.classes.toggle('hidden');
-      _title.classes.toggle('folded');
-    });
-    // Start off folded
-    _tagsContainer.classes.toggle('hidden', true);
-    _title.classes.toggle('folded', true);
-
     tagViewsById = {};
   }
 
-  Element get renderElement => _tagsGroupElement;
+  void set name(String text) => _groupName = text;
+  String get name => _groupName;
 
-  void set name(String text) => _titleText.text = text;
-  String get name => _titleText.text;
+  void requestToDelete() {
+    expand();
+    InlineOverlayModal warningModal;
+    warningModal = new InlineOverlayModal('Are you sure you want to remove this group?', [
+      new Button(ButtonType.text, buttonText: 'Yes', onClick: (_) => _view.appController.command(TagsConfigAction.removeTagGroup, new TagGroupData(name))),
+      new Button(ButtonType.text, buttonText: 'No', onClick: (_) => warningModal.remove()),
+    ]);
+    renderElement.append(warningModal.inlineOverlayModal);
+  }
 
   void addTags(Map<String, TagView> tags) {
     for (var tag in tags.keys) {
-      _tagsContainer.insertBefore(tags[tag].renderElement, _addTagButton.renderElement);
+      _tagsContainer.append(tags[tag].renderElement);
       tagViewsById[tag] = tags[tag];
     }
   }
