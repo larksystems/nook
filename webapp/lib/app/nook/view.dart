@@ -987,8 +987,8 @@ class ConversationListPanelView {
       }
       summary = new ConversationSummary(
           conversation.docId,
-          conversation.messages.first.text,
-          conversation.unread);
+          conversation.messages.last.text,
+          isOurTurnInConversation(conversation));
       conversationsToAdd.add(summary);
     }
     _conversationList.appendItems(conversationsToAdd);
@@ -1006,15 +1006,15 @@ class ConversationListPanelView {
     }
     summary = new ConversationSummary(
         conversation.docId,
-        conversation.messages.first.text,
-        conversation.unread);
+        conversation.messages.last.text,
+        isOurTurnInConversation(conversation));
     _conversationList.addItem(summary, null);
     _phoneToConversations[summary.deidentifiedPhoneNumber] = summary;
     _conversationPanelTitle.text = _conversationPanelTitleText;
   }
 
   void updateConversationSummary(ConversationSummary summary, Conversation conversation) {
-    conversation.unread ? summary._markUnread() : summary._markRead();
+    isOurTurnInConversation(conversation) ? summary._markUnread() : summary._markRead();
   }
 
   void selectConversation(String deidentifiedPhoneNumber) {
