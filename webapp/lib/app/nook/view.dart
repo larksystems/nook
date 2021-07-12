@@ -1174,7 +1174,7 @@ class ConversationFilter {
 
   void removeMenuTag(FilterMenuTagView tag, String category) {
     _tagAccordion.items.forEach((accordion) {
-      accordion.bodyElement.children.removeWhere((element) => element.dataset["id"] == tag.renderElement.dataset["id"]);
+      accordion.bodyElement.children.removeWhere((element) => accordion.id == category && element.dataset["id"] == tag.renderElement.dataset["id"]);
     });
   }
 
