@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'dart:svg' as svg;
 
 import 'package:intl/intl.dart';
+import 'package:katikati_ui_lib/components/accordion/accordion.dart';
 import 'package:katikati_ui_lib/components/tabs/tabs.dart';
 import 'package:katikati_ui_lib/components/url_view/url_view.dart';
 import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
@@ -1101,8 +1102,7 @@ class ConversationFilter {
   DivElement _tagsContainer;
   DivElement _tagsMenu;
   DivElement _tagsMenuWrapper;
-  Map<String, List<FilterMenuTagView>> _tagGroups;
-  Map<String, DivElement> _tagGroupsContainers;
+  Accordion _tagAccordion;
 
   ConversationFilter() {
     conversationFilter = new DivElement()
@@ -1135,52 +1135,47 @@ class ConversationFilter {
       ..classes.add('tags-container');
     conversationFilter.append(_tagsContainer);
 
-    _tagGroupsContainers = {};
-    _tagGroups = {};
+    _tagAccordion = Accordion([]);
+    _tagsMenuWrapper.append(_tagAccordion.renderElement);
   }
 
   void addMenuTag(FilterMenuTagView tag, String category) {
-    _tagGroups.putIfAbsent(category, () => []).add(tag);
-    _tagGroupsContainers.putIfAbsent(category, () {
-      var newContainerTitle = new DivElement()
-        ..classes.add('tags-menu__group-name')
-        ..text = category;
-      _tagsMenuWrapper.append(newContainerTitle);
 
-      var newContainer = new DivElement()
-        ..classes.add('tags-menu__container');
-      _tagsMenuWrapper.append(newContainer);
+    if (_tagAccordion.queryItem(category) == null) {
+      var tagGroup = AccordionItem(category, DivElement()..innerText = category, DivElement()..className = 'tags-menu__container', false, dataId: category);
+      _tagAccordion.appendItem(tagGroup);
+    }
 
-      var separator = new DivElement()
-        ..classes.add('tags-menu__group-separator');
-      _tagsMenuWrapper.append(separator);
+    var currentAccordion = _tagAccordion.queryItem(category);
+    currentAccordion.bodyElement.append(tag.renderElement);
 
-      newContainerTitle.onClick.listen((event) {
-          newContainer.classes.toggle('hidden');
-          newContainerTitle.classes.toggle('folded');
-      });
-      // Start off folded
-      newContainer.classes.toggle('hidden', true);
-      newContainerTitle.classes.toggle('folded', true);
-
-      return newContainer;
-    }).append(tag.renderElement);
-    bool wasHidden = _tagGroupsContainers[category].classes.remove('hidden'); // briefly override any display settings to make sure we can compute getBoundingClientRect()
-    List<num> widths = _tagGroupsContainers[category].querySelectorAll('.tag__text').toList().map((e) => e.getBoundingClientRect().width).toList();
-    _tagGroupsContainers[category].classes.toggle('hidden', wasHidden); // clear inline display settings
-    num avgGridWidth = widths.fold(0, (previousValue, width) => previousValue + width);
-    avgGridWidth = avgGridWidth / widths.length;
+    // todo: potentially move this computation to onExpand
+    // recompute the grid
+    var wasHidden = !currentAccordion.isOpen;
+    if (wasHidden) {
+      currentAccordion.expand();
+    }
+    List<num> widths = currentAccordion.bodyElement.querySelectorAll('.tag__text').toList().map((e) => e.getBoundingClientRect().width).toList();
+    if (wasHidden) {
+      currentAccordion.collapse();
+    }
+    if (widths.isEmpty) {
+      widths.add(1);
+    }
+    num totalGridWidth = widths.fold(0, (previousValue, width) => previousValue + width);
+    num avgGridWidth = totalGridWidth / widths.length;
     num colSpacing = 10;
     num minColWidth = math.min(avgGridWidth + 2 * colSpacing, 138);
     num containerWidth = _tagsMenuWrapper.getBoundingClientRect().width;
     num columnWidth = containerWidth / (containerWidth / minColWidth).floor() - colSpacing;
-    _tagGroupsContainers[category].style.setProperty('grid-template-columns', 'repeat(auto-fill, ${columnWidth}px)');
+    currentAccordion.bodyElement.dataset['width'] = "${columnWidth}";
+    currentAccordion.bodyElement.style.setProperty('grid-template-columns', 'repeat(auto-fill, ${columnWidth}px)');
   }
 
   void removeMenuTag(FilterMenuTagView tag, String category) {
-    int index = _tagGroups[category].indexWhere((t) => t.renderElement.dataset["id"] == tag.renderElement.dataset["id"]);
-    _tagGroups[category][index].renderElement.remove();
-    _tagGroups[category].removeAt(index);
+    _tagAccordion.items.forEach((accordion) {
+      accordion.bodyElement.children.removeWhere((element) => accordion.id == category && element.dataset["id"] == tag.renderElement.dataset["id"]);
+    });
   }
 
   void addFilterTag(FilterTagView tag) {
