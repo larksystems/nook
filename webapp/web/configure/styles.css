@@ -25,21 +25,3 @@ main {
     overflow-y: auto;
     margin-top: 50px;
 }
-
-.editable-widget {
-    display: flex;
-    align-items: center;
-}
-
-.editable-widget .button {
-    opacity: 0;
-}
-
-.editable-widget.editable-widget--always-show-buttons .button {
-    opacity: 0.3;
-}
-
-.editable-widget:hover .button,
-.editable-widget .button:hover {
-    opacity: 1;
-}

@@ -130,15 +130,15 @@ void _populateTagPanelView(List<model.Tag> tags) {
   // Important tags first, then sort by text string
   tags.sort((t1, t2) {
     switch (t1.type) {
-      case model.TagType.important:
-        if (t2.type == model.TagType.important) {
+      case model.TagType.Important:
+        if (t2.type == model.TagType.Important) {
           return t1.text.compareTo(t2.text);
         } else {
           return -1;
         }
         break;
       default:
-        if (t2.type == model.TagType.important) {
+        if (t2.type == model.TagType.Important) {
           return 1;
         } else {
           return t1.text.compareTo(t2.text);
@@ -191,7 +191,7 @@ void _populateSelectedAfterDateFilterTag(DateTime afterDateFilter, TagFilterType
 // This is temporary method until we remove the kk namespace, tag
 TagStyle tagTypeToKKStyle(model.TagType tagType) {
   switch (tagType) {
-    case model.TagType.important:
+    case model.TagType.Important:
       return TagStyle.Important;
     default:
       if (tagType == model.NotFoundTagType.NotFound) {

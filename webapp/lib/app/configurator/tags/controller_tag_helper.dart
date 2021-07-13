@@ -132,7 +132,7 @@ class TagManager {
       ..text = ''
       ..shortcut = ''
       ..visible = true
-      ..type = model.TagType.normal;
+      ..type = model.TagType.Normal;
     addTag(tag);
     editedTags[tag.tagId] = tag;
     return tag;

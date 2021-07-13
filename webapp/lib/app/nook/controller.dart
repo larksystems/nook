@@ -1288,7 +1288,7 @@ class NookController extends Controller {
           ..text = ''
           ..shortcut = ''
           ..visible = true
-          ..type = model.TagType.normal;
+          ..type = model.TagType.Normal;
 
         conversation = activeConversation;
         message = conversation.messages[messageData.messageIndex];
