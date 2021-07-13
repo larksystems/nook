@@ -82,3 +82,61 @@
 .button--add:active:after {
   background-color: #333;
 }
+
+/* A simple tick button to add a new tag */
+
+.button--confirm {
+  width: 16px;
+  height: 16px;
+  margin: 2px;
+}
+
+.button--confirm:before,
+.button--confirm:after {
+  position: relative;
+  left: 7px;
+  top: 1px;
+  content: ' ';
+  height: 14px;
+  width: 2px;
+  background-color: #ccc;
+  display: block;
+}
+
+.button--confirm:before {
+  left: 10px;
+  height: 12px;
+  transform: rotate(40deg);
+}
+
+.button--confirm:after {
+  left: 4px;
+  top: -7px;
+  height: 7px;
+  transform: rotate(310deg);
+}
+
+.button--confirm:hover:before,
+.button--confirm:hover:after {
+  background-color: #888;
+}
+
+.button--confirm:active:before,
+.button--confirm:active:after {
+  background-color: #333;
+}
+
+
+/* A simple pencil button to edit something */
+
+.button--edit {
+  width: 16px;
+  height: 16px;
+  opacity: 0.6;
+  margin: 2px;
+}
+
+.button--edit:before {
+  content: '✎';
+  display: block;
+}
