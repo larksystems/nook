@@ -142,7 +142,8 @@ class MessagesConfiguratorController extends ConfiguratorController {
 
       case MessagesConfigAction.updateStandardMessagesGroup:
         StandardMessagesGroupData groupData = data;
-        standardMessagesManager.updateStandardMessagesGroupDescription(groupData.groupId, groupData.newGroupName);
+        var editedMessages = standardMessagesManager.updateStandardMessagesGroupDescription(groupData.groupId, groupData.newGroupName);
+        editedStandardMessages.addAll(editedMessages);
         formDirty = true;
         break;
 

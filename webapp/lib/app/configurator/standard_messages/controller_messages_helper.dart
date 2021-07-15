@@ -92,15 +92,18 @@ class StandardMessagesManager {
     }
   }
 
-  void updateStandardMessagesGroupDescription(String id, String newDescription) {
+  Map<String, model.SuggestedReply> updateStandardMessagesGroupDescription(String id, String newDescription) {
+    Map<String, model.SuggestedReply> editedMessages = {};
     if (emptyGroups.containsKey(id)) {
       emptyGroups[id] = newDescription;
-      return;
+      return {};
     }
     for (var standardMessage in _standardMessages) {
       if (standardMessage.groupId != id) continue;
       standardMessage.groupDescription = newDescription;
+      editedMessages[standardMessage.groupId] = standardMessage;
     }
+    return editedMessages;
   }
 
   void removeStandardMessage(model.SuggestedReply standardMessage) => removeStandardMessages([standardMessage]);
