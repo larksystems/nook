@@ -2,7 +2,6 @@ part of controller;
 
 class ConversationFilter {
   Map<TagFilterType, Set<model.Tag>> filterTags;
-  Map<TagFilterType, DateTime> afterDateFilter;
   String conversationIdFilter;
 
   ConversationFilter() {
@@ -10,10 +9,6 @@ class ConversationFilter {
       TagFilterType.include: Set(),
       TagFilterType.exclude: Set(),
       TagFilterType.lastInboundTurn: Set()
-    };
-    afterDateFilter = {
-      TagFilterType.include: null,
-      TagFilterType.exclude: null,
     };
     conversationIdFilter = "";
   }
@@ -25,23 +20,12 @@ class ConversationFilter {
       TagFilterType.lastInboundTurn: _getTagsFromUrl(TagFilterType.lastInboundTurn, controller.tagIdsToTags),
     };
 
-    afterDateFilter = {
-      TagFilterType.include: _view.urlView.getPageUrlFilterAfterDate(TagFilterType.include, onError: (Exception e){
-        var message = e is FormatException ? e.message : "Unknown format";
-        _view.appController
-            .command(UIAction.showSnackbar, new SnackbarData("Invalid date/time format for filter in URL: ${message}", SnackbarNotificationType.error));
-      }),
-      TagFilterType.exclude: _view.urlView.getPageUrlFilterAfterDate(TagFilterType.exclude),
-    };
-
     conversationIdFilter = _view.urlView.getPageUrlFilterConversationId() ?? "";
   }
 
   bool get isEmpty => filterTags[TagFilterType.include].isEmpty
                    && filterTags[TagFilterType.exclude].isEmpty
                    && filterTags[TagFilterType.lastInboundTurn].isEmpty
-                   && afterDateFilter[TagFilterType.include] == null
-                   && afterDateFilter[TagFilterType.exclude] == null
                    && conversationIdFilter == "";
 
   Map<TagFilterType, Set<String>> get filterTagIds => {
@@ -51,11 +35,6 @@ class ConversationFilter {
   };
 
   bool test(model.Conversation conversation) {
-    // Filter by the last (most recent) message
-    // TODO consider an option to filter by the first message
-    if (afterDateFilter[TagFilterType.include] != null && conversation.messages.last.datetime.isBefore(afterDateFilter[TagFilterType.include])) return false;
-    if (afterDateFilter[TagFilterType.exclude] != null && conversation.messages.last.datetime.isAfter(afterDateFilter[TagFilterType.exclude])) return false;
-
     var tags = convertTagIdsToTags(conversation.tagIds, controller.tagIdsToTags);
     var unifierTags = tags.map((t) => unifierTagForTag(t, controller.tagIdsToTags));
     var unifierTagIds = tagsToTagIds(unifierTags).toSet();
