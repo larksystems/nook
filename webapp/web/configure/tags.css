@@ -1,90 +1,10 @@
 @charset "utf-8";
 
-.tags-group {
-  position: relative;
-  border-bottom: 1px solid #ccc;
-}
-
-.tags-group__title {
-  margin: 8px;
-  cursor: pointer;
-  display: flex;
-}
-
-.tags-group__title__text {
-  display: inline-block;
-}
-
 .tags-group__tags {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-gap: 10px 10px;
   margin-bottom: 12px;
-}
-
-.tag {
-  font-size: 12px;
-  font-style: italic;
-  display: flex;
-  flex-wrap: nowrap;
-  position: relative;
-}
-
-.tag__name {
-  padding: 2px 5px;
-  margin: 1px 0;
-  border-radius: 2px;
-  border: 1px dashed #ddd;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 200px;
-}
-
-.tag--highlighted .tag__name {
-  background-color: #ddd;
-  border: 1px dashed #000;
-  font-weight: bold;
-}
-.tag--green .tag__name {
-  color:  darkgreen;
-  font-weight: bold;
-}
-.tag--yellow .tag__name {
-  color: darkorange;
-  font-weight: bold;
-}
-.tag--red .tag__name {
-  color: crimson;
-  font-weight: bold;
-}
-.tag--important .tag__name {
-  border-color: crimson;
-  background-color: crimson;
-  color: white;
-}
-.tag--unsaved .tag__name {
-  -webkit-animation: borderBlinkUnsaved 1s step-end infinite;
-  animation: borderBlinkUnsaved 1s step-end infinite;
-  border: 2px solid;
-}
-@-webkit-keyframes borderBlinkUnsaved {
-  from, to {
-      border-color: #bbb;
-  }
-  50% {
-      border-color: #ddd;
-  }
-}
-@keyframes borderBlinkUnsaved {
-  from, to {
-    border-color: #bbb;
-  }
-  50% {
-      border-color: #ddd;
-  }
-}
-.tag--pending .tag__name {
-  color: #666;
 }
 
 .tooltip {

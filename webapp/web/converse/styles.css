@@ -163,30 +163,6 @@ main {
     grid-gap: 4px 10px;
 }
 
-.tags-menu__group-name {
-    margin: 8px;
-    cursor: pointer;
-}
-
-.tags-menu__group-name::before {
-    content: "▼";
-    font-size: .6em;
-    font-weight: bold;
-    padding-right: 7px;
-}
-
-.tags-menu__group-name.folded::before {
-    content: "►";
-}
-
-.tags-menu__group-separator {
-    text-align: center;
-    border-bottom: 1px solid #bbb;
-    border-top: 7px solid white;
-    border-left: 32px solid white;
-    border-right: 32px solid white;
-}
-
 .panel-title {
     text-align: left;
     padding: 12px 8px;
@@ -218,38 +194,6 @@ main {
     font-weight: bold;
 }
 
-.conversation-list__item {
-    display: flex;
-    border-bottom: 1px solid lightgray;
-    word-break: break-word;
-    position: relative;
-}
-
-.conversation-list__item:hover {
-    background: #eee;
-}
-
-.conversation-list__item--selected {
-    border: 1px solid black;
-    position: relative;
-    overflow: auto;
-}
-
-.conversation-list__item--selected::after {
-    content: '';
-    position:absolute;
-    z-index: 1;
-    border-right: 5px solid black;
-    display: block;
-    top: 0;
-    right: 0;
-    height: 100%;
-}
-
-.conversation-list__item--unread {
-    font-weight:bold;
-}
-
 .conversation-list__user-indicators {
     position: absolute;
     top: 8px;
@@ -262,31 +206,6 @@ main {
 
 .user-indicators {
     display: flex;
-}
-
-.conversation-selector {
-    flex: 0 0 auto;
-    margin: 12px 8px auto;
-}
-
-.summary-message {
-    padding: 8px;
-    flex: 1 1 auto;
-}
-
-.summary-message .summary-message__id {
-    color: #666;
-    font-size: 0.8em;
-}
-
-.conversation-list__item--warning .summary-message .summary-message__id::before {
-    content: '';
-    display: inline-block;
-    background: url(/assets/icon-warning.png);
-    background-size: contain;
-    width: 9px;
-    height: 9px;
-    margin-right: 4px;
 }
 
 .messages {
@@ -395,8 +314,7 @@ main {
     height: 100%;
 }
 
-.notes-box,
-.new-message-box {
+.notes-box {
     flex: 0 0 auto;
     width: 100%;
     height: 100%;
@@ -405,16 +323,7 @@ main {
     overflow-y: scroll;
 }
 
-.new-message-box {
-    height: 50px;
-    margin: 12px 24px 12px 56px;
-    border: 1px dashed #AAAAAA;
-    box-sizing: border-box;
-    display: flex;
-}
-
-.notes-box__textarea,
-.new-message-box__textarea {
+.notes-box__textarea {
     resize: none;
     border: none;
     border-top: 1px solid #ddd;
@@ -424,10 +333,6 @@ main {
     color: #555;
     font-size: 12px;
     background: #fafafa;
-}
-
-.warning-background {
-    background: #ffcabe;
 }
 
 .conversation-list-select-header {
@@ -443,25 +348,6 @@ main {
 
 .conversation-list-select {
     flex: 0 1 auto;
-}
-
-.auth {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    margin: 0 6px;
-}
-
-.user-pic {
-    width: 20px;
-    height: 20px;
-    border-radius: 2px;
-    background-size: contain;
-    margin: 6px;
-}
-
-.user-name {
-    margin: 6px;
 }
 
 .flex-fill-gap {

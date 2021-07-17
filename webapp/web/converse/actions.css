@@ -74,8 +74,7 @@
   color: #222222;
 }
 
-.action__button,
-.new-message-box__send-button {
+.action__button {
   flex: 0 0 auto;
   padding: 4px;
   border-radius: 3px;
@@ -106,14 +105,7 @@
   box-shadow: none;
 }
 
-.new-message-box__send-button {
-  font-size: 10px;
-  align-self: center;
-  margin-right: 12px;
-}
-
-.action:hover .action__button,
-.new-message-box__send-button {
+.action:hover .action__button {
   opacity: 1;
 }
 
