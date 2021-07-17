@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:html';
 
 import 'package:katikati_ui_lib/components/logger.dart';
+import 'package:katikati_ui_lib/components/button/button.dart';
 
 import 'package:nook/view.dart';
 export 'package:nook/view.dart';
