@@ -170,21 +170,10 @@ void _addTagsToFilterMenu(Map<String, List<model.Tag>> tagsByCategory, TagFilter
   }
 }
 
-void _addDateTagToFilterMenu(TagFilterType filterType) {
-  _view.conversationFilter[filterType].addMenuTag(AfterDateFilterMenuTagView(filterType), "Date");
-}
-
 void _populateSelectedFilterTags(Set<model.Tag> tags, TagFilterType filterType) {
   _view.conversationFilter[filterType].clearSelectedTags();
   for (var tag in tags) {
     _view.conversationFilter[filterType].addFilterTag(new FilterTagView(tag.text, tag.tagId, tagTypeToKKStyle(tag.type), filterType));
-  }
-}
-
-void _populateSelectedAfterDateFilterTag(DateTime afterDateFilter, TagFilterType filterType) {
-  _view.conversationFilter[filterType].removeFilterTag(AFTER_DATE_TAG_ID);
-  if (afterDateFilter != null) {
-    _view.conversationFilter[filterType].addFilterTag(new AfterDateFilterTagView(afterDateFilter, filterType));
   }
 }
 

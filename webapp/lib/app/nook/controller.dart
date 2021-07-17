@@ -46,8 +46,6 @@ enum UIAction {
   rejectConversationTag,
   rejectMessageTag,
   removeFilterTag,
-  promptAfterDateFilter,
-  updateAfterDateFilter,
   showConversation,
   selectConversationList,
   selectConversation,
@@ -156,16 +154,6 @@ class FilterTagData extends Data {
 
   @override
   String toString() => 'FilterTagData: {tagId: $tagId, filterType: $filterType}';
-}
-
-class AfterDateFilterData extends Data {
-  String tagId;
-  DateTime afterDateFilter;
-  TagFilterType filterType;
-  AfterDateFilterData(this.tagId, this.filterType, [this.afterDateFilter]);
-
-  @override
-  String toString() => 'AfterDateFilter: {tagId: $tagId, filterType: $filterType, afterDateFilter: $afterDateFilter}';
 }
 
 class ConversationListData extends Data {
@@ -408,16 +396,11 @@ class NookController extends Controller {
         // Re-read the conversation filter from the URL since we now have the names of the tags
         conversationFilter = new ConversationFilter.fromUrl();
         _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.include], TagFilterType.include);
-        _populateSelectedAfterDateFilterTag(conversationFilter.afterDateFilter[TagFilterType.include], TagFilterType.include);
 
         if (currentConfig.conversationalTurnsEnabled) {
           _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.exclude], TagFilterType.exclude);
-          _populateSelectedAfterDateFilterTag(conversationFilter.afterDateFilter[TagFilterType.exclude], TagFilterType.exclude);
         }
       }, showAndLogError);
-
-    _addDateTagToFilterMenu(TagFilterType.include);
-    _addDateTagToFilterMenu(TagFilterType.exclude);
 
     platform.listenForSuggestedReplies(
       (added, modified, removed) {
@@ -652,7 +635,6 @@ class NookController extends Controller {
         _view.urlView.setPageUrlFilterTags(TagFilterType.exclude, conversationFilter.filterTagIds[TagFilterType.exclude]);
       } else {
         _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.exclude], TagFilterType.exclude);
-        _populateSelectedAfterDateFilterTag(conversationFilter.afterDateFilter[TagFilterType.exclude], TagFilterType.exclude);
       }
     }
 
@@ -829,7 +811,6 @@ class NookController extends Controller {
     if (activeConversation == null &&
         action != UIAction.selectConversationList &&
         action != UIAction.addFilterTag && action != UIAction.removeFilterTag &&
-        action != UIAction.promptAfterDateFilter && action != UIAction.updateAfterDateFilter &&
         action != UIAction.updateSuggestedRepliesCategory &&
         action != UIAction.updateDisplayedTagsGroup &&
         action != UIAction.selectAllConversations && action != UIAction.deselectAllConversations &&
@@ -1018,21 +999,6 @@ class NookController extends Controller {
         if (actionObjectState == UIActionObject.loadingConversations) return;
         updateFilteredAndSelectedConversationLists();
         updateViewForConversation(activeConversation, updateInPlace: true);
-        break;
-      case UIAction.promptAfterDateFilter:
-        AfterDateFilterData filterData = data;
-        _view.conversationPanelView.showAfterDateFilterPrompt(filterData.filterType, conversationFilter.afterDateFilter[filterData.filterType]);
-        break;
-      case UIAction.updateAfterDateFilter:
-        AfterDateFilterData filterData = data;
-        conversationFilter.afterDateFilter[filterData.filterType] = filterData.afterDateFilter;
-        _view.conversationFilter[filterData.filterType].removeFilterTag(filterData.tagId);
-        if (filterData.afterDateFilter != null) {
-          _view.conversationFilter[filterData.filterType].addFilterTag(new AfterDateFilterTagView(filterData.afterDateFilter, filterData.filterType));
-        }
-        _view.urlView.setPageUrlFilterAfterDate(filterData.filterType, filterData.afterDateFilter);
-        if (actionObjectState == UIActionObject.loadingConversations) return;
-        updateFilteredAndSelectedConversationLists();
         break;
       case UIAction.updateConversationIdFilter:
         ConversationIdFilterData filterData = data;

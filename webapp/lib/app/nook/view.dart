@@ -199,7 +199,6 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
   FreetextMessageSendView _freetextMessageSendView;
   DivElement _suggestedMessages;
   DivElement _suggestedMessagesActions;
-  AfterDateFilterView _afterDateFilterView;
 
   List<MessageView> _messageViews = [];
   List<SuggestedMessageView> _suggestedMessageViews = [];
@@ -276,9 +275,6 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
     _suggestedMessagesActions.append(deleteSuggestedMessages);
 
     _suggestedMessagesActions.append(automaticSuggestionIndicator..classes.add('absolute'));
-
-    _afterDateFilterView = AfterDateFilterView();
-    conversationPanel.append(_afterDateFilterView.panel);
   }
 
   set deidentifiedPhoneNumber(String deidentifiedPhoneNumber) => _conversationIdCopy.dataset['copy-value'] = deidentifiedPhoneNumber;
@@ -381,10 +377,6 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
     }
   }
 
-  void showAfterDateFilterPrompt(TagFilterType filterType, DateTime dateTime) {
-    _afterDateFilterView.showPrompt(filterType, dateTime);
-  }
-
   void showWarning(String explanation) {
     _conversationWarning.title = explanation;
     _conversationWarning.classes.remove('hidden');
@@ -401,94 +393,6 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
       _suggestedMessages.append(message.message);
     }
     _suggestedMessagesActions.classes.toggle('hidden', _suggestedMessages.children.isEmpty);
-  }
-}
-
-class AfterDateFilterView {
-  DivElement panel;
-  TextAreaElement _textArea;
-
-  TagFilterType _currentFilterType;
-
-  AfterDateFilterView() {
-    _textArea = new TextAreaElement()
-      ..classes.add('after-date-prompt__textarea');
-    makeEditable(_textArea, onEnter: (_) => applyFilter());
-
-    panel = DivElement()
-      ..classes.add('after-date-prompt')
-      ..append(SpanElement()
-        ..classes.add('after-date-prompt__prompt-text')
-        ..text = 'Enter "after date" filter as yyyy-mm-dd hh:')
-      ..append(_textArea)
-      ..append(_addButton('Apply')..onClick.listen(applyFilter))
-      ..append(_addButton('Cancel')..onClick.listen(hidePrompt));
-  }
-
-  DivElement _addButton(String text) {
-    return DivElement()
-      ..classes.add('after-date-prompt__button')
-      ..append(SpanElement()
-        ..classes.add('after-date-prompt__button-text')
-        ..text = text);
-  }
-
-  void showPrompt(TagFilterType filterType, DateTime dateTime) {
-    _currentFilterType = filterType;
-    dateTime ??= DateTime.now();
-    // TODO populate the fields with dateTime
-    panel.classes.add('after-date-prompt__visible');
-    _textArea
-      ..text = afterDateFilterFormat.format(dateTime)
-      ..setSelectionRange(5, _textArea.text.length)
-      ..focus();
-  }
-
-  void applyFilter([_]) {
-    DateTime dateTime;
-    try {
-      dateTime = parseAfterDateFilterText(_textArea.value);
-    } on FormatException catch (e) {
-      _view.appController.command(UIAction.showSnackbar, new SnackbarData("Invalid date/time format: ${e.message}", SnackbarNotificationType.error));
-      return;
-    }
-    _view.appController.command(UIAction.updateAfterDateFilter, new AfterDateFilterData(AFTER_DATE_TAG_ID, _currentFilterType, dateTime));
-    hidePrompt();
-  }
-
-  void hidePrompt([_]) {
-    panel.classes.remove('after-date-prompt__visible');
-    _currentFilterType = null;
-  }
-
-  DateTime parseAfterDateFilterText(String text) {
-    text = text.trim();
-    if (text.length < 4) throw FormatException('Expected 4 digit year');
-    int year = int.tryParse(text.substring(0, 4));
-    if (year == null) throw FormatException('Invalid 4 digit year');
-    int index = 4;
-
-    int nextGroup() {
-      while (true) {
-        if (index == text.length) return null;
-        var ch = text.codeUnitAt(index);
-        if (0x30 <= ch && ch <= 0x39) break;
-        ++index;
-      }
-      int end = index + 1;
-      if (end < text.length) {
-        var ch = text.codeUnitAt(index);
-        if (0x30 <= ch && ch <= 0x39) ++end;
-      }
-      var value = int.tryParse(text.substring(index, end));
-      index = end;
-      return value;
-    }
-
-    int month = nextGroup() ?? 1;
-    int day = nextGroup() ?? 1;
-    int hour = nextGroup() ?? 12;
-    return new DateTime(year, month, day, hour);
   }
 }
 
@@ -769,30 +673,6 @@ class FilterTagView extends TagView {
       markPending(true);
       _view.appController.command(UIAction.removeFilterTag, new FilterTagData(tagId, _filterType));
     };
-  }
-}
-
-const AFTER_DATE_TAG_ID = "after-date";
-
-class AfterDateFilterMenuTagView extends FilterMenuTagView {
-  AfterDateFilterMenuTagView(TagFilterType filterType) : super("after date", AFTER_DATE_TAG_ID, TagStyle.None, filterType);
-
-  @override
-  void handleClicked(String tagId) {
-    _view.appController.command(UIAction.promptAfterDateFilter, new AfterDateFilterData(tagId, _filterType));
-  }
-}
-
-class AfterDateFilterTagView extends FilterTagView {
-  AfterDateFilterTagView(DateTime dateTime, TagFilterType filterType) : super(filterText(dateTime), AFTER_DATE_TAG_ID, TagStyle.None, filterType);
-
-  static String filterText(DateTime dateTime) {
-    return "after date ${afterDateFilterFormat.format(dateTime)}";
-  }
-
-  @override
-  void handleClicked(String tagId) {
-    _view.appController.command(UIAction.updateAfterDateFilter, new AfterDateFilterData(tagId, _filterType, null));
   }
 }
 
