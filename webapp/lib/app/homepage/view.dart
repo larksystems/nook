@@ -80,8 +80,7 @@ class HomePageView extends PageView {
           controller.routeToPath(page.urlPath);
         });
         button.renderElement
-          ..classes.add('config-page-option__action')
-          ..classes.add('config-page-option__action--disabled');
+          ..classes.add('config-page-option__action');
         button.parent = pageContent;
 
         var description = new SpanElement()
