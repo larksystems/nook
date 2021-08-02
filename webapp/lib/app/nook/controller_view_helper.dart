@@ -186,9 +186,10 @@ void _populateTurnlines(List<model.Turnline> turnlines) {
     for (var step in turnline.steps) {
       turnlineView.addStep(TurnlineStep(step.title, step.done, step.verified));
     }
+    turnlineViews.add(turnlineView);
   }
   _view.turnlinePanelView.turnlines = turnlineViews;
-  reflowTurnlinesCascade(turnlineViews.first);
+  if (turnlineViews.isNotEmpty) reflowTurnlinesCascade(turnlineViews.first);
 }
 
 // This is temporary method until we remove the kk namespace, tag
