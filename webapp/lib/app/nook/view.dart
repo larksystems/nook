@@ -16,6 +16,7 @@ import 'package:katikati_ui_lib/components/conversation/conversation_item.dart';
 import 'package:katikati_ui_lib/components/user_presence/user_presence_indicator.dart';
 import 'package:katikati_ui_lib/components/scroll_indicator/scroll_indicator.dart';
 import 'package:katikati_ui_lib/components/tag/tag.dart';
+import 'package:katikati_ui_lib/components/turnline/turnline.dart' as tl;
 import 'package:katikati_ui_lib/components/button/button.dart' as buttons;
 import 'package:nook/view.dart';
 import 'package:nook/app/utils.dart';
@@ -39,6 +40,7 @@ class NookPageView extends PageView {
   ConversationPanelView conversationPanelView;
   ReplyPanelView replyPanelView;
   TagPanelView tagPanelView;
+  TurnlinePanelView turnlinePanelView;
   NotesPanelView notesPanelView;
   UrlView urlView;
   TabsView tabsView;
@@ -52,6 +54,7 @@ class NookPageView extends PageView {
     conversationPanelView = new ConversationPanelView();
     replyPanelView = new ReplyPanelView();
     tagPanelView = new TagPanelView();
+    turnlinePanelView = new TurnlinePanelView();
     notesPanelView = new NotesPanelView();
     urlView = new UrlView();
 
@@ -119,6 +122,11 @@ class NookPageView extends PageView {
     if (showTagPanel) {
       var tagsTab = TabView('tag', "Tags", tagPanelView.tagPanel);
       tabsToSet.add(tagsTab);
+    }
+
+    {
+      var turnlineTab = TabView('turnline', "Turnline", turnlinePanelView.turnlinePanel);
+      tabsToSet.add(turnlineTab);
     }
 
     if (enableEditNotesPanel) {
@@ -1311,6 +1319,22 @@ class NotesPanelView {
       _notesTextArea.disabled = true;
     }
     _notes.append(_notesTextArea);
+  }
+}
+
+class TurnlinePanelView {
+  DivElement turnlinePanel;
+
+  TurnlinePanelView() {
+    turnlinePanel = DivElement()
+      ..classes.add('turnline-panel');
+  }
+
+  void set turnlines(List<tl.Turnline> value) {
+    turnlinePanel.children.clear();
+    for (var turnline in value) {
+      turnlinePanel.append(turnline.renderElement);
+    }
   }
 }
 

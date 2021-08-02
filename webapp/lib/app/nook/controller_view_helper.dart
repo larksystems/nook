@@ -45,6 +45,7 @@ void _populateConversationPanelView(model.Conversation conversation, {bool updat
     suggestedMessages.add(new SuggestedMessageView(message.text, translation: message.translation));
   }
   _view.conversationPanelView.setSuggestedMessages(suggestedMessages);
+  _populateTurnlines(conversation.turnlines);
 }
 
 void _updateConversationPanelView(model.Conversation conversation) {
@@ -71,6 +72,7 @@ void _updateConversationPanelView(model.Conversation conversation) {
     suggestedMessages.add(new SuggestedMessageView(message.text, translation: message.translation));
   }
   _view.conversationPanelView.setSuggestedMessages(suggestedMessages);
+  _populateTurnlines(conversation.turnlines);
 }
 
 MessageView _generateMessageView(model.Message message, model.Conversation conversation) {
@@ -175,6 +177,18 @@ void _populateSelectedFilterTags(Set<model.Tag> tags, TagFilterType filterType) 
   for (var tag in tags) {
     _view.conversationFilter[filterType].addFilterTag(new FilterTagView(tag.text, tag.tagId, tagTypeToKKStyle(tag.type), filterType));
   }
+}
+
+void _populateTurnlines(List<model.Turnline> turnlines) {
+  List<Turnline> turnlineViews = [];
+  for (var turnline in turnlines) {
+    var turnlineView = Turnline(turnline.title);
+    for (var step in turnline.steps) {
+      turnlineView.addStep(TurnlineStep(step.title, step.done, step.verified));
+    }
+  }
+  _view.turnlinePanelView.turnlines = turnlineViews;
+  reflowTurnlinesCascade(turnlineViews.first);
 }
 
 // This is temporary method until we remove the kk namespace, tag
