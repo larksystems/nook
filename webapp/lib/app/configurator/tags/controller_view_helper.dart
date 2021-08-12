@@ -45,11 +45,7 @@ Map<String, List<model.Tag>> _groupTagsIntoCategories(List<model.Tag> tags) {
   Map<String, List<model.Tag>> result = {};
   for (model.Tag tag in tags) {
     if (tag.groups.isEmpty) {
-      if (tag.group.isEmpty) {
-        result.putIfAbsent("", () => []).add(tag);
-        continue;
-      }
-      result.putIfAbsent(tag.group, () => []).add(tag);
+      result.putIfAbsent("", () => []).add(tag);
       continue;
     }
     for (var group in tag.groups) {
