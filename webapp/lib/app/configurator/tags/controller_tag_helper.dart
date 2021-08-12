@@ -56,7 +56,7 @@ class TagManager {
       }
 
       if (tag.groups.isEmpty) {
-        _tagsByGroup.putIfAbsent(tag.group, () => []).add(tag);
+        _tagsByGroup.putIfAbsent('', () => []).add(tag);
         continue;
       }
       for (var group in tag.groups) {
@@ -111,7 +111,7 @@ class TagManager {
       removed.add(tag);
 
       if (oldTag.groups.isEmpty) {
-        _tagsByGroup[oldTag.group].remove(oldTag);
+        _tagsByGroup[''].remove(oldTag);
         continue;
       }
       for (var group in oldTag.groups) {

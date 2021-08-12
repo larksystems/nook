@@ -1569,13 +1569,13 @@ class NookController extends Controller {
       var groupsToUpdate = <String>{};
       for (var tag in tagsToRemove) {
         if (tag.groups.isEmpty) {
-          groupsToUpdate.add(tag.group);
+          groupsToUpdate.add('');
           continue;
         }
         groupsToUpdate.addAll(tag.groups);
       }
       for (var group in groupsToUpdate) {
-        var tagsToRemoveForGroup = tagsToRemove.where((t) => t.groups.contains(group) || t.group == group).toList();
+        var tagsToRemoveForGroup = tagsToRemove.where((t) => t.groups.contains(group)).toList();
         for (var filterType in filterTypes) {
           _removeTagsFromFilterMenu({group: tagsToRemoveForGroup}, filterType);
         }
@@ -1589,13 +1589,13 @@ class NookController extends Controller {
     var groupsToUpdate = <String>{};
     for (var tag in tagsToAdd) {
       if (tag.groups.isEmpty) {
-        groupsToUpdate.add(tag.group);
+        groupsToUpdate.add('');
         continue;
       }
       groupsToUpdate.addAll(tag.groups);
     }
     for (var group in groupsToUpdate) {
-      var tagsToAddForGroup = tagsToAdd.where((t) => t.groups.contains(group) || t.group == group).toList();
+      var tagsToAddForGroup = tagsToAdd.where((t) => t.groups.contains(group)).toList();
       for (var filterType in filterTypes) {
         _addTagsToFilterMenu({group: tagsToAddForGroup}, filterType);
       }
