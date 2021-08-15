@@ -13,7 +13,7 @@
 
 .configuration-actions {
   padding: 10px 0;
-  background-color: rgba(255, 255, 255, 0.8);
+  background-color: var(--white-80);
 }
 
 .configuration-actions.sticky {
@@ -21,13 +21,13 @@
   bottom: 0;
   text-align: center;
   margin-top: 15px;
-  border: 1px solid #dddddd;
+  border: 1px solid var(--default-border-color);
 }
 
 .configuration-actions__save-action {
   padding: 10px 15px;
-  background-color: #499398;
-  color: #ffffff;
+  background-color: var(--secondary-variant-accent-color);
+  color: var(--text-on-secondary-accent-color);
   border: none;
 }
 
@@ -42,7 +42,7 @@
   display: inline-block;
   box-sizing: border-box;
   text-align: center;
-  color: #666;
+  color: var(--darker-gray);
   margin-left: 10px;
 
   /* A little animation on hide and show */
@@ -68,7 +68,7 @@
 
 .message__text {
   overflow-y: scroll;
-  border: 1px solid #ddd;
+  border: 1px solid var(--default-border-color);
   padding: 6px;
   min-height: 96px;
   margin-bottom: 0px;
@@ -80,8 +80,8 @@
 }
 
 .message__text--alert {
-  border-color: #fa8072;
-  outline-color: #fa8072;
+  border-color: var(--light-red);
+  outline-color: var(--light-red);
 }
 
 .message__length-indicator {
@@ -95,7 +95,7 @@
 
 .message__length-indicator--alert {
   opacity: 1;
-  color: #fa8072;
-  outline-color: #fa8072;
+  color: var(--light-red);
+  outline-color: var(--light-red);
   font-weight: bold;
 }

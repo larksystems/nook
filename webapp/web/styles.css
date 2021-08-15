@@ -45,7 +45,6 @@ header {
     padding: 8px;
 }
 
-.config-page-option__action.config-page-option__action--disabled {
-    background: #bbbbbb;
-    pointer-events: none;
+.config-page-option__action {
+    min-width: 140px;
 }
