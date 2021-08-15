@@ -19,46 +19,54 @@
 .message__bubble {
   margin: 4px;
   padding: 6px;
-  border-radius: 6px;
+  border-radius: 2px;
   flex: 0 1 auto;
   flex-wrap: inherit;
   word-break: break-word;
   overflow: hidden;
+  cursor: default;
 }
 
 .message.message--incoming .message__bubble {
-  background: #f3f3f3;
-  border: 2px solid #f3f3f3;
+  background-color: var(--default-background-color);
+  border: 1px solid var(--default-border-color);
 }
 
 .message.message--outgoing .message__bubble {
-  background: #fbfbfb;
-  border: 2px solid #fbfbfb;
+  background-color: var(--lighter-background-color);
+  border: 1px solid var(--lighter-border-color);
 }
 
-.message.message--selected .message__bubble {
-  border: 2px solid #ccc;
+.message.message--selected .message__bubble,
+.message.message--selected:hover .message__bubble {
+  border: 1px dashed var(--selection-color);
 }
 
 .message.message--failed .message__bubble {
-  text-decoration: line-through red;
+  text-decoration: line-through var(--red);
 }
 
 .message.message--pending .message__bubble {
   font-style: italic;
-  color: #666666;
+  color: var(--darker-gray);
 }
 
 
 .message__datetime {
   font-size: .8em;
-  color: #666;
+  color: var(--dark-gray);
 }
 
 .message__translation {
   font-size: .8em;
   padding-left: 16px;
-  color: #666;
+  color: var(--dark-gray);
+}
+
+.message__translation:empty::before {
+  content: 'Translation';
+  font-style: italic;
+  color: var(--black-10);
 }
 
 .message__tags {
@@ -75,7 +83,7 @@
   margin-left: 6px;
   text-align: right;
   white-space: nowrap;
-  color: #999;
+  color: var(--dark-gray);
 }
 
 .status-line-warning {
@@ -84,8 +92,8 @@
 
 .message.message--suggested {
   font-size: 0.8em;
-  background: #fbfbfb;
-  border: 1px dashed #000;
+  background: var(--lighter-background-color);
+  border: 1px dashed var(--selection-color);
   margin: 4px 0;
 }
 
@@ -99,7 +107,7 @@
   align-self: center;
   padding: 4px;
   border-radius: 3px;
-  border: 1px solid #bbb;
+  border: 1px solid var(--default-border-color);
   margin: 8px 24px 8px 8px;
   position: relative;
 }
@@ -119,7 +127,7 @@
 }
 
 .suggested-message-panel__action.action--delete:hover {
-  color: salmon;
+  color: var(--light-red);
 }
 
 .suggested-message-panel__messages {
