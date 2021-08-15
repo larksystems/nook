@@ -411,7 +411,7 @@ class MessageView {
   DivElement _messageText;
   DivElement _messageTranslation;
   DivElement _messageTags;
-  DivElement _addMessageTagButton;
+  buttons.Button _addTag;
 
   static MessageView selectedMessageView;
 
@@ -452,16 +452,15 @@ class MessageView {
     tags.forEach((tag) => _messageTags.append(tag.renderElement));
     message.append(_messageTags);
 
-    _addMessageTagButton = new DivElement()
-      ..classes.add('tag__add')
-      ..classes.add('btn')
-      ..classes.add('btn--hover-only')
-      ..onClick.listen((e) {
-        e.stopPropagation();
-        _view.appController.command(UIAction.selectMessage, new MessageData(conversationId, messageIndex));
-        _view.appController.command(UIAction.startAddNewTagInline, new MessageData(conversationId, messageIndex));
-      });
-    _messageTags.append(_addMessageTagButton);
+    _addTag = buttons.Button(buttons.ButtonType.add, onClick: (e) {
+      e.stopPropagation();
+      _view.appController.command(UIAction.selectMessage, new MessageData(conversationId, messageIndex));
+      _view.appController.command(UIAction.startAddNewTagInline, new MessageData(conversationId, messageIndex));
+    });
+    _addTag.renderElement.classes
+      ..add('tag__add')
+      ..add('button--hover-only');
+    _messageTags.append(_addTag.renderElement);
 
     setStatus(status);
   }
@@ -471,7 +470,7 @@ class MessageView {
   void addTag(TagView tag, [int position]) {
     if (position == null || position >= _messageTags.children.length) {
       // Add at the end
-      _messageTags.insertBefore(tag.renderElement, _addMessageTagButton);
+      _messageTags.insertBefore(tag.renderElement, _addTag.renderElement);
       tag.renderElement.scrollIntoView();
       return;
     }
