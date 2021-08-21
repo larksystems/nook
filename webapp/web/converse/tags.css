@@ -14,52 +14,26 @@
 
 /* A simple plus button to add a new tag */
 
-.tag__add {
-  width: 16px;
-  height: 16px;
-  margin: 1px 2px 1px 2px;
-  padding: 3px 0;
+.button.button--icon.tag__add {
+  font-size: 10px;
+  padding: 4px 6px;
   border-radius: 2px;
   display: inline-block;
   vertical-align: middle;
   cursor: pointer;
+  border: 1px dotted var(--default-border-color);
 }
 
-.tag__add:before,
-.tag__add:after {
-  position: relative;
-  left: 7px;
-  top: 1px;
-  content: ' ';
-  height: 14px;
-  width: 2px;
-  background-color: #ccc;
-  display: block;
-}
-
-.tag__add:before {
-  transform: rotate(90deg);
-}
-
-.tag__add:after {
-  top: -13px;
-}
-
-.tag__add:hover:before,
-.tag__add:hover:after {
-  background-color: #888;
-}
-
-.tag__add:active:before,
-.tag__add:active:after {
-  background-color: #333;
+.button.button--icon.tag__add:hover {
+  border-color: var(--dark-border-color);
+  background-color: var(--default-background-color);
 }
 
 /* hover-only buttons */
 
-.hover-parent > .btn {
+.hover-parent > .button {
   opacity: 0;
 }
-.hover-parent:hover > .btn.btn--hover-only {
+.hover-parent:hover > .button.button--hover-only {
   opacity: 1;
 }
