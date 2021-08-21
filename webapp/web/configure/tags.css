@@ -18,8 +18,8 @@
   height: 300px;
   overflow-y: scroll;
   background: white;
-  box-shadow: 0px 0px 20px 0px #ddd;
-  border: 1px solid #ddd;
+  box-shadow: 0px 0px 20px 0px var(--black-10);
+  border: 1px solid var(--black-10);
   z-index: 3;
   padding: 7px;
   font-size: .8em;
@@ -39,11 +39,11 @@
   flex: 1 1 auto;
   margin: 3px;
   padding: 2px 4px;
-  background: #eee;
+  background: var(--default-background-color);
   border-radius: 5px;
 }
 
 .dropzone--active {
-  border: 1px dashed #888;
-  background-color: rgba(0, 0, 0, 0.03);
+  border: 1px dashed var(--default-border-color);
+  background-color: var(--lighter-background-color);
 }
