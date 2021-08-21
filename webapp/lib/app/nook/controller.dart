@@ -57,8 +57,6 @@ enum UIAction {
   selectMessage,
   deselectMessage,
   keyPressed,
-  addNewSuggestedReply,
-  addNewTag,
   startAddNewTagInline,
   cancelAddNewTagInline,
   saveTag,
@@ -1183,14 +1181,6 @@ class NookController extends Controller {
             break;
         }
         // There is no matching shortcut in either replies or tags, ignore
-        break;
-      case UIAction.addNewSuggestedReply:
-        AddSuggestedReplyData replyData = data;
-        // TODO: call platform
-        break;
-      case UIAction.addNewTag:
-        AddTagData tagData = data;
-        // TODO: call platform
         break;
       case UIAction.startAddNewTagInline:
         actionObjectState = UIActionObject.addTagInline;
