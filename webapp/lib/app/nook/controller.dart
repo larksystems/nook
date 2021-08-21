@@ -59,7 +59,7 @@ enum UIAction {
   keyPressed,
   startAddNewTagInline,
   cancelAddNewTagInline,
-  saveTag,
+  saveNewTagInline,
   selectAllConversations,
   deselectAllConversations,
   updateSuggestedRepliesCategory,
@@ -76,11 +76,11 @@ enum UIConversationSort {
 
 class MessageData extends Data {
   String conversationId;
-  int messageIndex;
-  MessageData(this.conversationId, this.messageIndex);
+  String messageId;
+  MessageData(this.conversationId, this.messageId);
 
   @override
-  String toString() => 'MessageData: {conversationId: $conversationId, messageIndex: $messageIndex}';
+  String toString() => 'MessageData: {conversationId: $conversationId, messageId: $messageId}';
 }
 
 class ReplyData extends Data {
@@ -112,11 +112,11 @@ class ManualReplyData extends Data {
 class TranslationData extends Data {
   String translationText;
   String conversationId;
-  int messageIndex;
-  TranslationData(this.translationText, this.conversationId, this.messageIndex);
+  String messageId;
+  TranslationData(this.translationText, this.conversationId, this.messageId);
 
   @override
-  String toString() => 'TranslationData: {translationText: $translationText, conversationId: $conversationId, messageIndex: $messageIndex}';
+  String toString() => 'TranslationData: {translationText: $translationText, conversationId: $conversationId, messageId: $messageId}';
 }
 
 class ReplyTranslationData extends Data {
@@ -130,11 +130,11 @@ class ReplyTranslationData extends Data {
 
 class MessageTagData extends Data {
   String tagId;
-  int messageIndex;
-  MessageTagData(this.tagId, this.messageIndex);
+  String messageId;
+  MessageTagData(this.tagId, this.messageId);
 
   @override
-  String toString() => 'MessageTagData: {tagId: $tagId, messageIndex: $messageIndex}';
+  String toString() => 'MessageTagData: {tagId: $tagId, messageId: $messageId}';
 }
 
 class ConversationTagData extends Data {
@@ -906,7 +906,7 @@ class NookController extends Controller {
         break;
 
       case UIAction.rejectSuggestedMessages:
-        platform.rejectSuggestedMessages(conversation).catchError(showAndLogError);
+        platform.rejectSuggestedMessages(addTagInlineConversation).catchError(showAndLogError);
         _view.conversationPanelView.setSuggestedMessages([]);
         break;
 
@@ -956,11 +956,11 @@ class NookController extends Controller {
         break;
       case UIAction.removeMessageTag:
         MessageTagData messageTagData = data;
-        var message = activeConversation.messages[messageTagData.messageIndex];
+        var message = activeConversation.messages.singleWhere((element) => element.id == messageTagData.messageId);
         platform.removeMessageTag(activeConversation, message, messageTagData.tagId).then(
           (_) {
             _view.conversationPanelView
-              .messageViewAtIndex(messageTagData.messageIndex)
+              .messageViewWithId(messageTagData.messageId)
               .removeTag(messageTagData.tagId);
           }, onError: showAndLogError);
         break;
@@ -973,7 +973,7 @@ class NookController extends Controller {
 
       case UIAction.confirmMessageTag:
         MessageTagData messageTagData = data;
-        var message = activeConversation.messages[messageTagData.messageIndex];
+        var message = activeConversation.messages.singleWhere((element) => element.id == messageTagData.messageId);
         platform.confirmMessageTag(activeConversation, message, messageTagData.tagId).catchError(showAndLogError);
         break;
 
@@ -985,7 +985,7 @@ class NookController extends Controller {
 
       case UIAction.rejectMessageTag:
         MessageTagData messageTagData = data;
-        var message = activeConversation.messages[messageTagData.messageIndex];
+        var message = activeConversation.messages.singleWhere((element) => element.id == messageTagData.messageId);
         platform.rejectMessageTag(activeConversation, message, messageTagData.tagId).catchError(showAndLogError);
         break;
 
@@ -1008,8 +1008,8 @@ class NookController extends Controller {
         break;
       case UIAction.selectMessage:
         MessageData messageData = data;
-        selectedMessage = activeConversation.messages[messageData.messageIndex];
-        _view.conversationPanelView.selectMessage(messageData.messageIndex);
+        selectedMessage = activeConversation.messages.singleWhere((element) => element.id == messageData.messageId);
+        _view.conversationPanelView.selectMessage(activeConversation.messages.indexOf(selectedMessage));
         actionObjectState = UIActionObject.message;
         break;
       case UIAction.deselectMessage:
@@ -1053,12 +1053,12 @@ class NookController extends Controller {
         break;
       case UIAction.showConversation:
         ConversationData conversationData = data;
+        actionObjectState = UIActionObject.conversation;
         if (conversationData.deidentifiedPhoneNumber == activeConversation.docId) break;
         bool shouldRecomputeConversationList = !filteredConversations.contains(activeConversation);
         activeConversation = conversations.singleWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
         if (shouldRecomputeConversationList) updateFilteredAndSelectedConversationLists();
         updateViewForConversation(activeConversation);
-
         break;
       case UIAction.selectConversationList:
         ConversationListData conversationListData = data;
@@ -1093,9 +1093,9 @@ class NookController extends Controller {
         if (data is TranslationData) {
           TranslationData messageTranslation = data;
           var conversation = activeConversation;
-          var message = conversation.messages[messageTranslation.messageIndex];
+          var message = conversation.messages.singleWhere((element) => element.id == messageTranslation.messageId);
           SaveTextAction.textChange(
-            "${conversation.docId}.message-${messageTranslation.messageIndex}.translation",
+            "${conversation.docId}.message-${messageTranslation.messageId}.translation",
             messageTranslation.translationText,
             (newText) {
               return platform.setMessageTranslation(conversation, message, newText).catchError(showAndLogError);
@@ -1227,17 +1227,18 @@ class NookController extends Controller {
     }
   }
 
-  model.Tag newTagToAdd;
-  model.Message message;
-  model.Conversation conversation;
+  model.Conversation addTagInlineConversation;
+  model.Message addTagInlineMessage;
+  model.Tag newTagInline;
+  EditableTagView addTagInlineView;
 
   void subCommandForAddTagInline(UIAction action, [Data data]) {
     switch (action) {
       case UIAction.startAddNewTagInline:
-        if (newTagToAdd != null) return; // another tag creation in progress
+        if (newTagInline != null) return; // another tag creation in progress
 
         MessageData messageData = data;
-        newTagToAdd = new model.Tag()
+        newTagInline = new model.Tag()
           ..docId = model.generateTagId()
           ..filterable = true
           ..groups = ["${signedInUser.userName}'s tags"]
@@ -1247,41 +1248,41 @@ class NookController extends Controller {
           ..visible = true
           ..type = model.TagType.Normal;
 
-        conversation = activeConversation;
-        message = conversation.messages[messageData.messageIndex];
+        addTagInlineConversation = activeConversation;
+        addTagInlineMessage = addTagInlineConversation.messages.singleWhere((element) => element.id == messageData.messageId);
 
-        var newTagView = new EditableTagView(newTagToAdd.text, newTagToAdd.tagId, tagTypeToKKStyle(newTagToAdd.type));
+        addTagInlineView = new EditableTagView(newTagInline.text, newTagInline.tagId, tagTypeToKKStyle(newTagInline.type));
         _view.conversationPanelView
-            .messageViewAtIndex(messageData.messageIndex)
-            .addTag(newTagView);
-        newTagView.focus();
+            .messageViewWithId(messageData.messageId)
+            .addTag(addTagInlineView);
+        addTagInlineView.focus();
         break;
-      case UIAction.saveTag:
+      case UIAction.saveNewTagInline:
         SaveTagData saveTagData = data;
         actionObjectState = UIActionObject.message;
 
-        newTagToAdd..text = saveTagData.tagText;
-        platform.addTag(newTagToAdd).then(
+        newTagInline..text = saveTagData.tagText;
+        platform.addTag(newTagInline).then(
           (_) {
             _view.conversationPanelView
-                .messageViewAtIndex(conversation.messages.indexOf(message))
-                .removeTag(newTagToAdd.tagId);
-            tags.add(newTagToAdd);
+                .messageViewAtIndex(addTagInlineConversation.messages.indexOf(addTagInlineMessage))
+                .removeTag(newTagInline.tagId);
+            tags.add(newTagInline);
 
-            setMessageTag(newTagToAdd, message, conversation);
-            newTagToAdd = null;
-            message = null;
-            conversation = null;
+            setMessageTag(newTagInline, addTagInlineMessage, addTagInlineConversation);
+            newTagInline = null;
+            addTagInlineMessage = null;
+            addTagInlineConversation = null;
           }, onError: showAndLogError);
         break;
       case UIAction.cancelAddNewTagInline:
         actionObjectState = UIActionObject.message;
         _view.conversationPanelView
-            .messageViewAtIndex(conversation.messages.indexOf(message))
-            .removeTag(newTagToAdd.tagId);
-        newTagToAdd = null;
-        message = null;
-        conversation = null;
+            .messageViewAtIndex(addTagInlineConversation.messages.indexOf(addTagInlineMessage))
+            .removeTag(newTagInline.tagId);
+        newTagInline = null;
+        addTagInlineMessage = null;
+        addTagInlineConversation = null;
         break;
       default:
         break;
@@ -1362,10 +1363,10 @@ class NookController extends Controller {
     // Replace the previous conversation in the conversation panel
     _populateConversationPanelView(conversation, updateInPlace: updateInPlace);
     _view.notesPanelView.noteText = conversation.notes;
-    // Deselect message if selected
+    // Reselect message if selected
     if (actionObjectState == UIActionObject.message) {
-      selectedMessage = null;
-      _view.conversationPanelView.deselectMessage();
+      selectedMessage = conversation.messages.singleWhere((element) => element.id == selectedMessage.id);
+      _view.conversationPanelView.selectMessage(conversation.messages.indexOf(selectedMessage));
     }
     _selectConversationInView(conversation);
     if (!filteredConversations.contains(conversation)) {

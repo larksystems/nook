@@ -209,6 +209,7 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
   DivElement _suggestedMessagesActions;
 
   List<MessageView> _messageViews = [];
+  Map<String, MessageView> _messageViewsMap = {};
   List<SuggestedMessageView> _suggestedMessageViews = [];
 
   ConversationPanelView() {
@@ -292,6 +293,7 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
   void addMessage(MessageView message) {
     _messages.append(message.message);
     _messageViews.add(message);
+    _messageViewsMap[message.messageId] = message;
     message.message.scrollIntoView();
   }
 
@@ -306,7 +308,7 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
     }
 
     for (int i = _messageViews.length; i < count; i++) {
-      MessageView message = new MessageView('', DateTime.now(), '', i);
+      MessageView message = new MessageView('', DateTime.now(), '', '$i');
       _messages.append(message.message);
       _messageViews.add(message);
     }
@@ -316,10 +318,12 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
     if (index >= _messageViews.length) {
       _messages.append(message.message);
       _messageViews.add(message);
+      _messageViewsMap[message.messageId] = message;
       return;
     }
     _messages.children[index] = message.message;
     _messageViews[index] = message;
+    _messageViewsMap[message.messageId] = message;
   }
 
   void addTags(TagView tag) {
@@ -349,11 +353,16 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
     return _messageViews[index];
   }
 
+  MessageView messageViewWithId(String id) {
+    return _messageViewsMap[id];
+  }
+
   void clear() {
     _conversationId.text = '';
     _conversationIdCopy.dataset['copy-value'] = '';
     _info.text = '';
     _messageViews = [];
+    _messageViewsMap = {};
     _suggestedMessageViews = [];
     removeTags();
     clearNewMessageBox();
@@ -413,21 +422,23 @@ class MessageView {
   DivElement _messageTags;
   buttons.Button _addTag;
 
+  String messageId;
+
   static MessageView selectedMessageView;
 
-  MessageView(String text, DateTime dateTime, String conversationId, int messageIndex, {String translation = '', bool incoming = true, List<TagView> tags = const[], MessageStatus status = null}) {
+  MessageView(String text, DateTime dateTime, String conversationId, this.messageId, {String translation = '', bool incoming = true, List<TagView> tags = const[], MessageStatus status = null}) {
     message = new DivElement()
       ..classes.add('message')
       ..classes.add(incoming ? 'message--incoming' : 'message--outgoing')
       ..dataset['conversationId'] = conversationId
-      ..dataset['messageIndex'] = '$messageIndex';
+      ..dataset['messageId'] = messageId;
 
     _messageBubble = new DivElement()
       ..classes.add('message__bubble')
       ..onClick.listen((event) {
         event.preventDefault();
         event.stopPropagation();
-        _view.appController.command(UIAction.selectMessage, new MessageData(conversationId, messageIndex));
+        _view.appController.command(UIAction.selectMessage, new MessageData(conversationId, messageId));
       });
     message.append(_messageBubble);
 
@@ -454,8 +465,8 @@ class MessageView {
 
     _addTag = buttons.Button(buttons.ButtonType.add, onClick: (e) {
       e.stopPropagation();
-      _view.appController.command(UIAction.selectMessage, new MessageData(conversationId, messageIndex));
-      _view.appController.command(UIAction.startAddNewTagInline, new MessageData(conversationId, messageIndex));
+      _view.appController.command(UIAction.selectMessage, new MessageData(conversationId, messageId));
+      _view.appController.command(UIAction.startAddNewTagInline, new MessageData(conversationId, messageId));
     });
     _addTag.renderElement.classes
       ..add('tag__add')
@@ -465,7 +476,9 @@ class MessageView {
     setStatus(status);
   }
 
+  void set text(String value) => _messageText.text = value;
   set translation(String translation) => _messageTranslation.text = translation;
+  void set datetime(DateTime value) => _messageDateTime.text = _formatDateTime(value);
 
   void addTag(TagView tag, [int position]) {
     if (position == null || position >= _messageTags.children.length) {
@@ -525,7 +538,7 @@ class MessageView {
                 new TranslationData(
                     _messageTranslation.text,
                     message.dataset['conversationId'],
-                    int.parse(message.dataset['messageIndex'])));
+                    message.dataset['messageId']));
       });
     }
     _messageBubble.append(_messageTranslation);
@@ -588,7 +601,7 @@ class MessageTagView extends TagView {
     onDelete = () {
       markPending(true);
       DivElement message = getAncestors(renderElement).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
-      _view.appController.command(UIAction.removeMessageTag, new MessageTagData(tagId, int.parse(message.dataset['message-index'])));
+      _view.appController.command(UIAction.removeMessageTag, new MessageTagData(tagId, message.dataset['messageId']));
     };
     markHighlighted(highlight);
   }
@@ -600,13 +613,13 @@ class SuggestedMessageTagView extends TagView {
     onDelete = () {
       markPending(true);
       DivElement message = getAncestors(renderElement).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
-      _view.appController.command(UIAction.rejectMessageTag, new MessageTagData(tagId, int.parse(message.dataset['message-index'])));
+      _view.appController.command(UIAction.rejectMessageTag, new MessageTagData(tagId, message.dataset['messageId']));
     };
 
     onAccept = () {
       markPending(true);
       DivElement message = getAncestors(renderElement).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
-        _view.appController.command(UIAction.confirmMessageTag, new MessageTagData(tagId, int.parse(message.dataset['message-index'])));
+        _view.appController.command(UIAction.confirmMessageTag, new MessageTagData(tagId, message.dataset['messageId']));
     };
 
     markHighlighted(highlight);
@@ -648,12 +661,12 @@ class EditableTagView extends TagView {
     super.beginEdit();
 
     onEdit = (value) {
-      _view.appController.command(UIAction.saveTag, new SaveTagData(value, tagId));
+      _view.appController.command(UIAction.saveNewTagInline, new SaveTagData(value, tagId));
     };
 
     onCancel = () {
       DivElement message = getAncestors(renderElement).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
-      _view.appController.command(UIAction.cancelAddNewTagInline, new MessageTagData(tagId, int.parse(message.dataset['message-index'])));
+      _view.appController.command(UIAction.cancelAddNewTagInline);
     };
   }
 }

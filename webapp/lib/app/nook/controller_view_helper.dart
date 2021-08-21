@@ -63,7 +63,24 @@ void _updateConversationPanelView(model.Conversation conversation) {
 
   _view.conversationPanelView.padOrTrimMessageViews(conversation.messages.length);
   for (int i = 0; i < conversation.messages.length; i++) {
-    MessageView messageView = _generateMessageView(conversation.messages[i], conversation);
+    var message = conversation.messages[i];
+    // Update message inline when adding a tag inline
+    if (controller.actionObjectState == UIActionObject.addTagInline && message.id == controller.addTagInlineMessage.id) {
+      var messageView = _view.conversationPanelView.messageViewWithId(message.id);
+      messageView
+        ..text = message.text
+        ..translation = message.translation
+        ..datetime = message.datetime;
+      for (var tagId in message.tagIds) {
+        messageView.removeTag(tagId);
+      }
+      var tags = _generateMessageTagViews(message);
+      for (int j = 0; j < tags.length; j++) {
+        messageView.addTag(tags[j], j);
+      }
+      continue;
+    }
+    MessageView messageView = _generateMessageView(message, conversation);
     _view.conversationPanelView.updateMessage(messageView, i);
   }
 
@@ -75,7 +92,7 @@ void _updateConversationPanelView(model.Conversation conversation) {
   _populateTurnlines(conversation.turnlines);
 }
 
-MessageView _generateMessageView(model.Message message, model.Conversation conversation) {
+List<TagView> _generateMessageTagViews(model.Message message) {
   List<TagView> tags = [];
   for (var tag in convertTagIdsToTags(message.tagIds, controller.tagIdsToTags)) {
     bool shouldHighlightTag = controller.conversationFilter.filterTagIds[TagFilterType.include].contains(tag.tagId);
@@ -87,11 +104,16 @@ MessageView _generateMessageView(model.Message message, model.Conversation conve
     shouldHighlightTag = shouldHighlightTag || controller.conversationFilter.filterTagIds[TagFilterType.lastInboundTurn].contains(tag.tagId);
     tags.add(new SuggestedMessageTagView(tag.text, tag.tagId, tagTypeToKKStyle(tag.type), shouldHighlightTag));
   }
+  return tags;
+}
+
+MessageView _generateMessageView(model.Message message, model.Conversation conversation) {
+  List<TagView> tags = _generateMessageTagViews(message);
   var messageView = new MessageView(
       message.text,
       message.datetime,
       conversation.docId,
-      conversation.messages.indexOf(message),
+      message.id,
       translation: message.translation,
       incoming: message.direction == model.MessageDirection.In,
       tags: tags,
