@@ -1806,21 +1806,6 @@ abstract class AddActionView {
   }
 }
 
-class AddReplyActionView extends AddActionView {
-  AddReplyActionView(String infoText) : super(infoText) {
-    _newActionButton.onClick.listen((_) => _view.appController.command(UIAction.addNewSuggestedReply, new AddSuggestedReplyData(_newActionTextArea.text, _newActionTranslation.text)));
-  }
-}
-
-class AddTagActionView extends AddActionView {
-  AddTagActionView(String infoText) : super(infoText) {
-    _newActionButton.onClick.listen((_) => _view.appController.command(UIAction.addNewTag, new AddTagData(_newActionTextArea.text)));
-    // No translation for tags
-    _newActionTranslation.remove();
-    _newActionTranslationLabel.remove();
-  }
-}
-
 class ChangeSortOrderActionView {
   DivElement changeSortOrderAction;
 
