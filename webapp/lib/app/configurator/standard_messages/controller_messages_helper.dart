@@ -21,18 +21,6 @@ class StandardMessagesManager {
   int get lastStandardMessagesCategorySeqNo => _lastStandardMessagesCategorySeqNo;
   int get nextStandardMessagesCategorySeqNo => ++_lastStandardMessagesCategorySeqNo;
 
-  String get nextStandardMessageId {
-    var seqNo = nextStandardMessageSeqNo;
-    String paddedSeqNo = seqNo.toString().padLeft(6, '0');
-    return 'reply-${paddedSeqNo}';
-  }
-
-  String get nextStandardMessagesGroupId {
-    var seqNo = nextStandardMessagesGroupSeqNo;
-    String paddedSeqNo = seqNo.toString().padLeft(6, '0');
-    return 'reply-group-${paddedSeqNo}';
-  }
-
   void _updateLastStandardMessageSeqNo(int seqNo) {
     if (seqNo < _lastStandardMessageSeqNo) return;
     _lastStandardMessageSeqNo = seqNo;
@@ -153,8 +141,8 @@ class StandardMessagesManager {
   }
 
   MessageGroup createStandardMessagesGroup(String category, {String groupId, String groupDescription}) {
-    var newGroupId = groupId ?? nextStandardMessagesGroupId;
-    var newMessageGroup = new MessageGroup(newGroupId, groupDescription ?? "message group $lastStandardMessagesGroupSeqNo");
+    var newGroupId = groupId ?? model.generateStandardMessageGroupId();
+    var newMessageGroup = new MessageGroup(newGroupId, groupDescription ?? "message group $nextStandardMessagesGroupSeqNo");
     categories[category].groups[newMessageGroup.groupDescription] = newMessageGroup;
     return newMessageGroup;
   }
