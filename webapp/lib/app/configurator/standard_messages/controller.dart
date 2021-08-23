@@ -16,50 +16,51 @@ part 'controller_messages_helper.dart';
 Logger log = new Logger('controller.dart');
 
 enum MessagesConfigAction {
-  // Handling standard messages
   addStandardMessage,
-  addStandardMessagesGroup,
   updateStandardMessage,
-  updateStandardMessagesGroup,
   removeStandardMessage,
+  addStandardMessagesGroup,
+  updateStandardMessagesGroup,
   removeStandardMessagesGroup,
-  toggleStandardMessagesGroup,
-  expandStandardMessagesGroup,
-  changeStandardMessagesCategory,
+  addStandardMessagesCategory,
+  updateStandardMessagesCategory,
+  removeStandardMessagesCategory,
 }
 
 class StandardMessageData extends Data {
   String id;
   String text;
   String translation;
-  String groupId;
-  StandardMessageData(this.id, {this.text, this.translation, this.groupId});
+  String group;
+  String category;
+  StandardMessageData(this.id, {this.text, this.translation, this.group, this.category});
 
   @override
   String toString() {
-    return "StandardMessageData($id, '$text', '$translation', $groupId)";
+    return "StandardMessageData($id, '$text', '$translation', $group, $category)";
   }
 }
 
 class StandardMessagesGroupData extends Data {
-  String groupId;
-  String groupName;
+  String group;
   String newGroupName;
-  StandardMessagesGroupData(this.groupId, {this.groupName, this.newGroupName});
+  String category;
+  StandardMessagesGroupData(this.category, this.group, {this.newGroupName});
 
   @override
   String toString() {
-    return "StandardMessagesGroupData($groupId, '$groupName', '$newGroupName')";
+    return "StandardMessagesGroupData($category, $group, '$newGroupName')";
   }
 }
 
 class StandardMessagesCategoryData extends Data {
   String category;
-  StandardMessagesCategoryData(this.category);
+  String newCategoryName;
+  StandardMessagesCategoryData(this.category, {this.newCategoryName});
 
   @override
   String toString() {
-    return "StandardMessagesCategoryData($category)";
+    return "StandardMessagesCategoryData($category, '$newCategoryName')";
   }
 }
 
@@ -68,11 +69,6 @@ MessagesConfigurationPageView get _view => _controller.view;
 
 class MessagesConfiguratorController extends ConfiguratorController {
   StandardMessagesManager standardMessagesManager = new StandardMessagesManager();
-  String selectedStandardMessagesCategory;
-  Map<String, model.SuggestedReply> editedStandardMessages = {};
-  Map<String, model.SuggestedReply> removedStandardMessages = {};
-  Set<String> collapsedMessageGroupIds = {};
-  bool formDirty = false;
 
   MessagesConfiguratorController() : super() {
     _controller = this;
@@ -86,113 +82,78 @@ class MessagesConfiguratorController extends ConfiguratorController {
       return;
     }
     log.verbose('command => $action : $data');
+    log.verbose('Before -- ${standardMessagesManager.categories}');
     switch (action) {
       case MessagesConfigAction.addStandardMessage:
         StandardMessageData messageData = data;
-        var newStandardMessage = model.SuggestedReply()
-          ..docId = standardMessagesManager.nextStandardMessageId
-          ..text = ''
-          ..translation = ''
-          ..shortcut = ''
-          ..seqNumber = standardMessagesManager.lastStandardMessageSeqNo
-          ..category = selectedStandardMessagesCategory
-          ..groupId = messageData.groupId
-          ..groupDescription = standardMessagesManager.groups[messageData.groupId]
-          ..indexInGroup = standardMessagesManager.getNextIndexInGroup(messageData.groupId);
-        standardMessagesManager.addStandardMessage(newStandardMessage);
+        var message = standardMessagesManager.createMessage(messageData.category, messageData.group);
 
-        var newStandardMessageView = new StandardMessageView(newStandardMessage.docId, newStandardMessage.text, newStandardMessage.translation);
-        (_view.groups.queryItem(messageData.groupId) as StandardMessagesGroupView).addMessage(newStandardMessage.suggestedReplyId, newStandardMessageView);
-        editedStandardMessages[newStandardMessage.docId] = newStandardMessage;
-        formDirty = true;
+        _addMessagesToView({
+          message.category: {
+            message.groupDescription: [message]
+          }
+        });
         break;
 
       case MessagesConfigAction.updateStandardMessage:
         StandardMessageData messageData = data;
-        var standardMessage = standardMessagesManager.getStandardMessageById(messageData.id);
-        if (messageData.text != null) {
-          standardMessage.text = messageData.text;
-        }
-        if (messageData.translation != null) {
-          standardMessage.translation = messageData.translation;
-        }
-        editedStandardMessages[standardMessage.docId] = standardMessage;
-        formDirty = true;
+        var standardMessage = standardMessagesManager.modifyMessage(messageData.id, messageData.text, messageData.translation);
+        _modifyMessagesInView({
+          standardMessage.category: {
+            standardMessage.groupDescription: [standardMessage]
+          }
+        });
         break;
 
       case MessagesConfigAction.removeStandardMessage:
         StandardMessageData messageData = data;
-        var standardMessage = standardMessagesManager.getStandardMessageById(messageData.id);
-        standardMessagesManager.removeStandardMessage(standardMessage);
-        (_view.groups.queryItem(standardMessage.groupId) as StandardMessagesGroupView).removeMessage(messageData.id);
-        editedStandardMessages.remove(standardMessage.suggestedReplyId);
-        removedStandardMessages[standardMessage.suggestedReplyId] = standardMessage;
-        formDirty = true;
+        var standardMessage = standardMessagesManager.deleteMessage(messageData.id);
+        _removeMessagesFromView({
+          standardMessage.category: {
+            standardMessage.groupDescription: [standardMessage]
+          }
+        });
         break;
 
       case MessagesConfigAction.addStandardMessagesGroup:
-        var newGroupId = standardMessagesManager.nextStandardMessagesGroupId;
-        standardMessagesManager.emptyGroups[newGroupId] = '';
-        var standardMessagesGroupView = new StandardMessagesGroupView(newGroupId, standardMessagesManager.emptyGroups[newGroupId], DivElement(), DivElement());
-        _view.addItem(standardMessagesGroupView);
-        standardMessagesGroupView.editableTitle.beginEdit();
-        standardMessagesGroupView.expand();
-        formDirty = true;
+        StandardMessagesGroupData groupData = data;
+        var newGroup = standardMessagesManager.createStandardMessagesGroup(groupData.category);
+        _addMessagesToView({groupData.category: {newGroup.groupDescription: []}});
         break;
 
       case MessagesConfigAction.updateStandardMessagesGroup:
         StandardMessagesGroupData groupData = data;
-        var editedMessages = standardMessagesManager.updateStandardMessagesGroupDescription(groupData.groupId, groupData.newGroupName);
-        editedStandardMessages.addAll(editedMessages);
-        formDirty = true;
+        standardMessagesManager.renameStandardMessageGroup(groupData.category, groupData.group, groupData.newGroupName);
+        _view.categoriesByName[groupData.category].renameGroup(groupData.group, groupData.newGroupName);
         break;
 
       case MessagesConfigAction.removeStandardMessagesGroup:
         StandardMessagesGroupData groupData = data;
-        List<model.SuggestedReply> standardMessagesToRemove = standardMessagesManager.standardMessages.where((r) => r.groupId == groupData.groupId).toList();
-        standardMessagesManager.removeStandardMessagesGroup(groupData.groupId);
-        _view.groups.removeItem(groupData.groupId);
-        for (var message in standardMessagesToRemove) {
-          editedStandardMessages.remove(message.suggestedReplyId);
-          removedStandardMessages[message.suggestedReplyId] = message;
-        }
-        formDirty = true;
+        standardMessagesManager.deleteStandardMessagesGroup(groupData.category, groupData.group);
+        _view.categoriesByName[groupData.category].removeGroup(groupData.group);
         break;
 
-      case MessagesConfigAction.toggleStandardMessagesGroup:
-        StandardMessagesGroupData groupData = data;
-        var groupId = groupData.groupId;
-        var collapsed = collapsedMessageGroupIds.contains(groupId);
-        if (collapsed) {
-          collapsedMessageGroupIds.remove(groupId);
-          _view.groups.expandItem(groupId);
-        } else {
-          collapsedMessageGroupIds.add(groupId);
-          _view.groups.collapseItem(groupId);
-        }
+      case MessagesConfigAction.addStandardMessagesCategory:
+        var newCategory = standardMessagesManager.createStandardMessagesCategory();
+        _addMessagesToView({newCategory: {}});
         break;
 
-      case MessagesConfigAction.expandStandardMessagesGroup:
-        StandardMessagesGroupData groupData = data;
-        var groupId = groupData.groupId;
-        var collapsed = collapsedMessageGroupIds.contains(groupId);
-        if (collapsed) {
-          collapsedMessageGroupIds.remove(groupId);
-          _view.groups.expandItem(groupId);
-        }
+      case MessagesConfigAction.updateStandardMessagesCategory:
+        StandardMessagesCategoryData categoryData = data;
+        standardMessagesManager.renameStandardMessageCategory(categoryData.category, categoryData.newCategoryName);
+        _view.renameCategory(categoryData.category, categoryData.newCategoryName);
         break;
 
-      case MessagesConfigAction.changeStandardMessagesCategory:
-        StandardMessagesCategoryData groupData = data;
-        selectedStandardMessagesCategory = groupData.category;
-        collapsedMessageGroupIds.clear();
-        _populateStandardMessagesConfigPage(standardMessagesManager.standardMessagesByCategory[selectedStandardMessagesCategory]);
+      case MessagesConfigAction.removeStandardMessagesCategory:
+        StandardMessagesCategoryData categoryData = data;
+        standardMessagesManager.deleteStandardMessagesCategory(categoryData.category);
+        _view.categories.removeItem(categoryData.category);
         break;
-
-      default:
     }
 
-    if (formDirty) {
+    log.verbose('After -- ${standardMessagesManager.categories}');
+
+    if (standardMessagesManager.hasUnsavedMessages) {
       _view.enableSaveButton();
     } else {
       _view.disableSaveButton();
@@ -202,20 +163,13 @@ class MessagesConfiguratorController extends ConfiguratorController {
   @override
   void setUpOnLogin() {
     platform.listenForSuggestedReplies((added, modified, removed) {
-      standardMessagesManager.addStandardMessages(added);
-      standardMessagesManager.updateStandardMessages(modified);
-      standardMessagesManager.removeStandardMessages(removed);
+      var messagesAdded = standardMessagesManager.addStandardMessages(added);
+      var messagesModified = standardMessagesManager.updateStandardMessages(modified);
+      var messagesRemoved = standardMessagesManager.removeStandardMessages(removed);
 
-      // Replace list of categories in the UI selector
-      _view.categories = standardMessagesManager.categories;
-      // If the categories have changed under us and the selected one no longer exists,
-      // default to the first category, whichever it is
-      if (!standardMessagesManager.categories.contains(selectedStandardMessagesCategory)) {
-        selectedStandardMessagesCategory = standardMessagesManager.categories.first;
-      }
-      // Select the selected category in the UI and add the standard messages for it
-      _view.selectedCategory = selectedStandardMessagesCategory;
-      _populateStandardMessagesConfigPage(standardMessagesManager.standardMessagesByCategory[selectedStandardMessagesCategory]);
+      _addMessagesToView(_groupMessagesIntoCategoriesAndGroups(messagesAdded));
+      _modifyMessagesInView(_groupMessagesIntoCategoriesAndGroups(messagesModified));
+      _removeMessagesFromView(_groupMessagesIntoCategoriesAndGroups(messagesRemoved));
     });
   }
 
@@ -224,11 +178,10 @@ class MessagesConfiguratorController extends ConfiguratorController {
     _view.showSaveStatus('Saving...');
     bool otherPartSaved = false;
 
-    platform.updateSuggestedReplies(editedStandardMessages.values.toList()).then((value) {
-      editedStandardMessages.clear();
+    platform.updateSuggestedReplies(standardMessagesManager.editedMessages.values.toList()).then((value) {
+      standardMessagesManager.editedMessages.clear();
       if (otherPartSaved) {
         _view.showSaveStatus('Saved!');
-        formDirty = false;
         _view.disableSaveButton();
         return;
       }
@@ -237,11 +190,10 @@ class MessagesConfiguratorController extends ConfiguratorController {
       _view.showSaveStatus('Unable to save. Please check your connection and try again. If the issue persists, please contact your project administrator');
     });
 
-    platform.deleteSuggestedReplies(removedStandardMessages.values.toList()).then((value) {
-      removedStandardMessages.clear();
+    platform.deleteSuggestedReplies(standardMessagesManager.deletedMessages.values.toList()).then((value) {
+      standardMessagesManager.deletedMessages.clear();
       if (otherPartSaved) {
         _view.showSaveStatus('Saved!');
-        formDirty = false;
         _view.disableSaveButton();
         return;
       }

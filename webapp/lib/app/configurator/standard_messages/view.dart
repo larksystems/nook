@@ -16,94 +16,167 @@ Logger log = new Logger('view.dart');
 MessagesConfigurationPageView _view;
 
 class MessagesConfigurationPageView extends ConfigurationPageView {
-  SelectElement _categories;
-  Accordion groups;
+  DivElement _messagesContainer;
+  Button _addButton;
+
+  Accordion categories;
+
+  Map<String, StandardMessagesCategoryView> categoriesByName = {};
 
   MessagesConfigurationPageView(MessagesConfiguratorController controller) : super(controller) {
     _view = this;
 
     configurationTitle.text = 'What do you want to say?';
 
-    _categories = new SelectElement();
-    _categories.onChange.listen(
-        (_) => controller.command(MessagesConfigAction.changeStandardMessagesCategory, new StandardMessagesCategoryData(_categories.value)));
-    configurationContent.append(_categories);
+    _messagesContainer = new DivElement();
+    configurationContent.append(_messagesContainer);
 
-    groups = new Accordion([]);
-    configurationContent.append(groups.renderElement);
+    categories = new Accordion([]);
+    configurationContent.append(categories.renderElement);
 
-    var addButton = new Button(ButtonType.add,
-        hoverText: 'Add a new group of standard messages', onClick: (event) => controller.command(MessagesConfigAction.addStandardMessagesGroup));
-    addButton.parent = configurationContent;
+    _addButton = new Button(ButtonType.add, hoverText: 'Add a new message category', onClick: (_) => _view.appController.command(MessagesConfigAction.addStandardMessagesCategory));
+    configurationContent.append(_addButton.renderElement);
   }
 
-  void addItem(AccordionItem item) {
-    groups.appendItem(item);
+  void addCategory(String category, StandardMessagesCategoryView categoryView) {
+    categories.appendItem(categoryView);
+    categoriesByName[category] = categoryView;
   }
 
-  void removeItem(String id) {
-    groups.removeItem(id);
+  void renameCategory(String categoryName, String newCategoryName) {
+    var categoryView = _view.categoriesByName.remove(categoryName);
+    categoryView.id = newCategoryName;
+    categoryView.name = newCategoryName;
+    categoriesByName[newCategoryName] = categoryView;
+    categories.updateItem(newCategoryName, categoryView);
   }
 
-  set selectedCategory(String category) {
-    int index = _categories.children.indexWhere((Element option) => (option as OptionElement).value == category);
-    if (index == -1) {
-      // Couldn't find category in list of standard messages category, using first
-      _categories.selectedIndex = 0;
-      _view.appController.command(MessagesConfigAction.changeStandardMessagesCategory, new StandardMessagesCategoryData(_categories.value));
-      return;
-    }
-    _categories.selectedIndex = index;
-  }
-
-  set categories(List<String> categories) {
-    _categories.children.clear();
-    for (var category in categories) {
-      _categories.append(new OptionElement()
-        ..value = category
-        ..text = category.isEmpty ? '[Unnamed]' : category);
-    }
+  void removeCategory(String category) {
+    categories.removeItem(category);
+    categoriesByName.remove(category);
   }
 
   void clear() {
-    groups.clear();
+    categories.clear();
+  }
+}
+
+class StandardMessagesCategoryView extends AccordionItem {
+  String _categoryName;
+  DivElement _standardMessagesGroupContainer;
+  Button _addButton;
+  TextEdit editableTitle;
+
+  Accordion groups;
+
+  Map<String, StandardMessagesGroupView> groupsByName = {};
+
+  StandardMessagesCategoryView(this._categoryName, DivElement header, DivElement body) : super(_categoryName, header, body, false) {
+    _categoryName = _categoryName ?? '';
+
+    editableTitle = TextEdit(_categoryName, removable: true)
+      ..testInput = (String value) {
+        var messageManager = (_view.appController as MessagesConfiguratorController).standardMessagesManager;
+        var categories = messageManager.standardMessages.map((e) => e.category).toSet();
+        categories.remove(id);
+        return !categories.contains(value);
+      }
+      ..onEdit = (value) {
+        _view.appController.command(MessagesConfigAction.updateStandardMessagesCategory, new StandardMessagesCategoryData(_categoryName, newCategoryName: value));
+        _categoryName = value;
+      }
+      ..onDelete = () {
+        requestToDelete();
+      };
+    header.append(editableTitle.renderElement);
+
+    _standardMessagesGroupContainer = new DivElement()..classes.add('standard-messages__group');
+    body.append(_standardMessagesGroupContainer);
+
+    groups = new Accordion([]);
+    _standardMessagesGroupContainer.append(groups.renderElement);
+
+    _addButton = Button(ButtonType.add, hoverText: 'Add a new group of standard messages', onClick: (event) => _view.appController.command(MessagesConfigAction.addStandardMessagesGroup, new StandardMessagesGroupData(_categoryName, '')));
+
+    body.append(_addButton.renderElement);
+  }
+
+  void set name(String value) => _categoryName = value;
+  String get name => _categoryName;
+
+  void addGroup(String groupName, StandardMessagesGroupView standardMessagesGroupView) {
+    groups.appendItem(standardMessagesGroupView);
+    groupsByName[groupName] = standardMessagesGroupView;
+  }
+
+  void renameGroup(String groupName, String newGroupName) {
+    var groupView = groupsByName.remove(groupName);
+    groupView.id = newGroupName;
+    groupsByName[newGroupName] = groupView;
+    groups.updateItem(newGroupName, groupView);
+  }
+
+  void removeGroup(String groupName) {
+    groupsByName[groupName].renderElement.remove();
+    groupsByName.remove(groupName);
+  }
+
+  void requestToDelete() {
+    expand();
+    var standardMessagesCategoryData = new StandardMessagesCategoryData(id);
+    var removeWarningModal;
+    removeWarningModal = new InlineOverlayModal('Are you sure you want to remove this category?', [
+        new Button(ButtonType.text,
+            buttonText: 'Yes', onClick: (_) => _view.appController.command(MessagesConfigAction.removeStandardMessagesCategory, standardMessagesCategoryData)),
+        new Button(ButtonType.text, buttonText: 'No', onClick: (_) => removeWarningModal.remove()),
+      ]);
+    renderElement.append(removeWarningModal.inlineOverlayModal);
   }
 }
 
 class StandardMessagesGroupView extends AccordionItem {
-  String id;
-  String _title;
-  DivElement _header;
-  DivElement _body;
+  String _categoryName;
   DivElement _standardMessagesContainer;
   Button _addButton;
   TextEdit editableTitle;
 
   Map<String, StandardMessageView> messagesById = {};
 
-  StandardMessagesGroupView(this.id, this._title, this._header, this._body) : super(id, _header, _body, false) {
-    editableTitle = TextEdit(_title, removable: true)
+  StandardMessagesGroupView(this._categoryName, String groupName, DivElement header, DivElement body) : super(groupName, header, body, false) {
+    editableTitle = TextEdit(groupName, removable: true)
+      ..testInput = (String value) {
+        var messageManager = (_view.appController as MessagesConfiguratorController).standardMessagesManager;
+        var groups = messageManager.standardMessages.map((e) => e.group_description).toSet();
+        groups.remove(id);
+        return !groups.contains(value);
+      }
       ..onEdit = (value) {
-        _view.appController.command(MessagesConfigAction.updateStandardMessagesGroup, new StandardMessagesGroupData(id, newGroupName: value));
+        _view.appController.command(MessagesConfigAction.updateStandardMessagesGroup, new StandardMessagesGroupData(_categoryName, id, newGroupName: value));
       }
       ..onDelete = () {
         requestToDelete();
       };
-    _header.append(editableTitle.renderElement);
+    header.append(editableTitle.renderElement);
 
     _standardMessagesContainer = DivElement();
-    _body.append(_standardMessagesContainer);
+    body.append(_standardMessagesContainer);
 
     _addButton = Button(ButtonType.add);
     _addButton.renderElement.onClick.listen((e) {
-      _view.appController.command(MessagesConfigAction.addStandardMessage, new StandardMessageData('', groupId: id));
+      _view.appController.command(MessagesConfigAction.addStandardMessage, new StandardMessageData('', group: id, category: _categoryName));
     });
-    
-    _body.append(_addButton.renderElement);
+
+    body.append(_addButton.renderElement);
   }
 
   void addMessage(String id, StandardMessageView standardMessageView) {
     _standardMessagesContainer.append(standardMessageView.renderElement);
+    messagesById[id] = standardMessageView;
+  }
+
+  void modifyMessage(String id, StandardMessageView standardMessageView) {
+    _standardMessagesContainer.insertBefore(standardMessageView.renderElement, messagesById[id].renderElement);
+    messagesById[id].renderElement.remove();
     messagesById[id] = standardMessageView;
   }
 
@@ -114,7 +187,7 @@ class StandardMessagesGroupView extends AccordionItem {
 
   void requestToDelete() {
     expand();
-    var standardMessagesGroupData = new StandardMessagesGroupData(id);
+    var standardMessagesGroupData = new StandardMessagesGroupData(_categoryName, id);
     var removeWarningModal;
     removeWarningModal = new InlineOverlayModal('Are you sure you want to remove this group?', [
         new Button(ButtonType.text,
