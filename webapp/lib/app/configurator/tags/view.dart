@@ -23,7 +23,7 @@ class TagsConfigurationPageView extends ConfigurationPageView {
   DivElement _tagsContainer;
   Button addGroupButton;
 
-  Accordion groups = new Accordion([]);
+  Accordion groups;
 
   TagsConfigurationPageView(TagsConfiguratorController controller) : super(controller) {
     _view = this;
@@ -33,13 +33,14 @@ class TagsConfigurationPageView extends ConfigurationPageView {
     _tagsContainer = new DivElement();
     configurationContent.append(_tagsContainer);
 
+    groups = new Accordion([]);
     configurationContent.append(groups.renderElement);
+
     addGroupButton = new Button(ButtonType.add, hoverText: 'Add a new tag group', onClick: (_) => controller.command(TagsConfigAction.addTagGroup));
     configurationContent.append(addGroupButton.renderElement);
   }
 
   void addTagCategory(String id, TagGroupView tagGroupView) {
-    _tagsContainer.append(tagGroupView.renderElement);
     groups.appendItem(tagGroupView);
   }
 

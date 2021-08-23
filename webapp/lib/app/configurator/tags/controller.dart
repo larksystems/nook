@@ -16,7 +16,6 @@ part 'controller_tag_helper.dart';
 Logger log = new Logger('controller.dart');
 
 enum TagsConfigAction {
-  // Handling tags
   addTag,
   addTagGroup,
   renameTag,
@@ -123,8 +122,8 @@ class TagsConfiguratorController extends ConfiguratorController {
         TagGroupData groupData = data;
         tagManager.renameTagGroup(groupData.groupName, groupData.newGroupName);
         var groupView = _view.groups.queryItem(groupData.groupName);
-        groupView?.id = groupData.newGroupName;
-        _view.groups.updateItem(groupData.groupName, groupView);
+        groupView.id = groupData.newGroupName;
+        _view.groups.updateItem(groupData.newGroupName, groupView);
         break;
 
       case TagsConfigAction.removeTagGroup:
@@ -148,11 +147,11 @@ class TagsConfiguratorController extends ConfiguratorController {
     platform.listenForTags((added, modified, removed) {
       var tagsAdded = tagManager.addTags(added);
       var tagsModified = tagManager.updateTags(modified);
-      var tagsDeleted = tagManager.removeTags(removed);
+      var tagsRemoved = tagManager.removeTags(removed);
 
       _addTagsToView(_groupTagsIntoCategories(tagsAdded));
       _modifyTagsInView(_groupTagsIntoCategories(tagsModified));
-      _removeTagsFromView(_groupTagsIntoCategories(tagsDeleted));
+      _removeTagsFromView(_groupTagsIntoCategories(tagsRemoved));
     });
   }
 
