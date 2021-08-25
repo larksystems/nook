@@ -4,21 +4,25 @@ class ConversationFilter {
   Map<TagFilterType, Set<model.Tag>> filterTags;
   String conversationIdFilter;
 
-  ConversationFilter() {
+  ConversationFilter(model.UserConfiguration userConfig) {
     filterTags = {
       TagFilterType.include: Set(),
       TagFilterType.exclude: Set(),
       TagFilterType.lastInboundTurn: Set()
     };
+
+    _applyMandatoryFilters(userConfig);
     conversationIdFilter = "";
   }
 
-  ConversationFilter.fromUrl() {
+  ConversationFilter.fromUrl(model.UserConfiguration userConfig) {
     filterTags = {
       TagFilterType.include: _getTagsFromUrl(TagFilterType.include, controller.tagIdsToTags),
       TagFilterType.exclude: _getTagsFromUrl(TagFilterType.exclude, controller.tagIdsToTags),
       TagFilterType.lastInboundTurn: _getTagsFromUrl(TagFilterType.lastInboundTurn, controller.tagIdsToTags),
     };
+
+    _applyMandatoryFilters(userConfig);
 
     conversationIdFilter = _view.urlView.getPageUrlFilterConversationId() ?? "";
   }
@@ -34,6 +38,10 @@ class ConversationFilter {
     TagFilterType.lastInboundTurn: tagsToTagIds(filterTags[TagFilterType.lastInboundTurn]).toSet()
   };
 
+  // This is a temporary solution to allow fixing up of the filters after a change, it should be folded
+  // in the modifications
+  void updateFilters(model.UserConfiguration userConfig) => _applyMandatoryFilters(userConfig);
+
   bool test(model.Conversation conversation) {
     var tags = convertTagIdsToTags(conversation.tagIds, controller.tagIdsToTags);
     var unifierTags = tags.map((t) => unifierTagForTag(t, controller.tagIdsToTags));
@@ -45,6 +53,14 @@ class ConversationFilter {
     if (!conversation.docId.startsWith(conversationIdFilter) && !conversation.shortDeidentifiedPhoneNumber.startsWith(conversationIdFilter)) return false;
 
     return true;
+  }
+
+  void _applyMandatoryFilters(model.UserConfiguration userConfig) {
+    if (userConfig != null) filterTags[TagFilterType.exclude].addAll(
+      convertTagIdsToTags(userConfig.mandatoryExcludeTagIds, controller.tagIdsToTags));
+
+    if (userConfig.mandatoryIncludeTagIds != null) filterTags[TagFilterType.include].addAll(
+      convertTagIdsToTags(userConfig.mandatoryIncludeTagIds, controller.tagIdsToTags));
   }
 
   Set<model.Tag> _getTagsFromUrl(TagFilterType type, Map<String, model.Tag> tags) {
