@@ -342,7 +342,7 @@ class NookController extends Controller {
 
     // Get any filter tags from the url
     conversationFilter = new ConversationFilter.fromUrl(currentUserConfig);
-    _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.include], TagFilterType.include);
+    _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.include), TagFilterType.include);
     _view.conversationIdFilter.filter = conversationFilter.conversationIdFilter;
 
     platform.listenForTags(
@@ -394,10 +394,10 @@ class NookController extends Controller {
 
         // Re-read the conversation filter from the URL since we now have the names of the tags
         conversationFilter = new ConversationFilter.fromUrl(currentUserConfig);
-        _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.include], TagFilterType.include);
+        _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.include), TagFilterType.include);
 
         if (currentConfig.conversationalTurnsEnabled) {
-          _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.exclude], TagFilterType.exclude);
+          _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.exclude), TagFilterType.exclude);
         }
       }, showAndLogError);
 
@@ -620,24 +620,22 @@ class NookController extends Controller {
       _view.conversationFilter[TagFilterType.lastInboundTurn].showFilter(newConfig.conversationalTurnsEnabled);
       if (oldConfig.conversationalTurnsEnabled != null && !newConfig.conversationalTurnsEnabled) {
         // only clear things up after we've received the config from the server
-        conversationFilter.filterTags[TagFilterType.lastInboundTurn].clear();
-        conversationFilter.updateFilters(currentUserConfig);
+        conversationFilter.clearFilters(TagFilterType.lastInboundTurn);
 
         _view.urlView.setPageUrlFilterTags(TagFilterType.lastInboundTurn, conversationFilter.filterTagIds[TagFilterType.lastInboundTurn]);
       } else {
-        _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.lastInboundTurn], TagFilterType.lastInboundTurn);
+        _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.lastInboundTurn), TagFilterType.lastInboundTurn);
       }
 
       // exclude filtering is temporary sharing the flag with last inbound turns
       _view.conversationFilter[TagFilterType.exclude].showFilter(newConfig.conversationalTurnsEnabled);
       if (oldConfig.conversationalTurnsEnabled != null && !newConfig.conversationalTurnsEnabled) {
         // only clear things up after we've received the config from the server
-        conversationFilter.filterTags[TagFilterType.exclude].clear();
-        conversationFilter.updateFilters(currentUserConfig);
+        conversationFilter.clearFilters(TagFilterType.exclude);
 
         _view.urlView.setPageUrlFilterTags(TagFilterType.exclude, conversationFilter.filterTagIds[TagFilterType.exclude]);
       } else {
-        _populateSelectedFilterTags(conversationFilter.filterTags[TagFilterType.exclude], TagFilterType.exclude);
+        _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.exclude), TagFilterType.exclude);
       }
     }
 
@@ -943,10 +941,8 @@ class NookController extends Controller {
         FilterTagData tagData = data;
         model.Tag tag = tagIdToTag(tagData.tagId, tagIdsToTags);
         model.Tag unifierTag = unifierTagForTag(tag, tagIdsToTags);
-        var added = conversationFilter.filterTags[tagData.filterType].add(unifierTag);
-        conversationFilter.updateFilters(currentUserConfig);
-
-        if (!added) return; // Trying to add an existing tag, nothing to do here
+        var added = conversationFilter.addFilter(tagData.filterType, unifierTag);
+        if (!added) return; // No change, nothing further to do
         _view.urlView.setPageUrlFilterTags(tagData.filterType, conversationFilter.filterTagIds[tagData.filterType]);
         _view.conversationFilter[tagData.filterType].addFilterTag(new FilterTagView(unifierTag.text, unifierTag.tagId, tagTypeToKKStyle(unifierTag.type), tagData.filterType));
         if (actionObjectState == UIActionObject.loadingConversations) return;
@@ -998,8 +994,8 @@ class NookController extends Controller {
       case UIAction.removeFilterTag:
         FilterTagData tagData = data;
         model.Tag tag = tagIdToTag(tagData.tagId, tagIdsToTags);
-        conversationFilter.filterTags[tagData.filterType].removeWhere((t) => t.tagId == tag.tagId);
-        conversationFilter.updateFilters(currentUserConfig);
+        var changed = conversationFilter.removeFilter(tagData.filterType, tag);
+        if (!changed) return; // No change, nothing further to do
         _view.urlView.setPageUrlFilterTags(tagData.filterType, conversationFilter.filterTagIds[tagData.filterType]);
         _view.conversationFilter[tagData.filterType].removeFilterTag(tag.tagId);
         if (actionObjectState == UIActionObject.loadingConversations) return;
