@@ -616,6 +616,16 @@ class NookController extends Controller {
       _view.notesPanelView.enableEditableNotes(newConfig.editNotesEnabled);
     }
 
+    if (oldConfig.mandatoryExcludeTagIds != newConfig.mandatoryExcludeTagIds ||
+        oldConfig.mandatoryIncludeTagIds != newConfig.mandatoryIncludeTagIds) {
+          conversationFilter.updateUserConfig(newConfig);
+
+          _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.lastInboundTurn), TagFilterType.lastInboundTurn);
+          _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.include), TagFilterType.include);
+          _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.exclude), TagFilterType.exclude);
+
+        }
+
     if (oldConfig.conversationalTurnsEnabled != newConfig.conversationalTurnsEnabled) {
       _view.conversationFilter[TagFilterType.lastInboundTurn].showFilter(newConfig.conversationalTurnsEnabled);
       if (oldConfig.conversationalTurnsEnabled != null && !newConfig.conversationalTurnsEnabled) {
