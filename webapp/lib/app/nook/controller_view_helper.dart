@@ -154,15 +154,15 @@ void _populateTagPanelView(List<model.Tag> tags) {
   // Important tags first, then sort by text string
   tags.sort((t1, t2) {
     switch (t1.type) {
-      case model.TagType.Important:
-        if (t2.type == model.TagType.Important) {
+      case model.TagType.important:
+        if (t2.type == model.TagType.important) {
           return t1.text.compareTo(t2.text);
         } else {
           return -1;
         }
         break;
       default:
-        if (t2.type == model.TagType.Important) {
+        if (t2.type == model.TagType.important) {
           return 1;
         } else {
           return t1.text.compareTo(t2.text);
@@ -217,7 +217,7 @@ void _populateTurnlines(List<model.Turnline> turnlines) {
 // This is temporary method until we remove the kk namespace, tag
 TagStyle tagTypeToKKStyle(model.TagType tagType) {
   switch (tagType) {
-    case model.TagType.Important:
+    case model.TagType.important:
       return TagStyle.Important;
     default:
       if (tagType == model.NotFoundTagType.NotFound) {

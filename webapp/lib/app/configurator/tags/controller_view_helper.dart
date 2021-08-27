@@ -61,7 +61,7 @@ Map<String, List<model.Tag>> _groupTagsIntoCategories(List<model.Tag> tags) {
 
 TagStyle _tagTypeToKKStyle(model.TagType tagType) {
   switch (tagType) {
-    case model.TagType.Important:
+    case model.TagType.important:
       return TagStyle.Important;
     default:
       if (tagType == model.NotFoundTagType.NotFound) {

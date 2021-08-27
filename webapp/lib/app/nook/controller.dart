@@ -1246,7 +1246,7 @@ class NookController extends Controller {
           ..text = ''
           ..shortcut = ''
           ..visible = true
-          ..type = model.TagType.Normal;
+          ..type = model.TagType.normal;
 
         addTagInlineConversation = activeConversation;
         addTagInlineMessage = addTagInlineConversation.messages.singleWhere((element) => element.id == messageData.messageId);
