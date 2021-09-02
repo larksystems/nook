@@ -690,7 +690,6 @@ class FilterTagView extends TagView {
   FilterTagView(String text, String tagId, TagStyle tagStyle, TagFilterType filterType) : super(text, tagId, tagStyle: tagStyle, deletable: true) {
     _filterType = filterType;
     onDelete = () {
-      markPending(true);
       _view.appController.command(UIAction.removeFilterTag, new FilterTagData(tagId, _filterType));
     };
   }
