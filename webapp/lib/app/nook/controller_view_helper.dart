@@ -95,13 +95,13 @@ void _updateConversationPanelView(model.Conversation conversation) {
 List<TagView> _generateMessageTagViews(model.Message message) {
   List<TagView> tags = [];
   for (var tag in convertTagIdsToTags(message.tagIds, controller.tagIdsToTags)) {
-    bool shouldHighlightTag = controller.conversationFilter.filterTagIds[TagFilterType.include].contains(tag.tagId);
-    shouldHighlightTag = shouldHighlightTag || controller.conversationFilter.filterTagIds[TagFilterType.lastInboundTurn].contains(tag.tagId);
+    bool shouldHighlightTag = controller.conversationFilter.filterTagIdsManuallySet[TagFilterType.include].contains(tag.tagId);
+    shouldHighlightTag = shouldHighlightTag || controller.conversationFilter.filterTagIdsManuallySet[TagFilterType.lastInboundTurn].contains(tag.tagId);
     tags.add(new MessageTagView(tag.text, tag.tagId, tagTypeToKKStyle(tag.type), shouldHighlightTag));
   }
   for (var tag in convertTagIdsToTags(message.suggestedTagIds, controller.tagIdsToTags)) {
-    bool shouldHighlightTag = controller.conversationFilter.filterTagIds[TagFilterType.include].contains(tag.tagId);
-    shouldHighlightTag = shouldHighlightTag || controller.conversationFilter.filterTagIds[TagFilterType.lastInboundTurn].contains(tag.tagId);
+    bool shouldHighlightTag = controller.conversationFilter.filterTagIdsManuallySet[TagFilterType.include].contains(tag.tagId);
+    shouldHighlightTag = shouldHighlightTag || controller.conversationFilter.filterTagIdsManuallySet[TagFilterType.lastInboundTurn].contains(tag.tagId);
     tags.add(new SuggestedMessageTagView(tag.text, tag.tagId, tagTypeToKKStyle(tag.type), shouldHighlightTag));
   }
   return tags;
