@@ -206,11 +206,11 @@ class StandardMessageView {
       ..classes.add('standard-message')
       ..dataset['id'] = '$id';
 
-    var textView = new MessageView(
-        0, text, (index, text) => _view.appController.command(MessagesConfigAction.updateStandardMessage, new StandardMessageData(id, text: text)));
-    var translationView = new MessageView(0, translation,
-        (index, translation) => _view.appController.command(MessagesConfigAction.updateStandardMessage, new StandardMessageData(id, translation: translation)));
-    _standardMessageElement..append(textView.renderElement)..append(translationView.renderElement);
+    var textView = new MessageView(text, (text) => _view.appController.command(MessagesConfigAction.updateStandardMessage, new StandardMessageData(id, text: text)));
+    var translationView = new MessageView(translation, (translation) => _view.appController.command(MessagesConfigAction.updateStandardMessage, new StandardMessageData(id, translation: translation)), placeholder: '(optional) Translate the message in a secondary language here');
+    _standardMessageElement
+      ..append(textView.renderElement)
+      ..append(translationView.renderElement);
     _makeStandardMessageViewTextareasSynchronisable([textView, translationView]);
 
     var removeButton = new Button(ButtonType.remove, hoverText: 'Remove standard message', onClick: (_) {
@@ -234,7 +234,7 @@ class MessageView {
   Function onMessageUpdateCallback;
   Function _onTextareaHeightChangeCallback;
 
-  MessageView(int index, String message, this.onMessageUpdateCallback) {
+  MessageView(String message, this.onMessageUpdateCallback, {String placeholder = ''}) {
     _messageElement = new DivElement()..classes.add('message');
 
     var textLengthIndicator = new SpanElement()
@@ -246,9 +246,9 @@ class MessageView {
       ..classes.add('message__text')
       ..classes.toggle('message__text--alert', message.length > 160)
       ..text = message != null ? message : ''
+      ..placeholder = placeholder
       ..contentEditable = 'true'
-      ..dataset['index'] = '$index'
-      ..onBlur.listen((event) => onMessageUpdateCallback(index, (event.target as TextAreaElement).value))
+      ..onBlur.listen((event) => onMessageUpdateCallback((event.target as TextAreaElement).value))
       ..onInput.listen((event) {
         int count = _messageText.value.split('').length;
         textLengthIndicator.text = '${count}/160';
