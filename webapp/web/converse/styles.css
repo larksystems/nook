@@ -275,6 +275,31 @@ main {
     justify-content: center;
 }
 
+.messages-date-separator__wrapper {
+    text-align: center;
+    position: relative;
+    margin-top: 12px;
+    margin-bottom: 12px;
+}
+
+.messages-date-separator__wrapper::before {
+    content: '';
+    position: absolute;
+    width: 90%;
+    border-top: 1px solid var(--lighter-gray);
+    left: 5%;
+    top: 10px;
+    z-index: -1;
+}
+
+.messages-date-separator {
+    background: var(--lighter-gray);
+    color: var(--dark-gray);
+    padding: 2px 4px;
+    font-size: 0.8em;
+    border-radius: 2px;
+}
+
 .notes-panel {
     height: 100%;
 }
