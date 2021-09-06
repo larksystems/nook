@@ -288,7 +288,7 @@ main {
     width: 90%;
     border-top: 1px solid var(--lighter-gray);
     left: 5%;
-    top: 10px;
+    top: 50%;
     z-index: -1;
 }
 

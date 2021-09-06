@@ -301,10 +301,10 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
   }
 
   void addMessage(MessageView message) {
-    _messages.append(message.wrapper);
+    _messages.append(message.renderElement);
     _messageViews.add(message);
     _messageViewsMap[message.messageId] = message;
-    message.message.scrollIntoView();
+    message._message.scrollIntoView();
   }
 
   void padOrTrimMessageViews(int count) {
@@ -319,19 +319,19 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
 
     for (int i = _messageViews.length; i < count; i++) {
       MessageView message = new MessageView('', DateTime.now(), '', '$i');
-      _messages.append(message.message);
+      _messages.append(message._message);
       _messageViews.add(message);
     }
   }
 
   void updateMessage(MessageView message, int index) {
     if (index >= _messageViews.length) {
-      _messages.append(message.wrapper);
+      _messages.append(message.renderElement);
       _messageViews.add(message);
       _messageViewsMap[message.messageId] = message;
       return;
     }
-    _messages.children[index] = message.wrapper;
+    _messages.children[index] = message.renderElement;
     _messageViews[index] = message;
     _messageViewsMap[message.messageId] = message;
   }
@@ -481,8 +481,8 @@ class DateSeparatorView {
 }
 
 class MessageView {
-  DivElement wrapper;
-  DivElement message;
+  DivElement renderElement;
+  DivElement _message;
   DivElement _messageBubble;
   DivElement _messageDateTime;
   DivElement _messageText;
@@ -498,15 +498,15 @@ class MessageView {
   MessageView(String text, DateTime dateTime, String conversationId, this.messageId, {String translation = '', bool incoming = true, List<TagView> tags = const[], MessageStatus status = null}) {
     _dateSeparator = DateSeparatorView(dateTime);
 
-    message = new DivElement()
+    _message = new DivElement()
       ..classes.add('message')
       ..classes.add(incoming ? 'message--incoming' : 'message--outgoing')
       ..dataset['conversationId'] = conversationId
       ..dataset['messageId'] = messageId;
 
-    wrapper = new DivElement()
+    renderElement = new DivElement()
     ..append(_dateSeparator.renderElement)
-    ..append(message);
+    ..append(_message);
 
     _messageBubble = new DivElement()
       ..classes.add('message__bubble')
@@ -515,7 +515,7 @@ class MessageView {
         event.stopPropagation();
         _view.appController.command(UIAction.selectMessage, new MessageData(conversationId, messageId));
       });
-    message.append(_messageBubble);
+    _message.append(_messageBubble);
 
     _messageDateTime = new DivElement()
       ..classes.add('message__datetime')
@@ -536,7 +536,7 @@ class MessageView {
       ..classes.add('message__tags')
       ..classes.add('hover-parent');
     tags.forEach((tag) => _messageTags.append(tag.renderElement));
-    message.append(_messageTags);
+    _message.append(_messageTags);
 
     _addTag = buttons.Button(buttons.ButtonType.add, onClick: (e) {
       e.stopPropagation();
@@ -577,12 +577,12 @@ class MessageView {
 
   void _select() {
     MessageView._deselect();
-    message.classes.add('message--selected');
+    _message.classes.add('message--selected');
     selectedMessageView = this;
   }
 
   static void _deselect() {
-    selectedMessageView?.message?.classes?.remove('message--selected');
+    selectedMessageView?._message?.classes?.remove('message--selected');
     selectedMessageView = null;
   }
 
@@ -590,14 +590,14 @@ class MessageView {
     // TODO handle more types of status
 
     if (status == MessageStatus.pending)
-      message.classes.add('message--pending');
+      _message.classes.add('message--pending');
     else
-      message.classes.remove('message--pending');
+      _message.classes.remove('message--pending');
 
     if (status == MessageStatus.failed)
-      message.classes.add('message--failed');
+      _message.classes.add('message--failed');
     else
-      message.classes.remove('message--failed');
+      _message.classes.remove('message--failed');
   }
 
   void enableEditableTranslations(bool enable) {
@@ -612,8 +612,8 @@ class MessageView {
         _view.appController.command(UIAction.updateTranslation,
                 new TranslationData(
                     _messageTranslation.text,
-                    message.dataset['conversationId'],
-                    message.dataset['messageId']));
+                    _message.dataset['conversationId'],
+                    _message.dataset['messageId']));
       });
     }
     _messageBubble.append(_messageTranslation);
