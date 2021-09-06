@@ -286,14 +286,14 @@ main {
     content: '';
     position: absolute;
     width: 90%;
-    border-top: 1px solid var(--lighter-gray);
+    border-top: 1px solid var(--lighter-border-color);
     left: 5%;
     top: 50%;
     z-index: -1;
 }
 
 .messages-date-separator {
-    background: var(--lighter-gray);
+    background: var(--default-background-color);
     color: var(--dark-gray);
     padding: 2px 4px;
     font-size: 0.8em;

@@ -290,16 +290,6 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
   set deidentifiedPhoneNumberShort(String deidentifiedPhoneNumberShort) => _conversationId.text = deidentifiedPhoneNumberShort;
   set demographicsInfo(String demographicsInfo) => _info.text = demographicsInfo;
 
-  void addDateSeparator(String dateString) {
-    DivElement dateTimeWrapper = DivElement()
-      ..classes.add('messages-date-separator__wrapper');
-    SpanElement dateTime = SpanElement()
-      ..classes.add('messages-date-separator')
-      ..innerText = dateString;
-    dateTimeWrapper.append(dateTime);
-    _messages.append(dateTimeWrapper);
-  }
-
   void addMessage(MessageView message) {
     _messages.append(message.renderElement);
     _messageViews.add(message);
