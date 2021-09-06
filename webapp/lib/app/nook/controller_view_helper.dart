@@ -37,8 +37,6 @@ void _populateConversationPanelView(model.Conversation conversation, {bool updat
 
   for (var message in conversation.messages) {
     MessageView messageView = _generateMessageView(message, conversation);
-    var currentDateTime = _getDaysAgoSinceToday(message.datetime);
-    _view.conversationPanelView.addDateSeparator(currentDateTime);
     _view.conversationPanelView.addMessage(messageView);
   }
 
@@ -47,26 +45,8 @@ void _populateConversationPanelView(model.Conversation conversation, {bool updat
     suggestedMessages.add(new SuggestedMessageView(message.text, translation: message.translation));
   }
   _view.conversationPanelView.setSuggestedMessages(suggestedMessages);
+  _view.conversationPanelView.updateDateSeparators();
   _populateTurnlines(conversation.turnlines);
-}
-
-String _getDaysAgoSinceToday(DateTime dateTime) {
-  final today = DateTime.now();
-  final difference = today.difference(dateTime);
-  final differenceDays = difference.inDays;
-  final DateFormat formatter = DateFormat('MMM yyyy');
-
-  if (differenceDays < 1) {
-    return "Today";
-  } else if (differenceDays < 2) {
-    return "Yesterday";
-  } else if (differenceDays < 7) {
-    return "This week";
-  } else if (differenceDays >= 7) {
-    return formatter.format(dateTime);
-  }
-
-  return "";
 }
 
 void _updateConversationPanelView(model.Conversation conversation) {
@@ -110,6 +90,7 @@ void _updateConversationPanelView(model.Conversation conversation) {
     suggestedMessages.add(new SuggestedMessageView(message.text, translation: message.translation));
   }
   _view.conversationPanelView.setSuggestedMessages(suggestedMessages);
+  _view.conversationPanelView.updateDateSeparators();
   _populateTurnlines(conversation.turnlines);
 }
 
