@@ -294,7 +294,7 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
     _messages.append(message.renderElement);
     _messageViews.add(message);
     _messageViewsMap[message.messageId] = message;
-    message._message.scrollIntoView();
+    message.renderElement.scrollIntoView();
   }
 
   void padOrTrimMessageViews(int count) {
@@ -309,7 +309,7 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
 
     for (int i = _messageViews.length; i < count; i++) {
       MessageView message = new MessageView('', DateTime.now(), '', '$i');
-      _messages.append(message._message);
+      _messages.append(message.renderElement);
       _messageViews.add(message);
     }
   }
@@ -377,9 +377,9 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
 
   void updateDateSeparators() {
     String lastDate = '';
-    for(var messageView in _messageViews) {
+    for (var messageView in _messageViews) {
       String dateString = messageView._dateSeparator.formattedDateString;
-      if(lastDate != dateString) {
+      if (lastDate != dateString) {
         messageView._dateSeparator.show();
       } else {
         messageView._dateSeparator.hide();
@@ -428,18 +428,22 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
 
 class DateSeparatorView {
   DateTime _dateTime;
-  String _formattedDateString;
-  String get formattedDateString => _formattedDateString;
-
+  
   DivElement renderElement;
+  SpanElement _dateElement;
+
+  String get formattedDateString => _getDaysAgoSinceToday(_dateTime);
+  set dateTime (DateTime dateTime) {
+    this._dateTime = dateTime;
+    _dateElement.innerText = formattedDateString;
+  }
 
   DateSeparatorView(this._dateTime) {
     renderElement = DivElement()..className = 'messages-date-separator__wrapper';
-    _formattedDateString = _getDaysAgoSinceToday(this._dateTime);
-    var dateElement = SpanElement()
+    _dateElement = SpanElement()
       ..className = 'messages-date-separator'
-      ..innerText = _formattedDateString;
-    renderElement.append(dateElement);
+      ..innerText = formattedDateString;
+    renderElement.append(_dateElement);
   }
 
   void hide() {
@@ -451,18 +455,21 @@ class DateSeparatorView {
   }
 
   String _getDaysAgoSinceToday(DateTime dateTime) {
+    final date = DateTime(dateTime.year, dateTime.month, dateTime.day);
+
     final today = DateTime.now();
-    final difference = today.difference(dateTime);
-    final differenceDays = difference.inDays;
+    final todate = DateTime(today.year, today.month, today.day + 1);
+
+    final differenceDays = todate.difference(date).inDays;
     final DateFormat formatter = DateFormat('MMM yyyy');
 
-    if (differenceDays < 1) {
+    if (differenceDays <= 1) {
       return "Today";
-    } else if (differenceDays < 2) {
+    } else if (differenceDays <= 2) {
       return "Yesterday";
-    } else if (differenceDays < 7) {
+    } else if (differenceDays <= 7) {
       return "This week";
-    } else if (differenceDays >= 7) {
+    } else if (differenceDays > 7) {
       return formatter.format(dateTime);
     }
 
@@ -495,8 +502,8 @@ class MessageView {
       ..dataset['messageId'] = messageId;
 
     renderElement = new DivElement()
-    ..append(_dateSeparator.renderElement)
-    ..append(_message);
+      ..append(_dateSeparator.renderElement)
+      ..append(_message);
 
     _messageBubble = new DivElement()
       ..classes.add('message__bubble')
@@ -543,7 +550,10 @@ class MessageView {
 
   void set text(String value) => _messageText.text = value;
   set translation(String translation) => _messageTranslation.text = translation;
-  void set datetime(DateTime value) => _messageDateTime.text = _formatDateTime(value);
+  void set datetime(DateTime value) {
+    _messageDateTime.text = _formatDateTime(value);
+    _dateSeparator.dateTime = value;
+  }
 
   void addTag(TagView tag, [int position]) {
     if (position == null || position >= _messageTags.children.length) {
