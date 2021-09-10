@@ -124,13 +124,14 @@ done
 echo "done! cloud functions urls look as expected"
 echo ""
 
-########## cd to the nook project directory and get the absolute path
+##### prepare to build the project
 
+##### get the absolute paths for the project
 cd "$(dirname "$0")"/..
 NOOK_DIR="$(pwd)"
 
-########## rebuild the webapp
-
+########## build the nook webapp
+cd $NOOK_DIR
 echo ""
 
 # Remove previous build if it exists
@@ -138,15 +139,14 @@ rm -rf public
 
 # Build
 cd webapp
-echo "building webapp ..."
+echo "building nook webapp ..."
 webdev build
-echo "build complete"
+echo "build nook complete"
 mv build ../public
-cd ..
-
 echo ""
 
 # Copy the constants in the build folder
+cd $NOOK_DIR
 cp $FIREBASE_CONSTANTS_FILE public/assets/firebase_constants.json
 
 # Copy the latest commit sha1 hash on origin/master into the build folder
