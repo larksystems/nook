@@ -45,6 +45,7 @@ void _populateConversationPanelView(model.Conversation conversation, {bool updat
     suggestedMessages.add(new SuggestedMessageView(message.text, translation: message.translation));
   }
   _view.conversationPanelView.setSuggestedMessages(suggestedMessages);
+  _view.conversationPanelView.updateDateSeparators();
   _populateTurnlines(conversation.turnlines);
 }
 
@@ -89,6 +90,7 @@ void _updateConversationPanelView(model.Conversation conversation) {
     suggestedMessages.add(new SuggestedMessageView(message.text, translation: message.translation));
   }
   _view.conversationPanelView.setSuggestedMessages(suggestedMessages);
+  _view.conversationPanelView.updateDateSeparators();
   _populateTurnlines(conversation.turnlines);
 }
 

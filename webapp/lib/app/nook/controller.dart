@@ -2,6 +2,7 @@ library controller;
 
 import 'dart:async';
 import 'dart:collection';
+import 'package:intl/intl.dart';
 import 'package:firebase/firebase.dart' show FirebaseError;
 
 import 'package:katikati_ui_lib/components/url_view/url_view.dart';
