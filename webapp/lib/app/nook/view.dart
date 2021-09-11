@@ -457,23 +457,19 @@ class DateSeparatorView {
   String _getDaysAgoSinceToday(DateTime dateTime) {
     final date = DateTime(dateTime.year, dateTime.month, dateTime.day);
 
-    final today = DateTime.now();
-    final todate = DateTime(today.year, today.month, today.day + 1);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
 
-    final differenceDays = todate.difference(date).inDays;
+    final differenceDays = today.difference(date).inDays;
     final DateFormat formatter = DateFormat('MMM yyyy');
 
-    if (differenceDays <= 1) {
+    if (differenceDays < 1) {
       return "Today";
-    } else if (differenceDays <= 2) {
+    } else if (differenceDays == 1) {
       return "Yesterday";
-    } else if (differenceDays <= 7) {
-      return "This week";
-    } else if (differenceDays > 7) {
+    } else {
       return formatter.format(dateTime);
     }
-
-    return "";
   }
 }
 
