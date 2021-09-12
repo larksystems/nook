@@ -153,11 +153,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
 
     log.verbose('After -- ${standardMessagesManager.categories}');
 
-    if (standardMessagesManager.hasUnsavedMessages) {
-      _view.enableSaveButton();
-    } else {
-      _view.disableSaveButton();
-    }
+    _view.unsavedChanges = standardMessagesManager.hasUnsavedMessages;
   }
 
   @override
@@ -182,7 +178,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
       standardMessagesManager.editedMessages.clear();
       if (otherPartSaved) {
         _view.showSaveStatus('Saved!');
-        _view.disableSaveButton();
+        _view.unsavedChanges = false;
         return;
       }
       otherPartSaved = true;
@@ -194,7 +190,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
       standardMessagesManager.deletedMessages.clear();
       if (otherPartSaved) {
         _view.showSaveStatus('Saved!');
-        _view.disableSaveButton();
+        _view.unsavedChanges = false;
         return;
       }
       otherPartSaved = true;
