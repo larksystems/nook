@@ -141,10 +141,6 @@ void _populateReplyPanelView(List<model.SuggestedReply> replies) {
       replyView.showButtons(controller.currentConfig.sendMessagesEnabled);
       views.add(replyView);
     }
-    if (views.length == 1) {
-      _view.replyPanelView.addReply(views.first);
-      continue;
-    }
     var replyGroupView = new ReplyActionGroupView(groupId, groupDescription, buttonText + " all", views);
     _view.replyPanelView.addReply(replyGroupView);
   }
