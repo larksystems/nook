@@ -33,7 +33,7 @@ class ConfigurationPageView extends PageView {
     }
 
     _unsavedChanges = status;
-    if (status) {
+    if (_unsavedChanges) {
       _enableSaveButton();
       _addConfirmationOnLeave();
     } else {
