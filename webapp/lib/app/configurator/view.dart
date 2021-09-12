@@ -17,6 +17,7 @@ Logger log = new Logger('view.dart');
 /// (e.g. tags or messages), and a save button with an indicator.
 class ConfigurationPageView extends PageView {
   DivElement renderElement;
+  DivElement headerElement;
   DivElement configurationTitle;
   DivElement configurationContent;
 
@@ -27,17 +28,17 @@ class ConfigurationPageView extends PageView {
   ConfigurationPageView(ConfiguratorController controller) : super(controller) {
     renderElement = new DivElement()..classes.add('configuration-view');
 
-    configurationTitle = new DivElement()..classes.add('configuration-view__title');
-    renderElement.append(configurationTitle);
+    headerElement = new DivElement()..classes.add('configuration-header');
+    renderElement.append(headerElement);
 
-    configurationContent = new DivElement()..classes.add('configuration-view__content');
-    renderElement.append(configurationContent);
+    configurationTitle = new DivElement()..classes.add('configuration-view__title');
+    headerElement.append(configurationTitle);
 
     configurationActions = new DivElement()..classes.add('configuration-actions');
     renderElement.append(configurationActions);
 
     saveConfigurationButton = new ButtonElement()
-      ..disabled = true
+      ..hidden = true
       ..classes.add('configuration-actions__save-action')
       ..text = 'Save Configuration'
       ..onClick.listen((_) => controller.command(ConfigAction.saveConfiguration));
@@ -45,6 +46,11 @@ class ConfigurationPageView extends PageView {
 
     saveStatusElement = new SpanElement()..classes.add('configuration-actions__save-action__status');
     configurationActions.append(saveStatusElement);
+
+    headerElement.append(configurationActions);
+
+    configurationContent = new DivElement()..classes.add('configuration-view__content');
+    renderElement.append(configurationContent);
   }
 
   void initSignedInView(String displayName, String photoUrl) {
@@ -72,16 +78,11 @@ class ConfigurationPageView extends PageView {
   }
 
   void enableSaveButton() {
-    saveConfigurationButton.removeAttribute('disabled');
-    configurationActions.classes.toggle('sticky', true);
+    saveConfigurationButton.removeAttribute('hidden');
   }
 
   void disableSaveButton() {
-    saveConfigurationButton.setAttribute('disabled', 'true');
-    new Timer(new Duration(milliseconds: 10 * _ANIMATION_LENGTH_MS), () {
-      saveStatusElement.text = '';
-      configurationActions.classes.toggle('sticky', false);
-    });
+    saveConfigurationButton.setAttribute('hidden', 'true');
   }
 }
 
