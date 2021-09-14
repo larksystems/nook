@@ -428,7 +428,7 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
 
 class DateSeparatorView {
   DateTime _dateTime;
-  
+
   DivElement renderElement;
   SpanElement _dateElement;
 
@@ -957,7 +957,7 @@ class ConversationListPanelView {
       }
       summary = new ConversationSummary(
           conversation.docId,
-          conversation.messages.last.text,
+          conversation.messages.isEmpty ? "No messages yet" : conversation.messages.last?.text,
           isOurTurnInConversation(conversation));
       conversationsToAdd.add(summary);
     }
