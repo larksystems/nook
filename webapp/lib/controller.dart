@@ -30,7 +30,7 @@ final pages = {
   Page.homepage: PageInfo('', '', ''),
   Page.configureTags: PageInfo('How do you want to label messages and conversations?', 'Configure tags', 'configure/tags.html'),
   Page.configureMessages: PageInfo('What standard messages do you want to send?', 'Configure messages', 'configure/messages.html'),
-  Page.converse: PageInfo('View conversations and send messages', 'Conversations', '/converse?exclude-filter=tag-93c81391'),
+  Page.converse: PageInfo('View conversations and send messages', 'Conversations', '/converse/index.html'),
   Page.explore: PageInfo('Explore trends and analyse themes', 'Explore', '/explore'),
 };
 

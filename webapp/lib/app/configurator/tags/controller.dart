@@ -135,11 +135,7 @@ class TagsConfiguratorController extends ConfiguratorController {
       default:
     }
 
-    if (tagManager.hasUnsavedTags) {
-      _view.enableSaveButton();
-    } else {
-      _view.disableSaveButton();
-    }
+    _view.unsavedChanges = tagManager.hasUnsavedTags;
   }
 
   @override
@@ -164,7 +160,7 @@ class TagsConfiguratorController extends ConfiguratorController {
       tagManager.editedTags.clear();
       if (otherPartSaved) {
         _view.showSaveStatus('Saved!');
-        _view.disableSaveButton();
+        _view.unsavedChanges = false;
         return;
       }
       otherPartSaved = true;
@@ -176,7 +172,7 @@ class TagsConfiguratorController extends ConfiguratorController {
       tagManager.deletedTags.clear();
       if (otherPartSaved) {
         _view.showSaveStatus('Saved!');
-        _view.disableSaveButton();
+        _view.unsavedChanges = false;
         return;
       }
       otherPartSaved = true;

@@ -25,6 +25,24 @@ class ConfigurationPageView extends PageView {
   ButtonElement saveConfigurationButton;
   SpanElement saveStatusElement;
 
+  bool _unsavedChanges = false;
+
+  bool get unsavedChanges => _unsavedChanges;
+  set unsavedChanges(bool status) {
+    if (status == _unsavedChanges) {
+      return;
+    }
+
+    _unsavedChanges = status;
+    if (_unsavedChanges) {
+      _enableSaveButton();
+      _addConfirmationOnLeave();
+    } else {
+      _disableSaveButton();
+      _removeConfirmationOnLeave();
+    }
+  }
+
   ConfigurationPageView(ConfiguratorController controller) : super(controller) {
     renderElement = new DivElement()..classes.add('configuration-view');
 
@@ -77,12 +95,29 @@ class ConfigurationPageView extends PageView {
     new Timer(new Duration(milliseconds: _ANIMATION_LENGTH_MS), () => saveStatusElement.text = '');
   }
 
-  void enableSaveButton() {
-    saveConfigurationButton.removeAttribute('hidden');
+  void _enableSaveButton() {
+    saveConfigurationButton.removeAttribute('disabled');
   }
 
-  void disableSaveButton() {
-    saveConfigurationButton.setAttribute('hidden', 'true');
+  void _disableSaveButton() {
+    saveConfigurationButton.setAttribute('disabled', 'true');
+    new Timer(new Duration(milliseconds: 10 * _ANIMATION_LENGTH_MS), () {
+      saveStatusElement.text = '';
+    });
+  }
+
+  // so that the same instance of function is passed to the add / remove listeners
+  Function(Event) _onLeaveListener = (Event event) {
+    var evt = event as BeforeUnloadEvent;
+    evt.returnValue = "";
+  };
+
+  void _addConfirmationOnLeave() {
+    window.addEventListener('beforeunload', _onLeaveListener, true);
+  }
+
+  void _removeConfirmationOnLeave() {
+    window.removeEventListener('beforeunload', _onLeaveListener, true);
   }
 }
 
