@@ -96,11 +96,11 @@ class ConfigurationPageView extends PageView {
   }
 
   void _enableSaveButton() {
-    saveConfigurationButton.removeAttribute('disabled');
+    saveConfigurationButton.hidden = false;
   }
 
   void _disableSaveButton() {
-    saveConfigurationButton.setAttribute('disabled', 'true');
+    saveConfigurationButton.hidden = true;
     new Timer(new Duration(milliseconds: 10 * _ANIMATION_LENGTH_MS), () {
       saveStatusElement.text = '';
     });
