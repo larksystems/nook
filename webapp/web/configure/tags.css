@@ -28,6 +28,8 @@
 
 .tooltip__title {
   font-weight: bold;
+  color: var(--primary-text-color);
+  cursor: pointer;
 }
 
 .tooltip__messages {

@@ -6,7 +6,7 @@ import 'package:dnd/dnd.dart' as dnd;
 import 'package:katikati_ui_lib/components/accordion/accordion.dart';
 import 'package:katikati_ui_lib/components/editable/editable_text.dart';
 import 'package:katikati_ui_lib/components/button/button.dart';
-import 'package:katikati_ui_lib/components/model/model.g.dart';
+import 'package:katikati_ui_lib/components/model/model.dart';
 import 'package:nook/app/configurator/view.dart';
 export 'package:nook/app/configurator/view.dart';
 import 'package:nook/platform/platform.dart' as platform;
@@ -171,7 +171,7 @@ class ConfigureTagView extends TagView {
       warningModal.parent = renderElement;
     };
 
-    var tooltip = new SampleMessagesTooltip('Sample messages for tag "$tagText"');
+    var tooltip = new SampleMessagesTooltip('Sample messages for tag "$tagText"', tagId);
     tooltip.onMouseEnter = () {
       _tooltipInTransition = true;
       tooltip.parent = renderElement;
@@ -198,11 +198,12 @@ class ConfigureTagView extends TagView {
 
 class SampleMessagesTooltip {
   DivElement tooltip;
+  String _tagId;
   DivElement _messages;
   Function onMouseEnter; 
   Function onMouseLeave;
 
-  SampleMessagesTooltip(String title) {
+  SampleMessagesTooltip(String title, this._tagId) {
     tooltip = new DivElement()
       ..classes.add('tooltip')
       ..onMouseEnter.listen((e) {
@@ -214,9 +215,11 @@ class SampleMessagesTooltip {
         onMouseLeave();
       });
 
-    tooltip.append(new ParagraphElement()
-      ..classes.add('tooltip__title')
-      ..text = title);
+    var titleElement = new AnchorElement(href: _conversationLinkFromMessageID(tagId: _tagId))
+      ..classes.add('tooltip__title');
+    titleElement.append(SpanElement()..className = 'fas fa-external-link-square-alt');
+    titleElement.append(SpanElement()..innerText = " ${title}");
+    tooltip.append(titleElement);
 
     var removeButton = new Button(ButtonType.text, hoverText: 'Close sample messages tooltip', onClick: (_) => remove(), buttonText: "Close");
     removeButton.renderElement.style
@@ -246,7 +249,7 @@ class SampleMessagesTooltip {
     }
 
     for (var message in messages) {
-      var messageLink = AnchorElement(href: _conversationLinkFromMessageID(message.id))
+      var messageLink = AnchorElement(href: _conversationLinkFromMessageID(messageId: message.id, tagId: _tagId))
         ..classes.add('tooltip__message');
       var linkIcon = SpanElement()..className = 'fas fa-external-link-alt';
       var messageText = SpanElement()..innerText = "  ${message.text}";
@@ -257,9 +260,16 @@ class SampleMessagesTooltip {
     }
   }
 
-  String _conversationLinkFromMessageID(String messageID) {
-    var conversationID = messageID.replaceAll('nook-message-', '').substring(0, 52);
-    return "/converse/index.html?conversation-id=${conversationID}";
+  String _conversationLinkFromMessageID({String messageId, String tagId}) {
+    Map<String, String> queryParams = {};
+    if(messageId != null) {
+      queryParams["conversation-id"] = messageId.replaceAll('nook-message-', '').substring(0, 52);
+    }
+    if(tagId != null) {
+      queryParams["include-filter"] = tagId;
+    }
+    String queryString = Uri(queryParameters: queryParams).query;
+    return "/converse/index.html?${queryString}";
   }
 
   void set parent(Element value) => value.append(tooltip);
