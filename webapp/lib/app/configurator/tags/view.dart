@@ -6,6 +6,7 @@ import 'package:dnd/dnd.dart' as dnd;
 import 'package:katikati_ui_lib/components/accordion/accordion.dart';
 import 'package:katikati_ui_lib/components/editable/editable_text.dart';
 import 'package:katikati_ui_lib/components/button/button.dart';
+import 'package:katikati_ui_lib/components/model/model.g.dart';
 import 'package:nook/app/configurator/view.dart';
 export 'package:nook/app/configurator/view.dart';
 import 'package:nook/platform/platform.dart' as platform;
@@ -225,16 +226,40 @@ class SampleMessagesTooltip {
     removeButton.parent = tooltip;
 
     _messages = new DivElement()..classes.add('tooltip__messages');
+    var loadingText = DivElement()
+      ..classes.add('tooltip__placeholder')
+      ..innerText = "Loading...";
+    _messages..append(loadingText);
+
     tooltip.append(_messages);
   }
 
-  void displayMessages(List<String> messages) {
+  void displayMessages(List<Message> messages) {
     _messages.children.clear();
-    for (var message in messages) {
-      _messages.append(new DivElement()
-        ..classes.add('tooltip__message')
-        ..text = message);
+
+    if (messages.isEmpty) {
+      var noMessageText = SpanElement()
+        ..classes.add("tooltip__placeholder")
+        ..innerText = "No messages with this tag.";
+      _messages.append(noMessageText);
+      return;
     }
+
+    for (var message in messages) {
+      var messageLink = AnchorElement(href: _conversationLinkFromMessageID(message.id))
+        ..classes.add('tooltip__message');
+      var linkIcon = SpanElement()..className = 'fas fa-external-link-alt';
+      var messageText = SpanElement()..innerText = "  ${message.text}";
+      messageLink
+        ..append(linkIcon)
+        ..append(messageText);
+      _messages.append(messageLink);
+    }
+  }
+
+  String _conversationLinkFromMessageID(String messageID) {
+    var conversationID = messageID.replaceAll('nook-message-', '').substring(0, 52);
+    return "/converse/index.html?conversation-id=${conversationID}";
   }
 
   void set parent(Element value) => value.append(tooltip);
