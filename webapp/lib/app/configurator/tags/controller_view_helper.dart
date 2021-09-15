@@ -12,7 +12,8 @@ void _addTagsToView(Map<String, List<model.Tag>> tagsByCategory, {bool startEdit
         tagsById[tag.tagId].beginEdit();
       }
     }
-    (_view.groups.queryItem(category) as TagGroupView).addTags(tagsById);
+    var groupView = _view.groups.queryItem(category) as TagGroupView;
+    groupView.addTags(tagsById);
     if (startEditing) {
       tagsById[tagsByCategory[category].last.tagId].focus();
       tagsById[tagsByCategory[category].last.tagId].onCancel = () {
@@ -20,7 +21,8 @@ void _addTagsToView(Map<String, List<model.Tag>> tagsByCategory, {bool startEdit
       };
     }
     if (startEditingName) {
-      (_view.groups.queryItem(category) as TagGroupView).editableTitle.beginEdit();
+      groupView.editableTitle.beginEdit(selectAllOnFocus: true);
+      groupView.expand();
     }
   }
 }
