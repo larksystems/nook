@@ -1,5 +1,6 @@
 library view;
 
+import 'dart:async';
 import 'dart:html';
 import 'package:dnd/dnd.dart' as dnd;
 import 'package:katikati_ui_lib/components/accordion/accordion.dart';
@@ -149,6 +150,7 @@ class TagGroupView extends AccordionItem {
 
 class ConfigureTagView extends TagView {
   static bool dragInProgress = false;
+  bool _tooltipInTransition = false;
   ConfigureTagView(String tagText, String tagId, String groupId, TagStyle tagStyle) : super(tagText, tagId, groupId: groupId, tagStyle: tagStyle, deletable: true, editable: true) {
     var draggableTag = new dnd.Draggable(renderElement, avatarHandler: dnd.AvatarHandler.original(), draggingClass: 'tag__text');
     draggableTag
@@ -169,13 +171,26 @@ class ConfigureTagView extends TagView {
     };
 
     var tooltip = new SampleMessagesTooltip('Sample messages for tag "$tagText"');
+    tooltip.onMouseEnter = () {
+      _tooltipInTransition = true;
+      tooltip.parent = renderElement;
+    };
+    tooltip.onMouseLeave = () {
+      _tooltipInTransition = false;
+      tooltip.remove();
+    };
+
     onMouseEnter = () {
       if (dragInProgress) return;
       tooltip.parent = renderElement;
       getSampleMessages(platform.firestoreInstance, tagId).then((value) => tooltip.displayMessages(value));
     };
     onMouseLeave = () {
-      tooltip.remove();
+      Timer(Duration(milliseconds: 100), () {
+        if (!_tooltipInTransition) {
+          tooltip.remove();
+        }
+      });
     };
   }
 }
@@ -183,9 +198,20 @@ class ConfigureTagView extends TagView {
 class SampleMessagesTooltip {
   DivElement tooltip;
   DivElement _messages;
+  Function onMouseEnter; 
+  Function onMouseLeave;
 
   SampleMessagesTooltip(String title) {
-    tooltip = new DivElement()..classes.add('tooltip');
+    tooltip = new DivElement()
+      ..classes.add('tooltip')
+      ..onMouseEnter.listen((e) {
+        if (onMouseEnter == null) return;
+        onMouseEnter();
+      })
+      ..onMouseLeave.listen((e) {
+        if (onMouseLeave == null) return;
+        onMouseLeave();
+      });
 
     tooltip.append(new ParagraphElement()
       ..classes.add('tooltip__title')
