@@ -1,12 +1,13 @@
 import 'package:firebase/firestore.dart' as firestore;
+import 'package:katikati_ui_lib/components/model/model.dart';
 
-Future<List<String>> getSampleMessages(firestore.Firestore fs, String tagId) async {
+Future<List<Message>> getSampleMessages(firestore.Firestore fs, String tagId) async {
   var snapshot = await fs.collection("/nook_conversation_shards/shard-0/conversations")
     .where("tags", "array-contains", tagId)
     .limit(50)
     .get();
 
-  var messageTexts = <String>[];
+  var messageTexts = <Message>[];
 
   for (var doc in snapshot.docs) {
     var data = doc.data();
@@ -14,7 +15,7 @@ Future<List<String>> getSampleMessages(firestore.Firestore fs, String tagId) asy
     for (var message in messages) {
       var tags = (message["tags"] as List);
       if (tags.contains(tagId)) {
-        messageTexts.add(message["text"]);
+        messageTexts.add(Message.fromData(message));
       }
     }
   }
