@@ -198,6 +198,7 @@ const ADD_TAG_INFO = 'Add new tag';
 class ConversationPanelView with AutomaticSuggestionIndicator {
   // HTML elements
   DivElement conversationPanel;
+  DivElement _conversationSummary;
   DivElement _messages;
   DivElement _conversationWarning;
   DivElement _conversationId;
@@ -215,15 +216,22 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
   ConversationPanelView() {
     conversationPanel = new DivElement()
       ..classes.add('conversation-panel')
-      ..onClick.listen((_) => _view.appController.command(UIAction.deselectMessage, null));
+      ..onClick.listen((_) {
+        _view.appController.command(UIAction.deselectConversationSummary, null);
+        _view.appController.command(UIAction.deselectMessage, null);
+      });
 
-    var conversationSummary = new DivElement()
+    _conversationSummary = new DivElement()
       ..classes.add('conversation-summary');
-    conversationPanel.append(conversationSummary);
+    _conversationSummary.onClick.listen((e) {
+      e.stopPropagation(); // to stop immediate deselection
+      _view.appController.command(UIAction.selectConversationSummary, new ConversationData(_conversationIdCopy.dataset['copy-value']));
+    });
+    conversationPanel.append(_conversationSummary);
 
     var title = new DivElement()
       ..classes.add('conversation-summary__title');
-    conversationSummary.append(title);
+    _conversationSummary.append(title);
 
     _conversationWarning = new DivElement()
       ..classes.add('conversation-summary__warning')
@@ -242,11 +250,11 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
 
     _info = new DivElement()
       ..classes.add('conversation-summary__demographics');
-    conversationSummary.append(_info);
+    _conversationSummary.append(_info);
 
     _tags = new DivElement()
       ..classes.add('conversation-summary__tags');
-    conversationSummary.append(_tags);
+    _conversationSummary.append(_tags);
 
     _messages = new DivElement()
       ..classes.add('messages');
@@ -347,6 +355,14 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
 
   void deselectMessage() {
     MessageView._deselect();
+  }
+
+  void selectConversationSummary() {
+    _conversationSummary.classes.toggle("conversation-summary--selected", true);
+  }
+
+  void deselectConversationSummary() {
+    _conversationSummary.classes.toggle("conversation-summary--selected", false);
   }
 
   MessageView messageViewAtIndex(int index) {
@@ -1530,6 +1546,7 @@ class ReplyPanelView {
 
 class TagPanelView {
   DivElement tagPanel;
+  DivElement _instruction;
   SelectElement _tagGroups;
   DivElement _tags;
   DivElement _tagList;
@@ -1546,6 +1563,11 @@ class TagPanelView {
     var panelTitle = new DivElement()
       ..classes.add('panel-title');
     tagPanel.append(panelTitle);
+
+    _instruction = new DivElement()
+      ..classes.add('panel-instruction')
+      ..text = "Select a conversation or a message to tag";
+    tagPanel.append(_instruction);
 
     _tagGroups = new SelectElement()
       ..onChange.listen((_) => _view.appController.command(UIAction.updateDisplayedTagsGroup, new UpdateTagsGroupData(_tagGroups.value)));
@@ -1617,6 +1639,14 @@ class TagPanelView {
     for (var view in _tagViews) {
       view.showButtons(show);
     }
+  }
+
+  void showInstruction() {
+    _instruction.hidden = false;
+  }
+
+  void hideInstruction() {
+    _instruction.hidden = true;
   }
 }
 

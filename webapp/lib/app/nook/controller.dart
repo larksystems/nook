@@ -55,6 +55,8 @@ enum UIAction {
   markConversationRead,
   markConversationUnread,
   changeConversationSortOrder,
+  selectConversationSummary,
+  deselectConversationSummary,
   selectMessage,
   deselectMessage,
   keyPressed,
@@ -307,6 +309,7 @@ class NookController extends Controller {
   model.Conversation activeConversation;
   List<model.Conversation> selectedConversations;
   model.Message selectedMessage;
+  model.Conversation selectedConversationSummary;
 
   model.UserConfiguration defaultUserConfig;
   model.UserConfiguration currentUserConfig;
@@ -930,7 +933,7 @@ class NookController extends Controller {
           case UIActionObject.conversation:
             model.Tag tag = tags.singleWhere((tag) => tag.tagId == tagData.tagId);
             if (!currentConfig.sendMultiMessageEnabled || selectedConversations.isEmpty) {
-              setConversationTag(tag, activeConversation);
+              setConversationTag(tag, selectedConversationSummary);
               break;
             }
             if (!_view.taggingMultiConversationsUserConfirmation(selectedConversations.length)) {
@@ -1021,17 +1024,46 @@ class NookController extends Controller {
         if (actionObjectState == UIActionObject.loadingConversations) return;
         updateFilteredAndSelectedConversationLists();
         break;
+      case UIAction.selectConversationSummary:
+        ConversationData conversationData = data;
+        selectedConversationSummary = conversations.firstWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
+        _view.conversationPanelView.selectConversationSummary();
+        actionObjectState = UIActionObject.conversation;
+        _view.tagPanelView.hideInstruction();
+
+        selectedMessage = null;
+        _view.conversationPanelView.deselectMessage();
+        break;
+      case UIAction.deselectConversationSummary:
+        if (actionObjectState == UIActionObject.conversation) {
+          selectedConversationSummary = null;
+          _view.conversationPanelView.deselectConversationSummary();
+          actionObjectState = null;
+
+          if(selectedConversationSummary == null && selectedMessage == null) {
+            _view.tagPanelView.showInstruction();
+          }
+        }
+        break;
       case UIAction.selectMessage:
         MessageData messageData = data;
         selectedMessage = activeConversation.messages.singleWhere((element) => element.id == messageData.messageId);
         _view.conversationPanelView.selectMessage(activeConversation.messages.indexOf(selectedMessage));
         actionObjectState = UIActionObject.message;
+        _view.tagPanelView.hideInstruction();
+
+        selectedConversationSummary = null;
+        _view.conversationPanelView.deselectConversationSummary();
         break;
       case UIAction.deselectMessage:
         if (actionObjectState == UIActionObject.message) {
           selectedMessage = null;
           _view.conversationPanelView.deselectMessage();
-          actionObjectState = UIActionObject.conversation;
+          actionObjectState = null;
+
+          if(selectedConversationSummary == null && selectedMessage == null) {
+            _view.tagPanelView.showInstruction();
+          }
         }
         break;
       case UIAction.markConversationRead:
