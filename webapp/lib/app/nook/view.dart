@@ -297,6 +297,10 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
     message.renderElement.scrollIntoView();
   }
 
+  void scrollToLatestMessage() {
+    _messages.scrollTop = _messages.scrollHeight;
+  }
+
   void padOrTrimMessageViews(int count) {
     if (_messageViews.length == count) return;
     if (_messageViews.length > count) {

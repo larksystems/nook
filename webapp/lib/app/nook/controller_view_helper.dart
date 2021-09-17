@@ -84,6 +84,7 @@ void _updateConversationPanelView(model.Conversation conversation) {
     MessageView messageView = _generateMessageView(message, conversation);
     _view.conversationPanelView.updateMessage(messageView, i);
   }
+  _view.conversationPanelView.scrollToLatestMessage();
 
   List<SuggestedMessageView> suggestedMessages = [];
   for (var message in conversation.suggestedMessages) {
