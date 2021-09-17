@@ -1633,7 +1633,13 @@ class ReplyActionView implements ActionView {
   DivElement _translationElement;
   List<DivElement> _buttonElements;
 
-  ReplyActionView(String text, String translation, String shortcut, int replyIndex, String buttonText) {
+  String _text;
+  String _translation;
+
+  String get text => _text;
+  String get translation => _translation;
+
+  ReplyActionView(this._text, this._translation, String shortcut, int replyIndex, String buttonText) {
     action = new DivElement()
       ..classes.add('action')
       ..dataset['id'] = "${replyIndex}";
@@ -1656,7 +1662,7 @@ class ReplyActionView implements ActionView {
 
       _textElement = new DivElement()
         ..classes.add('action__text')
-        ..text = text;
+        ..text = _text;
       textWrapper.append(_textElement);
 
       var buttonElement = new DivElement()
@@ -1666,8 +1672,14 @@ class ReplyActionView implements ActionView {
       buttonElement.onClick.listen((_) => _view.appController.command(UIAction.sendMessage, new ReplyData(replyIndex)));
       buttonElement.onMouseEnter.listen((event) => highlightText(true));
       buttonElement.onMouseLeave.listen((event) => highlightText(false));
-      textWrapper.append(buttonElement);
-      _buttonElements.add(buttonElement);
+      if (_text.isNotEmpty) {
+        textWrapper.append(buttonElement);
+        _buttonElements.add(buttonElement);
+      } else {
+        _textElement
+          ..classes.add('action__text--placeholder')
+          ..text = 'Empty text';
+      }
     }
 
     { // Add translation
@@ -1677,7 +1689,7 @@ class ReplyActionView implements ActionView {
 
       _translationElement = new DivElement()
         ..classes.add('action__translation')
-        ..text = translation;
+        ..text = _translation;
       translationWrapper.append(_translationElement);
 
       var buttonElement = new DivElement()
@@ -1687,8 +1699,14 @@ class ReplyActionView implements ActionView {
       buttonElement.onClick.listen((_) => _view.appController.command(UIAction.sendMessage, new ReplyData(replyIndex, replyWithTranslation: true)));
       buttonElement.onMouseEnter.listen((event) => highlightTranslation(true));
       buttonElement.onMouseLeave.listen((event) => highlightTranslation(false));
-      translationWrapper.append(buttonElement);
-      _buttonElements.add(buttonElement);
+      if (_translation.isNotEmpty) {
+        translationWrapper.append(buttonElement);
+        _buttonElements.add(buttonElement);
+      } else {
+        _translationElement
+          ..classes.add('action__text--placeholder')
+          ..text = 'Empty translation';
+      }
     }
   }
 
@@ -1745,8 +1763,11 @@ class ReplyActionGroupView implements ActionView {
       replies.forEach((reply) => reply.highlightText(true));
     });
     sendButton.onMouseLeave.listen((event) => replies.forEach((reply) => reply.highlightText(false)));
-    buttonGroup.append(sendButton);
-    _buttonElements.add(sendButton);
+    var emptyTexts = replies.any((reply) => reply.text.isEmpty);
+    if (!emptyTexts) {
+      buttonGroup.append(sendButton);
+      _buttonElements.add(sendButton);
+    }
 
     var sendTranslationButton = new DivElement()
       ..classes.add('action__button')
@@ -1758,8 +1779,11 @@ class ReplyActionGroupView implements ActionView {
       replies.forEach((reply) => reply.highlightTranslation(true));
     });
     sendTranslationButton.onMouseLeave.listen((event) => replies.forEach((reply) => reply.highlightTranslation(false)));
-    buttonGroup.append(sendTranslationButton);
-    _buttonElements.add(sendTranslationButton);
+    var emptyTranslations = replies.any((reply) => reply.translation.isEmpty);
+    if (!emptyTranslations) {
+      buttonGroup.append(sendTranslationButton);
+      _buttonElements.add(sendTranslationButton);
+    }
 
     var repliesWrapper = new DivElement()
       ..classes.add('action__group__wrapper');

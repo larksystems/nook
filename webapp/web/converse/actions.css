@@ -68,6 +68,11 @@
   align-items: center;
 }
 
+.action__text--placeholder {
+  color: var(--gray);
+  font-style: italic;
+}
+
 .action__text.action__text--bold,
 .action__translation.action__translation--bold {
   font-weight: bold;
