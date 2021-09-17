@@ -51,6 +51,27 @@
   color: var(--darker-gray);
 }
 
+.message__bubble .message__status {
+  font-size: 0.8em;
+  margin-bottom: 6px;
+}
+
+.message.message--pending .message__bubble .message__status {
+  color: var(--extra-dark-gray);
+  animation-duration: 1s;
+  animation-iteration-count: infinite;
+  animation-name: tagPendingAnimation;
+}
+
+@keyframes tagPendingAnimation {
+  50% {
+    color: var(--gray);
+  }
+}
+
+.message.message--failed .message__bubble .message__status {
+  color: var(--light-red);
+}
 
 .message__datetime {
   font-size: .8em;
