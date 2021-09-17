@@ -148,15 +148,13 @@ class TagGroupView extends AccordionItem {
   }
 }
 
-
 class ConfigureTagView extends TagView {
   static bool dragInProgress = false;
   bool _tooltipInTransition = false;
-  ConfigureTagView(String tagText, String tagId, String groupId, TagStyle tagStyle) : super(tagText, tagId, groupId: groupId, tagStyle: tagStyle, deletable: true, editable: true) {
+  ConfigureTagView(String tagText, String tagId, String groupId, TagStyle tagStyle)
+      : super(tagText, tagId, groupId: groupId, tagStyle: tagStyle, deletable: true, editable: true) {
     var draggableTag = new dnd.Draggable(renderElement, avatarHandler: dnd.AvatarHandler.original(), draggingClass: 'tag__text');
-    draggableTag
-      ..onDragStart.listen((_) => dragInProgress = true)
-      ..onDragEnd.listen((_) => dragInProgress = false);
+    draggableTag..onDragStart.listen((_) => dragInProgress = true)..onDragEnd.listen((_) => dragInProgress = false);
 
     onEdit = (text) {
       _view.appController.command(TagsConfigAction.renameTag, new TagData(tagId, text: text));
@@ -200,7 +198,7 @@ class SampleMessagesTooltip {
   DivElement tooltip;
   String _tagId;
   DivElement _messages;
-  Function onMouseEnter; 
+  Function onMouseEnter;
   Function onMouseLeave;
 
   SampleMessagesTooltip(String title, this._tagId) {
@@ -215,8 +213,7 @@ class SampleMessagesTooltip {
         onMouseLeave();
       });
 
-    var titleElement = new AnchorElement(href: _linkToFilteredConversationView(tagId: _tagId))
-      ..classes.add('tooltip__title');
+    var titleElement = new AnchorElement(href: _linkToFilteredConversationView(tagId: _tagId))..classes.add('tooltip__title');
     titleElement.append(SpanElement()..className = 'fas fa-external-link-square-alt');
     titleElement.append(SpanElement()..innerText = " ${title}");
     tooltip.append(titleElement);
@@ -249,13 +246,10 @@ class SampleMessagesTooltip {
     }
 
     for (var message in messages) {
-      var messageLink = AnchorElement(href: _linkToFilteredConversationView(messageId: message.id, tagId: _tagId))
-        ..classes.add('tooltip__message');
+      var messageLink = AnchorElement(href: _linkToFilteredConversationView(messageId: message.id, tagId: _tagId))..classes.add('tooltip__message');
       var linkIcon = SpanElement()..className = 'fas fa-external-link-alt';
       var messageText = SpanElement()..innerText = "  ${message.text}";
-      messageLink
-        ..append(linkIcon)
-        ..append(messageText);
+      messageLink..append(linkIcon)..append(messageText);
       _messages.append(messageLink);
     }
   }
