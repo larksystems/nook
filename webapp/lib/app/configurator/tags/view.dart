@@ -215,7 +215,7 @@ class SampleMessagesTooltip {
         onMouseLeave();
       });
 
-    var titleElement = new AnchorElement(href: _conversationLinkFromMessageID(tagId: _tagId))
+    var titleElement = new AnchorElement(href: _linkToFilteredConversationView(tagId: _tagId))
       ..classes.add('tooltip__title');
     titleElement.append(SpanElement()..className = 'fas fa-external-link-square-alt');
     titleElement.append(SpanElement()..innerText = " ${title}");
@@ -249,7 +249,7 @@ class SampleMessagesTooltip {
     }
 
     for (var message in messages) {
-      var messageLink = AnchorElement(href: _conversationLinkFromMessageID(messageId: message.id, tagId: _tagId))
+      var messageLink = AnchorElement(href: _linkToFilteredConversationView(messageId: message.id, tagId: _tagId))
         ..classes.add('tooltip__message');
       var linkIcon = SpanElement()..className = 'fas fa-external-link-alt';
       var messageText = SpanElement()..innerText = "  ${message.text}";
@@ -260,12 +260,12 @@ class SampleMessagesTooltip {
     }
   }
 
-  String _conversationLinkFromMessageID({String messageId, String tagId}) {
+  String _linkToFilteredConversationView({String messageId, String tagId}) {
     Map<String, String> queryParams = {};
-    if(messageId != null) {
+    if (messageId != null) {
       queryParams["conversation-id"] = messageId.replaceAll('nook-message-', '').substring(0, 52);
     }
-    if(tagId != null) {
+    if (tagId != null) {
       queryParams["include-filter"] = tagId;
     }
     String queryString = Uri(queryParameters: queryParams).query;
