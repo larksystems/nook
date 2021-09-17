@@ -758,7 +758,7 @@ class FilterMenuTagView extends TagView {
 
 class FilterTagView extends TagView {
   TagFilterType _filterType;
-  FilterTagView(String text, String tagId, TagStyle tagStyle, TagFilterType filterType) : super(text, tagId, tagStyle: tagStyle, deletable: true) {
+  FilterTagView(String text, String tagId, TagStyle tagStyle, TagFilterType filterType, {bool deletable = true}) : super(text, tagId, tagStyle: tagStyle, deletable: deletable) {
     _filterType = filterType;
     onDelete = () {
       _view.appController.command(UIAction.removeFilterTag, new FilterTagData(tagId, _filterType));

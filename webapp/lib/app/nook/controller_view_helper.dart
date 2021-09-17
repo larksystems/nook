@@ -195,8 +195,15 @@ void _addTagsToFilterMenu(Map<String, List<model.Tag>> tagsByCategory, TagFilter
 void _populateSelectedFilterTags(Set<model.Tag> tags, TagFilterType filterType) {
   _view.conversationFilter[filterType].clearSelectedTags();
   for (var tag in tags) {
-    _view.conversationFilter[filterType].addFilterTag(new FilterTagView(tag.text, tag.tagId, tagTypeToKKStyle(tag.type), filterType));
+    var filterTagViewToAdd = new FilterTagView(tag.text, tag.tagId, tagTypeToKKStyle(tag.type), filterType, deletable: _filterTagRemovable(tag.tagId));
+    _view.conversationFilter[filterType].addFilterTag(filterTagViewToAdd);
   }
+}
+
+bool _filterTagRemovable(String tagId) {
+  bool mandatoryExclude = controller.currentConfig.mandatoryExcludeTagIds.contains(tagId);
+  bool mandatoryInclude = controller.currentConfig.mandatoryIncludeTagIds.contains(tagId);
+  return (mandatoryInclude || mandatoryExclude) ? false : true;
 }
 
 void _populateTurnlines(List<model.Turnline> turnlines) {
