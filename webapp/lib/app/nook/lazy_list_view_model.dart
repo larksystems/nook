@@ -47,6 +47,50 @@ class LazyListViewModel {
     _updateCachedElements();
   }
 
+  bool _itemIsInView(int viewScrollTop, int viewScrollHeight, Element item) {
+    if (item == null) return false;
+    var itemOffset = item.offsetTop ?? 0;
+    if (viewScrollTop <= itemOffset && itemOffset < viewScrollTop + viewScrollHeight) return true;
+    return false;
+  }
+
+  void setItems(Iterable<LazyListViewItem> items, [LazyListViewItem selectedItem]) {
+    var scrollTop = _listView.scrollTop;
+    var clientHeight = _listView.clientHeight;
+
+    LazyListViewItem referenceItem = null;
+    // check if the selected item is within view
+    if (_itemIsInView(scrollTop, clientHeight, selectedItem?.elementOrNull)) {
+      referenceItem = selectedItem;
+    } else {
+      // the selected item is not within view
+      // change the reference item to the first item fully in view
+      for (var item in _items) {
+        if (_itemIsInView(scrollTop, clientHeight, item?.elementOrNull) && items.contains(selectedItem)) {
+          referenceItem = item;
+          break;
+        }
+      }
+    }
+    var initialOffset = referenceItem?.elementOrNull?.offsetTop ?? 0;
+    var initialOffsetInView = initialOffset - scrollTop;
+
+    removeItems(_items.toList());
+    _items.addAll(items);
+    _updateCachedElements();
+
+    if (!_items.contains(referenceItem)) return;
+
+    selectItem(referenceItem ?? selectedItem);
+    _updateCachedElements();
+
+    var newOffset = referenceItem?.elementOrNull?.offsetTop ?? 0;
+    var newOffsetInView = newOffset - _listView.scrollTop;
+    if (initialOffsetInView != newOffsetInView) {
+      _listView.scrollBy(0, newOffsetInView - initialOffsetInView);
+    }
+  }
+
   void clearItems() {
     for (var item in _items) {
       item.disposeElement();
@@ -86,10 +130,10 @@ class LazyListViewModel {
   /// the height of the cached/displayed DOM elements "scrollHeight",
   /// and the height of the scrolling area.
   void _updateCachedElements([_ignored_]) {
-    _scrollPad.remove();
 
-    var currentScrollHeight = _listView.scrollHeight;
     var desiredScrollHeight = _listView.scrollTop + 3 * _listView.clientHeight;
+    _scrollPad.remove();
+    var currentScrollHeight = _listView.scrollHeight;
     if (currentScrollHeight < desiredScrollHeight && _listView.children.length < _items.length) {
       // Handle special case if no elements are visible - initialise the list with one element
       if (_listView.children.isEmpty) {
