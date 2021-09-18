@@ -14,6 +14,7 @@ class LazyListViewModel {
   /// The DOM element used to display the items
   /// and typically displaying only a subset of the items.
   final DivElement _listView;
+  Function _onItemAdd;
 
   /// A DOM element used to pad the height of the scroll list
   /// so that scrolling approximates the list size
@@ -21,9 +22,11 @@ class LazyListViewModel {
   final _scrollPad = DivElement();
   static const _scrollPadMinHeight = 30;
 
-  LazyListViewModel(this._listView) {
+  LazyListViewModel(this._listView, {Function onItemAdd}) {
     _listView.onScroll.listen(_updateCachedElements);
     window.onResize.listen(_windowResized);
+
+    _onItemAdd = onItemAdd;
   }
 
   void addItem(LazyListViewItem item, [int position]) {
@@ -95,6 +98,9 @@ class LazyListViewModel {
       if (_listView.children.isEmpty) {
         var item = _items[_listView.children.length];
         _listView.append(item.element);
+        if (_onItemAdd != null) {
+          _onItemAdd(item);
+        }
         currentScrollHeight = _listView.scrollHeight;
       }
       // Special case: there are fewer elements visible
@@ -113,6 +119,9 @@ class LazyListViewModel {
       for (int i = 0; i < numItemsToAdd; i++) {
         var item = _items[_listView.children.length];
         _listView.append(item.element);
+        if (_onItemAdd != null) {
+          _onItemAdd(item);
+        }
       }
     }
     _updateScrollPad();

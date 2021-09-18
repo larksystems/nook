@@ -2,6 +2,7 @@ library controller;
 
 import 'dart:async';
 import 'dart:collection';
+import 'dart:html';
 import 'package:intl/intl.dart';
 import 'package:firebase/firebase.dart' show FirebaseError;
 
@@ -10,6 +11,7 @@ import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
 import 'package:katikati_ui_lib/components/tag/tag.dart';
 import 'package:katikati_ui_lib/components/turnline/turnline.dart';
 import 'package:katikati_ui_lib/components/logger.dart';
+import 'package:katikati_ui_lib/utils/dateTime.dart';
 import 'package:nook/controller.dart';
 export 'package:nook/controller.dart';
 import 'package:katikati_ui_lib/components/model/model.dart' as model;
@@ -55,6 +57,7 @@ enum UIAction {
   markConversationRead,
   markConversationUnread,
   changeConversationSortOrder,
+  onAddConversationsInPanelDOM,
   selectMessage,
   deselectMessage,
   keyPressed,
@@ -1064,6 +1067,9 @@ class NookController extends Controller {
         filteredConversations = emptyConversationsSet(conversationSortOrder)
           ..addAll(filteredConversations);
         _view.conversationListPanelView.changeConversationSortOrder(conversationSortOrder);
+        updateFilteredAndSelectedConversationLists();
+        break;
+      case UIAction.onAddConversationsInPanelDOM:
         updateFilteredAndSelectedConversationLists();
         break;
       case UIAction.showConversation:
