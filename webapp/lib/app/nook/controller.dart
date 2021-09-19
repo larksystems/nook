@@ -1040,7 +1040,7 @@ class NookController extends Controller {
           _view.conversationPanelView.deselectConversationSummary();
           actionObjectState = null;
 
-          if(selectedConversationSummary == null && selectedMessage == null) {
+          if (selectedConversationSummary == null && selectedMessage == null) {
             _view.tagPanelView.showInstruction();
           }
         }
