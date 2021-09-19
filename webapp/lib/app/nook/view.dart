@@ -1798,15 +1798,20 @@ class TagActionView implements ActionView {
       ..text = shortcut;
     action.append(_shortcutElement);
 
-    var tagElement = TagView(text, "");
+    var tagElement = TagView(text, "")
+      ..onSelect = _addTagCommand;
     action.append(tagElement.renderElement);
 
     _buttonElement = new DivElement()
       ..classes.add('action__button')
       ..classes.add('action__button--float')
       ..text = buttonText
-      ..onClick.listen((_) => _view.appController.command(UIAction.addTag, new TagData(action.dataset['id'])));
+      ..onClick.listen((_) => _addTagCommand());
     action.append(_buttonElement);
+  }
+
+  void _addTagCommand() {
+    _view.appController.command(UIAction.addTag, new TagData(action.dataset['id']));
   }
 
   void showShortcut(bool show) {
