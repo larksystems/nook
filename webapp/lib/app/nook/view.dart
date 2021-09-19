@@ -7,7 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:katikati_ui_lib/components/accordion/accordion.dart';
 import 'package:katikati_ui_lib/components/tabs/tabs.dart';
 import 'package:katikati_ui_lib/components/url_view/url_view.dart';
-import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
+import 'package:katikati_ui_lib/components/tooltip/tooltip.dart';
 import 'package:katikati_ui_lib/components/nav/button_links.dart';
 import 'package:katikati_ui_lib/components/messages/freetext_message_send.dart';
 import 'package:katikati_ui_lib/components/logger.dart';
@@ -780,7 +780,7 @@ class FilterMenuTagView extends TagView {
 
 class FilterTagView extends TagView {
   TagFilterType _filterType;
-  FilterTagView(String text, String tagId, TagStyle tagStyle, TagFilterType filterType) : super(text, tagId, tagStyle: tagStyle, deletable: true) {
+  FilterTagView(String text, String tagId, TagStyle tagStyle, TagFilterType filterType, {bool deletable = true}) : super(text, tagId, tagStyle: tagStyle, deletable: deletable) {
     _filterType = filterType;
     onDelete = () {
       _view.appController.command(UIAction.removeFilterTag, new FilterTagData(tagId, _filterType));
@@ -1966,5 +1966,15 @@ class ChangeSortOrderActionView {
         changeSortOrderAction.append(chronologically.renderElement);
         break;
     }
+  }
+}
+
+class HelpIndicatorTooltip {
+  DivElement renderElement;
+
+  HelpIndicatorTooltip(String tooltip, TooltipPosition position) {
+    var questionIcon = SpanElement()..className = "fas fa-info";
+    var tooltip = Tooltip(questionIcon, "This tag cannot be removed from the filter. Please contact your admin if you have any questions.", position: position);
+    renderElement = tooltip.renderElement..classes.add("tooltip-icon");
   }
 }
