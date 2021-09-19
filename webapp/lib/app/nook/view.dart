@@ -1705,7 +1705,7 @@ class ReplyActionView implements ActionView {
       } else {
         _translationElement
           ..classes.add('action__text--placeholder')
-          ..text = 'Empty translation';
+          ..text = 'No message translation provided';
       }
     }
   }
