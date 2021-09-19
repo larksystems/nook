@@ -735,7 +735,7 @@ class NookController extends Controller {
           } else {
             activeConversation = matches.first;
           }
-          updateViewForConversation(activeConversation, updateInPlace: true);
+          updateViewForConversation(activeConversation, updateInPlace: false);
         }
 
         // Determine if the active conversation data needs to be replaced
