@@ -601,15 +601,11 @@ class NookController extends Controller {
     }
 
     if (oldConfig.tagMessagesEnabled != newConfig.tagMessagesEnabled) {
-      if (actionObjectState == UIActionObject.message) {
-        _view.tagPanelView.showButtons(newConfig.tagMessagesEnabled);
-      }
+      _view.tagPanelView.showButtons(newConfig.tagMessagesEnabled);
     }
 
     if (oldConfig.tagConversationsEnabled != newConfig.tagConversationsEnabled) {
-      if (actionObjectState == UIActionObject.conversation) {
-        _view.tagPanelView.showButtons(newConfig.tagConversationsEnabled);
-      }
+      _view.tagPanelView.showButtons(newConfig.tagConversationsEnabled);
     }
 
     if (oldConfig.editTranslationsEnabled != newConfig.editTranslationsEnabled) {
