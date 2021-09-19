@@ -111,7 +111,7 @@ class NookPageView extends PageView {
     showNormalStatus('signed out');
   }
 
-  void showPanels(showReplyPanel, enableEditNotesPanel, showTagPanel) {
+  void showPanels(bool showReplyPanel, bool enableEditNotesPanel, bool showTagPanel, bool showTurnlinePanel, String defaultTab) {
     List<TabView> tabsToSet = [];
 
     if (showReplyPanel) {
@@ -124,7 +124,7 @@ class NookPageView extends PageView {
       tabsToSet.add(tagsTab);
     }
 
-    {
+    if (showTurnlinePanel) {
       var turnlineTab = TabView('turnline', "Turnline", turnlinePanelView.turnlinePanel);
       tabsToSet.add(turnlineTab);
     }
@@ -136,6 +136,17 @@ class NookPageView extends PageView {
     }
 
     tabsView.setTabs(tabsToSet);
+    
+    if (showReplyPanel && defaultTab == 'standard_messages') {
+      tabsView.selectTab(defaultTab);
+    } else if (showTagPanel && defaultTab == 'tag') {
+      tabsView.selectTab(defaultTab);
+    } else if (showTurnlinePanel && defaultTab == 'turnline') {
+      tabsView.selectTab(defaultTab);
+    } else if (enableEditNotesPanel && defaultTab == 'notes') {
+      tabsView.selectTab(defaultTab);
+    }
+
   }
 
   bool sendingMultiMessagesUserConfirmation(int noMessages) {
