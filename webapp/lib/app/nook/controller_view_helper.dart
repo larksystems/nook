@@ -195,14 +195,19 @@ void _addTagsToFilterMenu(Map<String, List<model.Tag>> tagsByCategory, TagFilter
 void _populateSelectedFilterTags(Set<model.Tag> tags, TagFilterType filterType) {
   _view.conversationFilter[filterType].clearSelectedTags();
   for (var tag in tags) {
-    var filterTagViewToAdd = new FilterTagView(tag.text, tag.tagId, tagTypeToKKStyle(tag.type), filterType, deletable: _filterTagRemovable(tag.tagId));
+    var filterRemovable = _filterTagRemovable(tag.tagId);
+    var filterTagViewToAdd = new FilterTagView(tag.text, tag.tagId, tagTypeToKKStyle(tag.type), filterType, deletable: filterRemovable);
     _view.conversationFilter[filterType].addFilterTag(filterTagViewToAdd);
+    if (!filterRemovable) {
+      var tooltip = HelpIndicatorTooltip("This tag cannot be removed from the filter. Please contact your admin if you have any questions.", TooltipPosition.top);
+      filterTagViewToAdd.renderElement.append(tooltip.renderElement);
+    }
   }
 }
 
 bool _filterTagRemovable(String tagId) {
-  bool mandatoryExclude = controller.currentConfig.mandatoryExcludeTagIds.contains(tagId);
-  bool mandatoryInclude = controller.currentConfig.mandatoryIncludeTagIds.contains(tagId);
+  bool mandatoryExclude = (controller.currentConfig.mandatoryExcludeTagIds ?? Set<String>()).contains(tagId);
+  bool mandatoryInclude = (controller.currentConfig.mandatoryIncludeTagIds ?? Set<String>()).contains(tagId);
   return (mandatoryInclude || mandatoryExclude) ? false : true;
 }
 

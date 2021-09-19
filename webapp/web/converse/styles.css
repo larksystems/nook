@@ -78,6 +78,13 @@ main {
     background: #fafafa;
 }
 
+.conversation-filter .tooltip-icon .fas {
+    font-size: 0.8em;
+    margin-left: 6px;
+    margin-right: 12px;
+    color: var(--gray);
+}
+
 .tags-container,
 .tags-menu__container {
     display: flex;
