@@ -136,7 +136,7 @@ class NookPageView extends PageView {
     }
 
     tabsView.setTabs(tabsToSet);
-    
+
     if (showReplyPanel && defaultTab == 'standard_messages') {
       tabsView.selectTab(defaultTab);
     } else if (showTagPanel && defaultTab == 'tag') {
@@ -631,7 +631,7 @@ class MessageView {
       _messageStatus.text = '[Failed]';
     } else {
       _message.classes.remove('message--failed');
-    } 
+    }
   }
 
   void enableEditableTranslations(bool enable) {
@@ -995,7 +995,7 @@ class ConversationListPanelView {
 
   void updateConversationSummary(ConversationSummary summary, Conversation conversation) {
     summary._text = conversation.messages.isEmpty ? "No messages yet" : conversation.messages.last?.text;
-    isOurTurnInConversation(conversation) ? summary._markUnread() : summary._markRead();
+    conversationNeedsReply(conversation) ? summary._markUnread() : summary._markRead();
   }
 
   void selectConversation(String deidentifiedPhoneNumber) {

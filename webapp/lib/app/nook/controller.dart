@@ -1687,8 +1687,8 @@ model.Tag unifierTagForTag(model.Tag tag, Map<String, model.Tag> allTags) {
 }
 
 // TODO(mariana): this should be picked up from the project configuration
-const OUR_TURN_TAG_ID = 'tag-97a3da54';
-bool isOurTurnInConversation(model.Conversation conversation) => conversation.tagIds.contains(OUR_TURN_TAG_ID);
+const NEEDS_REPLY_TAG_ID = 'tag-9778e326';
+bool conversationNeedsReply(model.Conversation conversation) => conversation.tagIds.contains(NEEDS_REPLY_TAG_ID);
 
 typedef Future<dynamic> SaveText(String newText);
 
