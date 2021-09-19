@@ -14,7 +14,6 @@ const SMS_MAX_LENGTH = 160;
 void _populateConversationListPanelView(Set<model.Conversation> conversations) {
   _view.conversationListPanelView.hideLoadSpinner();
   _view.conversationListPanelView.hideSelectConversationListMessage();
-  _view.conversationListPanelView.clearConversationList();
   _view.conversationListPanelView.updateConversationList(conversations);
 }
 

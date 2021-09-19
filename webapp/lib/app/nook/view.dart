@@ -978,54 +978,28 @@ class ConversationListPanelView {
     for (Conversation c in conversations) {
       conversationUuids.add(c.docId);
     }
-    List<ConversationSummary> conversationsToRemove = [];
-    for (var uuid in _phoneToConversations.keys) {
-      if (conversationUuids.contains(uuid)) continue;
-      conversationsToRemove.add(_phoneToConversations[uuid]);
-    }
-    _conversationList.removeItems(conversationsToRemove);
-    _phoneToConversations.removeWhere((key, value) => !conversationUuids.contains(key));
-
-    List<ConversationSummary> conversationsToAdd = [];
+    List<ConversationSummary> conversationSummaries = [];
     for (var conversation in conversations) {
       ConversationSummary summary = _phoneToConversations[conversation.docId];
-      if (summary != null) {
-        updateConversationSummary(summary, conversation);
-        continue;
+      if (summary == null) {
+        summary = new ConversationSummary(conversation.docId, "", false);
       }
-      summary = new ConversationSummary(
-          conversation.docId,
-          conversation.messages.isEmpty ? "No messages yet" : conversation.messages.last?.text,
-          isOurTurnInConversation(conversation));
-      conversationsToAdd.add(summary);
-    }
-    _conversationList.appendItems(conversationsToAdd);
-    for (var conversation in conversationsToAdd) {
-      _phoneToConversations[conversation.deidentifiedPhoneNumber] = conversation;
-    }
-    _conversationPanelTitle.text = _conversationPanelTitleText;
-  }
-
-  void addOrUpdateConversation(Conversation conversation) {
-    ConversationSummary summary = _phoneToConversations[conversation.docId];
-    if (summary != null) {
       updateConversationSummary(summary, conversation);
-      return;
+      _phoneToConversations[summary.deidentifiedPhoneNumber] = summary;
+      conversationSummaries.add(summary);
     }
-    summary = new ConversationSummary(
-        conversation.docId,
-        conversation.messages.last.text,
-        isOurTurnInConversation(conversation));
-    _conversationList.addItem(summary, null);
-    _phoneToConversations[summary.deidentifiedPhoneNumber] = summary;
+    ConversationSummary selectedConversation = _phoneToConversations[controller.activeConversation?.docId];
+    _conversationList.setItems(conversationSummaries, selectedConversation);
     _conversationPanelTitle.text = _conversationPanelTitleText;
   }
 
   void updateConversationSummary(ConversationSummary summary, Conversation conversation) {
+    summary._text = conversation.messages.isEmpty ? "No messages yet" : conversation.messages.last?.text;
     isOurTurnInConversation(conversation) ? summary._markUnread() : summary._markRead();
   }
 
   void selectConversation(String deidentifiedPhoneNumber) {
+    if (activeConversation?.deidentifiedPhoneNumber == deidentifiedPhoneNumber) return;
     activeConversation?._deselect();
     activeConversation = _phoneToConversations[deidentifiedPhoneNumber];
     activeConversation._select();
@@ -1303,6 +1277,7 @@ class ConversationSummary with LazyListViewItem, UserPresenceIndicator {
       _conversationItem.setWarnings(Set.from([ConversationWarning.notInFilterResults]));
     }
 
+    elementOrNull = _conversationItem.renderElement;
     return _conversationItem.renderElement;
   }
 
