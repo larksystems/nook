@@ -715,7 +715,7 @@ class NookController extends Controller {
         updateMissingTagIds(conversations, tags, [TagFilterType.include, TagFilterType.exclude, TagFilterType.lastInboundTurn]);
 
         if (actionObjectState == UIActionObject.loadingConversations) {
-          actionObjectState = UIActionObject.conversation;
+          actionObjectState = null;
           _view.tagPanelView.selectedGroup = selectedTagGroup;
           _populateTagPanelView(tagsByGroup[selectedTagGroup]);
         }
@@ -1100,7 +1100,7 @@ class NookController extends Controller {
         break;
       case UIAction.showConversation:
         ConversationData conversationData = data;
-        actionObjectState = UIActionObject.conversation;
+        actionObjectState = null;
         if (conversationData.deidentifiedPhoneNumber == activeConversation.docId) break;
         bool shouldRecomputeConversationList = !filteredConversations.contains(activeConversation);
         activeConversation = conversations.singleWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
@@ -1377,7 +1377,7 @@ class NookController extends Controller {
       }
       _view.conversationPanelView.clear();
       _view.notesPanelView.noteText = '';
-      actionObjectState = UIActionObject.conversation;
+      actionObjectState = null;
       return null;
     }
 
@@ -1386,7 +1386,7 @@ class NookController extends Controller {
       _selectConversationInView(conversationToSelect);
       _populateConversationPanelView(conversationToSelect);
       _view.notesPanelView.noteText = conversationToSelect.notes;
-      actionObjectState = UIActionObject.conversation;
+      actionObjectState = null;
       return conversationToSelect;
     }
 
