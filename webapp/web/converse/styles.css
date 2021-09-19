@@ -222,6 +222,7 @@ main {
 .conversation-summary {
     text-align: center;
     padding: 4px;
+    border: 1px solid var(--white);
     border-bottom: 1px solid #ccc;
 }
 
