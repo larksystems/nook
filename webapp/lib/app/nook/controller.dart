@@ -71,6 +71,7 @@ enum UIAction {
 }
 
 enum UIConversationSort {
+  mostRecentMessageFirst,
   mostRecentInMessageFirst,
   alphabeticalById,
 }
@@ -171,6 +172,14 @@ class ConversationData extends Data {
 
   @override
   String toString() => 'ConversationData: {deidentifiedPhoneNumber: $deidentifiedPhoneNumber}';
+}
+
+class ConversationSortOrderData extends Data {
+  UIConversationSort sortOrder;
+  ConversationSortOrderData(this.sortOrder);
+
+  @override
+  String toString() => 'ConversationSortOrderData: {sortOrder: $sortOrder}';
 }
 
 class TagData extends Data {
@@ -764,6 +773,8 @@ class NookController extends Controller {
     switch (sortOrder) {
       case UIConversationSort.alphabeticalById:
         return SplayTreeSet(model.ConversationUtil.alphabeticalById);
+      case UIConversationSort.mostRecentMessageFirst:
+        return SplayTreeSet(model.ConversationUtil.mostRecentMessageFirst);
       case UIConversationSort.mostRecentInMessageFirst:
       default:
         return SplayTreeSet(model.ConversationUtil.mostRecentInboundFirst);
@@ -1058,7 +1069,8 @@ class NookController extends Controller {
         // platform.updateUnread(markedConversations, true).catchError(showAndLogError);
         break;
       case UIAction.changeConversationSortOrder:
-        conversationSortOrder = UIConversationSort.values[(UIConversationSort.values.indexOf(conversationSortOrder) + 1) % UIConversationSort.values.length];
+        ConversationSortOrderData conversationSortOrderData = data;
+        conversationSortOrder = conversationSortOrderData.sortOrder;
         conversations = emptyConversationsSet(conversationSortOrder)
           ..addAll(conversations);
         filteredConversations = emptyConversationsSet(conversationSortOrder)

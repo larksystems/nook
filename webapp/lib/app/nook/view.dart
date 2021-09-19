@@ -875,7 +875,7 @@ class ConversationListPanelView {
     _totalConversations = v;
     _conversationPanelTitle.text = _conversationPanelTitleText;
   }
-  String get _conversationPanelTitleText => '${_phoneToConversations.length}/${_totalConversations} conversations';
+  String get _conversationPanelTitleText => '${_phoneToConversations.length}/${_totalConversations}';
 
   ConversationListPanelView() {
     conversationListPanel = new DivElement()
@@ -896,12 +896,13 @@ class ConversationListPanelView {
       // ..classes.add('panel-title')
       ..classes.add('conversation-list-header__title')
       ..text = _conversationPanelTitleText;
+    panelHeader.append(SpanElement()..className = 'far fa-comments');
     panelHeader.append(_conversationPanelTitle);
 
     _changeSortOrder = ChangeSortOrderActionView();
     panelHeader.append(new DivElement()
       ..classes.add('conversation-list-header__sort-order')
-      ..append(_changeSortOrder.changeSortOrderAction));
+      ..append(_changeSortOrder.renderElement));
 
     _loadSpinner = new DivElement()
       ..classes.add('load-spinner');
@@ -1000,7 +1001,7 @@ class ConversationListPanelView {
   }
 
   void changeConversationSortOrder(UIConversationSort conversationSort) {
-    _changeSortOrder.showSortButton(conversationSort);
+    _changeSortOrder.updateSelectElement(conversationSort);
   }
 
   void checkConversation(String deidentifiedPhoneNumber) {
@@ -1864,30 +1865,47 @@ abstract class AddActionView {
 }
 
 class ChangeSortOrderActionView {
-  DivElement changeSortOrderAction;
-
-  buttons.Button alphabetically;
-  buttons.Button chronologically;
+  DivElement renderElement;
+  SelectElement _selectOrder;
 
   ChangeSortOrderActionView() {
-    changeSortOrderAction = new DivElement()
-      ..classes.add('sort-action__button')
-      ..onClick.listen((_) => _view.appController.command(UIAction.changeConversationSortOrder));
-
-    alphabetically = new buttons.Button(buttons.ButtonType("button--icon", iconClassName: "fas fa-sort-alpha-down"));
-    chronologically = new buttons.Button(buttons.ButtonType("button--icon", iconClassName: "fas fa-history"));
-
-    showSortButton(UIConversationSort.mostRecentInMessageFirst);
+    renderElement = DivElement();
+    _selectOrder = SelectElement()
+      ..className = "conversation-sort-order__select"
+      ..append(OptionElement(value: 'most_recent_message', data: 'Recent message'))
+      ..append(OptionElement(value: 'most_recent_inbound', data: 'Recent inbound message', selected: true))
+      ..append(OptionElement(value: 'alphabetically', data: 'Message ID alphabetically'))
+      ..onChange.listen(_changeSortOrder);
+    renderElement.append(SpanElement()..className = "fas fa-sort-amount-down");
+    renderElement.append(_selectOrder);
+  }
+  
+  void _changeSortOrder(Event e) {
+    switch ((e.currentTarget as SelectElement).value) {
+      case 'alphabetically':
+        _view.appController.command(UIAction.changeConversationSortOrder, ConversationSortOrderData(UIConversationSort.alphabeticalById));
+        break;
+      case 'most_recent_message':
+        _view.appController.command(UIAction.changeConversationSortOrder, ConversationSortOrderData(UIConversationSort.mostRecentMessageFirst));
+        break;
+      case 'most_recent_inbound':
+      default:
+        _view.appController.command(UIAction.changeConversationSortOrder, ConversationSortOrderData(UIConversationSort.mostRecentInMessageFirst));
+        break;
+    }
   }
 
-  void showSortButton(UIConversationSort sort) {
-    changeSortOrderAction.children.clear();
-    switch (sort) {
-      case UIConversationSort.alphabeticalById:
-        changeSortOrderAction.append(alphabetically.renderElement);
-        break;
+  void updateSelectElement(UIConversationSort sortOrder) {
+    switch (sortOrder) {
       case UIConversationSort.mostRecentInMessageFirst:
-        changeSortOrderAction.append(chronologically.renderElement);
+        _selectOrder.selectedIndex = 1;
+        break;
+      case UIConversationSort.alphabeticalById:
+        _selectOrder.selectedIndex = 2;   
+        break;
+      case UIConversationSort.mostRecentMessageFirst:
+      default:
+        _selectOrder.selectedIndex = 0;
         break;
     }
   }
