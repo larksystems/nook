@@ -7,7 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:katikati_ui_lib/components/accordion/accordion.dart';
 import 'package:katikati_ui_lib/components/tabs/tabs.dart';
 import 'package:katikati_ui_lib/components/url_view/url_view.dart';
-import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
+import 'package:katikati_ui_lib/components/tooltip/tooltip.dart';
 import 'package:katikati_ui_lib/components/nav/button_links.dart';
 import 'package:katikati_ui_lib/components/messages/freetext_message_send.dart';
 import 'package:katikati_ui_lib/components/logger.dart';
@@ -112,7 +112,7 @@ class NookPageView extends PageView {
     showNormalStatus('signed out');
   }
 
-  void showPanels(showReplyPanel, enableEditNotesPanel, showTagPanel) {
+  void showPanels(bool showReplyPanel, bool enableEditNotesPanel, bool showTagPanel, bool showTurnlinePanel, String defaultTab) {
     List<TabView> tabsToSet = [];
 
     if (showReplyPanel) {
@@ -125,7 +125,7 @@ class NookPageView extends PageView {
       tabsToSet.add(tagsTab);
     }
 
-    {
+    if (showTurnlinePanel) {
       var turnlineTab = TabView('turnline', "Turnline", turnlinePanelView.turnlinePanel);
       tabsToSet.add(turnlineTab);
     }
@@ -137,6 +137,17 @@ class NookPageView extends PageView {
     }
 
     tabsView.setTabs(tabsToSet);
+    
+    if (showReplyPanel && defaultTab == 'standard_messages') {
+      tabsView.selectTab(defaultTab);
+    } else if (showTagPanel && defaultTab == 'tag') {
+      tabsView.selectTab(defaultTab);
+    } else if (showTurnlinePanel && defaultTab == 'turnline') {
+      tabsView.selectTab(defaultTab);
+    } else if (enableEditNotesPanel && defaultTab == 'notes') {
+      tabsView.selectTab(defaultTab);
+    }
+
   }
 
   bool sendingMultiMessagesUserConfirmation(int noMessages) {
@@ -478,6 +489,7 @@ class MessageView {
   DivElement renderElement;
   DivElement _message;
   DivElement _messageBubble;
+  DivElement _messageStatus;
   DivElement _messageDateTime;
   DivElement _messageText;
   DivElement _messageTranslation;
@@ -510,6 +522,10 @@ class MessageView {
         _view.appController.command(UIAction.selectMessage, new MessageData(conversationId, messageId));
       });
     _message.append(_messageBubble);
+
+    _messageStatus = new DivElement()
+      ..classes.add('message__status');
+    _messageBubble.append(_messageStatus);
 
     _messageDateTime = new DivElement()
       ..classes.add('message__datetime')
@@ -586,15 +602,21 @@ class MessageView {
   void setStatus(MessageStatus status) {
     // TODO handle more types of status
 
-    if (status == MessageStatus.pending)
+    _messageStatus.text = '';
+    if (status == MessageStatus.pending) {
       _message.classes.add('message--pending');
-    else
+      _messageStatus.text = '[Pending]';
+      _dateSeparator.hide();
+    } else {
       _message.classes.remove('message--pending');
+    }
 
-    if (status == MessageStatus.failed)
+    if (status == MessageStatus.failed) {
       _message.classes.add('message--failed');
-    else
+      _messageStatus.text = '[Failed]';
+    } else {
       _message.classes.remove('message--failed');
+    } 
   }
 
   void enableEditableTranslations(bool enable) {
@@ -759,7 +781,7 @@ class FilterMenuTagView extends TagView {
 
 class FilterTagView extends TagView {
   TagFilterType _filterType;
-  FilterTagView(String text, String tagId, TagStyle tagStyle, TagFilterType filterType) : super(text, tagId, tagStyle: tagStyle, deletable: true) {
+  FilterTagView(String text, String tagId, TagStyle tagStyle, TagFilterType filterType, {bool deletable = true}) : super(text, tagId, tagStyle: tagStyle, deletable: deletable) {
     _filterType = filterType;
     onDelete = () {
       _view.appController.command(UIAction.removeFilterTag, new FilterTagData(tagId, _filterType));
@@ -1639,7 +1661,13 @@ class ReplyActionView implements ActionView {
   DivElement _translationElement;
   List<DivElement> _buttonElements;
 
-  ReplyActionView(String text, String translation, String shortcut, int replyIndex, String buttonText) {
+  String _text;
+  String _translation;
+
+  String get text => _text;
+  String get translation => _translation;
+
+  ReplyActionView(this._text, this._translation, String shortcut, int replyIndex, String buttonText) {
     action = new DivElement()
       ..classes.add('action')
       ..dataset['id'] = "${replyIndex}";
@@ -1662,7 +1690,7 @@ class ReplyActionView implements ActionView {
 
       _textElement = new DivElement()
         ..classes.add('action__text')
-        ..text = text;
+        ..text = _text;
       textWrapper.append(_textElement);
 
       var buttonElement = new DivElement()
@@ -1672,8 +1700,14 @@ class ReplyActionView implements ActionView {
       buttonElement.onClick.listen((_) => _view.appController.command(UIAction.sendMessage, new ReplyData(replyIndex)));
       buttonElement.onMouseEnter.listen((event) => highlightText(true));
       buttonElement.onMouseLeave.listen((event) => highlightText(false));
-      textWrapper.append(buttonElement);
-      _buttonElements.add(buttonElement);
+      if (_text.isNotEmpty) {
+        textWrapper.append(buttonElement);
+        _buttonElements.add(buttonElement);
+      } else {
+        _textElement
+          ..classes.add('action__text--placeholder')
+          ..text = 'No message text provided';
+      }
     }
 
     { // Add translation
@@ -1683,7 +1717,7 @@ class ReplyActionView implements ActionView {
 
       _translationElement = new DivElement()
         ..classes.add('action__translation')
-        ..text = translation;
+        ..text = _translation;
       translationWrapper.append(_translationElement);
 
       var buttonElement = new DivElement()
@@ -1693,8 +1727,14 @@ class ReplyActionView implements ActionView {
       buttonElement.onClick.listen((_) => _view.appController.command(UIAction.sendMessage, new ReplyData(replyIndex, replyWithTranslation: true)));
       buttonElement.onMouseEnter.listen((event) => highlightTranslation(true));
       buttonElement.onMouseLeave.listen((event) => highlightTranslation(false));
-      translationWrapper.append(buttonElement);
-      _buttonElements.add(buttonElement);
+      if (_translation.isNotEmpty) {
+        translationWrapper.append(buttonElement);
+        _buttonElements.add(buttonElement);
+      } else {
+        _translationElement
+          ..classes.add('action__text--placeholder')
+          ..text = 'No message translation provided';
+      }
     }
   }
 
@@ -1751,8 +1791,11 @@ class ReplyActionGroupView implements ActionView {
       replies.forEach((reply) => reply.highlightText(true));
     });
     sendButton.onMouseLeave.listen((event) => replies.forEach((reply) => reply.highlightText(false)));
-    buttonGroup.append(sendButton);
-    _buttonElements.add(sendButton);
+    var emptyTexts = replies.any((reply) => reply.text.isEmpty);
+    if (!emptyTexts) {
+      buttonGroup.append(sendButton);
+      _buttonElements.add(sendButton);
+    }
 
     var sendTranslationButton = new DivElement()
       ..classes.add('action__button')
@@ -1764,8 +1807,11 @@ class ReplyActionGroupView implements ActionView {
       replies.forEach((reply) => reply.highlightTranslation(true));
     });
     sendTranslationButton.onMouseLeave.listen((event) => replies.forEach((reply) => reply.highlightTranslation(false)));
-    buttonGroup.append(sendTranslationButton);
-    _buttonElements.add(sendTranslationButton);
+    var emptyTranslations = replies.any((reply) => reply.translation.isEmpty);
+    if (!emptyTranslations) {
+      buttonGroup.append(sendTranslationButton);
+      _buttonElements.add(sendTranslationButton);
+    }
 
     var repliesWrapper = new DivElement()
       ..classes.add('action__group__wrapper');
@@ -1804,15 +1850,20 @@ class TagActionView implements ActionView {
       ..text = shortcut;
     action.append(_shortcutElement);
 
-    var tagElement = TagView(text, "");
+    var tagElement = TagView(text, "")
+      ..onSelect = _addTagCommand;
     action.append(tagElement.renderElement);
 
     _buttonElement = new DivElement()
       ..classes.add('action__button')
       ..classes.add('action__button--float')
       ..text = buttonText
-      ..onClick.listen((_) => _view.appController.command(UIAction.addTag, new TagData(action.dataset['id'])));
+      ..onClick.listen((_) => _addTagCommand());
     action.append(_buttonElement);
+  }
+
+  void _addTagCommand() {
+    _view.appController.command(UIAction.addTag, new TagData(action.dataset['id']));
   }
 
   void showShortcut(bool show) {
@@ -1921,5 +1972,15 @@ class ChangeSortOrderActionView {
         changeSortOrderAction.append(chronologically.renderElement);
         break;
     }
+  }
+}
+
+class HelpIndicatorTooltip {
+  DivElement renderElement;
+
+  HelpIndicatorTooltip(String tooltip, TooltipPosition position) {
+    var questionIcon = SpanElement()..className = "fas fa-info";
+    var tooltip = Tooltip(questionIcon, "This tag cannot be removed from the filter. Please contact your admin if you have any questions.", position: position);
+    renderElement = tooltip.renderElement..classes.add("tooltip-icon");
   }
 }

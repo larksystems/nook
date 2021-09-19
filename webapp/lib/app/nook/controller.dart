@@ -3,7 +3,6 @@ library controller;
 import 'dart:async';
 import 'dart:collection';
 import 'dart:html';
-import 'package:intl/intl.dart';
 import 'package:firebase/firebase.dart' show FirebaseError;
 
 import 'package:katikati_ui_lib/components/url_view/url_view.dart';
@@ -11,7 +10,7 @@ import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
 import 'package:katikati_ui_lib/components/tag/tag.dart';
 import 'package:katikati_ui_lib/components/turnline/turnline.dart';
 import 'package:katikati_ui_lib/components/logger.dart';
-import 'package:katikati_ui_lib/utils/dateTime.dart';
+import 'package:katikati_ui_lib/components/tooltip/tooltip.dart';
 import 'package:nook/controller.dart';
 export 'package:nook/controller.dart';
 import 'package:katikati_ui_lib/components/model/model.dart' as model;
@@ -25,6 +24,9 @@ part 'controller_filter_helper.dart';
 part 'controller_view_helper.dart';
 
 Logger log = new Logger('controller.dart');
+
+const ENABLE_TURNLINE_PANEL = false;
+const DEFAULT_PANEL_TAB = 'standard_messages';
 
 enum UIActionObject {
   conversation,
@@ -313,6 +315,7 @@ class NookController extends Controller {
 
   model.UserConfiguration defaultUserConfig;
   model.UserConfiguration currentUserConfig;
+
   /// This represents the current configuration of the UI.
   /// It's computed by merging the [defaultUserConfig] and [currentUserConfig] (if set).
   model.UserConfiguration currentConfig;
@@ -349,193 +352,170 @@ class NookController extends Controller {
     _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.include), TagFilterType.include);
     _view.conversationIdFilter.filter = conversationFilter.conversationIdFilter;
 
-    platform.listenForTags(
-      (added, modified, removed) {
-        var modifiedIds = modified.map((t) => t.tagId).toList();
-        var previousModified = tags.where((tag) => modifiedIds.contains(tag.tagId)).toList();
-        var updatedIds = new Set()
-          ..addAll(added.map((t) => t.tagId))
-          ..addAll(modified.map((t) => t.tagId))
-          ..addAll(removed.map((t) => t.tagId));
-        tags.removeWhere((tag) => updatedIds.contains(tag.tagId));
-        tags
-          ..addAll(added)
-          ..addAll(modified);
+    platform.listenForTags((added, modified, removed) {
+      var modifiedIds = modified.map((t) => t.tagId).toList();
+      var previousModified = tags.where((tag) => modifiedIds.contains(tag.tagId)).toList();
+      var updatedIds = new Set()..addAll(added.map((t) => t.tagId))..addAll(modified.map((t) => t.tagId))..addAll(removed.map((t) => t.tagId));
+      tags.removeWhere((tag) => updatedIds.contains(tag.tagId));
+      tags..addAll(added)..addAll(modified);
 
-        tagIdsToTags = Map.fromEntries(tags.map((t) => MapEntry(t.tagId, t)));
+      tagIdsToTags = Map.fromEntries(tags.map((t) => MapEntry(t.tagId, t)));
 
-        // Update the filter tags by category map
-        filterTagsByCategory = _groupTagsIntoCategories(tags);
+      // Update the filter tags by category map
+      filterTagsByCategory = _groupTagsIntoCategories(tags);
 
-        _removeTagsFromFilterMenu(_groupTagsIntoCategories(removed), TagFilterType.include);
-        _removeTagsFromFilterMenu(_groupTagsIntoCategories(previousModified), TagFilterType.include);
-        _addTagsToFilterMenu(_groupTagsIntoCategories(added), TagFilterType.include);
-        _addTagsToFilterMenu(_groupTagsIntoCategories(modified), TagFilterType.include);
+      _removeTagsFromFilterMenu(_groupTagsIntoCategories(removed), TagFilterType.include);
+      _removeTagsFromFilterMenu(_groupTagsIntoCategories(previousModified), TagFilterType.include);
+      _addTagsToFilterMenu(_groupTagsIntoCategories(added), TagFilterType.include);
+      _addTagsToFilterMenu(_groupTagsIntoCategories(modified), TagFilterType.include);
 
-        _removeTagsFromFilterMenu(_groupTagsIntoCategories(removed), TagFilterType.exclude);
-        _removeTagsFromFilterMenu(_groupTagsIntoCategories(previousModified), TagFilterType.exclude);
-        _addTagsToFilterMenu(_groupTagsIntoCategories(added), TagFilterType.exclude);
-        _addTagsToFilterMenu(_groupTagsIntoCategories(modified), TagFilterType.exclude);
+      _removeTagsFromFilterMenu(_groupTagsIntoCategories(removed), TagFilterType.exclude);
+      _removeTagsFromFilterMenu(_groupTagsIntoCategories(previousModified), TagFilterType.exclude);
+      _addTagsToFilterMenu(_groupTagsIntoCategories(added), TagFilterType.exclude);
+      _addTagsToFilterMenu(_groupTagsIntoCategories(modified), TagFilterType.exclude);
 
-        // Update the conversation tags by group map
-        tagsByGroup = _groupTagsIntoCategories(tags);
-        // Empty sublist if there are no tags to show
-        if (tagsByGroup.isEmpty) {
-          tagsByGroup[''] = [];
+      // Update the conversation tags by group map
+      tagsByGroup = _groupTagsIntoCategories(tags);
+      // Empty sublist if there are no tags to show
+      if (tagsByGroup.isEmpty) {
+        tagsByGroup[''] = [];
+      }
+      List<String> groups = tagsByGroup.keys.toList();
+      groups.sort();
+      // Replace list of groups in the UI selector
+      _view.tagPanelView.groups = groups;
+      // If the groups have changed under us and the selected one no longer exists,
+      // default to the first group, whichever it is
+      if (!groups.contains(selectedTagGroup)) {
+        selectedTagGroup = groups.first;
+      }
+
+      _view.tagPanelView.selectedGroup = selectedTagGroup;
+      _populateTagPanelView(tagsByGroup[selectedTagGroup]);
+
+      // Re-read the conversation filter from the URL since we now have the names of the tags
+      conversationFilter = new ConversationFilter.fromUrl(currentUserConfig);
+      _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.include), TagFilterType.include);
+
+      if (currentConfig.conversationalTurnsEnabled) {
+        _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.exclude), TagFilterType.exclude);
+      }
+    }, showAndLogError);
+
+    platform.listenForSuggestedReplies((added, modified, removed) {
+      var updatedIds = new Set()
+        ..addAll(added.map((r) => r.suggestedReplyId))
+        ..addAll(modified.map((r) => r.suggestedReplyId))
+        ..addAll(removed.map((r) => r.suggestedReplyId));
+      suggestedReplies.removeWhere((suggestedReply) => updatedIds.contains(suggestedReply.suggestedReplyId));
+      suggestedReplies..addAll(added)..addAll(modified);
+
+      // Update the replies by category map
+      suggestedRepliesByCategory = _groupRepliesIntoCategories(suggestedReplies);
+      // Empty sublist if there are no replies to show
+      if (suggestedRepliesByCategory.isEmpty) {
+        suggestedRepliesByCategory[''] = [];
+      }
+      // Sort by sequence number
+      for (var replies in suggestedRepliesByCategory.values) {
+        replies.sort((r1, r2) {
+          var seqNo1 = r1.seqNumber == null ? double.nan : r1.seqNumber;
+          var seqNo2 = r2.seqNumber == null ? double.nan : r2.seqNumber;
+          return seqNo1.compareTo(seqNo2);
+        });
+      }
+      List<String> categories = suggestedRepliesByCategory.keys.toList();
+      categories.sort((c1, c2) => c1.compareTo(c2));
+      // Replace list of categories in the UI selector
+      _view.replyPanelView.categories = categories;
+      // If the categories have changed under us and the selected one no longer exists,
+      // default to the first category, whichever it is
+      if (!categories.contains(selectedSuggestedRepliesCategory)) {
+        selectedSuggestedRepliesCategory = categories.first;
+      }
+      // Select the selected category in the UI and add the suggested replies for it
+      _view.replyPanelView.selectedCategory = selectedSuggestedRepliesCategory;
+      _populateReplyPanelView(suggestedRepliesByCategory[selectedSuggestedRepliesCategory]);
+    }, showAndLogError);
+
+    platform.listenForConversationListShards((added, modified, removed) {
+      // TODO: handle removed shards as well
+      List<model.ConversationListShard> shards = new List()..addAll(added)..addAll(modified);
+      _view.conversationListSelectView.updateConversationLists(shards);
+
+      // Read any conversation shards from the URL
+      String urlConversationListRoot = _view.urlView.getPageUrlConversationList();
+      String conversationListRoot = urlConversationListRoot;
+      if (urlConversationListRoot == null) {
+        conversationListRoot = ConversationListData.NONE;
+        if (shards.length == 1) {
+          // we have just one shard - select it and load the data
+          conversationListRoot = shards.first.conversationListRoot;
         }
-        List<String> groups = tagsByGroup.keys.toList();
-        groups.sort();
-        // Replace list of groups in the UI selector
-        _view.tagPanelView.groups = groups;
-        // If the groups have changed under us and the selected one no longer exists,
-        // default to the first group, whichever it is
-        if (!groups.contains(selectedTagGroup)) {
-          selectedTagGroup = groups.first;
-        }
+      } else if (shards.where((shard) => shard.conversationListRoot == urlConversationListRoot).isEmpty) {
+        log.warning("Attempting to select shard ${conversationListRoot} that doesn't exist");
+        conversationListRoot = ConversationListData.NONE;
+      }
+      // If we try to access a list that hasn't loaded yet, keep it in the URL
+      // so it can be picked up on the next data snapshot from firebase.
+      _view.urlView.setPageUrlConversationList(urlConversationListRoot);
+      _view.conversationListSelectView.selectShard(conversationListRoot);
+      command(UIAction.selectConversationList, ConversationListData(conversationListRoot));
+    }, (error, stacktrace) {
+      _view.conversationListPanelView.hideLoadSpinner();
+      showAndLogError(error, stacktrace);
+    });
 
-        _view.tagPanelView.selectedGroup = selectedTagGroup;
-        _populateTagPanelView(tagsByGroup[selectedTagGroup]);
+    platform.listenForSystemMessages((added, modified, removed) {
+      var updatedIds = new Set()..addAll(added.map((m) => m.msgId))..addAll(modified.map((m) => m.msgId))..addAll(removed.map((m) => m.msgId));
+      systemMessages.removeWhere((systemMessage) => updatedIds.contains(systemMessage.msgId));
+      systemMessages..addAll(added.where((m) => !m.expired))..addAll(modified.where((m) => !m.expired));
+      command(BaseAction.updateSystemMessages, SystemMessagesData(systemMessages));
+    }, showAndLogError);
 
-        // Re-read the conversation filter from the URL since we now have the names of the tags
-        conversationFilter = new ConversationFilter.fromUrl(currentUserConfig);
-        _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.include), TagFilterType.include);
-
-        if (currentConfig.conversationalTurnsEnabled) {
-          _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.exclude), TagFilterType.exclude);
-        }
-      }, showAndLogError);
-
-    platform.listenForSuggestedReplies(
-      (added, modified, removed) {
-        var updatedIds = new Set()
-          ..addAll(added.map((r) => r.suggestedReplyId))
-          ..addAll(modified.map((r) => r.suggestedReplyId))
-          ..addAll(removed.map((r) => r.suggestedReplyId));
-        suggestedReplies.removeWhere((suggestedReply) => updatedIds.contains(suggestedReply.suggestedReplyId));
-        suggestedReplies
-          ..addAll(added)
-          ..addAll(modified);
-
-        // Update the replies by category map
-        suggestedRepliesByCategory = _groupRepliesIntoCategories(suggestedReplies);
-        // Empty sublist if there are no replies to show
-        if (suggestedRepliesByCategory.isEmpty) {
-          suggestedRepliesByCategory[''] = [];
-        }
-        // Sort by sequence number
-        for (var replies in suggestedRepliesByCategory.values) {
-          replies.sort((r1, r2) {
-            var seqNo1 = r1.seqNumber == null ? double.nan : r1.seqNumber;
-            var seqNo2 = r2.seqNumber == null ? double.nan : r2.seqNumber;
-            return seqNo1.compareTo(seqNo2);
-          });
-        }
-        List<String> categories = suggestedRepliesByCategory.keys.toList();
-        categories.sort((c1, c2) => c1.compareTo(c2));
-        // Replace list of categories in the UI selector
-        _view.replyPanelView.categories = categories;
-        // If the categories have changed under us and the selected one no longer exists,
-        // default to the first category, whichever it is
-        if (!categories.contains(selectedSuggestedRepliesCategory)) {
-          selectedSuggestedRepliesCategory = categories.first;
-        }
-        // Select the selected category in the UI and add the suggested replies for it
-        _view.replyPanelView.selectedCategory = selectedSuggestedRepliesCategory;
-        _populateReplyPanelView(suggestedRepliesByCategory[selectedSuggestedRepliesCategory]);
-      }, showAndLogError);
-
-    platform.listenForConversationListShards(
-      (added, modified, removed) {
-        // TODO: handle removed shards as well
-        List<model.ConversationListShard> shards = new List()
-          ..addAll(added)
-          ..addAll(modified);
-        _view.conversationListSelectView.updateConversationLists(shards);
-
-        // Read any conversation shards from the URL
-        String urlConversationListRoot = _view.urlView.getPageUrlConversationList();
-        String conversationListRoot = urlConversationListRoot;
-        if (urlConversationListRoot == null) {
-          conversationListRoot = ConversationListData.NONE;
-          if (shards.length == 1) { // we have just one shard - select it and load the data
-            conversationListRoot = shards.first.conversationListRoot;
-          }
-        } else if (shards.where((shard) => shard.conversationListRoot == urlConversationListRoot).isEmpty) {
-          log.warning("Attempting to select shard ${conversationListRoot} that doesn't exist");
-          conversationListRoot = ConversationListData.NONE;
-        }
-        // If we try to access a list that hasn't loaded yet, keep it in the URL
-        // so it can be picked up on the next data snapshot from firebase.
-        _view.urlView.setPageUrlConversationList(urlConversationListRoot);
-        _view.conversationListSelectView.selectShard(conversationListRoot);
-        command(UIAction.selectConversationList, ConversationListData(conversationListRoot));
-      }, (error, stacktrace) {
-        _view.conversationListPanelView.hideLoadSpinner();
-        showAndLogError(error, stacktrace);
-      });
-
-    platform.listenForSystemMessages(
-      (added, modified, removed) {
-        var updatedIds = new Set()
-          ..addAll(added.map((m) => m.msgId))
-          ..addAll(modified.map((m) => m.msgId))
-          ..addAll(removed.map((m) => m.msgId));
-        systemMessages.removeWhere((systemMessage) => updatedIds.contains(systemMessage.msgId));
-        systemMessages
-          ..addAll(added.where((m) => !m.expired))
-          ..addAll(modified.where((m) => !m.expired));
-        command(BaseAction.updateSystemMessages, SystemMessagesData(systemMessages));
-      }, showAndLogError);
-
-    platform.listenForUserConfigurations(
-      (added, modified, removed) {
-        List<model.UserConfiguration> changedUserConfigurations = new List()
-          ..addAll(added)
-          ..addAll(modified);
-        var defaultConfig = changedUserConfigurations.singleWhere((c) => c.docId == 'default', orElse: () => null);
-        defaultConfig = removed.where((c) => c.docId == 'default').length > 0 ? baseUserConfiguration : defaultConfig;
-        var userConfig = changedUserConfigurations.singleWhere((c) => c.docId == signedInUser.userEmail, orElse: () => null);
-        userConfig = removed.where((c) => c.docId == signedInUser.userEmail).length > 0 ? emptyUserConfiguration : userConfig;
-        if (defaultConfig == null && userConfig == null) {
-          // Neither of the relevant configurations has been changed, nothing to do here
-          return;
-        }
-        defaultUserConfig = defaultConfig ?? defaultUserConfig;
-        currentUserConfig = userConfig ?? currentUserConfig;
-        var newConfig = currentUserConfig.applyDefaults(defaultUserConfig);
-        applyConfiguration(newConfig);
-      }, showAndLogError);
+    platform.listenForUserConfigurations((added, modified, removed) {
+      List<model.UserConfiguration> changedUserConfigurations = new List()..addAll(added)..addAll(modified);
+      var defaultConfig = changedUserConfigurations.singleWhere((c) => c.docId == 'default', orElse: () => null);
+      defaultConfig = removed.where((c) => c.docId == 'default').length > 0 ? baseUserConfiguration : defaultConfig;
+      var userConfig = changedUserConfigurations.singleWhere((c) => c.docId == signedInUser.userEmail, orElse: () => null);
+      userConfig = removed.where((c) => c.docId == signedInUser.userEmail).length > 0 ? emptyUserConfiguration : userConfig;
+      if (defaultConfig == null && userConfig == null) {
+        // Neither of the relevant configurations has been changed, nothing to do here
+        return;
+      }
+      defaultUserConfig = defaultConfig ?? defaultUserConfig;
+      currentUserConfig = userConfig ?? currentUserConfig;
+      var newConfig = currentUserConfig.applyDefaults(defaultUserConfig);
+      applyConfiguration(newConfig);
+    }, showAndLogError);
     // Apply the default configuration before loading any new configs.
     applyConfiguration(defaultUserConfig);
 
-    platform.listenForUserPresence(
-      (added, modified, removed) {
-        // Remove the user presence markings that have changed from the UI
-        for (var userPresence in modified + removed) {
-          if (userPresence.userId == signedInUser.userEmail) continue;
-          var previousUserPresence = otherUserPresenceByUserId[userPresence.userId];
-          if (previousUserPresence != null) {
-            _view.conversationListPanelView.clearOtherUserPresence(userPresence.userId, previousUserPresence.conversationId);
-            _view.otherLoggedInUsers.hideOtherUserPresence(userPresence.userId);
-          }
-
-          otherUserPresenceTimersByUserId[userPresence.userId]?.cancel();
+    platform.listenForUserPresence((added, modified, removed) {
+      // Remove the user presence markings that have changed from the UI
+      for (var userPresence in modified + removed) {
+        if (userPresence.userId == signedInUser.userEmail) continue;
+        var previousUserPresence = otherUserPresenceByUserId[userPresence.userId];
+        if (previousUserPresence != null) {
+          _view.conversationListPanelView.clearOtherUserPresence(userPresence.userId, previousUserPresence.conversationId);
+          _view.otherLoggedInUsers.hideOtherUserPresence(userPresence.userId);
         }
 
-        for (var userPresence in removed) {
-          otherUserPresenceByUserId.remove(userPresence.userId);
-        }
-
-        for (var userPresence in added + modified) {
-          if (userPresence.userId == signedInUser.userEmail) continue;
-          otherUserPresenceByUserId[userPresence.userId] = userPresence;
-        }
-
-        displayOtherUserPresenceIndicators(otherUserPresenceByUserId.values.toList());
+        otherUserPresenceTimersByUserId[userPresence.userId]?.cancel();
       }
-    );
-  }
 
+      for (var userPresence in removed) {
+        otherUserPresenceByUserId.remove(userPresence.userId);
+      }
+
+      for (var userPresence in added + modified) {
+        if (userPresence.userId == signedInUser.userEmail) continue;
+        otherUserPresenceByUserId[userPresence.userId] = userPresence;
+      }
+
+      displayOtherUserPresenceIndicators(otherUserPresenceByUserId.values.toList());
+    });
+  }
 
   void displayOtherUserPresenceIndicators(List<model.UserPresence> otherUsers) {
     var presenceAge = DateTime.now().toUtc().subtract(Duration(minutes: 10));
@@ -601,15 +581,11 @@ class NookController extends Controller {
     }
 
     if (oldConfig.tagMessagesEnabled != newConfig.tagMessagesEnabled) {
-      if (actionObjectState == UIActionObject.message) {
-        _view.tagPanelView.showButtons(newConfig.tagMessagesEnabled);
-      }
+      _view.tagPanelView.showButtons(newConfig.tagMessagesEnabled);
     }
 
     if (oldConfig.tagConversationsEnabled != newConfig.tagConversationsEnabled) {
-      if (actionObjectState == UIActionObject.conversation) {
-        _view.tagPanelView.showButtons(newConfig.tagConversationsEnabled);
-      }
+      _view.tagPanelView.showButtons(newConfig.tagConversationsEnabled);
     }
 
     if (oldConfig.editTranslationsEnabled != newConfig.editTranslationsEnabled) {
@@ -620,16 +596,15 @@ class NookController extends Controller {
       _view.notesPanelView.enableEditableNotes(newConfig.editNotesEnabled);
     }
 
-    if (oldConfig.mandatoryExcludeTagIds != newConfig.mandatoryExcludeTagIds ||
-        oldConfig.mandatoryIncludeTagIds != newConfig.mandatoryIncludeTagIds) {
-          conversationFilter.updateUserConfig(newConfig);
+    if (oldConfig.mandatoryExcludeTagIds != newConfig.mandatoryExcludeTagIds || oldConfig.mandatoryIncludeTagIds != newConfig.mandatoryIncludeTagIds) {
+      conversationFilter.updateUserConfig(newConfig);
 
-          _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.lastInboundTurn), TagFilterType.lastInboundTurn);
-          _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.include), TagFilterType.include);
-          _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.exclude), TagFilterType.exclude);
+      _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.lastInboundTurn), TagFilterType.lastInboundTurn);
+      _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.include), TagFilterType.include);
+      _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.exclude), TagFilterType.exclude);
 
-          updateFilteredAndSelectedConversationLists();
-        }
+      updateFilteredAndSelectedConversationLists();
+    }
 
     if (oldConfig.conversationalTurnsEnabled != newConfig.conversationalTurnsEnabled) {
       _view.conversationFilter[TagFilterType.lastInboundTurn].showFilter(newConfig.conversationalTurnsEnabled);
@@ -657,7 +632,7 @@ class NookController extends Controller {
     if (oldConfig.tagsPanelVisibility != newConfig.tagsPanelVisibility ||
         oldConfig.editNotesEnabled != newConfig.editNotesEnabled ||
         oldConfig.repliesPanelVisibility != newConfig.repliesPanelVisibility) {
-      _view.showPanels(newConfig.repliesPanelVisibility, newConfig.editNotesEnabled, newConfig.tagsPanelVisibility);
+      _view.showPanels(newConfig.repliesPanelVisibility, newConfig.editNotesEnabled, newConfig.tagsPanelVisibility, ENABLE_TURNLINE_PANEL, DEFAULT_PANEL_TAB);
     }
 
     if (oldConfig.suggestedRepliesGroupsEnabled != newConfig.suggestedRepliesGroupsEnabled) {
@@ -683,84 +658,76 @@ class NookController extends Controller {
       return;
     }
     _view.urlView.setPageUrlConversationList(conversationListRoot);
-    conversationListSubscription = platform.listenForConversations(
-      (added, modified, removed) {
-        if (added.length > 0) {
-          log.verbose("adding ${added.length} conversation(s)");
+    conversationListSubscription = platform.listenForConversations((added, modified, removed) {
+      if (added.length > 0) {
+        log.verbose("adding ${added.length} conversation(s)");
+      }
+      if (modified.length > 0) {
+        log.verbose("modifying ${modified.length} conversation(s)");
+      }
+      if (removed.length > 0) {
+        log.verbose("removing ${removed.length} conversation(s)");
+      }
+      var updatedIds = new Set()..addAll(added.map((c) => c.docId))..addAll(modified.map((c) => c.docId))..addAll(removed.map((c) => c.docId));
+      List<model.Conversation> changedConversations = conversations.where((conversation) => updatedIds.contains(conversation.docId)).toList();
+      conversations.removeAll(changedConversations);
+      conversations..addAll(added)..addAll(modified);
+
+      log.debug('Updated Ids: $updatedIds');
+      log.debug('Old conversations: $changedConversations');
+      log.debug('New conversations, added: $added');
+      log.debug('New conversations, modified: $modified');
+      log.debug('New conversations, removed: $removed');
+
+      _view.conversationListPanelView.totalConversations = conversations.length;
+
+      updateMissingTagIds(conversations, tags, [TagFilterType.include, TagFilterType.exclude, TagFilterType.lastInboundTurn]);
+
+      if (actionObjectState == UIActionObject.loadingConversations) {
+        actionObjectState = UIActionObject.conversation;
+        _view.tagPanelView.selectedGroup = selectedTagGroup;
+        _populateTagPanelView(tagsByGroup[selectedTagGroup]);
+      }
+
+      // TODO even though they are unlikely to happen, we should also handle the removals in the UI for consistency
+
+      // Determine if we need to display the conversation from the url
+      String urlConversationId = _view.urlView.getPageUrlConversationId();
+      if (activeConversation == null && urlConversationId != null) {
+        var matches = conversations.where((c) => c.docId == urlConversationId).toList();
+        if (matches.length == 0) {
+          activeConversation = new model.Conversation()
+            ..docId = urlConversationId
+            ..demographicsInfo = {"": "conversation not found"}
+            ..tagIds = Set()
+            ..lastInboundTurnTagIds = Set()
+            ..notes = ""
+            ..messages = []
+            ..suggestedMessages = []
+            ..unread = false;
+        } else {
+          activeConversation = matches.first;
         }
-        if (modified.length > 0) {
-          log.verbose("modifying ${modified.length} conversation(s)");
-        }
-        if (removed.length > 0) {
-          log.verbose("removing ${removed.length} conversation(s)");
-        }
-        var updatedIds = new Set()
-          ..addAll(added.map((c) => c.docId))
-          ..addAll(modified.map((c) => c.docId))
-          ..addAll(removed.map((c) => c.docId));
-        List<model.Conversation> changedConversations = conversations.where((conversation) => updatedIds.contains(conversation.docId)).toList();
-        conversations.removeAll(changedConversations);
-        conversations
-          ..addAll(added)
-          ..addAll(modified);
+        updateViewForConversation(activeConversation, updateInPlace: true);
+      }
 
-        log.debug('Updated Ids: $updatedIds');
-        log.debug('Old conversations: $changedConversations');
-        log.debug('New conversations, added: $added');
-        log.debug('New conversations, modified: $modified');
-        log.debug('New conversations, removed: $removed');
+      // Determine if the active conversation data needs to be replaced
+      String activeConversationId = activeConversation?.docId;
+      if (updatedIds.contains(activeConversationId)) {
+        activeConversation = conversations.firstWhere((c) => c.docId == activeConversationId);
+      }
 
-        _view.conversationListPanelView.totalConversations = conversations.length;
+      updateFilteredAndSelectedConversationLists();
 
-        updateMissingTagIds(conversations, tags, [TagFilterType.include, TagFilterType.exclude, TagFilterType.lastInboundTurn]);
+      displayOtherUserPresenceIndicators(otherUserPresenceByUserId.values.toList());
 
-        if (actionObjectState == UIActionObject.loadingConversations) {
-          actionObjectState = UIActionObject.conversation;
-          _view.tagPanelView.selectedGroup = selectedTagGroup;
-          _populateTagPanelView(tagsByGroup[selectedTagGroup]);
-        }
+      if (activeConversation == null) return;
 
-        // TODO even though they are unlikely to happen, we should also handle the removals in the UI for consistency
-
-        // Determine if we need to display the conversation from the url
-        String urlConversationId = _view.urlView.getPageUrlConversationId();
-        if (activeConversation == null && urlConversationId != null) {
-          var matches = conversations.where((c) => c.docId == urlConversationId).toList();
-          if (matches.length == 0) {
-            activeConversation = new model.Conversation()
-              ..docId = urlConversationId
-              ..demographicsInfo = {"": "conversation not found"}
-              ..tagIds = Set()
-              ..lastInboundTurnTagIds = Set()
-              ..notes = ""
-              ..messages = []
-              ..suggestedMessages = []
-              ..unread = false;
-          } else {
-            activeConversation = matches.first;
-          }
-          updateViewForConversation(activeConversation, updateInPlace: true);
-        }
-
-        // Determine if the active conversation data needs to be replaced
-        String activeConversationId = activeConversation?.docId;
-        if (updatedIds.contains(activeConversationId)) {
-          activeConversation = conversations.firstWhere((c) => c.docId == activeConversationId);
-        }
-
-        updateFilteredAndSelectedConversationLists();
-
-        displayOtherUserPresenceIndicators(otherUserPresenceByUserId.values.toList());
-
-        if (activeConversation == null) return;
-
-        // Update the active conversation view as needed
-        if (updatedIds.contains(activeConversation.docId)) {
-          updateViewForConversation(activeConversation, updateInPlace: true);
-        }
-      },
-      conversationListRoot,
-      showAndLogError);
+      // Update the active conversation view as needed
+      if (updatedIds.contains(activeConversation.docId)) {
+        updateViewForConversation(activeConversation, updateInPlace: true);
+      }
+    }, conversationListRoot, showAndLogError);
   }
 
   SplayTreeSet<model.Conversation> emptyConversationsSet(UIConversationSort sortOrder) {
@@ -774,19 +741,19 @@ class NookController extends Controller {
   }
 
   model.UserConfiguration get baseUserConfiguration => new model.UserConfiguration()
-      ..repliesKeyboardShortcutsEnabled = false
-      ..tagsKeyboardShortcutsEnabled = false
-      ..sendMessagesEnabled = false
-      ..sendCustomMessagesEnabled = false
-      ..sendMultiMessageEnabled = false
-      ..tagMessagesEnabled = false
-      ..tagConversationsEnabled = false
-      ..editTranslationsEnabled = false
-      ..editNotesEnabled = false
-      ..conversationalTurnsEnabled = false
-      ..tagsPanelVisibility = false
-      ..repliesPanelVisibility = false
-      ..suggestedRepliesGroupsEnabled = false;
+    ..repliesKeyboardShortcutsEnabled = false
+    ..tagsKeyboardShortcutsEnabled = false
+    ..sendMessagesEnabled = false
+    ..sendCustomMessagesEnabled = false
+    ..sendMultiMessageEnabled = false
+    ..tagMessagesEnabled = false
+    ..tagConversationsEnabled = false
+    ..editTranslationsEnabled = false
+    ..editNotesEnabled = false
+    ..conversationalTurnsEnabled = false
+    ..tagsPanelVisibility = false
+    ..repliesPanelVisibility = false
+    ..suggestedRepliesGroupsEnabled = false;
 
   model.UserConfiguration get emptyUserConfiguration => new model.UserConfiguration();
 
@@ -826,15 +793,19 @@ class NookController extends Controller {
     // Early exist if it's not one of the actions valid without an active conversation.
     if (activeConversation == null &&
         action != UIAction.selectConversationList &&
-        action != UIAction.addFilterTag && action != UIAction.removeFilterTag &&
+        action != UIAction.addFilterTag &&
+        action != UIAction.removeFilterTag &&
         action != UIAction.updateSuggestedRepliesCategory &&
         action != UIAction.updateDisplayedTagsGroup &&
-        action != UIAction.selectAllConversations && action != UIAction.deselectAllConversations &&
-        action != UIAction.showSnackbar && action != UIAction.updateConversationIdFilter) {
+        action != UIAction.selectAllConversations &&
+        action != UIAction.deselectAllConversations &&
+        action != UIAction.showSnackbar &&
+        action != UIAction.updateConversationIdFilter) {
       return;
     }
 
-    if (action != UIAction.showSnackbar) { // not a user action
+    if (action != UIAction.showSnackbar) {
+      // not a user action
       lastUserActivity = new DateTime.now();
     }
 
@@ -866,7 +837,8 @@ class NookController extends Controller {
         break;
       case UIAction.sendMessageGroup:
         GroupReplyData replyData = data;
-        List<model.SuggestedReply> selectedReplies = suggestedRepliesByCategory[selectedSuggestedRepliesCategory].where((reply) => reply.groupId == replyData.replyGroupId).toList();
+        List<model.SuggestedReply> selectedReplies =
+            suggestedRepliesByCategory[selectedSuggestedRepliesCategory].where((reply) => reply.groupId == replyData.replyGroupId).toList();
         selectedReplies.sort((reply1, reply2) => reply1.indexInGroup.compareTo(reply2.indexInGroup));
         if (replyData.replyWithTranslation) {
           List<model.SuggestedReply> translationReplies = [];
@@ -959,7 +931,8 @@ class NookController extends Controller {
         var added = conversationFilter.addFilter(tagData.filterType, unifierTag);
         if (!added) return; // No change, nothing further to do
         _view.urlView.setPageUrlFilterTags(tagData.filterType, conversationFilter.filterTagIdsManuallySet[tagData.filterType]);
-        _view.conversationFilter[tagData.filterType].addFilterTag(new FilterTagView(unifierTag.text, unifierTag.tagId, tagTypeToKKStyle(unifierTag.type), tagData.filterType));
+        _view.conversationFilter[tagData.filterType]
+            .addFilterTag(new FilterTagView(unifierTag.text, unifierTag.tagId, tagTypeToKKStyle(unifierTag.type), tagData.filterType));
         if (actionObjectState == UIActionObject.loadingConversations) return;
         updateFilteredAndSelectedConversationLists();
         updateViewForConversation(activeConversation, updateInPlace: true);
@@ -974,12 +947,9 @@ class NookController extends Controller {
       case UIAction.removeMessageTag:
         MessageTagData messageTagData = data;
         var message = activeConversation.messages.singleWhere((element) => element.id == messageTagData.messageId);
-        platform.removeMessageTag(activeConversation, message, messageTagData.tagId).then(
-          (_) {
-            _view.conversationPanelView
-              .messageViewWithId(messageTagData.messageId)
-              .removeTag(messageTagData.tagId);
-          }, onError: showAndLogError);
+        platform.removeMessageTag(activeConversation, message, messageTagData.tagId).then((_) {
+          _view.conversationPanelView.messageViewWithId(messageTagData.messageId).removeTag(messageTagData.tagId);
+        }, onError: showAndLogError);
         break;
 
       case UIAction.confirmConversationTag:
@@ -1062,10 +1032,8 @@ class NookController extends Controller {
         break;
       case UIAction.changeConversationSortOrder:
         conversationSortOrder = UIConversationSort.values[(UIConversationSort.values.indexOf(conversationSortOrder) + 1) % UIConversationSort.values.length];
-        conversations = emptyConversationsSet(conversationSortOrder)
-          ..addAll(conversations);
-        filteredConversations = emptyConversationsSet(conversationSortOrder)
-          ..addAll(filteredConversations);
+        conversations = emptyConversationsSet(conversationSortOrder)..addAll(conversations);
+        filteredConversations = emptyConversationsSet(conversationSortOrder)..addAll(filteredConversations);
         _view.conversationListPanelView.changeConversationSortOrder(conversationSortOrder);
         updateFilteredAndSelectedConversationLists();
         break;
@@ -1149,19 +1117,17 @@ class NookController extends Controller {
         // If the keypress it has a modifier key, prevent all replies and tags
         if (keyPressData.hasModifierKey) return;
         // If the configuration allows it, try to match the key with a reply shortcut
-        if (currentConfig.sendMessagesEnabled &&
-            currentConfig.repliesPanelVisibility &&
-            currentConfig.repliesKeyboardShortcutsEnabled) {
+        if (currentConfig.sendMessagesEnabled && currentConfig.repliesPanelVisibility && currentConfig.repliesKeyboardShortcutsEnabled) {
           // If the shortcut is for a reply, find it and send it
           var selectedReply = suggestedRepliesByCategory[selectedSuggestedRepliesCategory].where((reply) => reply.shortcut == keyPressData.key);
           if (selectedReply.isNotEmpty) {
-            assert (selectedReply.length == 1);
+            assert(selectedReply.length == 1);
             if (!currentConfig.sendMultiMessageEnabled || selectedConversations.isEmpty) {
               sendReply(selectedReply.first, activeConversation);
               return;
             }
             String text = 'Cannot send multiple messages using keyboard shortcuts. '
-                          'Please use the send button on the suggested reply you want to send instead.';
+                'Please use the send button on the suggested reply you want to send instead.';
             command(UIAction.showSnackbar, new SnackbarData(text, SnackbarNotificationType.warning));
             return;
           }
@@ -1177,7 +1143,7 @@ class NookController extends Controller {
             if (!currentConfig.tagConversationsEnabled) return;
             var selectedTag = tags.where((tag) => tag.shortcut == keyPressData.key);
             if (selectedTag.isEmpty) break;
-            assert (selectedTag.length == 1);
+            assert(selectedTag.length == 1);
             setConversationTag(selectedTag.first, activeConversation);
             if (!currentConfig.sendMultiMessageEnabled || selectedConversations.isEmpty) {
               setConversationTag(selectedTag.first, activeConversation);
@@ -1193,7 +1159,7 @@ class NookController extends Controller {
             if (!currentConfig.tagConversationsEnabled) return;
             var selectedTag = tags.where((tag) => tag.shortcut == keyPressData.key);
             if (selectedTag.isEmpty) break;
-            assert (selectedTag.length == 1);
+            assert(selectedTag.length == 1);
             setMessageTag(selectedTag.first, selectedMessage, activeConversation);
             return;
           case UIActionObject.loadingConversations:
@@ -1273,9 +1239,7 @@ class NookController extends Controller {
         addTagInlineMessage = addTagInlineConversation.messages.singleWhere((element) => element.id == messageData.messageId);
 
         addTagInlineView = new EditableTagView(newTagInline.text, newTagInline.tagId, tagTypeToKKStyle(newTagInline.type));
-        _view.conversationPanelView
-            .messageViewWithId(messageData.messageId)
-            .addTag(addTagInlineView);
+        _view.conversationPanelView.messageViewWithId(messageData.messageId).addTag(addTagInlineView);
         addTagInlineView.focus();
         break;
       case UIAction.saveNewTagInline:
@@ -1283,24 +1247,19 @@ class NookController extends Controller {
         actionObjectState = UIActionObject.message;
 
         newTagInline..text = saveTagData.tagText;
-        platform.addTag(newTagInline).then(
-          (_) {
-            _view.conversationPanelView
-                .messageViewAtIndex(addTagInlineConversation.messages.indexOf(addTagInlineMessage))
-                .removeTag(newTagInline.tagId);
-            tags.add(newTagInline);
+        platform.addTag(newTagInline).then((_) {
+          _view.conversationPanelView.messageViewAtIndex(addTagInlineConversation.messages.indexOf(addTagInlineMessage)).removeTag(newTagInline.tagId);
+          tags.add(newTagInline);
 
-            setMessageTag(newTagInline, addTagInlineMessage, addTagInlineConversation);
-            newTagInline = null;
-            addTagInlineMessage = null;
-            addTagInlineConversation = null;
-          }, onError: showAndLogError);
+          setMessageTag(newTagInline, addTagInlineMessage, addTagInlineConversation);
+          newTagInline = null;
+          addTagInlineMessage = null;
+          addTagInlineConversation = null;
+        }, onError: showAndLogError);
         break;
       case UIAction.cancelAddNewTagInline:
         actionObjectState = UIActionObject.message;
-        _view.conversationPanelView
-            .messageViewAtIndex(addTagInlineConversation.messages.indexOf(addTagInlineMessage))
-            .removeTag(newTagInline.tagId);
+        _view.conversationPanelView.messageViewAtIndex(addTagInlineConversation.messages.indexOf(addTagInlineMessage)).removeTag(newTagInline.tagId);
         newTagInline = null;
         addTagInlineMessage = null;
         addTagInlineConversation = null;
@@ -1555,14 +1514,11 @@ class NookController extends Controller {
 
   void setMessageTag(model.Tag tag, model.Message message, model.Conversation conversation) {
     if (!message.tagIds.contains(tag.tagId)) {
-      platform.addMessageTag(activeConversation, message, tag.tagId).then(
-        (_) {
-          var tagView = new MessageTagView(tag.text, tag.tagId, tagTypeToKKStyle(tag.type));
-          _view.conversationPanelView
-            .messageViewAtIndex(conversation.messages.indexOf(message))
-            .addTag(tagView);
-          tagView.markPending(true);
-        }, onError: showAndLogError);
+      platform.addMessageTag(activeConversation, message, tag.tagId).then((_) {
+        var tagView = new MessageTagView(tag.text, tag.tagId, tagTypeToKKStyle(tag.type));
+        _view.conversationPanelView.messageViewAtIndex(conversation.messages.indexOf(message)).addTag(tagView);
+        tagView.markPending(true);
+      }, onError: showAndLogError);
     }
   }
 
@@ -1637,21 +1593,20 @@ UnmodifiableListView<model.Tag> convertTagIdsToTags(Iterable<String> tagIds, Map
   return UnmodifiableListView(tags);
 }
 
-UnmodifiableListView<String> tagsToTagIds(Iterable<model.Tag> tags) =>
-    UnmodifiableListView(tags.map((t) => t.tagId));
+UnmodifiableListView<String> tagsToTagIds(Iterable<model.Tag> tags) => UnmodifiableListView(tags.map((t) => t.tagId));
 
 model.Tag tagIdToTag(String tagId, Map<String, model.Tag> tags) {
-  if (tags.containsKey(tagId))
-    return tags[tagId];
+  if (tags.containsKey(tagId)) return tags[tagId];
 
-  _notFoundTagIds.putIfAbsent(tagId, () =>
-    new model.Tag()
-      ..docId = tagId
-      ..text = tagId
-      ..type = model.NotFoundTagType.NotFound
-      ..filterable = true
-      ..groups = ['not found']
-      ..isUnifier = false);
+  _notFoundTagIds.putIfAbsent(
+      tagId,
+      () => new model.Tag()
+        ..docId = tagId
+        ..text = tagId
+        ..type = model.NotFoundTagType.NotFound
+        ..filterable = true
+        ..groups = ['not found']
+        ..isUnifier = false);
   return _notFoundTagIds[tagId];
 }
 
@@ -1734,7 +1689,7 @@ void showAndLogError(error, trace) {
     _view.bannerView.showBanner("You don't have access to this dataset. Please contact your project administrator");
   } else if (error is Exception) {
     errMsg = "An internal error occurred: ${error.runtimeType}";
-  }  else {
+  } else {
     errMsg = "$error";
   }
   controller.command(UIAction.showSnackbar, new SnackbarData(errMsg, SnackbarNotificationType.error));
