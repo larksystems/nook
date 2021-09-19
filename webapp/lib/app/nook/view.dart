@@ -477,6 +477,7 @@ class MessageView {
   DivElement renderElement;
   DivElement _message;
   DivElement _messageBubble;
+  DivElement _messageStatus;
   DivElement _messageDateTime;
   DivElement _messageText;
   DivElement _messageTranslation;
@@ -509,6 +510,10 @@ class MessageView {
         _view.appController.command(UIAction.selectMessage, new MessageData(conversationId, messageId));
       });
     _message.append(_messageBubble);
+
+    _messageStatus = new DivElement()
+      ..classes.add('message__status');
+    _messageBubble.append(_messageStatus);
 
     _messageDateTime = new DivElement()
       ..classes.add('message__datetime')
@@ -585,15 +590,21 @@ class MessageView {
   void setStatus(MessageStatus status) {
     // TODO handle more types of status
 
-    if (status == MessageStatus.pending)
+    _messageStatus.text = '';
+    if (status == MessageStatus.pending) {
       _message.classes.add('message--pending');
-    else
+      _messageStatus.text = '[Pending]';
+      _dateSeparator.hide();
+    } else {
       _message.classes.remove('message--pending');
+    }
 
-    if (status == MessageStatus.failed)
+    if (status == MessageStatus.failed) {
       _message.classes.add('message--failed');
-    else
+      _messageStatus.text = '[Failed]';
+    } else {
       _message.classes.remove('message--failed');
+    } 
   }
 
   void enableEditableTranslations(bool enable) {
