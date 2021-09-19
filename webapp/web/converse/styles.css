@@ -177,6 +177,12 @@ main {
     border-bottom: 1px solid #ccc;
 }
 
+.panel-instruction {
+    font-size: 0.9em;
+    padding: 2px 6px;
+    font-style: italic;
+}
+
 .panel-title.panel-title--multiple-cols {
     display: flex;
     justify-content: space-between;
@@ -223,7 +229,12 @@ main {
 .conversation-summary {
     text-align: center;
     padding: 4px;
+    border: 1px solid var(--white);
     border-bottom: 1px solid #ccc;
+}
+
+.conversation-summary--selected {
+    border: 1px dashed var(--selection-color);
 }
 
 .conversation-summary__title {
