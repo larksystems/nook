@@ -1874,7 +1874,7 @@ class ChangeSortOrderActionView {
       ..className = "conversation-sort-order__select"
       ..append(OptionElement(value: 'most_recent_message', data: 'Recent message'))
       ..append(OptionElement(value: 'most_recent_inbound', data: 'Recent inbound message', selected: true))
-      ..append(OptionElement(value: 'alphabetically', data: 'Message ID alphabetically'))
+      ..append(OptionElement(value: 'alphabetically', data: 'Conversation ID alphabetically'))
       ..onChange.listen(_changeSortOrder);
     renderElement.append(SpanElement()..className = "fas fa-sort-amount-down");
     renderElement.append(_selectOrder);
