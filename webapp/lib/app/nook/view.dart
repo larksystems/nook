@@ -960,7 +960,7 @@ class ConversationListPanelView {
     for (var conversation in conversations) {
       ConversationSummary summary = _phoneToConversations[conversation.docId];
       if (summary == null) {
-        summary = new ConversationSummary(conversation.docId, "", conversation.messages.last.datetime, false);
+        summary = new ConversationSummary(conversation.docId, "", conversation.messages.isEmpty ? null : conversation.messages.last.datetime, false);
       }
       updateConversationSummary(summary, conversation, sortOrder);
       _phoneToConversations[summary.deidentifiedPhoneNumber] = summary;
