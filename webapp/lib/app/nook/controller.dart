@@ -25,7 +25,7 @@ part 'controller_view_helper.dart';
 Logger log = new Logger('controller.dart');
 
 const ENABLE_TURNLINE_PANEL = false;
-const DEFAULT_CONVERSATION_TAB = 'standard_messages';
+const DEFAULT_PANEL_TAB = 'standard_messages';
 
 enum UIActionObject {
   conversation,
@@ -657,7 +657,7 @@ class NookController extends Controller {
     if (oldConfig.tagsPanelVisibility != newConfig.tagsPanelVisibility ||
         oldConfig.editNotesEnabled != newConfig.editNotesEnabled ||
         oldConfig.repliesPanelVisibility != newConfig.repliesPanelVisibility) {
-      _view.showPanels(newConfig.repliesPanelVisibility, newConfig.editNotesEnabled, newConfig.tagsPanelVisibility, ENABLE_TURNLINE_PANEL, DEFAULT_CONVERSATION_TAB);
+      _view.showPanels(newConfig.repliesPanelVisibility, newConfig.editNotesEnabled, newConfig.tagsPanelVisibility, ENABLE_TURNLINE_PANEL, DEFAULT_PANEL_TAB);
     }
 
     if (oldConfig.suggestedRepliesGroupsEnabled != newConfig.suggestedRepliesGroupsEnabled) {
