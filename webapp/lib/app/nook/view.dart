@@ -1678,7 +1678,7 @@ class ReplyActionView implements ActionView {
       } else {
         _textElement
           ..classes.add('action__text--placeholder')
-          ..text = 'Empty text';
+          ..text = 'No message text provided';
       }
     }
 
