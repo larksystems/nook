@@ -1395,6 +1395,7 @@ class NookController extends Controller {
     if (conversationsInView.contains(conversation)) {
       // Select the conversation in the list of conversations
       _view.conversationListPanelView.selectConversation(conversation.docId);
+      _view.conversationPanelView.scrollToLatestMessage();
     }
   }
 
