@@ -602,7 +602,7 @@ class NookController extends Controller {
     }
 
     if (oldConfig.tagConversationsEnabled != newConfig.tagConversationsEnabled) {
-        _view.tagPanelView.showButtons(newConfig.tagConversationsEnabled);
+      _view.tagPanelView.showButtons(newConfig.tagConversationsEnabled);
     }
 
     if (oldConfig.editTranslationsEnabled != newConfig.editTranslationsEnabled) {
