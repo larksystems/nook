@@ -11,10 +11,10 @@ const SMS_MAX_LENGTH = 160;
 
 // Functions to populate the views with model objects.
 
-void _populateConversationListPanelView(Set<model.Conversation> conversations) {
+void _populateConversationListPanelView(Set<model.Conversation> conversations, UIConversationSort sortOrder) {
   _view.conversationListPanelView.hideLoadSpinner();
   _view.conversationListPanelView.hideSelectConversationListMessage();
-  _view.conversationListPanelView.updateConversationList(conversations);
+  _view.conversationListPanelView.updateConversationList(conversations, sortOrder);
 }
 
 void _populateConversationPanelView(model.Conversation conversation, {bool updateInPlace: false}) {
