@@ -357,7 +357,7 @@ class NookController extends Controller {
     selectedTagGroup = '';
 
     // Get any filter tags from the url
-    conversationFilter = new ConversationFilter.fromUrl(currentUserConfig);
+    conversationFilter = new ConversationFilter.fromUrl(currentConfig);
     _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.include), TagFilterType.include);
     _view.conversationIdFilter.filter = conversationFilter.conversationIdFilter;
 
@@ -409,7 +409,7 @@ class NookController extends Controller {
         _populateTagPanelView(tagsByGroup[selectedTagGroup]);
 
         // Re-read the conversation filter from the URL since we now have the names of the tags
-        conversationFilter = new ConversationFilter.fromUrl(currentUserConfig);
+        conversationFilter = new ConversationFilter.fromUrl(currentConfig);
         _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.include), TagFilterType.include);
 
         if (currentConfig.conversationalTurnsEnabled) {
