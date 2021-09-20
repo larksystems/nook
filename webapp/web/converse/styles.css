@@ -193,6 +193,15 @@ main {
     border-bottom: 1px solid #ccc;
 }
 
+.conversation-list-header .far,
+.conversation-list-header .fas {
+    margin-right: 6px;
+}
+
+.conversation-sort-order__select {
+    max-width: 150px;
+}
+
 .conversation-list-header__checkbox {
     margin: 0 16px 0 0;
 }
