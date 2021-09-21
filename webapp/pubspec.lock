@@ -264,8 +264,8 @@ packages:
     dependency: "direct main"
     description:
       path: ui
-      ref: "7869a2ea59a23d74de7579e142e536c852177633"
-      resolved-ref: "7869a2ea59a23d74de7579e142e536c852177633"
+      ref: "54d152067b99e349a931073b3128eccb507b1301"
+      resolved-ref: "54d152067b99e349a931073b3128eccb507b1301"
       url: "git@github.com:larksystems/katikati_common_lib.git"
     source: git
     version: "0.0.1"
