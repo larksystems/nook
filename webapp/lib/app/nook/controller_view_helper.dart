@@ -128,7 +128,9 @@ void _populateReplyPanelView(List<model.SuggestedReply> replies) {
   Map<String, List<model.SuggestedReply>> repliesByGroups = _groupRepliesIntoGroups(replies);
   _view.replyPanelView.clear();
   String buttonText = SEND_REPLY_BUTTON_TEXT;
-  for (var groupId in repliesByGroups.keys) {
+  var groupIdsSortedByDescription = repliesByGroups.keys.toList();
+  groupIdsSortedByDescription.sort((group1, group2) => repliesByGroups[group1].first.groupDescription.compareTo(repliesByGroups[group2].first.groupDescription));
+  for (var groupId in groupIdsSortedByDescription) {
     var repliesInGroup = repliesByGroups[groupId];
     List<ReplyActionView> views = [];
     var groupDescription = "";
