@@ -1444,6 +1444,7 @@ class NookController extends Controller {
   void sendReply(model.SuggestedReply reply, model.Conversation conversation) {
     log.verbose('Preparing to send reply "${reply.text}" to conversation ${conversation.docId}');
     model.Message newMessage = new model.Message()
+      ..id = model.generatePendingMessageId(conversation)
       ..text = reply.text
       ..datetime = new DateTime.now()
       ..direction = model.MessageDirection.Out
@@ -1470,25 +1471,33 @@ class NookController extends Controller {
   void sendMultiReply(model.SuggestedReply reply, List<model.Conversation> conversations) {
     List<String> conversationIds = conversations.map((conversation) => conversation.docId).toList();
     log.verbose('Preparing to send reply "${reply.text}" to conversations $conversationIds');
-    model.Message newMessage = new model.Message()
-      ..text = reply.text
-      ..datetime = new DateTime.now()
-      ..direction = model.MessageDirection.Out
-      ..translation = reply.translation
-      ..tagIds = []
-      ..status = model.MessageStatus.pending;
-    log.verbose('Adding reply "${reply.text}" to conversations ${conversationIds}');
-    conversations.forEach((conversation) => conversation.messages.add(newMessage));
-    if (conversations.contains(activeConversation)) {
-      _view.conversationPanelView.addMessage(_generateMessageView(newMessage, activeConversation));
-    }
+    Map<String, model.Message> newMessages = {};
+    conversations.forEach((conversation) {
+      model.Message newMessage = new model.Message()
+        ..id = model.generatePendingMessageId(conversation)
+        ..text = reply.text
+        ..datetime = new DateTime.now()
+        ..direction = model.MessageDirection.Out
+        ..translation = reply.translation
+        ..tagIds = []
+        ..status = model.MessageStatus.pending;
+      newMessages[conversation.docId] = newMessage;
+      conversation.messages.add(newMessage);
+      if (conversation.docId == activeConversation.docId) {
+        _view.conversationPanelView.addMessage(_generateMessageView(newMessage, activeConversation));
+      }
+    });
+
     log.verbose('Sending reply "${reply.text}" to conversations ${conversationIds}');
-    platform.sendMultiMessage(conversationIds, newMessage.text, onError: (error) {
+    platform.sendMultiMessage(conversationIds, reply.text, onError: (error) {
       log.error('Reply "${reply.text}" failed to be sent to conversations ${conversationIds}');
       log.error('Error: ${error}');
       command(UIAction.showSnackbar, new SnackbarData('Send Multi Reply Failed', SnackbarNotificationType.error));
-      newMessage.status = model.MessageStatus.failed;
+      for (var newMessage in newMessages.values) {
+        newMessage.status = model.MessageStatus.failed;
+      }
       if (conversationIds.contains(activeConversation.docId)) {
+        var newMessage = newMessages[activeConversation.docId];
         int newMessageIndex = activeConversation.messages.indexOf(newMessage);
         _view.conversationPanelView.messageViewAtIndex(newMessageIndex).setStatus(newMessage.status);
       }
@@ -1503,6 +1512,7 @@ class NookController extends Controller {
     List<model.Message> newMessages = [];
     for (var reply in replies) {
       model.Message newMessage = new model.Message()
+        ..id = model.generatePendingMessageId(conversation)
         ..text = reply.text
         ..datetime = new DateTime.now()
         ..direction = model.MessageDirection.Out
@@ -1510,11 +1520,8 @@ class NookController extends Controller {
         ..tagIds = []
         ..status = model.MessageStatus.pending;
       newMessages.add(newMessage);
-    }
-    log.verbose('Adding ${textReplies.length} replies "${repliesStr}" to conversation ${conversation.docId}');
-    conversation.messages.addAll(newMessages);
-    for (var message in newMessages) {
-      _view.conversationPanelView.addMessage(_generateMessageView(message, conversation));
+      conversation.messages.add(newMessage);
+      _view.conversationPanelView.addMessage(_generateMessageView(newMessage, conversation));
     }
 
     log.verbose('Sending ${textReplies.length} replies "${repliesStr}" to conversation ${conversation.docId}');
@@ -1538,34 +1545,40 @@ class NookController extends Controller {
     List<String> textReplies = replies.map((r) => r.text).toList();
     String repliesStr = textReplies.join("; ");
     log.verbose('Preparing to send ${textReplies.length} replies "${repliesStr}" to conversations $conversationIds');
-    var newMessages = <model.Message>[];
-    for (var reply in replies) {
-      model.Message newMessage = new model.Message()
-        ..text = reply.text
-        ..datetime = new DateTime.now()
-        ..direction = model.MessageDirection.Out
-        ..translation = reply.translation
-        ..tagIds = []
-        ..status = model.MessageStatus.pending;
-      newMessages.add(newMessage);
-    }
-    log.verbose('Adding ${textReplies.length} replies "${repliesStr}" to conversation ${conversationIds}');
-    conversations.forEach((conversation) => conversation.messages.addAll(newMessages));
-    if (conversations.contains(activeConversation)) {
-      for (var message in newMessages) {
-        _view.conversationPanelView.addMessage(_generateMessageView(message, activeConversation));
+    Map<String, List<model.Message>> newMessagesByConversation = {};
+    for (var conversation in conversations) {
+      var newMessages = <model.Message>[];
+      for (var reply in replies) {
+        model.Message newMessage = new model.Message()
+          ..id = model.generatePendingMessageId(conversation)
+          ..text = reply.text
+          ..datetime = new DateTime.now()
+          ..direction = model.MessageDirection.Out
+          ..translation = reply.translation
+          ..tagIds = []
+          ..status = model.MessageStatus.pending;
+        newMessages.add(newMessage);
+        conversation.messages.add(newMessage);
+        if (conversation.docId == activeConversation.docId) {
+          _view.conversationPanelView.addMessage(_generateMessageView(newMessage, activeConversation));
+        }
       }
+      newMessagesByConversation[conversation.docId] = newMessages;
     }
     log.verbose('Sending ${textReplies.length} replies "${repliesStr}" to conversation ${conversationIds}');
     platform.sendMultiMessages(conversationIds, textReplies, onError: (error) {
       log.error('${textReplies.length} replies "${repliesStr}" failed to be sent to conversations ${conversationIds}');
       log.error('Error: ${error}');
       command(UIAction.showSnackbar, new SnackbarData('Send Multi Reply Failed', SnackbarNotificationType.error));
-      for (var message in newMessages) {
-        message.status = model.MessageStatus.failed;
-        if (conversationIds.contains(activeConversation.docId)) {
-          int messageIndex = activeConversation.messages.indexOf(message);
-          _view.conversationPanelView.messageViewAtIndex(messageIndex).setStatus(message.status);
+      for (var conversationId in newMessagesByConversation.keys) {
+        var newMessages = newMessagesByConversation[conversationId];
+        for (var message in newMessages) {
+          message.status = model.MessageStatus.failed;
+          if (conversationId == activeConversation.docId) {
+            int messageIndex = activeConversation.messages.indexOf(message);
+            _view.conversationPanelView.messageViewAtIndex(messageIndex).setStatus(message.status);
+          }
+
         }
       }
     });
