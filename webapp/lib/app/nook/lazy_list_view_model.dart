@@ -10,6 +10,7 @@ import 'dart:html';
 class LazyListViewModel {
   /// The items to be displayed.
   final _items = <LazyListViewItem>[];
+  Function _onAddItemCallback;
 
   /// The DOM element used to display the items
   /// and typically displaying only a subset of the items.
@@ -21,9 +22,10 @@ class LazyListViewModel {
   final _scrollPad = DivElement();
   static const _scrollPadMinHeight = 30;
 
-  LazyListViewModel(this._listView) {
+  LazyListViewModel(this._listView, {Function onAddItemCallback}) {
     _listView.onScroll.listen(_updateCachedElements);
     window.onResize.listen(_windowResized);
+    _onAddItemCallback = onAddItemCallback;
   }
 
   void addItem(LazyListViewItem item, [int position]) {
@@ -139,6 +141,9 @@ class LazyListViewModel {
       if (_listView.children.isEmpty) {
         var item = _items[_listView.children.length];
         _listView.append(item.element);
+        if (_onAddItemCallback != null) {
+          _onAddItemCallback(item);
+        }
         currentScrollHeight = _listView.scrollHeight;
       }
       // Special case: there are fewer elements visible
@@ -157,6 +162,9 @@ class LazyListViewModel {
       for (int i = 0; i < numItemsToAdd; i++) {
         var item = _items[_listView.children.length];
         _listView.append(item.element);
+        if (_onAddItemCallback != null) {
+          _onAddItemCallback(item);
+        }
       }
     }
     _updateScrollPad();

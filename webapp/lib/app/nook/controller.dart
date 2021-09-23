@@ -1378,7 +1378,7 @@ class NookController extends Controller {
   /// Returns the first conversation in the list, or null if list is empty.
   model.Conversation updateViewForConversations(Set<model.Conversation> conversations) {
     // Update conversationListPanelView
-    _populateConversationListPanelView(conversations);
+    _populateConversationListPanelView(conversations, conversationSortOrder);
 
     // Update conversationPanelView
     if (conversations.isEmpty) {
