@@ -2,6 +2,7 @@ library controller;
 
 import 'dart:async';
 import 'dart:collection';
+import 'dart:html';
 import 'package:firebase/firebase.dart' show FirebaseError;
 
 import 'package:katikati_ui_lib/components/url_view/url_view.dart';
@@ -764,7 +765,12 @@ class NookController extends Controller {
 
         // Update the active conversation view as needed
         if (updatedIds.contains(activeConversation.docId)) {
-          updateViewForConversation(activeConversation, updateInPlace: true);
+          bool newMessagesAdded = false;
+          var oldConversationToCompare = changedConversations.firstWhere((conversation) => conversation.docId == activeConversation.docId, orElse: () {return null;});
+          // todo: might need to compare the messages to see if the messages were added
+          // length doesnt account for 1 deletion, 1 addition at the same time though unlikely
+          newMessagesAdded = oldConversationToCompare != null && oldConversationToCompare.messages.length < activeConversation.messages.length;          
+          updateViewForConversation(activeConversation, updateInPlace: true, newMessageAdded: newMessagesAdded);
         }
       },
       conversationListRoot,
@@ -1415,7 +1421,7 @@ class NookController extends Controller {
     return activeConversation;
   }
 
-  void updateViewForConversation(model.Conversation conversation, {bool updateInPlace: false}) {
+  void updateViewForConversation(model.Conversation conversation, {bool updateInPlace: false, bool newMessageAdded = false}) {
     userPositionReporter.reportPresence(signedInUser, conversation);
     if (conversation == null) return;
     // Replace the previous conversation in the conversation panel
@@ -1430,6 +1436,9 @@ class NookController extends Controller {
     if (!filteredConversations.contains(conversation)) {
       // If it doesn't meet the filter, show warning
       _view.conversationPanelView.showWarning('Conversation no longer meets filtering constraints');
+    }
+    if (newMessageAdded) {
+      _view.conversationPanelView.handleNewMessage();
     }
   }
 
