@@ -829,13 +829,13 @@ class NookController extends Controller {
     var mandatoryIncludes = currentConfig.mandatoryIncludeTagIds ?? Set<String>();
     var mandatoryExcludes = currentConfig.mandatoryExcludeTagIds ?? Set<String>();
 
-    for(String tagId in conversationFilter.filterTagIdsAll[TagFilterType.include]) {
+    for (String tagId in conversationFilter.filterTagIdsAll[TagFilterType.include]) {
       if (!mandatoryIncludes.contains(tagId)) {
         return false;
       }
     }
 
-    for(String tagId in conversationFilter.filterTagIdsAll[TagFilterType.exclude]) {
+    for (String tagId in conversationFilter.filterTagIdsAll[TagFilterType.exclude]) {
       if (!mandatoryExcludes.contains(tagId)) {
         return false;
       }
