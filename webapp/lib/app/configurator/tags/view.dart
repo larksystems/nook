@@ -156,16 +156,27 @@ class ConfigureTagView extends TagView {
     var draggableTag = new dnd.Draggable(renderElement, avatarHandler: dnd.AvatarHandler.original(), draggingClass: 'tag__text');
     draggableTag..onDragStart.listen((_) => dragInProgress = true)..onDragEnd.listen((_) => dragInProgress = false);
 
+    List<Message> _messagesCache;
+
     onEdit = (text) {
       _view.appController.command(TagsConfigAction.renameTag, new TagData(tagId, text: text));
     };
-    onDelete = () {
+    onDelete = () async {
       var warningModal;
-      warningModal = new PopupModal('Are you sure you want to remove this tag?', [
-        new Button(ButtonType.text,
-            buttonText: 'Yes', onClick: (_) => _view.appController.command(TagsConfigAction.removeTag, new TagData(tagId, groupId: groupId))),
-        new Button(ButtonType.text, buttonText: 'No', onClick: (_) => warningModal.remove()),
-      ]);
+      if (_messagesCache == null) {
+        _messagesCache = await getSampleMessages(platform.firestoreInstance, tagId) ?? [];
+      }
+
+      if (_messagesCache.isNotEmpty) {
+        warningModal = new PopupModal('Tag [${tagText}] is being used in ${_messagesCache.length} messages, and cannot be removed.', [
+          new Button(ButtonType.text, buttonText: 'Close', onClick: (_) => warningModal.remove()),
+        ]);  
+      } else {
+        warningModal = new PopupModal('Are you sure you want to remove this tag [${tagText}]?', [
+          new Button(ButtonType.text, buttonText: 'Yes', onClick: (_) => _view.appController.command(TagsConfigAction.removeTag, new TagData(tagId, groupId: groupId))),
+          new Button(ButtonType.text, buttonText: 'No', onClick: (_) => warningModal.remove()),
+        ]);
+      }
       warningModal.parent = renderElement;
     };
 
@@ -179,10 +190,13 @@ class ConfigureTagView extends TagView {
       tooltip.remove();
     };
 
-    onMouseEnter = () {
+    onMouseEnter = () async {
       if (dragInProgress) return;
       tooltip.parent = renderElement;
-      getSampleMessages(platform.firestoreInstance, tagId).then((value) => tooltip.displayMessages(value));
+      if (_messagesCache == null) {
+        _messagesCache = await getSampleMessages(platform.firestoreInstance, tagId) ?? [];
+      }
+      tooltip.displayMessages(_messagesCache);
     };
     onMouseLeave = () {
       Timer(Duration(milliseconds: 100), () {
