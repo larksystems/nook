@@ -1607,7 +1607,7 @@ class NookController extends Controller {
     if (!message.tagIds.contains(tag.tagId)) {
       platform.addMessageTag(activeConversation, message, tag.tagId).then(
         (_) {
-          var tagView = new MessageTagView(tag.text, tag.tagId, tagTypeToKKStyle(tag.type));
+          var tagView = new MessageTagView(tag.text, tag.tagId, tagTypeToKKStyle(tag.type), actionsBeforeTagText: message.direction == model.MessageDirection.Out);
           _view.conversationPanelView
             .messageViewAtIndex(conversation.messages.indexOf(message))
             .addTag(tagView);
