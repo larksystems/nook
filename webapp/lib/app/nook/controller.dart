@@ -1039,7 +1039,7 @@ class NookController extends Controller {
         selectedConversationSummary = conversations.firstWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
         _view.conversationPanelView.selectConversationSummary();
         actionObjectState = UIActionObject.conversation;
-        _view.tagPanelView.hideInstruction();
+        _view.tagPanelView.enableTagging(true);
 
         selectedMessage = null;
         _view.conversationPanelView.deselectMessage();
@@ -1051,7 +1051,7 @@ class NookController extends Controller {
           actionObjectState = null;
 
           if (selectedConversationSummary == null && selectedMessage == null) {
-            _view.tagPanelView.showInstruction();
+            _view.tagPanelView.enableTagging(false);
           }
         }
         break;
@@ -1060,7 +1060,7 @@ class NookController extends Controller {
         selectedMessage = activeConversation.messages.singleWhere((element) => element.id == messageData.messageId);
         _view.conversationPanelView.selectMessage(activeConversation.messages.indexOf(selectedMessage));
         actionObjectState = UIActionObject.message;
-        _view.tagPanelView.hideInstruction();
+        _view.tagPanelView.enableTagging(true);
 
         selectedConversationSummary = null;
         _view.conversationPanelView.deselectConversationSummary();
@@ -1072,7 +1072,7 @@ class NookController extends Controller {
           actionObjectState = null;
 
           if(selectedConversationSummary == null && selectedMessage == null) {
-            _view.tagPanelView.showInstruction();
+            _view.tagPanelView.enableTagging(false);
           }
         }
         break;

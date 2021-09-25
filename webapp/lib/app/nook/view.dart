@@ -122,6 +122,7 @@ class NookPageView extends PageView {
     if (showTagPanel) {
       var tagsTab = TabView('tag', "Tags", tagPanelView.tagPanel);
       tabsToSet.add(tagsTab);
+      tagPanelView.enableTagging(false);
     }
 
     if (showTurnlinePanel) {
@@ -1551,7 +1552,6 @@ class TagPanelView {
   DivElement _statusPanel;
   Text _statusText;
 
-  AddActionView _addTag;
   List<TagActionView> _tagViews;
 
   TagPanelView() {
@@ -1639,12 +1639,9 @@ class TagPanelView {
     }
   }
 
-  void showInstruction() {
-    _instruction.hidden = false;
-  }
-
-  void hideInstruction() {
-    _instruction.hidden = true;
+  void enableTagging(bool show) {
+    _instruction.hidden = show;
+    showButtons(show);
   }
 }
 
