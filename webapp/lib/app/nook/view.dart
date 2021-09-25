@@ -1011,7 +1011,7 @@ class ConversationListPanelView {
 
   void updateConversationStatus(String conversationDocId, ConversationItemStatus status) {
     ConversationSummary summary = _phoneToConversations[conversationDocId];
-    if(summary != null) {
+    if (summary != null) {
       summary._updateStatus(status);
     }
   }
