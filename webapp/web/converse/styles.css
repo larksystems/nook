@@ -239,7 +239,7 @@ main {
     overflow: auto;
 }
 
-.messages--new-message-indicator {
+.messages__new-message-indicator {
     position: absolute;
     left: 4px;
     background-color: var(--dark-gray);
@@ -250,7 +250,7 @@ main {
     cursor: pointer;
 }
 
-.messages--new-message-indicator:hover {
+.messages__new-message-indicator:hover {
     filter: brightness(var(--hover-brightness));
 }
 

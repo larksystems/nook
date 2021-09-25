@@ -316,7 +316,7 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
     _suggestedMessagesActions.append(automaticSuggestionIndicator..classes.add('absolute'));
 
     _newMessageIndicator = SpanElement()
-      ..classes.add('messages--new-message-indicator')
+      ..classes.add('messages__new-message-indicator')
       ..classes.add('hidden')
       ..innerText = "New messages ↓";
     _newMessageIndicator.onClick.listen((e) {
@@ -474,7 +474,7 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
   }
 
   void handleNewMessage() {
-    if(_scrolledToBottom) {
+    if (_scrolledToBottom) {
       _messages.scrollTop = _messages.scrollHeight;
       return;
     }
