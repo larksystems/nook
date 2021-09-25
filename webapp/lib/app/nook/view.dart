@@ -1324,7 +1324,7 @@ class ConversationSummary with LazyListViewItem, UserPresenceIndicator {
   void _showCheckbox(bool show) {
     // todo: figure out this
     _checkboxHidden = !show;
-    _conversationItem?.toggleCheckbox(show);
+    _conversationItem?.enableCheckbox(show);
   }
 
   void _showWarning(bool show) {
