@@ -109,6 +109,9 @@ class LazyListViewModel {
     _scrollPad.remove();
     while (position >= _listView.children.length) {
       _listView.append(_items[_listView.children.length].element);
+      if (_onAddItemCallback != null) {
+        _onAddItemCallback(item);
+      }
     }
     if (position >= 0) {
       item.element.scrollIntoView();

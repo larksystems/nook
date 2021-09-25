@@ -910,6 +910,8 @@ class ConversationListPanelView {
   ConversationSummary activeConversation;
 
   String _lastAddedConversationDateSeparatorString = "";
+  bool _showDateSeparator = true;
+
   int _totalConversations = 0;
   void set totalConversations(int v) {
     _totalConversations = v;
@@ -978,8 +980,7 @@ class ConversationListPanelView {
 
   void _onAddConversation(ConversationSummary item) {
     var currentDateSeparatorString = dateStringForSeparator(item._dateTime);
-    var sortOrder = controller.conversationSortOrder;
-    if (sortOrder == UIConversationSort.alphabeticalById) {
+    if (!_showDateSeparator) {
       item._toggleDateSeparator(false);
       return;
     }
@@ -1063,6 +1064,8 @@ class ConversationListPanelView {
 
   void changeConversationSortOrder(UIConversationSort conversationSort) {
     _changeSortOrder.updateSelectElement(conversationSort);
+    _showDateSeparator = conversationSort != UIConversationSort.alphabeticalById;
+    _lastAddedConversationDateSeparatorString = "";
   }
 
   void checkConversation(String deidentifiedPhoneNumber) {
