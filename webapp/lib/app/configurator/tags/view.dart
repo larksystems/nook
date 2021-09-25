@@ -170,10 +170,11 @@ class ConfigureTagView extends TagView {
       if (_messagesCache.isNotEmpty) {
         warningModal = new PopupModal('Tag [${tagText}] is being used in ${_messagesCache.length} messages, and cannot be removed.', [
           new Button(ButtonType.text, buttonText: 'Close', onClick: (_) => warningModal.remove()),
-        ]);  
+        ]);
       } else {
         warningModal = new PopupModal('Are you sure you want to remove this tag [${tagText}]?', [
-          new Button(ButtonType.text, buttonText: 'Yes', onClick: (_) => _view.appController.command(TagsConfigAction.removeTag, new TagData(tagId, groupId: groupId))),
+          new Button(ButtonType.text,
+              buttonText: 'Yes', onClick: (_) => _view.appController.command(TagsConfigAction.removeTag, new TagData(tagId, groupId: groupId))),
           new Button(ButtonType.text, buttonText: 'No', onClick: (_) => warningModal.remove()),
         ]);
       }
