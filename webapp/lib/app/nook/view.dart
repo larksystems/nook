@@ -713,6 +713,9 @@ class MessageTagView extends TagView {
       _view.appController.command(UIAction.removeMessageTag, new MessageTagData(tagId, message.dataset['messageId']));
     };
     markHighlighted(highlight);
+    onSelect = () {
+      _view.appController.command(UIAction.addFilterTag, new FilterTagData(tagId, TagFilterType.include));
+    };
   }
 }
 
@@ -741,6 +744,9 @@ class ConversationTagView extends TagView {
       markPending(true);
       DivElement messageSummary = getAncestors(renderElement).firstWhere((e) => e.classes.contains('conversation-summary'));
       _view.appController.command(UIAction.removeConversationTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
+    };
+    onSelect = () {
+      _view.appController.command(UIAction.addFilterTag, new FilterTagData(tagId, TagFilterType.include));
     };
   }
 }
@@ -1212,6 +1218,7 @@ class ConversationIdFilter {
   DivElement conversationFilter;
   SpanElement _descriptionText;
   TextInputElement _idInput;
+  buttons.Button _clearButton;
 
   ConversationIdFilter() {
     conversationFilter = new DivElement()
@@ -1230,12 +1237,28 @@ class ConversationIdFilter {
       _view.appController.command(UIAction.updateConversationIdFilter, new ConversationIdFilterData(_idInput.value));
     });
     conversationFilter.append(_idInput);
+    
+    _clearButton = buttons.Button(buttons.ButtonType.text, buttonText: "Clear all", onClick: (e) {
+      _view.appController.command(UIAction.clearAllFilters, null);
+    });
+    _clearButton.renderElement
+      ..classes.add("conversation-filter__clear-all")
+      ..classes.toggle("hidden", true);
+    conversationFilter.append(_clearButton.renderElement);
   }
 
   set filter(String text) => _idInput.value = text;
 
   void showFilter(bool show) {
     this.conversationFilter.classes.toggle('hidden', !show);
+  }
+
+  void clear() {
+    _idInput.value = "";
+  }
+
+  void enableClearButton(bool show) {
+    _clearButton.renderElement.classes.toggle("hidden", !show);
   }
 }
 

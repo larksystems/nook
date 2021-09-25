@@ -2,6 +2,7 @@ library controller;
 
 import 'dart:async';
 import 'dart:collection';
+import 'dart:html';
 import 'package:firebase/firebase.dart' show FirebaseError;
 
 import 'package:katikati_ui_lib/components/url_view/url_view.dart';
@@ -72,6 +73,7 @@ enum UIAction {
   updateDisplayedTagsGroup,
   showSnackbar,
   updateConversationIdFilter,
+  clearAllFilters,
   goToUser,
 }
 
@@ -411,6 +413,7 @@ class NookController extends Controller {
         // Re-read the conversation filter from the URL since we now have the names of the tags
         conversationFilter = new ConversationFilter.fromUrl(currentConfig);
         _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.include), TagFilterType.include);
+        _view.conversationIdFilter.enableClearButton(!checkFiltersEmpty(conversationFilter));
 
         if (currentConfig.conversationalTurnsEnabled) {
           _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.exclude), TagFilterType.exclude);
@@ -637,6 +640,7 @@ class NookController extends Controller {
           _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.exclude), TagFilterType.exclude);
 
           updateFilteredAndSelectedConversationLists();
+          _view.conversationIdFilter.enableClearButton(!checkFiltersEmpty(conversationFilter));
         }
 
     if (oldConfig.conversationalTurnsEnabled != newConfig.conversationalTurnsEnabled) {
@@ -821,6 +825,30 @@ class NookController extends Controller {
     return filteredConversations;
   }
 
+  bool checkFiltersEmpty(ConversationFilter conversationFilter) {
+    var mandatoryIncludes = currentConfig.mandatoryIncludeTagIds ?? Set<String>();
+    var mandatoryExcludes = currentConfig.mandatoryExcludeTagIds ?? Set<String>();
+
+    for(String tagId in conversationFilter.filterTagIdsAll[TagFilterType.include]) {
+      if (!mandatoryIncludes.contains(tagId)) {
+        return false;
+      }
+    }
+
+    for(String tagId in conversationFilter.filterTagIdsAll[TagFilterType.exclude]) {
+      if (!mandatoryExcludes.contains(tagId)) {
+        return false;
+      }
+    }
+
+    if (conversationFilter.conversationIdFilter != '') {
+      window.console.error(conversationFilter.conversationIdFilter);
+      return false;
+    }
+
+    return true;
+  }
+
   void command(action, [Data data]) {
     if (action is! UIAction) {
       super.command(action, data);
@@ -973,6 +1001,7 @@ class NookController extends Controller {
         if (actionObjectState == UIActionObject.loadingConversations) return;
         updateFilteredAndSelectedConversationLists();
         updateViewForConversation(activeConversation, updateInPlace: true);
+        _view.conversationIdFilter.enableClearButton(true);
         break;
       case UIAction.removeConversationTag:
         ConversationTagData conversationTagData = data;
@@ -1026,6 +1055,7 @@ class NookController extends Controller {
         if (actionObjectState == UIActionObject.loadingConversations) return;
         updateFilteredAndSelectedConversationLists();
         updateViewForConversation(activeConversation, updateInPlace: true);
+        _view.conversationIdFilter.enableClearButton(!checkFiltersEmpty(conversationFilter));
         break;
       case UIAction.updateConversationIdFilter:
         ConversationIdFilterData filterData = data;
@@ -1033,6 +1063,26 @@ class NookController extends Controller {
         _view.urlView.setPageUrlFilterConversationId(filterData.idFilter.isEmpty ? null : filterData.idFilter);
         if (actionObjectState == UIActionObject.loadingConversations) return;
         updateFilteredAndSelectedConversationLists();
+        _view.conversationIdFilter.enableClearButton(!checkFiltersEmpty(conversationFilter));
+        break;
+      case UIAction.clearAllFilters:
+        conversationFilter._filterTags.forEach((filterTagType, tags) {
+          tags.forEach((tag) {
+            _view.conversationFilter[filterTagType].removeFilterTag(tag.tagId);
+          });
+          _view.urlView.setPageUrlFilterTags(filterTagType, null);
+          conversationFilter.clearFilters(filterTagType);
+          conversationFilter._applyMandatoryFilters();
+          _populateSelectedFilterTags(conversationFilter._filterTags[filterTagType], filterTagType);
+        });
+
+        conversationFilter.conversationIdFilter = "";
+        _view.conversationIdFilter.clear();
+        _view.urlView.setPageUrlFilterConversationId(null);
+        
+        updateFilteredAndSelectedConversationLists();
+        _view.conversationIdFilter.enableClearButton(false);
+        updateViewForConversation(activeConversation, updateInPlace: true);
         break;
       case UIAction.selectConversationSummary:
         ConversationData conversationData = data;

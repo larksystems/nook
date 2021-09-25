@@ -127,6 +127,10 @@ main {
     min-width: 80px;
 }
 
+.conversation-filter__clear-all {
+    float: right;
+}
+
 .tags-menu__box {
     position: absolute;
     top: auto;
