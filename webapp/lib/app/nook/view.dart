@@ -1020,11 +1020,11 @@ class ConversationListPanelView {
 
     bool hasPendingMessages = false;
     bool hasFailedMessages = false;
-    for(Message message in conversation.messages) {
-      if(message.status == MessageStatus.pending) {
+    for (Message message in conversation.messages) {
+      if (message.status == MessageStatus.pending) {
         hasPendingMessages = true;
         if (hasFailedMessages) break;
-      } else if(message.status == MessageStatus.failed) {
+      } else if (message.status == MessageStatus.failed) {
         hasFailedMessages = true;
         break;
       }
