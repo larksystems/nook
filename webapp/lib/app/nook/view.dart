@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:katikati_ui_lib/components/accordion/accordion.dart';
 import 'package:katikati_ui_lib/components/tabs/tabs.dart';
 import 'package:katikati_ui_lib/components/url_view/url_view.dart';
+import 'package:katikati_ui_lib/utils/datetime.dart';
 import 'package:katikati_ui_lib/components/tooltip/tooltip.dart';
 import 'package:katikati_ui_lib/components/nav/button_links.dart';
 import 'package:katikati_ui_lib/components/messages/freetext_message_send.dart';
@@ -937,6 +938,9 @@ class ConversationListPanelView {
   Map<String, ConversationSummary> _phoneToConversations = {};
   ConversationSummary activeConversation;
 
+  String _lastAddedConversationDateSeparatorString = "";
+  bool _showDateSeparator = true;
+
   int _totalConversations = 0;
   void set totalConversations(int v) {
     _totalConversations = v;
@@ -983,7 +987,7 @@ class ConversationListPanelView {
 
     var conversationListElement = new DivElement()
       ..classes.add('conversation-list');
-    _conversationList = new LazyListViewModel(conversationListElement);
+    _conversationList = new LazyListViewModel(conversationListElement, onAddItemCallback: _onAddConversation);
     conversationListPanel.append(conversationListElement);
 
     var panelFilters = new DivElement()
@@ -1003,7 +1007,18 @@ class ConversationListPanelView {
     panelFilters.append(conversationTurnsFilter.conversationFilter);
   }
 
-  void updateConversationList(Set<Conversation> conversations) {
+  void _onAddConversation(ConversationSummary item) {
+    var currentDateSeparatorString = dateStringForSeparator(item._dateTime);
+    if (!_showDateSeparator) {
+      item._toggleDateSeparator(false);
+      return;
+    }
+
+    item._toggleDateSeparator((_lastAddedConversationDateSeparatorString == "" || currentDateSeparatorString != _lastAddedConversationDateSeparatorString));
+    _lastAddedConversationDateSeparatorString = currentDateSeparatorString;
+  }
+
+  void updateConversationList(Set<Conversation> conversations, UIConversationSort sortOrder) {
     Set<String> conversationUuids = Set<String>();
     for (Conversation c in conversations) {
       conversationUuids.add(c.docId);
@@ -1012,9 +1027,9 @@ class ConversationListPanelView {
     for (var conversation in conversations) {
       ConversationSummary summary = _phoneToConversations[conversation.docId];
       if (summary == null) {
-        summary = new ConversationSummary(conversation.docId, "", false);
+        summary = new ConversationSummary(conversation.docId, "", false, ConversationItemStatus.normal, dateTime: conversation.messages.isEmpty ? null : conversation.messages.last.datetime);
       }
-      updateConversationSummary(summary, conversation);
+      updateConversationSummary(summary, conversation, sortOrder);
       _phoneToConversations[summary.deidentifiedPhoneNumber] = summary;
       conversationSummaries.add(summary);
     }
@@ -1023,8 +1038,38 @@ class ConversationListPanelView {
     _conversationPanelTitle.text = _conversationPanelTitleText;
   }
 
-  void updateConversationSummary(ConversationSummary summary, Conversation conversation) {
-    summary._text = conversation.messages.isEmpty ? "No messages yet" : conversation.messages.last?.text;
+  void updateConversationStatus(String conversationDocId, ConversationItemStatus status) {
+    ConversationSummary summary = _phoneToConversations[conversationDocId];
+    if (summary != null) {
+      summary._updateStatus(status);
+    }
+  }
+
+  void updateConversationSummary(ConversationSummary summary, Conversation conversation, UIConversationSort sortOrder) {
+    var messageText = conversation.messages.isEmpty ? "No messages yet" : conversation.messages.last?.text;
+    var messageDateTime = conversation.messages.isEmpty ? null : conversation.messages.last?.datetime;
+
+    if (sortOrder == UIConversationSort.mostRecentInMessageFirst) {
+      messageText = conversation.mostRecentMessageInbound == null ? "No inbound message" : conversation.mostRecentMessageInbound.text;
+      messageDateTime = conversation.mostRecentMessageInbound == null ? null : conversation.mostRecentMessageInbound.datetime;
+    }
+
+    bool hasPendingMessages = false;
+    bool hasFailedMessages = false;
+    for (Message message in conversation.messages) {
+      if (message.status == MessageStatus.pending) {
+        hasPendingMessages = true;
+        if (hasFailedMessages) break;
+      } else if (message.status == MessageStatus.failed) {
+        hasFailedMessages = true;
+        break;
+      }
+    }
+    
+    summary
+      .._updateText(messageText)
+      .._updateDateTime(messageDateTime)
+      .._updateStatus(hasFailedMessages ? ConversationItemStatus.failed : hasPendingMessages ? ConversationItemStatus.pending : ConversationItemStatus.normal);
     conversationNeedsReply(conversation) ? summary._markUnread() : summary._markRead();
   }
 
@@ -1069,6 +1114,8 @@ class ConversationListPanelView {
 
   void changeConversationSortOrder(UIConversationSort conversationSort) {
     _changeSortOrder.updateSelectElement(conversationSort);
+    _showDateSeparator = conversationSort != UIConversationSort.alphabeticalById;
+    _lastAddedConversationDateSeparatorString = "";
   }
 
   void checkConversation(String deidentifiedPhoneNumber) {
@@ -1275,11 +1322,13 @@ class ConversationSummary with LazyListViewItem, UserPresenceIndicator {
 
   String deidentifiedPhoneNumber;
   String _text;
+  DateTime _dateTime;
   bool _unread;
   bool _checked = false;
   bool _selected = false;
   bool _checkboxHidden = true;
   bool _warning = false;
+  ConversationItemStatus _status;
 
   // HACK(mariana): This should get extracted from the model as it gets computed there for the single conversation view
   String get _shortDeidentifiedPhoneNumber => deidentifiedPhoneNumber.split('uuid-')[1].split('-')[0];
@@ -1287,12 +1336,13 @@ class ConversationSummary with LazyListViewItem, UserPresenceIndicator {
 
   Map<String, bool> _presentUsers = {};
 
-  ConversationSummary(this.deidentifiedPhoneNumber, this._text, this._unread) {
+  ConversationSummary(this.deidentifiedPhoneNumber, this._text, this._unread, this._status, {dateTime: DateTime}) {
+    _dateTime = dateTime;
     otherUserPresenceIndicator = new DivElement()..classes.add('conversation-list__user-indicators')..classes.add('user-indicators');
   }
 
   Element buildElement() {
-    _conversationItem = ConversationItemView(_shortDeidentifiedPhoneNumber, _text, ConversationItemStatus.normal, readStatus, checkEnabled: !_checkboxHidden, defaultSelected: _selected)
+    _conversationItem = ConversationItemView(_shortDeidentifiedPhoneNumber, _text, _status, readStatus, checkEnabled: !_checkboxHidden, defaultSelected: _selected, dateTime: _dateTime)
       ..onCheck.listen((_) {
         _view.appController.command(UIAction.selectConversation, new ConversationData(deidentifiedPhoneNumber));
       })
@@ -1350,14 +1400,29 @@ class ConversationSummary with LazyListViewItem, UserPresenceIndicator {
     _conversationItem?.uncheck();
   }
 
+  void _updateText(String text) {
+    _text = text;
+    _conversationItem?.updateMessage(text);
+  }
+
+  void _updateDateTime(DateTime dateTime) {
+    _dateTime = dateTime;
+    _conversationItem?.updateDateTime(dateTime);
+  }
+
+  void _toggleDateSeparator(bool show) {
+    _conversationItem?.toggleDateSeparator(show);
+  }
+
+  void _updateStatus(ConversationItemStatus status) {
+    _status = status;
+    _conversationItem?.updateStatus(status);
+  }
+
   void _showCheckbox(bool show) {
     // todo: figure out this
     _checkboxHidden = !show;
-    if(show) {
-      _conversationItem?.enableCheckbox();
-    } else {
-      _conversationItem?.disableCheckbox();
-    }
+    _conversationItem?.enableCheckbox(show);
   }
 
   void _showWarning(bool show) {
