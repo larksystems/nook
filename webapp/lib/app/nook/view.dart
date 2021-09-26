@@ -566,7 +566,6 @@ class MessageView {
         event.stopPropagation();
         _view.appController.command(UIAction.selectMessage, new MessageData(conversationId, messageId));
       });
-    _message.append(_messageBubble);
 
     _messageStatus = new DivElement()
       ..classes.add('message__status');
@@ -589,9 +588,17 @@ class MessageView {
 
     _messageTags = new DivElement()
       ..classes.add('message__tags')
+      ..classes.toggle('message__tags--outgoing', !incoming)
       ..classes.add('hover-parent');
     tags.forEach((tag) => _messageTags.append(tag.renderElement));
-    _message.append(_messageTags);
+
+    if (incoming) {
+      _message.append(_messageBubble);
+      _message.append(_messageTags);
+    } else {
+      _message.append(_messageTags);
+      _message.append(_messageBubble);
+    }
 
     _addTag = buttons.Button(buttons.ButtonType.add, onClick: (e) {
       e.stopPropagation();
@@ -736,7 +743,7 @@ String _formatDateTime(DateTime dateTime) {
 }
 
 class MessageTagView extends TagView {
-  MessageTagView(String text, String tagId, TagStyle tagStyle, [bool highlight = false]) : super(text, tagId, tagStyle: tagStyle, deletable: true) {
+  MessageTagView(String text, String tagId, TagStyle tagStyle, {bool actionsBeforeTagText = false, bool highlight = false}) : super(text, tagId, tagStyle: tagStyle, deletable: true, actionsBeforeText: actionsBeforeTagText) {
     onDelete = () {
       markPending(true);
       DivElement message = getAncestors(renderElement).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
@@ -747,7 +754,7 @@ class MessageTagView extends TagView {
 }
 
 class SuggestedMessageTagView extends TagView {
-  SuggestedMessageTagView(String text, String tagId, TagStyle tagStyle, [bool highlight = false]) : super(text, tagId, tagStyle: tagStyle, acceptable: true, deletable: true, suggested: true) {
+  SuggestedMessageTagView(String text, String tagId, TagStyle tagStyle, {bool actionsBeforeTagText = false, bool highlight = false}) : super(text, tagId, tagStyle: tagStyle, acceptable: true, deletable: true, suggested: true, actionsBeforeText: actionsBeforeTagText) {
 
     onDelete = () {
       markPending(true);

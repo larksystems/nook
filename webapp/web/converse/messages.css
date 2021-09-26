@@ -99,6 +99,10 @@
   height: 100%;
 }
 
+.message__tags.message__tags--outgoing {
+  align-items: flex-end;
+}
+
 .status-line {
   margin-right: 6px;
   margin-left: 6px;
