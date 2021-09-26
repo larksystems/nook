@@ -221,6 +221,9 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
   Map<String, MessageView> _messageViewsMap = {};
   List<SuggestedMessageView> _suggestedMessageViews = [];
 
+  bool _scrolledToBottom = true;
+  SpanElement _newMessageIndicator;
+
   ConversationPanelView() {
     conversationPanel = new DivElement()
       ..classes.add('conversation-panel')
@@ -266,6 +269,14 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
 
     _messages = new DivElement()
       ..classes.add('messages');
+    _messages.onScroll.listen((e) {
+      if (_messages.scrollTop == _messages.scrollHeight - _messages.offsetHeight) {
+        _newMessageIndicator.classes.toggle("hidden", true);
+        _scrolledToBottom = true;
+      } else {
+        _scrolledToBottom = false;
+      }
+    });
     conversationPanel.append(_messages);
 
     _freetextMessageSendView = FreetextMessageSendView("", maxLength: SMS_MAX_LENGTH)..onSend.listen((messageText) {
@@ -300,6 +311,16 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
     _suggestedMessagesActions.append(deleteSuggestedMessages);
 
     _suggestedMessagesActions.append(automaticSuggestionIndicator..classes.add('absolute'));
+
+    _newMessageIndicator = SpanElement()
+      ..classes.add('messages__new-message-indicator')
+      ..classes.add('hidden')
+      ..innerText = "New messages ↓";
+    _newMessageIndicator.onClick.listen((e) {
+      _messages.scrollTop = _messages.scrollHeight;
+      _newMessageIndicator.classes.toggle("hidden", true);
+    });
+    conversationPanel.append(_newMessageIndicator);
   }
 
   set deidentifiedPhoneNumber(String deidentifiedPhoneNumber) => _conversationIdCopy.dataset['copy-value'] = deidentifiedPhoneNumber;
@@ -447,6 +468,16 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
       _suggestedMessages.append(message.message);
     }
     _suggestedMessagesActions.classes.toggle('hidden', _suggestedMessages.children.isEmpty);
+  }
+
+  void handleNewMessage() {
+    if (_scrolledToBottom) {
+      _messages.scrollTop = _messages.scrollHeight;
+      return;
+    }
+
+    _newMessageIndicator.classes.toggle("hidden", false);
+    _newMessageIndicator.style.top = "${_messages.offsetHeight + _messages.offsetTop - 30}px";
   }
 }
 
