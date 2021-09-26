@@ -156,19 +156,15 @@ class ConfigureTagView extends TagView {
     var draggableTag = new dnd.Draggable(renderElement, avatarHandler: dnd.AvatarHandler.original(), draggingClass: 'tag__text');
     draggableTag..onDragStart.listen((_) => dragInProgress = true)..onDragEnd.listen((_) => dragInProgress = false);
 
-    List<Message> _messagesCache;
-
     onEdit = (text) {
       _view.appController.command(TagsConfigAction.renameTag, new TagData(tagId, text: text));
     };
     onDelete = () async {
       var warningModal;
-      if (_messagesCache == null) {
-        _messagesCache = await getSampleMessages(platform.firestoreInstance, tagId) ?? [];
-      }
+      var messages = await getSampleMessages(platform.firestoreInstance, tagId) ?? [];
 
-      if (_messagesCache.isNotEmpty) {
-        warningModal = new PopupModal('Tag [${tagText}] is being used in ${_messagesCache.length} messages, and cannot be removed.', [
+      if (messages.isNotEmpty) {
+        warningModal = new PopupModal('Tag [${tagText}] is being used in ${messages.length} messages, and cannot be removed.', [
           new Button(ButtonType.text, buttonText: 'Close', onClick: (_) => warningModal.remove()),
         ]);
       } else {
@@ -194,10 +190,8 @@ class ConfigureTagView extends TagView {
     onMouseEnter = () async {
       if (dragInProgress) return;
       tooltip.parent = renderElement;
-      if (_messagesCache == null) {
-        _messagesCache = await getSampleMessages(platform.firestoreInstance, tagId) ?? [];
-      }
-      tooltip.displayMessages(_messagesCache);
+      var messages = await getSampleMessages(platform.firestoreInstance, tagId) ?? [];
+      tooltip.displayMessages(messages);
     };
     onMouseLeave = () {
       Timer(Duration(milliseconds: 100), () {
