@@ -187,11 +187,10 @@ class ConfigureTagView extends TagView {
       tooltip.remove();
     };
 
-    onMouseEnter = () async {
+    onMouseEnter = () {
       if (dragInProgress) return;
       tooltip.parent = renderElement;
-      var messages = await getSampleMessages(platform.firestoreInstance, tagId) ?? [];
-      tooltip.displayMessages(messages);
+      getSampleMessages(platform.firestoreInstance, tagId).then((value) => tooltip.displayMessages(value));
     };
     onMouseLeave = () {
       Timer(Duration(milliseconds: 100), () {
