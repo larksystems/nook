@@ -998,7 +998,7 @@ class ConversationListPanelView {
     for (var conversation in conversations) {
       ConversationSummary summary = _phoneToConversations[conversation.docId];
       if (summary == null) {
-        summary = new ConversationSummary(conversation.docId, "", false, dateTime: conversation.messages.isEmpty ? null : conversation.messages.last.datetime);
+        summary = new ConversationSummary(conversation.docId, "", false, ConversationItemStatus.normal, dateTime: conversation.messages.isEmpty ? null : conversation.messages.last.datetime);
       }
       updateConversationSummary(summary, conversation, sortOrder);
       _phoneToConversations[summary.deidentifiedPhoneNumber] = summary;
@@ -1009,6 +1009,13 @@ class ConversationListPanelView {
     _conversationPanelTitle.text = _conversationPanelTitleText;
   }
 
+  void updateConversationStatus(String conversationDocId, ConversationItemStatus status) {
+    ConversationSummary summary = _phoneToConversations[conversationDocId];
+    if (summary != null) {
+      summary._updateStatus(status);
+    }
+  }
+
   void updateConversationSummary(ConversationSummary summary, Conversation conversation, UIConversationSort sortOrder) {
     var messageText = conversation.messages.isEmpty ? "No messages yet" : conversation.messages.last?.text;
     var messageDateTime = conversation.messages.isEmpty ? null : conversation.messages.last?.datetime;
@@ -1017,9 +1024,23 @@ class ConversationListPanelView {
       messageText = conversation.mostRecentMessageInbound == null ? "No inbound message" : conversation.mostRecentMessageInbound.text;
       messageDateTime = conversation.mostRecentMessageInbound == null ? null : conversation.mostRecentMessageInbound.datetime;
     }
+
+    bool hasPendingMessages = false;
+    bool hasFailedMessages = false;
+    for (Message message in conversation.messages) {
+      if (message.status == MessageStatus.pending) {
+        hasPendingMessages = true;
+        if (hasFailedMessages) break;
+      } else if (message.status == MessageStatus.failed) {
+        hasFailedMessages = true;
+        break;
+      }
+    }
+    
     summary
       .._updateText(messageText)
-      .._updateDateTime(messageDateTime);
+      .._updateDateTime(messageDateTime)
+      .._updateStatus(hasFailedMessages ? ConversationItemStatus.failed : hasPendingMessages ? ConversationItemStatus.pending : ConversationItemStatus.normal);
     conversationNeedsReply(conversation) ? summary._markUnread() : summary._markRead();
   }
 
@@ -1278,6 +1299,7 @@ class ConversationSummary with LazyListViewItem, UserPresenceIndicator {
   bool _selected = false;
   bool _checkboxHidden = true;
   bool _warning = false;
+  ConversationItemStatus _status;
 
   // HACK(mariana): This should get extracted from the model as it gets computed there for the single conversation view
   String get _shortDeidentifiedPhoneNumber => deidentifiedPhoneNumber.split('uuid-')[1].split('-')[0];
@@ -1285,13 +1307,13 @@ class ConversationSummary with LazyListViewItem, UserPresenceIndicator {
 
   Map<String, bool> _presentUsers = {};
 
-  ConversationSummary(this.deidentifiedPhoneNumber, this._text, this._unread, {dateTime: DateTime}) {
+  ConversationSummary(this.deidentifiedPhoneNumber, this._text, this._unread, this._status, {dateTime: DateTime}) {
     _dateTime = dateTime;
     otherUserPresenceIndicator = new DivElement()..classes.add('conversation-list__user-indicators')..classes.add('user-indicators');
   }
 
   Element buildElement() {
-    _conversationItem = ConversationItemView(_shortDeidentifiedPhoneNumber, _text, ConversationItemStatus.normal, readStatus, checkEnabled: !_checkboxHidden, defaultSelected: _selected, dateTime: _dateTime)
+    _conversationItem = ConversationItemView(_shortDeidentifiedPhoneNumber, _text, _status, readStatus, checkEnabled: !_checkboxHidden, defaultSelected: _selected, dateTime: _dateTime)
       ..onCheck.listen((_) {
         _view.appController.command(UIAction.selectConversation, new ConversationData(deidentifiedPhoneNumber));
       })
@@ -1361,6 +1383,11 @@ class ConversationSummary with LazyListViewItem, UserPresenceIndicator {
 
   void _toggleDateSeparator(bool show) {
     _conversationItem?.toggleDateSeparator(show);
+  }
+
+  void _updateStatus(ConversationItemStatus status) {
+    _status = status;
+    _conversationItem?.updateStatus(status);
   }
 
   void _showCheckbox(bool show) {
