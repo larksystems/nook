@@ -273,8 +273,12 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
     _messages = new DivElement()
       ..classes.add('messages');
     _messages.onScroll.listen((e) {
-      _scrolledToBottom = _messages.scrollTop == _messages.scrollHeight - _messages.offsetHeight;
-      _newMessageIndicator.classes.toggle("hidden", _scrolledToBottom);
+      if (_messages.scrollTop == _messages.scrollHeight - _messages.offsetHeight) {
+        _newMessageIndicator.classes.toggle("hidden", true);
+        _scrolledToBottom = true;
+      } else {
+        _scrolledToBottom = false;
+      }
     });
     conversationPanel.append(_messages);
 
