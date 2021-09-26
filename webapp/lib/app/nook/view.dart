@@ -67,8 +67,10 @@ class NookPageView extends PageView {
     };
     conversationIdFilter = conversationListPanelView.conversationIdFilter;
 
-    document.onKeyDown.listen(
-      (event) => appController.command(UIAction.keyPressed, new KeyPressData(event.key, event.altKey || event.ctrlKey || event.metaKey || event.shiftKey)));
+    document.onKeyDown.listen((event) {
+      if (ignoreShortcut(event)) return;
+      appController.command(UIAction.keyPressed, new KeyPressData(event.key, event.altKey || event.ctrlKey || event.metaKey || event.shiftKey));
+    });
   }
 
   void initSignedInView(String displayName, String photoUrl) {
@@ -186,15 +188,10 @@ void makeEditable(Element element, {void onChange(e), void onEnter(e)}) {
   element
     ..contentEditable = 'true'
     ..onBlur.listen((e) {
-      e.stopPropagation();
       if (onChange != null) onChange(e);
     })
-    ..onKeyPress.listen((e) => e.stopPropagation())
-    ..onKeyUp.listen((e) => e.stopPropagation())
     ..onKeyDown.listen((e) {
-      e.stopPropagation();
       if (onEnter != null && e.keyCode == KeyCode.ENTER) {
-        e.stopImmediatePropagation();
         onEnter(e);
       }
     });
@@ -1225,10 +1222,10 @@ class ConversationIdFilter {
 
     _idInput = new TextInputElement()
       ..classes.add('conversation-filter__input')
-      ..placeholder = 'Enter conversation ID';
-    makeEditable(_idInput, onChange: (_) {
-      _view.appController.command(UIAction.updateConversationIdFilter, new ConversationIdFilterData(_idInput.value));
-    });
+      ..placeholder = 'Enter conversation ID'
+      ..onChange.listen((_) {
+        _view.appController.command(UIAction.updateConversationIdFilter, new ConversationIdFilterData(_idInput.value));
+      });
     conversationFilter.append(_idInput);
   }
 
