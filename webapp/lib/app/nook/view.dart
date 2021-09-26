@@ -1009,6 +1009,13 @@ class ConversationListPanelView {
     _conversationPanelTitle.text = _conversationPanelTitleText;
   }
 
+  void updateConversationStatus(String conversationDocId, ConversationItemStatus status) {
+    ConversationSummary summary = _phoneToConversations[conversationDocId];
+    if (summary != null) {
+      summary._updateStatus(status);
+    }
+  }
+
   void updateConversationSummary(ConversationSummary summary, Conversation conversation, UIConversationSort sortOrder) {
     var messageText = conversation.messages.isEmpty ? "No messages yet" : conversation.messages.last?.text;
     var messageDateTime = conversation.messages.isEmpty ? null : conversation.messages.last?.datetime;

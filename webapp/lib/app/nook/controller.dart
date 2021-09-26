@@ -3,6 +3,7 @@ library controller;
 import 'dart:async';
 import 'dart:collection';
 import 'package:firebase/firebase.dart' show FirebaseError;
+import 'package:katikati_ui_lib/components/conversation/conversation_item.dart';
 
 import 'package:katikati_ui_lib/components/url_view/url_view.dart';
 import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
@@ -1451,6 +1452,7 @@ class NookController extends Controller {
       ..translation = reply.translation
       ..tagIds = []
       ..status = model.MessageStatus.pending;
+    _view.conversationListPanelView.updateConversationStatus(conversation.docId, ConversationItemStatus.pending);
     log.verbose('Adding reply "${reply.text}" to conversation ${conversation.docId}');
     conversation.messages.add(newMessage);
     _view.conversationPanelView.addMessage(_generateMessageView(newMessage, conversation));
@@ -1459,6 +1461,7 @@ class NookController extends Controller {
       log.error('Reply "${reply.text}" failed to be sent to conversation ${conversation.docId}');
       log.error('Error: ${error}');
       command(UIAction.showSnackbar, new SnackbarData('Send Reply Failed', SnackbarNotificationType.error));
+      _view.conversationListPanelView.updateConversationStatus(conversation.docId, ConversationItemStatus.failed);
       newMessage.status = model.MessageStatus.failed;
       if (conversation.docId == activeConversation.docId) {
         int newMessageIndex = activeConversation.messages.indexOf(newMessage);
@@ -1481,6 +1484,7 @@ class NookController extends Controller {
         ..translation = reply.translation
         ..tagIds = []
         ..status = model.MessageStatus.pending;
+      _view.conversationListPanelView.updateConversationStatus(conversation.docId, ConversationItemStatus.pending);
       newMessages[conversation.docId] = newMessage;
       conversation.messages.add(newMessage);
       if (conversation.docId == activeConversation.docId) {
@@ -1493,6 +1497,9 @@ class NookController extends Controller {
       log.error('Reply "${reply.text}" failed to be sent to conversations ${conversationIds}');
       log.error('Error: ${error}');
       command(UIAction.showSnackbar, new SnackbarData('Send Multi Reply Failed', SnackbarNotificationType.error));
+      conversationIds.forEach((conversationId) {
+        _view.conversationListPanelView.updateConversationStatus(conversationId, ConversationItemStatus.pending);
+      });
       for (var newMessage in newMessages.values) {
         newMessage.status = model.MessageStatus.failed;
       }
@@ -1519,6 +1526,7 @@ class NookController extends Controller {
         ..translation = reply.translation
         ..tagIds = []
         ..status = model.MessageStatus.pending;
+        _view.conversationListPanelView.updateConversationStatus(conversation.docId, ConversationItemStatus.pending);
       newMessages.add(newMessage);
       conversation.messages.add(newMessage);
       _view.conversationPanelView.addMessage(_generateMessageView(newMessage, conversation));
@@ -1529,6 +1537,7 @@ class NookController extends Controller {
       log.error('${textReplies.length} replies "${repliesStr}" failed to be sent to conversation ${conversation.docId}');
       log.error('Error: ${error}');
       command(UIAction.showSnackbar, new SnackbarData('Send Reply Failed', SnackbarNotificationType.error));
+      _view.conversationListPanelView.updateConversationStatus(conversation.docId, ConversationItemStatus.failed);
       for (var message in newMessages) {
         message.status = model.MessageStatus.failed;
         if (conversation.docId == activeConversation.docId) {
@@ -1557,6 +1566,7 @@ class NookController extends Controller {
           ..translation = reply.translation
           ..tagIds = []
           ..status = model.MessageStatus.pending;
+        _view.conversationListPanelView.updateConversationStatus(conversation.docId, ConversationItemStatus.pending);
         newMessages.add(newMessage);
         conversation.messages.add(newMessage);
         if (conversation.docId == activeConversation.docId) {
@@ -1570,6 +1580,9 @@ class NookController extends Controller {
       log.error('${textReplies.length} replies "${repliesStr}" failed to be sent to conversations ${conversationIds}');
       log.error('Error: ${error}');
       command(UIAction.showSnackbar, new SnackbarData('Send Multi Reply Failed', SnackbarNotificationType.error));
+      conversationIds.forEach((conversationId) {
+        _view.conversationListPanelView.updateConversationStatus(conversationId, ConversationItemStatus.pending);
+      });
       for (var conversationId in newMessagesByConversation.keys) {
         var newMessages = newMessagesByConversation[conversationId];
         for (var message in newMessages) {
