@@ -5,6 +5,7 @@ import 'dart:collection';
 import 'dart:html';
 import 'package:firebase/firebase.dart' show FirebaseError;
 import 'package:katikati_ui_lib/components/conversation/conversation_item.dart';
+import 'package:katikati_ui_lib/components/conversation/new_conversation_modal.dart';
 
 import 'package:katikati_ui_lib/components/url_view/url_view.dart';
 import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
@@ -75,6 +76,7 @@ enum UIAction {
   showSnackbar,
   updateConversationIdFilter,
   goToUser,
+  addNewConversations,
 }
 
 enum UIConversationSort {
@@ -298,6 +300,15 @@ class OtherUserData extends Data {
 
   @override
   String toString() => 'OtherUserData: {userId: $userId}';
+}
+
+class NewConversationsData extends Data {
+  List<NewConversationFormData> conversations;
+
+  NewConversationsData(this.conversations);
+
+  @override
+  String toString() => 'NewConversationsData: {conversations: $conversations}';
 }
 
 NookController controller;
@@ -1285,6 +1296,18 @@ class NookController extends Controller {
         OtherUserData userData = data;
         String conversationId = otherUserPresenceByUserId[userData.userId].conversationId;
         command(UIAction.showConversation, ConversationData(conversationId));
+        break;
+
+      case UIAction.addNewConversations:
+        NewConversationsData newConversationsData = data;
+        List<NewConversationFormData> conversations = newConversationsData.conversations;
+        // todo: EB: publish via platform
+        window.console.error(conversations);
+        command(UIAction.showSnackbar,
+            new SnackbarData('${conversations.length} conversation${conversations.length > 1 ? 's' : ''} added', SnackbarNotificationType.success));
+        _view.conversationListPanelView.closeNewConversationModal();
+        // todo: where to sort the new conversation?
+        // todo: select the recently added conversation, scroll list view panel to selected message
         break;
 
       default:
