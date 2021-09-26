@@ -766,7 +766,7 @@ class NookController extends Controller {
         // Update the active conversation view as needed
         if (updatedIds.contains(activeConversation.docId)) {
           bool newMessagesAdded = false;
-          var oldConversationToCompare = changedConversations.firstWhere((conversation) => conversation.docId == activeConversation.docId, orElse: () {return null;});
+          var oldConversationToCompare = changedConversations.firstWhere((conversation) => conversation.docId == activeConversation.docId, orElse: () => null);
           // todo: might need to compare the messages to see if the messages were added
           // length doesnt account for 1 deletion, 1 addition at the same time though unlikely
           newMessagesAdded = oldConversationToCompare != null && oldConversationToCompare.messages.length < activeConversation.messages.length;          
