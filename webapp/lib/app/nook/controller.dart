@@ -26,7 +26,7 @@ part 'controller_view_helper.dart';
 
 Logger log = new Logger('controller.dart');
 
-const ENABLE_TURNLINE_PANEL = false;
+const ENABLE_TURNLINE_PANEL = true;
 const DEFAULT_PANEL_TAB = 'standard_messages';
 
 enum UIActionObject {
@@ -770,7 +770,7 @@ class NookController extends Controller {
           var oldConversationToCompare = changedConversations.firstWhere((conversation) => conversation.docId == activeConversation.docId, orElse: () => null);
           // todo: might need to compare the messages to see if the messages were added
           // length doesnt account for 1 deletion, 1 addition at the same time though unlikely
-          newMessagesAdded = oldConversationToCompare != null && oldConversationToCompare.messages.length < activeConversation.messages.length;          
+          newMessagesAdded = oldConversationToCompare != null && oldConversationToCompare.messages.length < activeConversation.messages.length;
           updateViewForConversation(activeConversation, updateInPlace: true, newMessageAdded: newMessagesAdded);
         }
       },

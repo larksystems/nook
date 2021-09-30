@@ -217,7 +217,41 @@ void _populateTurnlines(List<model.Turnline> turnlines) {
   for (var turnline in turnlines) {
     var turnlineView = Turnline(turnline.title);
     for (var step in turnline.steps) {
-      turnlineView.addStep(TurnlineStep(step.title, step.done, step.verified));
+      var stepView = TurnlineStep(step.title, step.done, step.verified);
+      List<TagView> tags = [];
+      if (step.title == 'Age demog') {
+        for (var tag in controller.tagsByGroup['Pre-eval Q 2 - age']) {
+          var tagView = new TagView(tag.text, tag.tagId);
+          tagView.onSelect = () => _view.appController.command(UIAction.addTag, new TagData(tag.tagId));
+          tags.add(tagView);
+        }
+      } else if (step.title == 'Escalated') {
+        for (var tag in controller.tagsByGroup['Safeguarding issues']) {
+          var tagView = new TagView(tag.text, tag.tagId);
+          tagView.onSelect = () => _view.appController.command(UIAction.addTag, new TagData(tag.tagId));
+          tags.add(tagView);
+        }
+      }
+      stepView.setTags(tags);
+
+      List<DivElement> messages = [];
+      if (step.title == 'Age demog') {
+        Map<String, List<model.SuggestedReply>> repliesByGroups = _groupRepliesIntoGroups(controller.suggestedRepliesByCategory['Pre-evaluation survey']);
+        for (var groupId in repliesByGroups.keys) {
+          var groupDescription = repliesByGroups[groupId].first.groupDescription;
+          if (groupDescription.trim() != 'Q 2') continue;
+          for (var reply in repliesByGroups[groupId]) {
+            int replyIndex = repliesByGroups[groupId].indexOf(reply);
+            var replyView = new ReplyActionView(reply.text, reply.translation, reply.shortcut, replyIndex, 'SEND');
+            replyView.showShortcut(controller.currentConfig.replies_keyboard_shortcuts_enabled);
+            replyView.showButtons(controller.currentConfig.sendMessagesEnabled);
+            messages.add(replyView.action);
+          }
+        }
+      }
+      stepView.setMessages(messages);
+
+      turnlineView.addStep(stepView);
     }
     turnlineViews.add(turnlineView);
   }
