@@ -1072,7 +1072,7 @@ class ConversationListPanelView {
         break;
       }
     }
-    
+
     summary
       .._updateText(messageText)
       .._updateDateTime(messageDateTime)
@@ -1452,7 +1452,7 @@ class ConversationSummary with LazyListViewItem, UserPresenceIndicator {
   @override
   void showOtherUserPresence(String userId, bool recent) {
     if (_presentUsers.isEmpty) {
-      elementOrNull?.append(otherUserPresenceIndicator);
+      _conversationItem.conversationItem.append(otherUserPresenceIndicator);
     }
     super.showOtherUserPresence(userId, recent);
   }
@@ -2057,7 +2057,7 @@ class ChangeSortOrderActionView {
     renderElement.append(SpanElement()..className = "fas fa-sort-amount-down");
     renderElement.append(_selectOrder);
   }
-  
+
   void _changeSortOrder(Event e) {
     switch ((e.currentTarget as SelectElement).value) {
       case 'alphabetically':
@@ -2079,7 +2079,7 @@ class ChangeSortOrderActionView {
         _selectOrder.selectedIndex = 1;
         break;
       case UIConversationSort.alphabeticalById:
-        _selectOrder.selectedIndex = 2;   
+        _selectOrder.selectedIndex = 2;
         break;
       case UIConversationSort.mostRecentMessageFirst:
       default:
