@@ -6,14 +6,16 @@ void _addMessagesToView(Map<String, Map<String, List<model.SuggestedReply>>> mes
       _view.addCategory(category, new StandardMessagesCategoryView(category, DivElement(), DivElement()));
     }
     var categoryView = _view.categoriesByName[category];
-    for (var group in messagesByGroupByCategory[category].keys.toList()) {
+    int groupIndex = 0;
+    for (var group in messagesByGroupByCategory[category].keys.toList()..sort()) {
       if (categoryView.groups.queryItem(group) == null) {
-        categoryView.addGroup(group, new StandardMessagesGroupView(category, group, DivElement(), DivElement()));
+        categoryView.addGroup(group, new StandardMessagesGroupView(category, group, DivElement(), DivElement()), groupIndex);
       }
       var groupView = categoryView.groupsByName[group];
       for (var message in messagesByGroupByCategory[category][group]) {
         groupView.addMessage(message.suggestedReplyId, new StandardMessageView(message.suggestedReplyId, message.text, message.translation));
       }
+      groupIndex++;
     }
   }
 }

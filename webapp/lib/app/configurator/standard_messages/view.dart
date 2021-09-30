@@ -104,8 +104,12 @@ class StandardMessagesCategoryView extends AccordionItem {
   void set name(String value) => _categoryName = value;
   String get name => _categoryName;
 
-  void addGroup(String groupName, StandardMessagesGroupView standardMessagesGroupView) {
-    groups.appendItem(standardMessagesGroupView);
+  void addGroup(String groupName, StandardMessagesGroupView standardMessagesGroupView, [int index]) {
+    if (index == null || groups.items.length == index) {
+      groups.appendItem(standardMessagesGroupView);
+    } else {
+      groups.insertItem(standardMessagesGroupView, index);
+    }
     groupsByName[groupName] = standardMessagesGroupView;
   }
 
