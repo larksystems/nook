@@ -192,7 +192,7 @@ void makeEditable(Element element, {void onChange(e), void onEnter(e)}) {
     ..onBlur.listen((e) {
       if (onChange != null) onChange(e);
     })
-    ..onKeyDown.listen((e) {
+    ..onKeyUp.listen((e) {
       if (onEnter != null && e.keyCode == KeyCode.ENTER) {
         onEnter(e);
       }
