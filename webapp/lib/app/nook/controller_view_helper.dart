@@ -217,7 +217,34 @@ void _populateTurnlines(List<model.Turnline> turnlines) {
   for (var turnline in turnlines) {
     var turnlineView = Turnline(turnline.title);
     for (var step in turnline.steps) {
-      turnlineView.addStep(TurnlineStep(step.title, step.done, step.verified));
+      var stepView = TurnlineStep(step.title, step.done, step.verified);
+      List<TagView> tags = [];
+      if (step.tagGroupName != null) {
+        for (var tag in controller.tagsByGroup[step.tagGroupName]) {
+          var tagView = new TagView(tag.text, tag.tagId);
+          tagView.onSelect = () => _view.appController.command(UIAction.addTag, new TagData(tag.tagId));
+          tags.add(tagView);
+        }
+      }
+      stepView.setTags(tags);
+
+      List<DivElement> messages = [];
+      if (step.standardMessagesGroupId != null) {
+        Map<String, List<model.SuggestedReply>> repliesByGroups = _groupRepliesIntoGroups(controller.suggestedReplies);
+        if (repliesByGroups.containsKey(step.standardMessagesGroupId)) {
+          var replies = repliesByGroups[step.standardMessagesGroupId];
+          for (var reply in replies) {
+            int replyIndex = replies.indexOf(reply);
+            var replyView = new ReplyActionView(reply.text, reply.translation, reply.shortcut, replyIndex, 'SEND');
+            replyView.showShortcut(controller.currentConfig.replies_keyboard_shortcuts_enabled);
+            replyView.showButtons(controller.currentConfig.sendMessagesEnabled);
+            messages.add(replyView.action);
+          }
+        }
+      }
+      stepView.setMessages(messages);
+
+      turnlineView.addStep(stepView);
     }
     turnlineViews.add(turnlineView);
   }
