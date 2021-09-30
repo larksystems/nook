@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:katikati_ui_lib/components/accordion/accordion.dart';
 import 'package:katikati_ui_lib/components/tabs/tabs.dart';
 import 'package:katikati_ui_lib/components/url_view/url_view.dart';
+import 'package:katikati_ui_lib/utils/datetime.dart';
 import 'package:katikati_ui_lib/components/tooltip/tooltip.dart';
 import 'package:katikati_ui_lib/components/nav/button_links.dart';
 import 'package:katikati_ui_lib/components/messages/freetext_message_send.dart';
@@ -67,8 +68,10 @@ class NookPageView extends PageView {
     };
     conversationIdFilter = conversationListPanelView.conversationIdFilter;
 
-    document.onKeyDown.listen(
-      (event) => appController.command(UIAction.keyPressed, new KeyPressData(event.key, event.altKey || event.ctrlKey || event.metaKey || event.shiftKey)));
+    document.onKeyDown.listen((event) {
+      if (ignoreShortcut(event)) return;
+      appController.command(UIAction.keyPressed, new KeyPressData(event.key, event.altKey || event.ctrlKey || event.metaKey || event.shiftKey));
+    });
   }
 
   void initSignedInView(String displayName, String photoUrl) {
@@ -122,6 +125,7 @@ class NookPageView extends PageView {
     if (showTagPanel) {
       var tagsTab = TabView('tag', "Tags", tagPanelView.tagPanel);
       tabsToSet.add(tagsTab);
+      tagPanelView.enableTagging(false);
     }
 
     if (showTurnlinePanel) {
@@ -186,15 +190,10 @@ void makeEditable(Element element, {void onChange(e), void onEnter(e)}) {
   element
     ..contentEditable = 'true'
     ..onBlur.listen((e) {
-      e.stopPropagation();
       if (onChange != null) onChange(e);
     })
-    ..onKeyPress.listen((e) => e.stopPropagation())
-    ..onKeyUp.listen((e) => e.stopPropagation())
     ..onKeyDown.listen((e) {
-      e.stopPropagation();
       if (onEnter != null && e.keyCode == KeyCode.ENTER) {
-        e.stopImmediatePropagation();
         onEnter(e);
       }
     });
@@ -223,6 +222,9 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
   List<MessageView> _messageViews = [];
   Map<String, MessageView> _messageViewsMap = {};
   List<SuggestedMessageView> _suggestedMessageViews = [];
+
+  bool _scrolledToBottom = true;
+  SpanElement _newMessageIndicator;
 
   ConversationPanelView() {
     conversationPanel = new DivElement()
@@ -269,6 +271,14 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
 
     _messages = new DivElement()
       ..classes.add('messages');
+    _messages.onScroll.listen((e) {
+      if (_messages.scrollTop == _messages.scrollHeight - _messages.offsetHeight) {
+        _newMessageIndicator.classes.toggle("hidden", true);
+        _scrolledToBottom = true;
+      } else {
+        _scrolledToBottom = false;
+      }
+    });
     conversationPanel.append(_messages);
 
     _freetextMessageSendView = FreetextMessageSendView("", maxLength: SMS_MAX_LENGTH)..onSend.listen((messageText) {
@@ -303,6 +313,16 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
     _suggestedMessagesActions.append(deleteSuggestedMessages);
 
     _suggestedMessagesActions.append(automaticSuggestionIndicator..classes.add('absolute'));
+
+    _newMessageIndicator = SpanElement()
+      ..classes.add('messages__new-message-indicator')
+      ..classes.add('hidden')
+      ..innerText = "New messages ↓";
+    _newMessageIndicator.onClick.listen((e) {
+      _messages.scrollTop = _messages.scrollHeight;
+      _newMessageIndicator.classes.toggle("hidden", true);
+    });
+    conversationPanel.append(_newMessageIndicator);
   }
 
   set deidentifiedPhoneNumber(String deidentifiedPhoneNumber) => _conversationIdCopy.dataset['copy-value'] = deidentifiedPhoneNumber;
@@ -451,6 +471,16 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
     }
     _suggestedMessagesActions.classes.toggle('hidden', _suggestedMessages.children.isEmpty);
   }
+
+  void handleNewMessage() {
+    if (_scrolledToBottom) {
+      _messages.scrollTop = _messages.scrollHeight;
+      return;
+    }
+
+    _newMessageIndicator.classes.toggle("hidden", false);
+    _newMessageIndicator.style.top = "${_messages.offsetHeight + _messages.offsetTop - 30}px";
+  }
 }
 
 class DateSeparatorView {
@@ -536,7 +566,6 @@ class MessageView {
         event.stopPropagation();
         _view.appController.command(UIAction.selectMessage, new MessageData(conversationId, messageId));
       });
-    _message.append(_messageBubble);
 
     _messageStatus = new DivElement()
       ..classes.add('message__status');
@@ -559,9 +588,17 @@ class MessageView {
 
     _messageTags = new DivElement()
       ..classes.add('message__tags')
+      ..classes.toggle('message__tags--outgoing', !incoming)
       ..classes.add('hover-parent');
     tags.forEach((tag) => _messageTags.append(tag.renderElement));
-    _message.append(_messageTags);
+
+    if (incoming) {
+      _message.append(_messageBubble);
+      _message.append(_messageTags);
+    } else {
+      _message.append(_messageTags);
+      _message.append(_messageBubble);
+    }
 
     _addTag = buttons.Button(buttons.ButtonType.add, onClick: (e) {
       e.stopPropagation();
@@ -706,7 +743,7 @@ String _formatDateTime(DateTime dateTime) {
 }
 
 class MessageTagView extends TagView {
-  MessageTagView(String text, String tagId, TagStyle tagStyle, [bool highlight = false]) : super(text, tagId, tagStyle: tagStyle, deletable: true) {
+  MessageTagView(String text, String tagId, TagStyle tagStyle, {bool actionsBeforeTagText = false, bool highlight = false}) : super(text, tagId, tagStyle: tagStyle, deletable: true, actionsBeforeText: actionsBeforeTagText) {
     onDelete = () {
       markPending(true);
       DivElement message = getAncestors(renderElement).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
@@ -717,7 +754,7 @@ class MessageTagView extends TagView {
 }
 
 class SuggestedMessageTagView extends TagView {
-  SuggestedMessageTagView(String text, String tagId, TagStyle tagStyle, [bool highlight = false]) : super(text, tagId, tagStyle: tagStyle, acceptable: true, deletable: true, suggested: true) {
+  SuggestedMessageTagView(String text, String tagId, TagStyle tagStyle, {bool actionsBeforeTagText = false, bool highlight = false}) : super(text, tagId, tagStyle: tagStyle, acceptable: true, deletable: true, suggested: true, actionsBeforeText: actionsBeforeTagText) {
 
     onDelete = () {
       markPending(true);
@@ -908,6 +945,9 @@ class ConversationListPanelView {
   Map<String, ConversationSummary> _phoneToConversations = {};
   ConversationSummary activeConversation;
 
+  String _lastAddedConversationDateSeparatorString = "";
+  bool _showDateSeparator = true;
+
   int _totalConversations = 0;
   void set totalConversations(int v) {
     _totalConversations = v;
@@ -954,7 +994,7 @@ class ConversationListPanelView {
 
     var conversationListElement = new DivElement()
       ..classes.add('conversation-list');
-    _conversationList = new LazyListViewModel(conversationListElement);
+    _conversationList = new LazyListViewModel(conversationListElement, onAddItemCallback: _onAddConversation);
     conversationListPanel.append(conversationListElement);
 
     var panelFilters = new DivElement()
@@ -974,7 +1014,18 @@ class ConversationListPanelView {
     panelFilters.append(conversationTurnsFilter.conversationFilter);
   }
 
-  void updateConversationList(Set<Conversation> conversations) {
+  void _onAddConversation(ConversationSummary item) {
+    var currentDateSeparatorString = dateStringForSeparator(item._dateTime);
+    if (!_showDateSeparator) {
+      item._toggleDateSeparator(false);
+      return;
+    }
+
+    item._toggleDateSeparator((_lastAddedConversationDateSeparatorString == "" || currentDateSeparatorString != _lastAddedConversationDateSeparatorString));
+    _lastAddedConversationDateSeparatorString = currentDateSeparatorString;
+  }
+
+  void updateConversationList(Set<Conversation> conversations, UIConversationSort sortOrder) {
     Set<String> conversationUuids = Set<String>();
     for (Conversation c in conversations) {
       conversationUuids.add(c.docId);
@@ -983,9 +1034,9 @@ class ConversationListPanelView {
     for (var conversation in conversations) {
       ConversationSummary summary = _phoneToConversations[conversation.docId];
       if (summary == null) {
-        summary = new ConversationSummary(conversation.docId, "", false);
+        summary = new ConversationSummary(conversation.docId, "", false, ConversationItemStatus.normal, dateTime: conversation.messages.isEmpty ? null : conversation.messages.last.datetime);
       }
-      updateConversationSummary(summary, conversation);
+      updateConversationSummary(summary, conversation, sortOrder);
       _phoneToConversations[summary.deidentifiedPhoneNumber] = summary;
       conversationSummaries.add(summary);
     }
@@ -994,8 +1045,38 @@ class ConversationListPanelView {
     _conversationPanelTitle.text = _conversationPanelTitleText;
   }
 
-  void updateConversationSummary(ConversationSummary summary, Conversation conversation) {
-    summary._text = conversation.messages.isEmpty ? "No messages yet" : conversation.messages.last?.text;
+  void updateConversationStatus(String conversationDocId, ConversationItemStatus status) {
+    ConversationSummary summary = _phoneToConversations[conversationDocId];
+    if (summary != null) {
+      summary._updateStatus(status);
+    }
+  }
+
+  void updateConversationSummary(ConversationSummary summary, Conversation conversation, UIConversationSort sortOrder) {
+    var messageText = conversation.messages.isEmpty ? "No messages yet" : conversation.messages.last?.text;
+    var messageDateTime = conversation.messages.isEmpty ? null : conversation.messages.last?.datetime;
+
+    if (sortOrder == UIConversationSort.mostRecentInMessageFirst) {
+      messageText = conversation.mostRecentMessageInbound == null ? "No inbound message" : conversation.mostRecentMessageInbound.text;
+      messageDateTime = conversation.mostRecentMessageInbound == null ? null : conversation.mostRecentMessageInbound.datetime;
+    }
+
+    bool hasPendingMessages = false;
+    bool hasFailedMessages = false;
+    for (Message message in conversation.messages) {
+      if (message.status == MessageStatus.pending) {
+        hasPendingMessages = true;
+        if (hasFailedMessages) break;
+      } else if (message.status == MessageStatus.failed) {
+        hasFailedMessages = true;
+        break;
+      }
+    }
+    
+    summary
+      .._updateText(messageText)
+      .._updateDateTime(messageDateTime)
+      .._updateStatus(hasFailedMessages ? ConversationItemStatus.failed : hasPendingMessages ? ConversationItemStatus.pending : ConversationItemStatus.normal);
     conversationNeedsReply(conversation) ? summary._markUnread() : summary._markRead();
   }
 
@@ -1040,6 +1121,8 @@ class ConversationListPanelView {
 
   void changeConversationSortOrder(UIConversationSort conversationSort) {
     _changeSortOrder.updateSelectElement(conversationSort);
+    _showDateSeparator = conversationSort != UIConversationSort.alphabeticalById;
+    _lastAddedConversationDateSeparatorString = "";
   }
 
   void checkConversation(String deidentifiedPhoneNumber) {
@@ -1225,10 +1308,10 @@ class ConversationIdFilter {
 
     _idInput = new TextInputElement()
       ..classes.add('conversation-filter__input')
-      ..placeholder = 'Enter conversation ID';
-    makeEditable(_idInput, onChange: (_) {
-      _view.appController.command(UIAction.updateConversationIdFilter, new ConversationIdFilterData(_idInput.value));
-    });
+      ..placeholder = 'Enter conversation ID'
+      ..onChange.listen((_) {
+        _view.appController.command(UIAction.updateConversationIdFilter, new ConversationIdFilterData(_idInput.value));
+      });
     conversationFilter.append(_idInput);
   }
 
@@ -1246,11 +1329,13 @@ class ConversationSummary with LazyListViewItem, UserPresenceIndicator {
 
   String deidentifiedPhoneNumber;
   String _text;
+  DateTime _dateTime;
   bool _unread;
   bool _checked = false;
   bool _selected = false;
   bool _checkboxHidden = true;
   bool _warning = false;
+  ConversationItemStatus _status;
 
   // HACK(mariana): This should get extracted from the model as it gets computed there for the single conversation view
   String get _shortDeidentifiedPhoneNumber => deidentifiedPhoneNumber.split('uuid-')[1].split('-')[0];
@@ -1258,12 +1343,13 @@ class ConversationSummary with LazyListViewItem, UserPresenceIndicator {
 
   Map<String, bool> _presentUsers = {};
 
-  ConversationSummary(this.deidentifiedPhoneNumber, this._text, this._unread) {
+  ConversationSummary(this.deidentifiedPhoneNumber, this._text, this._unread, this._status, {dateTime: DateTime}) {
+    _dateTime = dateTime;
     otherUserPresenceIndicator = new DivElement()..classes.add('conversation-list__user-indicators')..classes.add('user-indicators');
   }
 
   Element buildElement() {
-    _conversationItem = ConversationItemView(_shortDeidentifiedPhoneNumber, _text, ConversationItemStatus.normal, readStatus, checkEnabled: !_checkboxHidden, defaultSelected: _selected)
+    _conversationItem = ConversationItemView(_shortDeidentifiedPhoneNumber, _text, _status, readStatus, checkEnabled: !_checkboxHidden, defaultSelected: _selected, dateTime: _dateTime)
       ..onCheck.listen((_) {
         _view.appController.command(UIAction.selectConversation, new ConversationData(deidentifiedPhoneNumber));
       })
@@ -1321,14 +1407,29 @@ class ConversationSummary with LazyListViewItem, UserPresenceIndicator {
     _conversationItem?.uncheck();
   }
 
+  void _updateText(String text) {
+    _text = text;
+    _conversationItem?.updateMessage(text);
+  }
+
+  void _updateDateTime(DateTime dateTime) {
+    _dateTime = dateTime;
+    _conversationItem?.updateDateTime(dateTime);
+  }
+
+  void _toggleDateSeparator(bool show) {
+    _conversationItem?.toggleDateSeparator(show);
+  }
+
+  void _updateStatus(ConversationItemStatus status) {
+    _status = status;
+    _conversationItem?.updateStatus(status);
+  }
+
   void _showCheckbox(bool show) {
     // todo: figure out this
     _checkboxHidden = !show;
-    if(show) {
-      _conversationItem?.enableCheckbox();
-    } else {
-      _conversationItem?.disableCheckbox();
-    }
+    _conversationItem?.enableCheckbox(show);
   }
 
   void _showWarning(bool show) {
@@ -1551,7 +1652,6 @@ class TagPanelView {
   DivElement _statusPanel;
   Text _statusText;
 
-  AddActionView _addTag;
   List<TagActionView> _tagViews;
 
   TagPanelView() {
@@ -1639,12 +1739,9 @@ class TagPanelView {
     }
   }
 
-  void showInstruction() {
-    _instruction.hidden = false;
-  }
-
-  void hideInstruction() {
-    _instruction.hidden = true;
+  void enableTagging(bool show) {
+    _instruction.hidden = show;
+    showButtons(show);
   }
 }
 

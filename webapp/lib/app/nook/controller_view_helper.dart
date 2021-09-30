@@ -11,10 +11,10 @@ const SMS_MAX_LENGTH = 160;
 
 // Functions to populate the views with model objects.
 
-void _populateConversationListPanelView(Set<model.Conversation> conversations) {
+void _populateConversationListPanelView(Set<model.Conversation> conversations, UIConversationSort sortOrder) {
   _view.conversationListPanelView.hideLoadSpinner();
   _view.conversationListPanelView.hideSelectConversationListMessage();
-  _view.conversationListPanelView.updateConversationList(conversations);
+  _view.conversationListPanelView.updateConversationList(conversations, sortOrder);
 }
 
 void _populateConversationPanelView(model.Conversation conversation, {bool updateInPlace: false}) {
@@ -98,12 +98,12 @@ List<TagView> _generateMessageTagViews(model.Message message) {
   for (var tag in convertTagIdsToTags(message.tagIds, controller.tagIdsToTags)) {
     bool shouldHighlightTag = controller.conversationFilter.filterTagIdsManuallySet[TagFilterType.include].contains(tag.tagId);
     shouldHighlightTag = shouldHighlightTag || controller.conversationFilter.filterTagIdsManuallySet[TagFilterType.lastInboundTurn].contains(tag.tagId);
-    tags.add(new MessageTagView(tag.text, tag.tagId, tagTypeToKKStyle(tag.type), shouldHighlightTag));
+    tags.add(new MessageTagView(tag.text, tag.tagId, tagTypeToKKStyle(tag.type), actionsBeforeTagText: message.direction == model.MessageDirection.Out, highlight: shouldHighlightTag));
   }
   for (var tag in convertTagIdsToTags(message.suggestedTagIds, controller.tagIdsToTags)) {
     bool shouldHighlightTag = controller.conversationFilter.filterTagIdsManuallySet[TagFilterType.include].contains(tag.tagId);
     shouldHighlightTag = shouldHighlightTag || controller.conversationFilter.filterTagIdsManuallySet[TagFilterType.lastInboundTurn].contains(tag.tagId);
-    tags.add(new SuggestedMessageTagView(tag.text, tag.tagId, tagTypeToKKStyle(tag.type), shouldHighlightTag));
+    tags.add(new SuggestedMessageTagView(tag.text, tag.tagId, tagTypeToKKStyle(tag.type), actionsBeforeTagText: message.direction == model.MessageDirection.Out, highlight: shouldHighlightTag));
   }
   return tags;
 }

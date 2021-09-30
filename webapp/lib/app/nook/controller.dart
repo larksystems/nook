@@ -2,7 +2,9 @@ library controller;
 
 import 'dart:async';
 import 'dart:collection';
+import 'dart:html';
 import 'package:firebase/firebase.dart' show FirebaseError;
+import 'package:katikati_ui_lib/components/conversation/conversation_item.dart';
 
 import 'package:katikati_ui_lib/components/url_view/url_view.dart';
 import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
@@ -764,7 +766,12 @@ class NookController extends Controller {
 
         // Update the active conversation view as needed
         if (updatedIds.contains(activeConversation.docId)) {
-          updateViewForConversation(activeConversation, updateInPlace: true);
+          bool newMessagesAdded = false;
+          var oldConversationToCompare = changedConversations.firstWhere((conversation) => conversation.docId == activeConversation.docId, orElse: () => null);
+          // todo: might need to compare the messages to see if the messages were added
+          // length doesnt account for 1 deletion, 1 addition at the same time though unlikely
+          newMessagesAdded = oldConversationToCompare != null && oldConversationToCompare.messages.length < activeConversation.messages.length;          
+          updateViewForConversation(activeConversation, updateInPlace: true, newMessageAdded: newMessagesAdded);
         }
       },
       conversationListRoot,
@@ -1039,7 +1046,7 @@ class NookController extends Controller {
         selectedConversationSummary = conversations.firstWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
         _view.conversationPanelView.selectConversationSummary();
         actionObjectState = UIActionObject.conversation;
-        _view.tagPanelView.hideInstruction();
+        _view.tagPanelView.enableTagging(true);
 
         selectedMessage = null;
         _view.conversationPanelView.deselectMessage();
@@ -1051,7 +1058,7 @@ class NookController extends Controller {
           actionObjectState = null;
 
           if (selectedConversationSummary == null && selectedMessage == null) {
-            _view.tagPanelView.showInstruction();
+            _view.tagPanelView.enableTagging(false);
           }
         }
         break;
@@ -1060,7 +1067,7 @@ class NookController extends Controller {
         selectedMessage = activeConversation.messages.singleWhere((element) => element.id == messageData.messageId);
         _view.conversationPanelView.selectMessage(activeConversation.messages.indexOf(selectedMessage));
         actionObjectState = UIActionObject.message;
-        _view.tagPanelView.hideInstruction();
+        _view.tagPanelView.enableTagging(true);
 
         selectedConversationSummary = null;
         _view.conversationPanelView.deselectConversationSummary();
@@ -1072,7 +1079,7 @@ class NookController extends Controller {
           actionObjectState = null;
 
           if(selectedConversationSummary == null && selectedMessage == null) {
-            _view.tagPanelView.showInstruction();
+            _view.tagPanelView.enableTagging(false);
           }
         }
         break;
@@ -1378,7 +1385,7 @@ class NookController extends Controller {
   /// Returns the first conversation in the list, or null if list is empty.
   model.Conversation updateViewForConversations(Set<model.Conversation> conversations) {
     // Update conversationListPanelView
-    _populateConversationListPanelView(conversations);
+    _populateConversationListPanelView(conversations, conversationSortOrder);
 
     // Update conversationPanelView
     if (conversations.isEmpty) {
@@ -1415,7 +1422,7 @@ class NookController extends Controller {
     return activeConversation;
   }
 
-  void updateViewForConversation(model.Conversation conversation, {bool updateInPlace: false}) {
+  void updateViewForConversation(model.Conversation conversation, {bool updateInPlace: false, bool newMessageAdded = false}) {
     userPositionReporter.reportPresence(signedInUser, conversation);
     if (conversation == null) return;
     // Replace the previous conversation in the conversation panel
@@ -1431,6 +1438,9 @@ class NookController extends Controller {
       // If it doesn't meet the filter, show warning
       _view.conversationPanelView.showWarning('Conversation no longer meets filtering constraints');
     }
+    if (newMessageAdded) {
+      _view.conversationPanelView.handleNewMessage();
+    }
   }
 
   void _selectConversationInView(model.Conversation conversation) {
@@ -1444,12 +1454,14 @@ class NookController extends Controller {
   void sendReply(model.SuggestedReply reply, model.Conversation conversation) {
     log.verbose('Preparing to send reply "${reply.text}" to conversation ${conversation.docId}');
     model.Message newMessage = new model.Message()
+      ..id = model.generatePendingMessageId(conversation)
       ..text = reply.text
       ..datetime = new DateTime.now()
       ..direction = model.MessageDirection.Out
       ..translation = reply.translation
       ..tagIds = []
       ..status = model.MessageStatus.pending;
+    _view.conversationListPanelView.updateConversationStatus(conversation.docId, ConversationItemStatus.pending);
     log.verbose('Adding reply "${reply.text}" to conversation ${conversation.docId}');
     conversation.messages.add(newMessage);
     _view.conversationPanelView.addMessage(_generateMessageView(newMessage, conversation));
@@ -1458,6 +1470,7 @@ class NookController extends Controller {
       log.error('Reply "${reply.text}" failed to be sent to conversation ${conversation.docId}');
       log.error('Error: ${error}');
       command(UIAction.showSnackbar, new SnackbarData('Send Reply Failed', SnackbarNotificationType.error));
+      _view.conversationListPanelView.updateConversationStatus(conversation.docId, ConversationItemStatus.failed);
       newMessage.status = model.MessageStatus.failed;
       if (conversation.docId == activeConversation.docId) {
         int newMessageIndex = activeConversation.messages.indexOf(newMessage);
@@ -1470,25 +1483,37 @@ class NookController extends Controller {
   void sendMultiReply(model.SuggestedReply reply, List<model.Conversation> conversations) {
     List<String> conversationIds = conversations.map((conversation) => conversation.docId).toList();
     log.verbose('Preparing to send reply "${reply.text}" to conversations $conversationIds');
-    model.Message newMessage = new model.Message()
-      ..text = reply.text
-      ..datetime = new DateTime.now()
-      ..direction = model.MessageDirection.Out
-      ..translation = reply.translation
-      ..tagIds = []
-      ..status = model.MessageStatus.pending;
-    log.verbose('Adding reply "${reply.text}" to conversations ${conversationIds}');
-    conversations.forEach((conversation) => conversation.messages.add(newMessage));
-    if (conversations.contains(activeConversation)) {
-      _view.conversationPanelView.addMessage(_generateMessageView(newMessage, activeConversation));
-    }
+    Map<String, model.Message> newMessages = {};
+    conversations.forEach((conversation) {
+      model.Message newMessage = new model.Message()
+        ..id = model.generatePendingMessageId(conversation)
+        ..text = reply.text
+        ..datetime = new DateTime.now()
+        ..direction = model.MessageDirection.Out
+        ..translation = reply.translation
+        ..tagIds = []
+        ..status = model.MessageStatus.pending;
+      _view.conversationListPanelView.updateConversationStatus(conversation.docId, ConversationItemStatus.pending);
+      newMessages[conversation.docId] = newMessage;
+      conversation.messages.add(newMessage);
+      if (conversation.docId == activeConversation.docId) {
+        _view.conversationPanelView.addMessage(_generateMessageView(newMessage, activeConversation));
+      }
+    });
+
     log.verbose('Sending reply "${reply.text}" to conversations ${conversationIds}');
-    platform.sendMultiMessage(conversationIds, newMessage.text, onError: (error) {
+    platform.sendMultiMessage(conversationIds, reply.text, onError: (error) {
       log.error('Reply "${reply.text}" failed to be sent to conversations ${conversationIds}');
       log.error('Error: ${error}');
       command(UIAction.showSnackbar, new SnackbarData('Send Multi Reply Failed', SnackbarNotificationType.error));
-      newMessage.status = model.MessageStatus.failed;
+      conversationIds.forEach((conversationId) {
+        _view.conversationListPanelView.updateConversationStatus(conversationId, ConversationItemStatus.pending);
+      });
+      for (var newMessage in newMessages.values) {
+        newMessage.status = model.MessageStatus.failed;
+      }
       if (conversationIds.contains(activeConversation.docId)) {
+        var newMessage = newMessages[activeConversation.docId];
         int newMessageIndex = activeConversation.messages.indexOf(newMessage);
         _view.conversationPanelView.messageViewAtIndex(newMessageIndex).setStatus(newMessage.status);
       }
@@ -1503,18 +1528,17 @@ class NookController extends Controller {
     List<model.Message> newMessages = [];
     for (var reply in replies) {
       model.Message newMessage = new model.Message()
+        ..id = model.generatePendingMessageId(conversation)
         ..text = reply.text
         ..datetime = new DateTime.now()
         ..direction = model.MessageDirection.Out
         ..translation = reply.translation
         ..tagIds = []
         ..status = model.MessageStatus.pending;
+        _view.conversationListPanelView.updateConversationStatus(conversation.docId, ConversationItemStatus.pending);
       newMessages.add(newMessage);
-    }
-    log.verbose('Adding ${textReplies.length} replies "${repliesStr}" to conversation ${conversation.docId}');
-    conversation.messages.addAll(newMessages);
-    for (var message in newMessages) {
-      _view.conversationPanelView.addMessage(_generateMessageView(message, conversation));
+      conversation.messages.add(newMessage);
+      _view.conversationPanelView.addMessage(_generateMessageView(newMessage, conversation));
     }
 
     log.verbose('Sending ${textReplies.length} replies "${repliesStr}" to conversation ${conversation.docId}');
@@ -1522,6 +1546,7 @@ class NookController extends Controller {
       log.error('${textReplies.length} replies "${repliesStr}" failed to be sent to conversation ${conversation.docId}');
       log.error('Error: ${error}');
       command(UIAction.showSnackbar, new SnackbarData('Send Reply Failed', SnackbarNotificationType.error));
+      _view.conversationListPanelView.updateConversationStatus(conversation.docId, ConversationItemStatus.failed);
       for (var message in newMessages) {
         message.status = model.MessageStatus.failed;
         if (conversation.docId == activeConversation.docId) {
@@ -1538,34 +1563,44 @@ class NookController extends Controller {
     List<String> textReplies = replies.map((r) => r.text).toList();
     String repliesStr = textReplies.join("; ");
     log.verbose('Preparing to send ${textReplies.length} replies "${repliesStr}" to conversations $conversationIds');
-    var newMessages = <model.Message>[];
-    for (var reply in replies) {
-      model.Message newMessage = new model.Message()
-        ..text = reply.text
-        ..datetime = new DateTime.now()
-        ..direction = model.MessageDirection.Out
-        ..translation = reply.translation
-        ..tagIds = []
-        ..status = model.MessageStatus.pending;
-      newMessages.add(newMessage);
-    }
-    log.verbose('Adding ${textReplies.length} replies "${repliesStr}" to conversation ${conversationIds}');
-    conversations.forEach((conversation) => conversation.messages.addAll(newMessages));
-    if (conversations.contains(activeConversation)) {
-      for (var message in newMessages) {
-        _view.conversationPanelView.addMessage(_generateMessageView(message, activeConversation));
+    Map<String, List<model.Message>> newMessagesByConversation = {};
+    for (var conversation in conversations) {
+      var newMessages = <model.Message>[];
+      for (var reply in replies) {
+        model.Message newMessage = new model.Message()
+          ..id = model.generatePendingMessageId(conversation)
+          ..text = reply.text
+          ..datetime = new DateTime.now()
+          ..direction = model.MessageDirection.Out
+          ..translation = reply.translation
+          ..tagIds = []
+          ..status = model.MessageStatus.pending;
+        _view.conversationListPanelView.updateConversationStatus(conversation.docId, ConversationItemStatus.pending);
+        newMessages.add(newMessage);
+        conversation.messages.add(newMessage);
+        if (conversation.docId == activeConversation.docId) {
+          _view.conversationPanelView.addMessage(_generateMessageView(newMessage, activeConversation));
+        }
       }
+      newMessagesByConversation[conversation.docId] = newMessages;
     }
     log.verbose('Sending ${textReplies.length} replies "${repliesStr}" to conversation ${conversationIds}');
     platform.sendMultiMessages(conversationIds, textReplies, onError: (error) {
       log.error('${textReplies.length} replies "${repliesStr}" failed to be sent to conversations ${conversationIds}');
       log.error('Error: ${error}');
       command(UIAction.showSnackbar, new SnackbarData('Send Multi Reply Failed', SnackbarNotificationType.error));
-      for (var message in newMessages) {
-        message.status = model.MessageStatus.failed;
-        if (conversationIds.contains(activeConversation.docId)) {
-          int messageIndex = activeConversation.messages.indexOf(message);
-          _view.conversationPanelView.messageViewAtIndex(messageIndex).setStatus(message.status);
+      conversationIds.forEach((conversationId) {
+        _view.conversationListPanelView.updateConversationStatus(conversationId, ConversationItemStatus.pending);
+      });
+      for (var conversationId in newMessagesByConversation.keys) {
+        var newMessages = newMessagesByConversation[conversationId];
+        for (var message in newMessages) {
+          message.status = model.MessageStatus.failed;
+          if (conversationId == activeConversation.docId) {
+            int messageIndex = activeConversation.messages.indexOf(message);
+            _view.conversationPanelView.messageViewAtIndex(messageIndex).setStatus(message.status);
+          }
+
         }
       }
     });
@@ -1594,7 +1629,7 @@ class NookController extends Controller {
     if (!message.tagIds.contains(tag.tagId)) {
       platform.addMessageTag(activeConversation, message, tag.tagId).then(
         (_) {
-          var tagView = new MessageTagView(tag.text, tag.tagId, tagTypeToKKStyle(tag.type));
+          var tagView = new MessageTagView(tag.text, tag.tagId, tagTypeToKKStyle(tag.type), actionsBeforeTagText: message.direction == model.MessageDirection.Out);
           _view.conversationPanelView
             .messageViewAtIndex(conversation.messages.indexOf(message))
             .addTag(tagView);
