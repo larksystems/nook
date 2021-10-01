@@ -214,6 +214,7 @@ bool _filterTagRemovable(String tagId) {
 
 void _populateTurnlines(List<model.Turnline> turnlines) {
   List<Turnline> turnlineViews = [];
+  model.TurnlineStep previousStep;
   for (var turnline in turnlines) {
     var turnlineView = Turnline(turnline.title);
     for (var step in turnline.steps) {
@@ -245,6 +246,10 @@ void _populateTurnlines(List<model.Turnline> turnlines) {
       stepView.setMessages(messages);
 
       turnlineView.addStep(stepView);
+      if ((previousStep?.done == null || previousStep.done)  && !step.done) {
+        stepView.open();
+      }
+      previousStep = step;
     }
     turnlineViews.add(turnlineView);
   }
