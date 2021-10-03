@@ -345,6 +345,7 @@ main {
     padding: 2px 4px;
     font-size: 0.8em;
     border-radius: 2px;
+    text-align: center;
 }
 
 .notes-panel {

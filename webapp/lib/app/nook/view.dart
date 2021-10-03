@@ -420,6 +420,11 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
     for (int i = 0; i < messagesNo; i++) {
       _messages.firstChild.remove();
     }
+
+    var startOfConversation = DivElement()
+      ..classes.add("messages-date-separator")
+      ..innerText = "You have reached the start of conversation";
+    _messages.append(startOfConversation);
   }
 
   void updateDateSeparators() {
