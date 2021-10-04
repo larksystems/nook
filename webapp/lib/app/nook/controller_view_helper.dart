@@ -220,7 +220,7 @@ void _populateTurnlines(List<model.Turnline> turnlines) {
     for (var step in turnline.steps) {
       var stepView = TurnlineStep(step.title, step.done, step.verified);
       List<TagView> tags = [];
-      if (step.tagGroupName != null) {
+      if (step.tagGroupName != null && controller.tagsByGroup.containsKey(step.tagGroupName)) {
         for (var tag in controller.tagsByGroup[step.tagGroupName]) {
           var tagView = new TagView(tag.text, tag.tagId);
           tagView.onSelect = () => _view.appController.command(UIAction.addTag, new TagData(tag.tagId));
