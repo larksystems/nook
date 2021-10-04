@@ -10,6 +10,11 @@ import 'dart:html';
 class LazyListViewModel {
   /// The items to be displayed.
   final _items = <LazyListViewItem>[];
+
+  /// The total number of items the lazy list has (not the number displayed)
+  int get numberOfItems => _items.length;
+
+  /// The callback to be called when an item is added to the DOM
   Function _onAddItemCallback;
 
   /// The DOM element used to display the items

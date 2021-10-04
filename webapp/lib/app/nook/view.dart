@@ -953,7 +953,7 @@ class ConversationListPanelView {
     _totalConversations = v;
     _conversationPanelTitle.text = _conversationPanelTitleText;
   }
-  String get _conversationPanelTitleText => '${_phoneToConversations.length}/${_totalConversations}';
+  String get _conversationPanelTitleText => '${_conversationList?.numberOfItems}/${_totalConversations}';
 
   ConversationListPanelView() {
     conversationListPanel = new DivElement()
