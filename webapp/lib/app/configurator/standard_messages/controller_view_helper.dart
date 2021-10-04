@@ -1,15 +1,23 @@
 part of controller;
 
-void _addMessagesToView(Map<String, Map<String, List<model.SuggestedReply>>> messagesByGroupByCategory) {
+void _addMessagesToView(Map<String, Map<String, List<model.SuggestedReply>>> messagesByGroupByCategory, {bool startEditingName = false}) {
   for (var category in messagesByGroupByCategory.keys.toList()) {
     if (_view.categories.queryItem(category) == null) {
       _view.addCategory(category, new StandardMessagesCategoryView(category, DivElement(), DivElement()));
+      if (startEditingName) {
+        _view.categoriesByName[category].expand();
+        _view.categoriesByName[category].editableTitle.beginEdit(selectAllOnFocus: true);
+      }
     }
     var categoryView = _view.categoriesByName[category];
     int groupIndex = 0;
     for (var group in messagesByGroupByCategory[category].keys.toList()..sort()) {
       if (categoryView.groups.queryItem(group) == null) {
         categoryView.addGroup(group, new StandardMessagesGroupView(category, group, DivElement(), DivElement()), groupIndex);
+        if (startEditingName) {
+          categoryView.groupsByName[group].expand();
+          categoryView.groupsByName[group].editableTitle.beginEdit(selectAllOnFocus: true);
+        }
       }
       var groupView = categoryView.groupsByName[group];
       for (var message in messagesByGroupByCategory[category][group]) {

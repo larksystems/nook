@@ -118,7 +118,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
       case MessagesConfigAction.addStandardMessagesGroup:
         StandardMessagesGroupData groupData = data;
         var newGroup = standardMessagesManager.createStandardMessagesGroup(groupData.category);
-        _addMessagesToView({groupData.category: {newGroup.groupDescription: []}});
+        _addMessagesToView({groupData.category: {newGroup.groupDescription: []}}, startEditingName: true);
         break;
 
       case MessagesConfigAction.updateStandardMessagesGroup:
@@ -135,7 +135,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
 
       case MessagesConfigAction.addStandardMessagesCategory:
         var newCategory = standardMessagesManager.createStandardMessagesCategory();
-        _addMessagesToView({newCategory: {}});
+        _addMessagesToView({newCategory: {}}, startEditingName: true);
         break;
 
       case MessagesConfigAction.updateStandardMessagesCategory:

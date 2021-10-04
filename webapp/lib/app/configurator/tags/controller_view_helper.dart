@@ -2,7 +2,7 @@ part of controller;
 
 void _addTagsToView(Map<String, List<model.Tag>> tagsByCategory, {bool startEditing = false, bool startEditingName = false}) {
   for (var category in tagsByCategory.keys.toList()..sort()) {
-    if (!(_view.groups.queryItem(category) != null)) {
+    if (_view.groups.queryItem(category) == null) {
       _view.addTagCategory(category, new TagGroupView(category, category, DivElement(), DivElement()));
     }
     Map<String, TagView> tagsById = {};
