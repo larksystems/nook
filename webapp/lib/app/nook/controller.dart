@@ -709,7 +709,12 @@ class NookController extends Controller {
           ..addAll(modified.map((c) => c.docId))
           ..addAll(removed.map((c) => c.docId));
         List<model.Conversation> changedConversations = conversations.where((conversation) => updatedIds.contains(conversation.docId)).toList();
-        conversations.removeAll(changedConversations);
+        var newConversations = emptyConversationsSet(conversationSortOrder);
+        for (var conversation in conversations) {
+          if (updatedIds.contains(conversation.docId)) continue;
+          newConversations.add(conversation);
+        }
+        conversations = newConversations;
         conversations
           ..addAll(added)
           ..addAll(modified);
