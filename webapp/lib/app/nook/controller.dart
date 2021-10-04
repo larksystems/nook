@@ -26,7 +26,7 @@ part 'controller_view_helper.dart';
 
 Logger log = new Logger('controller.dart');
 
-const ENABLE_TURNLINE_PANEL = true;
+const ENABLE_TURNLINE_PANEL = false;
 const DEFAULT_PANEL_TAB = 'standard_messages';
 
 enum UIActionObject {
