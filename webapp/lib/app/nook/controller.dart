@@ -833,6 +833,8 @@ class NookController extends Controller {
     return filteredConversations;
   }
 
+  bool get _enableTagging => selectedConversationSummary != null || selectedMessage != null;
+
   void command(action, [Data data]) {
     if (action is! UIAction) {
       super.command(action, data);
@@ -1062,9 +1064,7 @@ class NookController extends Controller {
           _view.conversationPanelView.deselectConversationSummary();
           actionObjectState = null;
 
-          if (selectedConversationSummary == null && selectedMessage == null) {
-            _view.tagPanelView.enableTagging(false);
-          }
+          _view.tagPanelView.enableTagging(_enableTagging);
         }
         break;
       case UIAction.selectMessage:
@@ -1083,9 +1083,7 @@ class NookController extends Controller {
           _view.conversationPanelView.deselectMessage();
           actionObjectState = null;
 
-          if(selectedConversationSummary == null && selectedMessage == null) {
-            _view.tagPanelView.enableTagging(false);
-          }
+          _view.tagPanelView.enableTagging(_enableTagging);
         }
         break;
       case UIAction.markConversationRead:
@@ -1279,6 +1277,7 @@ class NookController extends Controller {
         UpdateTagsGroupData updateGroupData = data;
         selectedTagGroup = updateGroupData.group;
         _populateTagPanelView(tagsByGroup[selectedTagGroup]);
+        _view.tagPanelView.enableTagging(_enableTagging);
         break;
 
       case UIAction.showSnackbar:
