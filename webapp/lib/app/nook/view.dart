@@ -1057,7 +1057,6 @@ class ConversationListPanelView {
     var messageDateTime = conversation.messages.isEmpty ? null : conversation.messages.last?.datetime;
 
     if (sortOrder == UIConversationSort.mostRecentInMessageFirst) {
-      messageText = conversation.mostRecentMessageInbound == null ? "No inbound message" : conversation.mostRecentMessageInbound.text;
       messageDateTime = conversation.mostRecentMessageInbound == null ? null : conversation.mostRecentMessageInbound.datetime;
     }
 
