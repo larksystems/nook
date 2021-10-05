@@ -1764,10 +1764,10 @@ class ReplyActionView implements ActionView {
   String get text => _text;
   String get translation => _translation;
 
-  ReplyActionView(this._text, this._translation, String shortcut, int replyIndex, String buttonText) {
+  ReplyActionView(this._text, this._translation, String shortcut, String replyId, String buttonText) {
     action = new DivElement()
       ..classes.add('action')
-      ..dataset['id'] = "${replyIndex}";
+      ..dataset['id'] = "${replyId}";
 
     _shortcutElement = new DivElement()
       ..classes.add('action__shortcut')
@@ -1794,7 +1794,7 @@ class ReplyActionView implements ActionView {
         ..classes.add('action__button')
         ..classes.add('action__button--float')
         ..text = '$buttonText (En)'; // TODO(mariana): These project-specific preferences should be read from a project config file
-      buttonElement.onClick.listen((_) => _view.appController.command(UIAction.sendMessage, new ReplyData(replyIndex)));
+      buttonElement.onClick.listen((_) => _view.appController.command(UIAction.sendMessage, new ReplyData(replyId)));
       buttonElement.onMouseEnter.listen((event) => highlightText(true));
       buttonElement.onMouseLeave.listen((event) => highlightText(false));
       if (_text.isNotEmpty) {
@@ -1821,7 +1821,7 @@ class ReplyActionView implements ActionView {
         ..classes.add('action__button')
         ..classes.add('action__button--float')
         ..text = '$buttonText (Swa)'; // TODO(mariana): These project-specific preferences should be read from a project config file
-      buttonElement.onClick.listen((_) => _view.appController.command(UIAction.sendMessage, new ReplyData(replyIndex, replyWithTranslation: true)));
+      buttonElement.onClick.listen((_) => _view.appController.command(UIAction.sendMessage, new ReplyData(replyId, replyWithTranslation: true)));
       buttonElement.onMouseEnter.listen((event) => highlightTranslation(true));
       buttonElement.onMouseLeave.listen((event) => highlightTranslation(false));
       if (_translation.isNotEmpty) {
