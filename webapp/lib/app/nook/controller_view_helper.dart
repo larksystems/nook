@@ -136,8 +136,7 @@ void _populateReplyPanelView(List<model.SuggestedReply> replies) {
     var groupDescription = "";
     for (var reply in repliesInGroup) {
       groupDescription = reply.groupDescription;
-      int replyIndex = replies.indexOf(reply);
-      var replyView = new ReplyActionView(reply.text, reply.translation, reply.shortcut, replyIndex, buttonText);
+      var replyView = new ReplyActionView(reply.text, reply.translation, reply.shortcut, reply.suggestedReplyId, buttonText);
       replyView.showShortcut(controller.currentConfig.repliesKeyboardShortcutsEnabled);
       replyView.showButtons(controller.currentConfig.sendMessagesEnabled);
       views.add(replyView);
@@ -235,8 +234,7 @@ void _populateTurnlines(List<model.Turnline> turnlines) {
         if (repliesByGroups.containsKey(step.standardMessagesGroupId)) {
           var replies = repliesByGroups[step.standardMessagesGroupId];
           for (var reply in replies) {
-            int replyIndex = replies.indexOf(reply);
-            var replyView = new ReplyActionView(reply.text, reply.translation, reply.shortcut, replyIndex, 'SEND');
+            var replyView = new ReplyActionView(reply.text, reply.translation, reply.shortcut, reply.suggestedReplyId, 'SEND');
             replyView.showShortcut(controller.currentConfig.replies_keyboard_shortcuts_enabled);
             replyView.showButtons(controller.currentConfig.sendMessagesEnabled);
             messages.add(replyView.action);

@@ -93,12 +93,12 @@ class MessageData extends Data {
 }
 
 class ReplyData extends Data {
-  int replyIndex;
+  String replyId;
   bool replyWithTranslation;
-  ReplyData(this.replyIndex, {this.replyWithTranslation: false});
+  ReplyData(this.replyId, {this.replyWithTranslation: false});
 
   @override
-  String toString() => 'ReplyData: {replyIndex: $replyIndex, replyWithTranslation: $replyWithTranslation}';
+  String toString() => 'ReplyData: {replyIndex: $replyId, replyWithTranslation: $replyWithTranslation}';
 }
 
 class GroupReplyData extends Data {
@@ -870,7 +870,7 @@ class NookController extends Controller {
     switch (action) {
       case UIAction.sendMessage:
         ReplyData replyData = data;
-        model.SuggestedReply selectedReply = suggestedRepliesByCategory[selectedSuggestedRepliesCategory][replyData.replyIndex];
+        model.SuggestedReply selectedReply = suggestedRepliesByCategory[selectedSuggestedRepliesCategory].singleWhere((reply) => reply.suggestedReplyId == replyData.replyId);
         if (replyData.replyWithTranslation) {
           model.SuggestedReply translationReply = new model.SuggestedReply();
           translationReply
