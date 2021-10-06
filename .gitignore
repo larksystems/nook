@@ -24,3 +24,4 @@ node_modules
 /public_metadata_nook_app.json
 /.firebase
 /webapp/web/assets/firebase_constants.json
+/webapp/web/assets/project_configuration.json
