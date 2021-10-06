@@ -1,5 +1,6 @@
 library controller;
 
+import 'dart:convert';
 import 'dart:html';
 
 import 'package:katikati_ui_lib/components/auth/auth.dart';
@@ -42,6 +43,8 @@ enum BaseAction {
 
   signInButtonClicked,
   signOutButtonClicked,
+
+  projectConfigurationLoaded,
 }
 
 class Data {}
@@ -76,20 +79,30 @@ class Controller {
   model.User signedInUser;
   List<model.SystemMessage> systemMessages;
   DateTime lastUserActivity = new DateTime.now();
+  Map<String, dynamic> projectConfiguration;
 
   PageView view;
   Platform platform;
 
   Controller() {
     systemMessages = [];
+    projectConfiguration = {};
+
+    try {
+      HttpRequest.getString('/assets/project_configuration.json').then((projectConfigurationJson) {
+        projectConfiguration = json.decode(projectConfigurationJson);
+        command(BaseAction.projectConfigurationLoaded);
+      }, onError: (_) { /* Do nothing */ });
+    } catch (e) { /* Do nothing */ }
   }
 
   void command(action, [Data data]) {
     switch (action) {
       case BaseAction.userSignedOut:
         signedInUser = null;
-        // tearDownOnLogout();
+        tearDownOnLogout();
         view.initSignedOutView();
+        view.updateSignedOutViewWithProjectConfiguration();
         break;
 
       case BaseAction.userSignedIn:
@@ -98,6 +111,7 @@ class Controller {
           ..userName = userData.displayName
           ..userEmail = userData.email;
         view.initSignedInView(userData.displayName, userData.photoUrl);
+        view.updateSignedInViewWithProjectConfiguration();
         setUpOnLogin();
         break;
 
@@ -108,6 +122,14 @@ class Controller {
 
       case BaseAction.signOutButtonClicked:
         platform.signOut();
+        break;
+
+      case BaseAction.projectConfigurationLoaded:
+        if (signedInUser != null) {
+          view.updateSignedInViewWithProjectConfiguration();
+        } else {
+          view.updateSignedOutViewWithProjectConfiguration();
+        }
         break;
 
       case BaseAction.updateSystemMessages:
@@ -123,8 +145,11 @@ class Controller {
     }
   }
 
+  /// Method to be implemented by extending classes to set up any UI/listeners on user logging in
   void setUpOnLogin() {}
-  // void tearDownOnLogout();
+
+  /// Method to be implemented by extending classes to tear down any UI/listeners on user logging out
+  void tearDownOnLogout() {}
 
   /// Sets the route and reloads the page if the URL has changed, otherwise calls its corresponding handler.
   /// To be used for pages processing data, and so where loading the page multiple times can cause an issue.
