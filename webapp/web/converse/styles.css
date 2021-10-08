@@ -82,7 +82,7 @@ main {
     background: #fafafa;
 }
 
-.conversation-filter .tooltip-icon .fas {
+.tag-tooltip .fas {
     font-size: 0.8em;
     margin-left: 6px;
     margin-right: 12px;

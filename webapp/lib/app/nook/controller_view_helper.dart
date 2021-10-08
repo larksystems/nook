@@ -170,6 +170,12 @@ void _populateTagPanelView(List<model.Tag> tags) {
 
   for (var tag in tags) {
     var tagView = new TagActionView(tag.text, tag.shortcut, tag.tagId, TAG_CONVERSATION_BUTTON_TEXT);
+    if (controller.currentConfig.mandatoryExcludeTagIds != null && controller.currentConfig.mandatoryExcludeTagIds.contains(tag.tagId)) {
+      var questionIcon = SpanElement()..className = "fas fa-info";
+      var tooltip = Tooltip(questionIcon, "Once you've added this tag, you won't be able to see the conversation anymore due to access restrictions on this tag.", position: TooltipPosition.bottom);
+      tooltip.renderElement.classes.add('tag-tooltip');
+      tagView.action.append(tooltip.renderElement);
+    }
     tagView.showShortcut(controller.currentConfig.tagsKeyboardShortcutsEnabled);
     tagView.showButtons(controller.currentConfig.tagConversationsEnabled);
     _view.tagPanelView.addTag(tagView);
@@ -195,7 +201,7 @@ void _addTagsToFilterMenu(Map<String, List<model.Tag>> tagsByCategory, TagFilter
 void _populateSelectedFilterTags(Set<model.Tag> tags, TagFilterType filterType) {
   _view.conversationFilter[filterType].clearSelectedTags();
   for (var tag in tags) {
-    var filterRemovable = _filterTagRemovable(tag.tagId);
+    var filterRemovable = _isFilterTagRemovable(tag.tagId, filterType);
     var filterTagViewToAdd = new FilterTagView(tag.text, tag.tagId, tagTypeToKKStyle(tag.type), filterType, deletable: filterRemovable);
     _view.conversationFilter[filterType].addFilterTag(filterTagViewToAdd);
     if (!filterRemovable) {
@@ -205,10 +211,15 @@ void _populateSelectedFilterTags(Set<model.Tag> tags, TagFilterType filterType) 
   }
 }
 
-bool _filterTagRemovable(String tagId) {
-  bool mandatoryExclude = (controller.currentConfig.mandatoryExcludeTagIds ?? Set<String>()).contains(tagId);
-  bool mandatoryInclude = (controller.currentConfig.mandatoryIncludeTagIds ?? Set<String>()).contains(tagId);
-  return (mandatoryInclude || mandatoryExclude) ? false : true;
+bool _isFilterTagRemovable(String tagId, TagFilterType filterType) {
+  switch (filterType) {
+    case TagFilterType.include:
+      return !(controller.currentConfig.mandatoryIncludeTagIds ?? Set<String>()).contains(tagId);
+    case TagFilterType.exclude:
+      return !(controller.currentConfig.mandatoryExcludeTagIds ?? Set<String>()).contains(tagId);
+    default:
+      return true;
+  }
 }
 
 void _populateTurnlines(List<model.Turnline> turnlines) {
