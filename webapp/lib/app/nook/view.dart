@@ -721,12 +721,11 @@ class SuggestedMessageView {
 
 final DateFormat _dateFormat = new DateFormat('E d MMM y');
 final DateFormat _dateFormatNoYear = new DateFormat('E d MMM');
-final DateFormat _hourFormat = new DateFormat('HH:mm');
+final DateFormat _hourFormat = new DateFormat('hh:mm a');
 
 String _formatDateTime(DateTime dateTime) {
   DateTime now = DateTime.now();
-  return dateTime.toIso8601String(); // HACK(mariana): Temporary fix to have a sortable timestamp for each message
-  DateTime localDateTime = dateTime.toLocal();
+  DateTime localDateTime = dateTime; // TODO: EB Adjust to local timezone well before passing to this function
 
   if (_dateFormat.format(now) == _dateFormat.format(localDateTime)) {
     // localDateTime is today, return only time
