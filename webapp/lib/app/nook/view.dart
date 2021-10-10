@@ -106,9 +106,8 @@ class NookPageView extends PageView {
     navHeaderView.navContent = new DivElement()
       ..style.display = 'flex'
       ..append(links.renderElement)
-      ..append(conversationListSelectView.panel)
-      ..append(new DivElement()..classes.add('flex-fill-gap'))
-      ..append(otherLoggedInUsers.loggedInUsers);
+      ..append(conversationListSelectView.panel);
+    navHeaderView.navViewElement.insertBefore(otherLoggedInUsers.loggedInUsers, navHeaderView.navViewElement.querySelector('.nav__auth_header'));
   }
 
   void initSignedOutView() {
@@ -852,7 +851,7 @@ class ConversationListSelectHeader {
   ConversationListSelectHeader() {
     panel = new DivElement()
       ..classes.add('conversation-list-select-header')
-      ..style.visibility = 'hidden';
+      ..style.display = 'none';
 
     panel.append(
       new SpanElement()
@@ -1806,7 +1805,7 @@ class ReplyActionView implements ActionView {
       var buttonElement = new DivElement()
         ..classes.add('action__button')
         ..classes.add('action__button--float')
-        ..text = '$buttonText (En)'; // TODO(mariana): These project-specific preferences should be read from a project config file
+        ..text = '$buttonText (${controller.projectConfiguration["firstLanguage"] ?? "1"})';
       buttonElement.onClick.listen((_) => _view.appController.command(UIAction.sendMessage, new ReplyData(replyId)));
       buttonElement.onMouseEnter.listen((event) => highlightText(true));
       buttonElement.onMouseLeave.listen((event) => highlightText(false));
@@ -1833,7 +1832,7 @@ class ReplyActionView implements ActionView {
       var buttonElement = new DivElement()
         ..classes.add('action__button')
         ..classes.add('action__button--float')
-        ..text = '$buttonText (Swa)'; // TODO(mariana): These project-specific preferences should be read from a project config file
+        ..text = '$buttonText (${controller.projectConfiguration["secondLanguage"] ?? "2"})';
       buttonElement.onClick.listen((_) => _view.appController.command(UIAction.sendMessage, new ReplyData(replyId, replyWithTranslation: true)));
       buttonElement.onMouseEnter.listen((event) => highlightTranslation(true));
       buttonElement.onMouseLeave.listen((event) => highlightTranslation(false));
@@ -1894,7 +1893,7 @@ class ReplyActionGroupView implements ActionView {
     var sendButton = new DivElement()
       ..classes.add('action__button')
       ..classes.add('action__button--flex')
-      ..text = '$buttonText (En)'; // TODO(mariana): These project-specific preferences should be read from a project config file
+      ..text = '$buttonText (${controller.projectConfiguration["firstLanguage"] ?? "1"})';
     sendButton.onClick.listen((_) => _view.appController.command(UIAction.sendMessageGroup, new GroupReplyData(groupId)));
     sendButton.onMouseEnter.listen((event) {
       sendButton.scrollIntoView(); // this is to stabilize the view around the button
@@ -1910,7 +1909,7 @@ class ReplyActionGroupView implements ActionView {
     var sendTranslationButton = new DivElement()
       ..classes.add('action__button')
       ..classes.add('action__button--flex')
-      ..text = '$buttonText (Swa)'; // TODO(mariana): These project-specific preferences should be read from a project config file
+      ..text = '$buttonText (${controller.projectConfiguration["secondLanguage"] ?? "2"})';
     sendTranslationButton.onClick.listen((_) => _view.appController.command(UIAction.sendMessageGroup, new GroupReplyData(groupId, replyWithTranslation: true)));
     sendTranslationButton.onMouseEnter.listen((event) {
       sendTranslationButton.scrollIntoView(); // this is to stabilize the view around the button

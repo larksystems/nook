@@ -48,7 +48,7 @@ class PageView {
     snackbarView = new SnackbarView();
   }
 
-  initSignedOutView() {
+  void initSignedOutView() {
     authHeaderView.signOut();
     headerElement.children.clear();
 
@@ -59,7 +59,7 @@ class PageView {
     footerElement.children.clear();
   }
 
-  initSignedInView(String displayName, String photoUrl) {
+  void initSignedInView(String displayName, String photoUrl) {
     authHeaderView.signIn(displayName, photoUrl);
     navHeaderView.navContent = ButtonLinksView(navLinks, window.location.pathname).renderElement;
     headerElement.append(navHeaderView.navViewElement);
@@ -69,6 +69,25 @@ class PageView {
 
     footerElement.append(snackbarView.snackbarElement);
   }
+
+  void updateSignedInViewWithProjectConfiguration() {
+    navHeaderView?.projectTitle = appController.projectConfiguration['projectTitle'];
+  }
+
+  void updateSignedOutViewWithProjectConfiguration() {
+    loginPage?.authView?.title = appController.projectConfiguration['loginTitle'] ?? '';
+    loginPage?.authView?.description = appController.projectConfiguration['loginDescription'] ?? '';
+    loginPage?.authView?.domainsInfo = _buildSignInDomainInfos(appController.projectConfiguration['domainsInfo'] ?? {});
+  }
+
+  List<SignInDomainInfo> _buildSignInDomainInfos(Map domains) {
+    List<SignInDomainInfo> result = [];
+    for (var domainName in domains.keys) {
+      print(domainName);
+      result.add(SignInDomainInfo(domainName, domains[domainName]));
+    }
+    return result;
+  }
 }
 
 /// The authentication page
@@ -76,9 +95,10 @@ class LoginPage {
   AuthMainView authView;
 
   LoginPage() {
-    authView = new AuthMainView(brand.KATIKATI, '', '',
-        [KATIKATI_DOMAIN_INFO, LARK_DOMAIN_INFO],
-        (SignInDomainInfo domainInfo) => _pageView.appController.command(BaseAction.signInButtonClicked, new SignInData(domainInfo)));
+    authView = new AuthMainView(
+      brand.KATIKATI,
+      [KATIKATI_DOMAIN_INFO],
+      (SignInDomainInfo domainInfo) => _pageView.appController.command(BaseAction.signInButtonClicked, new SignInData(domainInfo)));
   }
 
   DivElement get renderElement => authView.authElement;
