@@ -14,6 +14,7 @@ import 'package:katikati_ui_lib/components/messages/freetext_message_send.dart';
 import 'package:katikati_ui_lib/components/logger.dart';
 import 'package:katikati_ui_lib/components/model/model.dart';
 import 'package:katikati_ui_lib/components/conversation/conversation_item.dart';
+import 'package:katikati_ui_lib/components/conversation/new_conversation_modal.dart';
 import 'package:katikati_ui_lib/components/user_presence/user_presence_indicator.dart';
 import 'package:katikati_ui_lib/components/scroll_indicator/scroll_indicator.dart';
 import 'package:katikati_ui_lib/components/tag/tag.dart';
@@ -27,6 +28,7 @@ import 'dom_utils.dart';
 import 'lazy_list_view_model.dart';
 
 const SMS_MAX_LENGTH = 160;
+const ENABLE_NEW_CONVERSTION = false;
 
 Logger log = new Logger('view.dart');
 
@@ -937,6 +939,8 @@ class ConversationListPanelView {
   DivElement _loadSpinner;
   DivElement _selectConversationListMessage;
 
+  NewConversationModal _newConversationModal;
+
   ConversationIdFilter conversationIdFilter;
   ConversationIncludeFilter conversationIncludeFilter;
   ConversationExcludeFilter conversationExcludeFilter;
@@ -976,6 +980,12 @@ class ConversationListPanelView {
       ..text = _conversationPanelTitleText;
     panelHeader.append(SpanElement()..className = 'far fa-comments');
     panelHeader.append(_conversationPanelTitle);
+
+    if (ENABLE_NEW_CONVERSTION) {
+      _newConversationModal = NewConversationModal()
+        ..onSubmit = (List<NewConversationFormData> conversations) => _view.appController.command(UIAction.addNewConversations, NewConversationsData(conversations));
+      panelHeader.append(_newConversationModal.renderElement);
+    }
 
     _changeSortOrder = ChangeSortOrderActionView();
     panelHeader.append(new DivElement()
@@ -1077,6 +1087,10 @@ class ConversationListPanelView {
       .._updateDateTime(messageDateTime)
       .._updateStatus(hasFailedMessages ? ConversationItemStatus.failed : hasPendingMessages ? ConversationItemStatus.pending : ConversationItemStatus.normal);
     conversationNeedsReply(conversation) ? summary._markUnread() : summary._markRead();
+  }
+
+  void closeNewConversationModal() {
+    _newConversationModal.closeModal();
   }
 
   void selectConversation(String deidentifiedPhoneNumber) {
