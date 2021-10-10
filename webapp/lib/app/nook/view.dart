@@ -983,7 +983,7 @@ class ConversationListPanelView {
 
     if (ENABLE_NEW_CONVERSTION) {
       _newConversationModal = NewConversationModal()
-        ..onSubmit = _addNewConversation;
+        ..onSubmit = (List<NewConversationFormData> conversations) => _view.appController.command(UIAction.addNewConversations, NewConversationsData(conversations));
       panelHeader.append(_newConversationModal.renderElement);
     }
 
@@ -1088,10 +1088,6 @@ class ConversationListPanelView {
       .._updateDateTime(messageDateTime)
       .._updateStatus(hasFailedMessages ? ConversationItemStatus.failed : hasPendingMessages ? ConversationItemStatus.pending : ConversationItemStatus.normal);
     conversationNeedsReply(conversation) ? summary._markUnread() : summary._markRead();
-  }
-
-  void _addNewConversation(List<NewConversationFormData> conversations) {
-    _view.appController.command(UIAction.addNewConversations, NewConversationsData(conversations));
   }
 
   void closeNewConversationModal() {
