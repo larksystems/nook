@@ -49,6 +49,10 @@ enum UIAction {
   addFilterTag,
   removeConversationTag,
   removeMessageTag,
+  selectMessageTag,
+  deselectMessageTag,
+  selectConversationTag,
+  deselectConversationTag,
   confirmConversationTag,
   confirmMessageTag,
   rejectConversationTag,
@@ -335,6 +339,10 @@ class NookController extends Controller {
   List<model.Conversation> selectedConversations;
   model.Message selectedMessage;
   model.Conversation selectedConversationSummary;
+  
+  String selectedMessageTagId; // tag's ID
+  String selectedTagMessageId; // message's ID
+  String selectedConversationTagId;
 
   model.UserConfiguration defaultUserConfig;
   model.UserConfiguration currentUserConfig;
@@ -1005,6 +1013,9 @@ class NookController extends Controller {
         platform.removeConversationTag(activeConversation, tag.tagId).catchError(showAndLogError);
         _view.conversationPanelView.removeTag(tag.tagId);
         updateFilteredAndSelectedConversationLists();
+        if (tag.tagId == selectedConversationTagId) {
+          selectedConversationTagId = null;
+        }
         break;
       case UIAction.removeMessageTag:
         MessageTagData messageTagData = data;
@@ -1015,6 +1026,42 @@ class NookController extends Controller {
               .messageViewWithId(messageTagData.messageId)
               .removeTag(messageTagData.tagId);
           }, onError: showAndLogError);
+        if (messageTagData.tagId == selectedMessageTagId) {
+          selectedMessageTagId = null;
+          selectedTagMessageId = null;
+        }
+        break;
+      case UIAction.selectMessageTag:
+        MessageTagData messageTagData = data;
+        selectedMessageTagId = messageTagData.tagId;
+        selectedTagMessageId = messageTagData.messageId;
+        _view.conversationPanelView.messageViewWithId(selectedTagMessageId).markSelectedTag(selectedMessageTagId, true);
+        command(UIAction.deselectConversationSummary, null);
+        command(UIAction.deselectConversationTag, null);
+        command(UIAction.deselectMessage, null);
+        break;
+      case UIAction.deselectMessageTag:
+        if (selectedMessageTagId == null || selectedTagMessageId == null) {
+          return;
+        }
+        _view.conversationPanelView.messageViewWithId(selectedTagMessageId).markSelectedTag(selectedMessageTagId, false);
+        selectedMessageTagId = null;
+        selectedTagMessageId = null;
+        break;
+      case UIAction.selectConversationTag:
+        ConversationTagData conversationTagData = data;
+        selectedConversationTagId = conversationTagData.tagId;
+        _view.conversationPanelView.markTagSelected(selectedConversationTagId, true);
+        command(UIAction.deselectConversationSummary, null);
+        command(UIAction.deselectMessage, null);
+        command(UIAction.deselectMessageTag, null);
+        break;
+      case UIAction.deselectConversationTag:
+        if (selectedConversationTagId == null || activeConversation == null) {
+          return;
+        }
+        _view.conversationPanelView.markTagSelected(selectedConversationTagId, false);
+        selectedConversationTagId = null;
         break;
 
       case UIAction.confirmConversationTag:
@@ -1064,13 +1111,14 @@ class NookController extends Controller {
         selectedConversationSummary = conversations.firstWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
         _view.conversationPanelView.selectConversationSummary();
         actionObjectState = UIActionObject.conversation;
-        _view.tagPanelView.enableTagging(true);
-
-        selectedMessage = null;
-        _view.conversationPanelView.deselectMessage();
+        _view.tagPanelView.enableTagging(_enableTagging);
+        
+        command(UIAction.deselectConversationTag, null);
+        command(UIAction.deselectMessage, null);
+        command(UIAction.deselectMessageTag, null);
         break;
       case UIAction.deselectConversationSummary:
-        if (actionObjectState == UIActionObject.conversation) {
+        if (selectedConversationSummary != null) {
           selectedConversationSummary = null;
           _view.conversationPanelView.deselectConversationSummary();
           actionObjectState = null;
@@ -1085,11 +1133,12 @@ class NookController extends Controller {
         actionObjectState = UIActionObject.message;
         _view.tagPanelView.enableTagging(true);
 
-        selectedConversationSummary = null;
-        _view.conversationPanelView.deselectConversationSummary();
+        command(UIAction.deselectConversationSummary, null);
+        command(UIAction.deselectConversationTag, null);
+        command(UIAction.deselectMessageTag, null);
         break;
       case UIAction.deselectMessage:
-        if (actionObjectState == UIActionObject.message) {
+        if (selectedMessage != null) {
           selectedMessage = null;
           _view.conversationPanelView.deselectMessage();
           actionObjectState = null;
@@ -1138,11 +1187,11 @@ class NookController extends Controller {
         activeConversation = conversations.singleWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
         if (shouldRecomputeConversationList) updateFilteredAndSelectedConversationLists();
         updateViewForConversation(activeConversation);
-        selectedConversationSummary = null;
-        _view.conversationPanelView.deselectConversationSummary();
-        selectedMessage = null;
-        _view.conversationPanelView.deselectMessage();
-        _view.tagPanelView.enableTagging(_enableTagging);
+        
+        command(UIAction.deselectConversationSummary, null);
+        command(UIAction.deselectConversationTag, null);
+        command(UIAction.deselectMessage, null);
+        command(UIAction.deselectMessageTag, null);
         break;
       case UIAction.selectConversationList:
         ConversationListData conversationListData = data;
@@ -1208,6 +1257,14 @@ class NookController extends Controller {
         if (keyPressData.key == 'Esc' || keyPressData.key == 'Escape') {
           // Hide the snackbar if it's visible
           _view.snackbarView.hideSnackbar();
+        }
+        if (keyPressData.key == 'Backspace') {
+          // Delete if any tag is selected
+          if (selectedConversationTagId != null) {
+            command(UIAction.removeConversationTag, new ConversationTagData(selectedConversationTagId, null));
+          } else if (selectedMessageTagId != null) {
+            command(UIAction.removeMessageTag, new MessageTagData(selectedMessageTagId, selectedTagMessageId));
+          }
         }
         // If the keypress it has a modifier key, prevent all replies and tags
         if (keyPressData.hasModifierKey) return;
@@ -1460,11 +1517,14 @@ class NookController extends Controller {
     // Replace the previous conversation in the conversation panel
     _populateConversationPanelView(conversation, updateInPlace: updateInPlace);
     _view.notesPanelView.noteText = conversation.notes;
-    // Reselect message if selected
-    if (actionObjectState == UIActionObject.message) {
+    
+    if (selectedMessage != null) { // Reselect message if selected
       selectedMessage = conversation.messages.singleWhere((element) => element.id == selectedMessage.id);
       _view.conversationPanelView.selectMessage(conversation.messages.indexOf(selectedMessage));
+    } else if (selectedMessageTagId != null && selectedTagMessageId != null) { // Reselect message tag if selected
+      _view.conversationPanelView.messageViewWithId(selectedTagMessageId).markSelectedTag(selectedMessageTagId, true);
     }
+    
     _selectConversationInView(conversation);
     if (!filteredConversations.contains(conversation)) {
       // If it doesn't meet the filter, show warning
