@@ -1138,6 +1138,11 @@ class NookController extends Controller {
         activeConversation = conversations.singleWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
         if (shouldRecomputeConversationList) updateFilteredAndSelectedConversationLists();
         updateViewForConversation(activeConversation);
+        selectedConversationSummary = null;
+        _view.conversationPanelView.deselectConversationSummary();
+        selectedMessage = null;
+        _view.conversationPanelView.deselectMessage();
+        _view.tagPanelView.enableTagging(_enableTagging);
         break;
       case UIAction.selectConversationList:
         ConversationListData conversationListData = data;
