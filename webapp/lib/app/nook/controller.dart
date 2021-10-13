@@ -1182,16 +1182,16 @@ class NookController extends Controller {
       case UIAction.showConversation:
         ConversationData conversationData = data;
         actionObjectState = null;
+        command(UIAction.deselectConversationSummary, null);
+        command(UIAction.deselectConversationTag, null);
+        command(UIAction.deselectMessage, null);
+        command(UIAction.deselectMessageTag, null);
+        
         if (conversationData.deidentifiedPhoneNumber == activeConversation.docId) break;
         bool shouldRecomputeConversationList = !filteredConversations.contains(activeConversation);
         activeConversation = conversations.singleWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
         if (shouldRecomputeConversationList) updateFilteredAndSelectedConversationLists();
         updateViewForConversation(activeConversation);
-        
-        command(UIAction.deselectConversationSummary, null);
-        command(UIAction.deselectConversationTag, null);
-        command(UIAction.deselectMessage, null);
-        command(UIAction.deselectMessageTag, null);
         break;
       case UIAction.selectConversationList:
         ConversationListData conversationListData = data;
