@@ -1944,6 +1944,7 @@ class ReplyActionGroupView implements ActionView {
 
 class TagActionView implements ActionView {
   DivElement action;
+  TagView tagView;
   DivElement _shortcutElement;
   DivElement _buttonElement;
 
@@ -1957,9 +1958,9 @@ class TagActionView implements ActionView {
       ..text = shortcut;
     action.append(_shortcutElement);
 
-    var tagElement = TagView(text, "")
+    tagView = TagView(text, "")
       ..onSelect = _addTagCommand;
-    action.append(tagElement.renderElement);
+    action.append(tagView.renderElement);
 
     _buttonElement = new DivElement()
       ..classes.add('action__button')
@@ -2105,6 +2106,6 @@ class HelpIndicatorTooltip {
   HelpIndicatorTooltip(String tooltip, TooltipPosition position) {
     var questionIcon = SpanElement()..className = "fas fa-info";
     var tooltip = Tooltip(questionIcon, "This tag cannot be removed from the filter. Please contact your admin if you have any questions.", position: position);
-    renderElement = tooltip.renderElement..classes.add("tooltip-icon");
+    renderElement = tooltip.renderElement..classes.add("tag-tooltip");
   }
 }

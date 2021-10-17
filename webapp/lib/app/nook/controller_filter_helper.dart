@@ -91,6 +91,15 @@ class ConversationFilter {
     return true;
   }
 
+  bool testMandatoryFilters(model.Conversation conversation) {
+    var tags = convertTagIdsToTags(conversation.tagIds, controller.tagIdsToTags);
+    var unifierTags = tags.map((t) => unifierTagForTag(t, controller.tagIdsToTags));
+    var unifierTagIds = tagsToTagIds(unifierTags).toSet();
+    if (!unifierTagIds.containsAll(userConfig.mandatoryIncludeTagIds)) return false;
+    if (unifierTagIds.intersection(userConfig.mandatoryExcludeTagIds).isNotEmpty) return false;
+    return true;
+  }
+
   // This must be called after every change to the filters
   void _applyMandatoryFilters() {
     if (userConfig.mandatoryExcludeTagIds != null)
