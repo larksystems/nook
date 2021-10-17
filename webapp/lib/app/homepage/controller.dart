@@ -11,7 +11,10 @@ Logger log = new Logger('controller.dart');
 
 class HomePageController extends Controller {
 
-  HomePageController() : super() {
+  HomePageController() : super() {}
+
+  @override
+  void init() {
     view = new HomePageView(this,
       [pages[Page.converse]],
       [pages[Page.configureMessages], pages[Page.configureTags]],

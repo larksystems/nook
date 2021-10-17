@@ -44,6 +44,7 @@ class PageView {
         () {}, // We don't show the navbar when the user is not logged in, so no need to show this
         () => appController.command(BaseAction.signOutButtonClicked));
     navHeaderView.authHeader = authHeaderView;
+    navHeaderView.projectTitle = appController.projectConfiguration['projectTitle'];
 
     snackbarView = new SnackbarView();
   }
@@ -69,16 +70,22 @@ class PageView {
 
     footerElement.append(snackbarView.snackbarElement);
   }
+}
 
-  void updateSignedInViewWithProjectConfiguration() {
-    navHeaderView?.projectTitle = appController.projectConfiguration['projectTitle'];
+/// The authentication page
+class LoginPage {
+  AuthMainView authView;
+
+  LoginPage() {
+    authView = new AuthMainView(
+        brand.KATIKATI,
+        _pageView.appController.projectConfiguration['loginTitle'] ?? '',
+        _pageView.appController.projectConfiguration['loginDescription'] ?? '',
+        _buildSignInDomainInfos(_pageView.appController.projectConfiguration['domainsInfo'] ?? {}),
+        (SignInDomainInfo domainInfo) => _pageView.appController.command(BaseAction.signInButtonClicked, new SignInData(domainInfo)));
   }
 
-  void updateSignedOutViewWithProjectConfiguration() {
-    loginPage?.authView?.title = appController.projectConfiguration['loginTitle'] ?? '';
-    loginPage?.authView?.description = appController.projectConfiguration['loginDescription'] ?? '';
-    loginPage?.authView?.domainsInfo = _buildSignInDomainInfos(appController.projectConfiguration['domainsInfo'] ?? {});
-  }
+  DivElement get renderElement => authView.authElement;
 
   List<SignInDomainInfo> _buildSignInDomainInfos(Map domains) {
     List<SignInDomainInfo> result = [];
@@ -88,18 +95,4 @@ class PageView {
     }
     return result;
   }
-}
-
-/// The authentication page
-class LoginPage {
-  AuthMainView authView;
-
-  LoginPage() {
-    authView = new AuthMainView(
-      brand.KATIKATI,
-      [KATIKATI_DOMAIN_INFO],
-      (SignInDomainInfo domainInfo) => _pageView.appController.command(BaseAction.signInButtonClicked, new SignInData(domainInfo)));
-  }
-
-  DivElement get renderElement => authView.authElement;
 }

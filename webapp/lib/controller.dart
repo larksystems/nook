@@ -43,8 +43,6 @@ enum BaseAction {
 
   signInButtonClicked,
   signOutButtonClicked,
-
-  projectConfigurationLoaded,
 }
 
 class Data {}
@@ -91,18 +89,22 @@ class Controller {
     try {
       HttpRequest.getString('/assets/project_configuration.json').then((projectConfigurationJson) {
         projectConfiguration = json.decode(projectConfigurationJson);
-        command(BaseAction.projectConfigurationLoaded);
+        init();
       }, onError: (_) { /* Do nothing */ });
     } catch (e) { /* Do nothing */ }
   }
 
+  /// Method to be implemented by extending classes to initialise the view after the project configuration has been loaded
+  void init() {}
+
+  /// Method to be implemented by extending classes to respond to their own UI command datatype.
+  /// Any commands they don't recognise, they should pass them to super.command().
   void command(action, [Data data]) {
     switch (action) {
       case BaseAction.userSignedOut:
         signedInUser = null;
         tearDownOnLogout();
         view.initSignedOutView();
-        view.updateSignedOutViewWithProjectConfiguration();
         break;
 
       case BaseAction.userSignedIn:
@@ -111,7 +113,6 @@ class Controller {
           ..userName = userData.displayName
           ..userEmail = userData.email;
         view.initSignedInView(userData.displayName, userData.photoUrl);
-        view.updateSignedInViewWithProjectConfiguration();
         setUpOnLogin();
         break;
 
@@ -122,14 +123,6 @@ class Controller {
 
       case BaseAction.signOutButtonClicked:
         platform.signOut();
-        break;
-
-      case BaseAction.projectConfigurationLoaded:
-        if (signedInUser != null) {
-          view.updateSignedInViewWithProjectConfiguration();
-        } else {
-          view.updateSignedOutViewWithProjectConfiguration();
-        }
         break;
 
       case BaseAction.updateSystemMessages:
@@ -162,4 +155,10 @@ class Controller {
   }
 
   void routeToPage(Page page) => routeToPath(pages[page].urlPath);
+
+  /// Set of configuration options common across UIs
+  int get MESSAGE_MAX_LENGTH {
+    print('------ get message max length: ${projectConfiguration['textCharacterLimit']}');
+    return projectConfiguration['textCharacterLimit'] ?? 160;
+  }
 }
