@@ -72,6 +72,10 @@ class MessagesConfiguratorController extends ConfiguratorController {
 
   MessagesConfiguratorController() : super() {
     _controller = this;
+  }
+
+  @override
+  void init() {
     view = new MessagesConfigurationPageView(this);
     platform = new Platform(this);
   }

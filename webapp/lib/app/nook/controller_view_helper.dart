@@ -7,8 +7,6 @@ const DELETE_SUGGESTED_REPLY_BUTTON_TEXT = 'DELETE suggested messages';
 
 const TAG_CONVERSATION_BUTTON_TEXT = 'TAG';
 
-const SMS_MAX_LENGTH = 160;
-
 // Functions to populate the views with model objects.
 
 void _populateConversationListPanelView(Set<model.Conversation> conversations, UIConversationSort sortOrder) {

@@ -68,6 +68,10 @@ class TagsConfiguratorController extends ConfiguratorController {
 
   TagsConfiguratorController() : super() {
     _controller = this;
+  }
+
+  @override
+  void init() {
     view = new TagsConfigurationPageView(this);
     platform = new Platform(this);
   }

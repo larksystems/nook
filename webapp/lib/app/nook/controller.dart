@@ -27,8 +27,8 @@ part 'controller_view_helper.dart';
 
 Logger log = new Logger('controller.dart');
 
-const ENABLE_TURNLINE_PANEL = false;
-const DEFAULT_PANEL_TAB = 'standard_messages';
+bool get ENABLE_TURNLINE_PANEL => controller.projectConfiguration['nookTurnlineEnabled'] ?? false;
+String get DEFAULT_PANEL_TAB => controller.projectConfiguration['nookDefaultPanel'] ?? 'standard_messages';
 
 enum UIActionObject {
   conversation,
@@ -349,9 +349,13 @@ class NookController extends Controller {
 
   NookController() : super() {
     controller = this;
+  }
 
+  @override
+  void init() {
     defaultUserConfig = baseUserConfiguration;
     currentUserConfig = currentConfig = emptyUserConfiguration;
+
     view = new NookPageView(this);
     platform = new Platform(this);
     userPositionReporter = UserPositionReporter();
