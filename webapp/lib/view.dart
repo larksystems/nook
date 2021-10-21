@@ -81,7 +81,7 @@ class LoginPage {
         brand.KATIKATI,
         _pageView.appController.projectConfiguration['loginTitle'] ?? '',
         _pageView.appController.projectConfiguration['loginDescription'] ?? '',
-        _buildSignInDomainInfos(_pageView.appController.projectConfiguration['domainsInfo'] ?? {}),
+        _buildSignInDomainInfos(_pageView.appController.projectConfiguration['domainsInfo'] ?? []),
         (SignInDomainInfo domainInfo) => _pageView.appController.command(BaseAction.signInButtonClicked, new SignInData(domainInfo)));
   }
 
