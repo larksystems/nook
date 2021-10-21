@@ -158,7 +158,6 @@ class Controller {
 
   /// Set of configuration options common across UIs
   int get MESSAGE_MAX_LENGTH {
-    print('------ get message max length: ${projectConfiguration['textCharacterLimit']}');
     return projectConfiguration['textCharacterLimit'] ?? 160;
   }
 }
