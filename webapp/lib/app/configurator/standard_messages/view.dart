@@ -243,21 +243,21 @@ class MessageView {
 
     var textLengthIndicator = new SpanElement()
       ..classes.add('message__length-indicator')
-      ..classes.toggle('message__length-indicator--alert', message.length > 160)
-      ..text = '${message.length}/160';
+      ..classes.toggle('message__length-indicator--alert', message.length > _view.appController.MESSAGE_MAX_LENGTH)
+      ..text = '${message.length}/${_view.appController.MESSAGE_MAX_LENGTH}';
 
     _messageText = new TextAreaElement()
       ..classes.add('message__text')
-      ..classes.toggle('message__text--alert', message.length > 160)
+      ..classes.toggle('message__text--alert', message.length > _view.appController.MESSAGE_MAX_LENGTH)
       ..text = message != null ? message : ''
       ..placeholder = placeholder
       ..contentEditable = 'true'
       ..onBlur.listen((event) => onMessageUpdateCallback((event.target as TextAreaElement).value))
       ..onInput.listen((event) {
         int count = _messageText.value.split('').length;
-        textLengthIndicator.text = '${count}/160';
-        _messageText.classes.toggle('message__text--alert', count > 160);
-        textLengthIndicator.classes.toggle('message__length-indicator--alert', count > 160);
+        textLengthIndicator.text = '${count}/${_view.appController.MESSAGE_MAX_LENGTH}';
+        _messageText.classes.toggle('message__text--alert', count > _view.appController.MESSAGE_MAX_LENGTH);
+        textLengthIndicator.classes.toggle('message__length-indicator--alert', count > _view.appController.MESSAGE_MAX_LENGTH);
         _handleTextareaHeightChange();
       });
 

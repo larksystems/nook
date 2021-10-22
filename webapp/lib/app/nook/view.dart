@@ -27,7 +27,6 @@ import 'controller.dart';
 import 'dom_utils.dart';
 import 'lazy_list_view_model.dart';
 
-const SMS_MAX_LENGTH = 160;
 const ENABLE_NEW_CONVERSTION = false;
 
 Logger log = new Logger('view.dart');
@@ -284,7 +283,7 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
     });
     conversationPanel.append(_messages);
 
-    _freetextMessageSendView = FreetextMessageSendView("", maxLength: SMS_MAX_LENGTH)..onSend.listen((messageText) {
+    _freetextMessageSendView = FreetextMessageSendView("", maxLength: _view.appController.MESSAGE_MAX_LENGTH)..onSend.listen((messageText) {
       _view.appController.command(UIAction.sendManualMessage, new ManualReplyData(messageText));
     });
     conversationPanel.append(_freetextMessageSendView.renderElement);
@@ -1837,7 +1836,7 @@ class ReplyActionView implements ActionView {
       var buttonElement = new DivElement()
         ..classes.add('action__button')
         ..classes.add('action__button--float')
-        ..text = '$buttonText (${controller.projectConfiguration["firstLanguage"] ?? "1"})';
+        ..text = '$buttonText (${controller.projectConfiguration["firstLanguage"] ?? "lang 1"})';
       buttonElement.onClick.listen((_) => _view.appController.command(UIAction.sendMessage, new ReplyData(replyId)));
       buttonElement.onMouseEnter.listen((event) => highlightText(true));
       buttonElement.onMouseLeave.listen((event) => highlightText(false));
@@ -1864,7 +1863,7 @@ class ReplyActionView implements ActionView {
       var buttonElement = new DivElement()
         ..classes.add('action__button')
         ..classes.add('action__button--float')
-        ..text = '$buttonText (${controller.projectConfiguration["secondLanguage"] ?? "2"})';
+        ..text = '$buttonText (${controller.projectConfiguration["secondLanguage"] ?? "lang 2"})';
       buttonElement.onClick.listen((_) => _view.appController.command(UIAction.sendMessage, new ReplyData(replyId, replyWithTranslation: true)));
       buttonElement.onMouseEnter.listen((event) => highlightTranslation(true));
       buttonElement.onMouseLeave.listen((event) => highlightTranslation(false));
@@ -1925,7 +1924,7 @@ class ReplyActionGroupView implements ActionView {
     var sendButton = new DivElement()
       ..classes.add('action__button')
       ..classes.add('action__button--flex')
-      ..text = '$buttonText (${controller.projectConfiguration["firstLanguage"] ?? "1"})';
+      ..text = '$buttonText (${controller.projectConfiguration["firstLanguage"] ?? "lang 1"})';
     sendButton.onClick.listen((_) => _view.appController.command(UIAction.sendMessageGroup, new GroupReplyData(groupId)));
     sendButton.onMouseEnter.listen((event) {
       sendButton.scrollIntoView(); // this is to stabilize the view around the button
@@ -1941,7 +1940,7 @@ class ReplyActionGroupView implements ActionView {
     var sendTranslationButton = new DivElement()
       ..classes.add('action__button')
       ..classes.add('action__button--flex')
-      ..text = '$buttonText (${controller.projectConfiguration["secondLanguage"] ?? "2"})';
+      ..text = '$buttonText (${controller.projectConfiguration["secondLanguage"] ?? "lang 2"})';
     sendTranslationButton.onClick.listen((_) => _view.appController.command(UIAction.sendMessageGroup, new GroupReplyData(groupId, replyWithTranslation: true)));
     sendTranslationButton.onMouseEnter.listen((event) {
       sendTranslationButton.scrollIntoView(); // this is to stabilize the view around the button
@@ -1978,6 +1977,7 @@ class ReplyActionGroupView implements ActionView {
 
 class TagActionView implements ActionView {
   DivElement action;
+  TagView tagView;
   DivElement _shortcutElement;
   DivElement _buttonElement;
 
@@ -1991,9 +1991,9 @@ class TagActionView implements ActionView {
       ..text = shortcut;
     action.append(_shortcutElement);
 
-    var tagElement = TagView(text, "")
+    tagView = TagView(text, "")
       ..onSelect = _addTagCommand;
-    action.append(tagElement.renderElement);
+    action.append(tagView.renderElement);
 
     _buttonElement = new DivElement()
       ..classes.add('action__button')
@@ -2139,6 +2139,6 @@ class HelpIndicatorTooltip {
   HelpIndicatorTooltip(String tooltip, TooltipPosition position) {
     var questionIcon = SpanElement()..className = "fas fa-info";
     var tooltip = Tooltip(questionIcon, "This tag cannot be removed from the filter. Please contact your admin if you have any questions.", position: position);
-    renderElement = tooltip.renderElement..classes.add("tooltip-icon");
+    renderElement = tooltip.renderElement..classes.add("tag-tooltip");
   }
 }

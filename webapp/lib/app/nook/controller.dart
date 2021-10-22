@@ -27,8 +27,8 @@ part 'controller_view_helper.dart';
 
 Logger log = new Logger('controller.dart');
 
-const ENABLE_TURNLINE_PANEL = false;
-const DEFAULT_PANEL_TAB = 'standard_messages';
+bool get ENABLE_TURNLINE_PANEL => controller.projectConfiguration['nookTurnlineEnabled'] ?? false;
+String get DEFAULT_PANEL_TAB => controller.projectConfiguration['nookDefaultPanel'] ?? 'standard_messages';
 
 enum UIActionObject {
   conversation,
@@ -357,9 +357,13 @@ class NookController extends Controller {
 
   NookController() : super() {
     controller = this;
+  }
 
+  @override
+  void init() {
     defaultUserConfig = baseUserConfiguration;
     currentUserConfig = currentConfig = emptyUserConfiguration;
+
     view = new NookPageView(this);
     platform = new Platform(this);
     userPositionReporter = UserPositionReporter();
@@ -657,6 +661,10 @@ class NookController extends Controller {
           _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.include), TagFilterType.include);
           _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.exclude), TagFilterType.exclude);
 
+          if (newConfig.mandatoryExcludeTagIds.intersection(tagsByGroup[selectedTagGroup].map((t) => t.tagId).toSet()).isNotEmpty) {
+            _populateTagPanelView(tagsByGroup[selectedTagGroup]);
+          }
+
           updateFilteredAndSelectedConversationLists();
         }
 
@@ -868,7 +876,7 @@ class NookController extends Controller {
     // For most actions, a conversation needs to be active.
     // Early exist if it's not one of the actions valid without an active conversation.
     if (activeConversation == null &&
-        action != UIAction.selectConversationList &&
+        action != UIAction.selectConversationList && action != UIAction.showConversation &&
         action != UIAction.addFilterTag && action != UIAction.removeFilterTag &&
         action != UIAction.updateSuggestedRepliesCategory &&
         action != UIAction.updateDisplayedTagsGroup &&
@@ -1187,9 +1195,9 @@ class NookController extends Controller {
         command(UIAction.deselectMessage, null);
         command(UIAction.deselectMessageTag, null);
         
-        if (conversationData.deidentifiedPhoneNumber == activeConversation.docId) break;
+        if (conversationData.deidentifiedPhoneNumber == activeConversation?.docId) break;
         bool shouldRecomputeConversationList = !filteredConversations.contains(activeConversation);
-        activeConversation = conversations.singleWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
+        activeConversation = conversations.singleWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber, orElse: () => null);
         if (shouldRecomputeConversationList) updateFilteredAndSelectedConversationLists();
         updateViewForConversation(activeConversation);
         break;
@@ -1475,6 +1483,12 @@ class NookController extends Controller {
   model.Conversation updateViewForConversations(Set<model.Conversation> conversations) {
     // Update conversationListPanelView
     _populateConversationListPanelView(conversations, conversationSortOrder);
+
+    if (activeConversation != null && !conversationFilter.testMandatoryFilters(activeConversation)) {
+      _view.conversationPanelView.clear();
+      _view.conversationPanelView.showWarning("You don't have access to this conversation.");
+      return null;
+    }
 
     // Update conversationPanelView
     if (conversations.isEmpty) {
