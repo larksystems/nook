@@ -652,22 +652,32 @@ class MessageView {
   }
 
   void setStatus(MessageStatus status) {
-    // TODO handle more types of status
-
+    // clear any previous status
     _messageStatus.text = '';
-    if (status == MessageStatus.pending) {
-      _message.classes.add('message--pending');
-      _messageStatus.text = '[Pending]';
-      _dateSeparator.hide();
-    } else {
-      _message.classes.remove('message--pending');
-    }
+    _message.classes.removeAll([
+      'message--pending',
+      'message--failed',
+      'message--unknown',
+      ]);
 
-    if (status == MessageStatus.failed) {
-      _message.classes.add('message--failed');
-      _messageStatus.text = '[Failed]';
-    } else {
-      _message.classes.remove('message--failed');
+    switch (status) {
+      case MessageStatus.confirmed:
+        // default is confirmed, nothing to do
+        break;
+      case MessageStatus.pending:
+        _message.classes.add('message--pending');
+        _messageStatus.text = '[Pending]';
+        _dateSeparator.hide();
+        break;
+      case MessageStatus.failed:
+        _message.classes.add('message--failed');
+        _messageStatus.text = '[Failed]';
+        break;
+      case MessageStatus.unknown:
+      default:
+        _message.classes.add('message--unknown');
+        _messageStatus.text = '[$status]';
+        break;
     }
   }
 

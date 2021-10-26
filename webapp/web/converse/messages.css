@@ -42,10 +42,6 @@
   border: 1px dashed var(--selection-color);
 }
 
-.message.message--failed .message__bubble {
-  text-decoration: line-through var(--red);
-}
-
 .message.message--pending .message__bubble {
   font-style: italic;
   color: var(--darker-gray);
@@ -69,8 +65,19 @@
   }
 }
 
+.message.message--failed .message__bubble {
+  text-decoration: line-through var(--red);
+}
+
 .message.message--failed .message__bubble .message__status {
   color: var(--light-red);
+  text-decoration: none;
+  display: inline-block;
+}
+
+.message.message--unknown .message__bubble {
+  font-style: italic;
+  color: var(--darker-gray);
 }
 
 .message__datetime {
