@@ -18,6 +18,7 @@ Logger log = new Logger('controller.dart');
 enum TagsConfigAction {
   addTag,
   addTagGroup,
+  requestRenameTag,
   renameTag,
   moveTag,
   updateTagGroup,
@@ -60,6 +61,19 @@ class TagGroupData extends Data {
   }
 }
 
+class RequestRenameTagData extends Data {
+  String text;
+  Function onUnique;
+  Function onDuplicate;
+
+  RequestRenameTagData(this.text, this.onUnique, this.onDuplicate);
+
+  @override
+  String toString() {
+    return 'RequestRenameTagData($text)';
+  }
+}
+
 TagsConfiguratorController _controller;
 TagsConfigurationPageView get _view => _controller.view;
 
@@ -89,6 +103,16 @@ class TagsConfiguratorController extends ConfiguratorController {
         _addTagsToView({
           tagData.groupId: [tag]
         }, startEditing: true);
+        break;
+      
+      case TagsConfigAction.requestRenameTag:
+        RequestRenameTagData requestRenameTagData = data;
+        var presentTagTexts = tagManager._tags.map((tag) => tag.text.toLowerCase().trim()).toList();
+        if(presentTagTexts.contains(requestRenameTagData.text.toLowerCase().trim())) {
+          requestRenameTagData.onDuplicate();
+        } else {
+          requestRenameTagData.onUnique();
+        }
         break;
 
       case TagsConfigAction.renameTag:

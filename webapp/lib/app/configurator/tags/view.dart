@@ -157,7 +157,18 @@ class ConfigureTagView extends TagView {
     draggableTag..onDragStart.listen((_) => dragInProgress = true)..onDragEnd.listen((_) => dragInProgress = false);
 
     onEdit = (text) {
-      _view.appController.command(TagsConfigAction.renameTag, new TagData(tagId, text: text));
+      var requestRenameTagData = new RequestRenameTagData(text, () {
+        _view.appController.command(TagsConfigAction.renameTag, new TagData(tagId, text: text.trim()));
+      }, () {
+        var warningModal;
+        warningModal = new PopupModal('A tag with text [${text}] already exists. This can cause confusion when tagging messages / conversations. Do you want to continue?', [
+          new Button(ButtonType.text, buttonText: 'Continue', onClick: (_) { _view.appController.command(TagsConfigAction.renameTag, new TagData(tagId, text: text.trim())); }),
+          new Button(ButtonType.text, buttonText: 'Go back', onClick: (_) { warningModal.remove(); beginEdit(); })
+        ]);
+        warningModal.parent = renderElement;
+      });
+
+      _view.appController.command(TagsConfigAction.requestRenameTag, requestRenameTagData);
     };
     onDelete = () async {
       var warningModal;
