@@ -20,6 +20,7 @@ import 'package:katikati_ui_lib/components/scroll_indicator/scroll_indicator.dar
 import 'package:katikati_ui_lib/components/tag/tag.dart';
 import 'package:katikati_ui_lib/components/turnline/turnline.dart' as tl;
 import 'package:katikati_ui_lib/components/button/button.dart' as buttons;
+import 'package:katikati_ui_lib/components/model/model.dart' as model;
 import 'package:nook/view.dart';
 import 'package:nook/app/utils.dart';
 
@@ -620,6 +621,11 @@ class MessageView {
     _dateSeparator.dateTime = value;
   }
 
+  void addNewTag(NewTagViewWithSuggestions tag) {
+    _messageTags.insertBefore(tag.renderElement, _addTag.renderElement);
+    tag.renderElement.scrollIntoView();
+  }
+
   void addTag(TagView tag, [int position]) {
     if (position == null || position >= _messageTags.children.length) {
       // Add at the end
@@ -811,16 +817,18 @@ mixin AutomaticSuggestionIndicator {
   Element get automaticSuggestionIndicator => Element.html('<i class="fas fa-robot automated-action-indicator"></i>');
 }
 
-class EditableTagView extends TagView {
-  EditableTagView(String text, String tagId, TagStyle tagStyle) : super(text, tagId, tagStyle: tagStyle, deletable: true, editable: true) {
-    super.beginEdit();
+class EditableTagView extends NewTagViewWithSuggestions {
+  EditableTagView(List<TagSuggestion> suggestions, String messageId) : super(suggestions) {
+    onNewTag = (value) {
+      _view.appController.command(UIAction.saveNewTagInline, new SaveTagData(value, model.generateTagId()));
+    };
 
-    onEdit = (value) {
-      _view.appController.command(UIAction.saveNewTagInline, new SaveTagData(value, tagId));
+    onAcceptSuggestion = (tagId) {
+      _view.appController.command(UIAction.addTag, new TagData(tagId));
+      _view.appController.command(UIAction.cancelAddNewTagInline);
     };
 
     onCancel = () {
-      DivElement message = getAncestors(renderElement).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
       _view.appController.command(UIAction.cancelAddNewTagInline);
     };
   }

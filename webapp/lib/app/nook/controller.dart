@@ -13,6 +13,7 @@ import 'package:katikati_ui_lib/components/tag/tag.dart';
 import 'package:katikati_ui_lib/components/turnline/turnline.dart';
 import 'package:katikati_ui_lib/components/logger.dart';
 import 'package:katikati_ui_lib/components/tooltip/tooltip.dart';
+import 'package:katikati_ui_lib/components/autocomplete/autocomplete.dart';
 import 'package:nook/controller.dart';
 export 'package:nook/controller.dart';
 import 'package:katikati_ui_lib/components/model/model.dart' as model;
@@ -1356,10 +1357,11 @@ class NookController extends Controller {
         addTagInlineConversation = activeConversation;
         addTagInlineMessage = addTagInlineConversation.messages.singleWhere((element) => element.id == messageData.messageId);
 
-        addTagInlineView = new EditableTagView(newTagInline.text, newTagInline.tagId, tagTypeToKKStyle(newTagInline.type));
+        var suggestions = tags.map((tag) => TagSuggestion(tag.tagId, tag.text)).toList();
+        addTagInlineView = new EditableTagView(suggestions, messageData.messageId);
         _view.conversationPanelView
             .messageViewWithId(messageData.messageId)
-            .addTag(addTagInlineView);
+            .addNewTag(addTagInlineView);
         addTagInlineView.focus();
         break;
       case UIAction.saveNewTagInline:
@@ -1371,7 +1373,7 @@ class NookController extends Controller {
           (_) {
             _view.conversationPanelView
                 .messageViewAtIndex(addTagInlineConversation.messages.indexOf(addTagInlineMessage))
-                .removeTag(newTagInline.tagId);
+                .removeTag("__new_tag");
             tags.add(newTagInline);
 
             setMessageTag(newTagInline, addTagInlineMessage, addTagInlineConversation);
@@ -1384,10 +1386,15 @@ class NookController extends Controller {
         actionObjectState = UIActionObject.message;
         _view.conversationPanelView
             .messageViewAtIndex(addTagInlineConversation.messages.indexOf(addTagInlineMessage))
-            .removeTag(newTagInline.tagId);
+            .removeTag("__new_tag");
         newTagInline = null;
         addTagInlineMessage = null;
         addTagInlineConversation = null;
+        break;
+      case UIAction.addTag:
+        var tagData = data as TagData;
+        model.Tag tag = tags.singleWhere((tag) => tag.tagId == tagData.tagId);
+        setMessageTag(tag, selectedMessage, activeConversation);
         break;
       default:
         break;
