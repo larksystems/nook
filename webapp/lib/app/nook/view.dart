@@ -1079,14 +1079,10 @@ class ConversationListPanelView {
 
     bool hasPendingMessages = false;
     bool hasFailedMessages = false;
-    for (Message message in conversation.messages) {
-      if (message.status == MessageStatus.pending) {
-        hasPendingMessages = true;
-        if (hasFailedMessages) break;
-      } else if (message.status == MessageStatus.failed) {
-        hasFailedMessages = true;
-        break;
-      }
+    if (conversation.messages.isNotEmpty) {
+      Message lastMessage = conversation.messages.last;
+      hasPendingMessages = lastMessage.status == MessageStatus.pending;
+      hasFailedMessages = lastMessage.status == MessageStatus.failed;
     }
 
     summary
