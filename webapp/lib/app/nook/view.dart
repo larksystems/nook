@@ -232,6 +232,8 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
       ..onClick.listen((_) {
         _view.appController.command(UIAction.deselectConversationSummary, null);
         _view.appController.command(UIAction.deselectMessage, null);
+        _view.appController.command(UIAction.deselectMessageTag, null);
+        _view.appController.command(UIAction.deselectConversationTag, null);
       });
 
     _conversationSummary = new DivElement()
@@ -371,6 +373,12 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
 
   void removeTag(String tagId) {
     _tags.children.removeWhere((Element d) => d.dataset["id"] == tagId);
+  }
+
+  void markTagSelected(String tagId, bool selected) {
+    _tags.children
+        .where((Element t) => t.dataset["id"] == tagId)
+        .forEach((Element t) => t.classes.toggle("tag--selected", selected));
   }
 
   void removeTags() {
@@ -640,6 +648,12 @@ class MessageView {
     _messageTags.children.removeWhere((e) => e.dataset["id"] == tagId);
   }
 
+  void markSelectedTag(String tagId, bool selected) {
+    _messageTags.children
+        .where((Element t) => t.dataset["id"] == tagId)
+        .forEach((Element t) => t.classes.toggle("tag--selected", selected));
+  }
+
   void _select() {
     MessageView._deselect();
     _message.classes.add('message--selected');
@@ -758,6 +772,12 @@ class MessageTagView extends TagView {
       DivElement message = getAncestors(renderElement).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
       _view.appController.command(UIAction.removeMessageTag, new MessageTagData(tagId, message.dataset['messageId']));
     };
+
+    onSelect = () {
+      DivElement message = getAncestors(renderElement).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
+      _view.appController.command(UIAction.selectMessageTag, new MessageTagData(tagId, message.dataset['messageId']));
+    };
+    
     markHighlighted(highlight);
   }
 }
@@ -787,6 +807,11 @@ class ConversationTagView extends TagView {
       markPending(true);
       DivElement messageSummary = getAncestors(renderElement).firstWhere((e) => e.classes.contains('conversation-summary'));
       _view.appController.command(UIAction.removeConversationTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
+    };
+
+    onSelect = () {
+      DivElement messageSummary = getAncestors(renderElement).firstWhere((e) => e.classes.contains('conversation-summary'));
+      _view.appController.command(UIAction.selectConversationTag, new ConversationTagData(tagId, messageSummary.dataset['id']));
     };
   }
 }
