@@ -861,7 +861,7 @@ class NookController extends Controller {
     return filteredConversations;
   }
 
-  void deselectTagsMessagesConversationSummaries() {
+  void deselectAllConversationElements() {
     command(UIAction.deselectConversationSummary, null);
     command(UIAction.deselectConversationTag, null);
     command(UIAction.deselectMessage, null);
@@ -1051,7 +1051,7 @@ class NookController extends Controller {
         }
         break;
       case UIAction.selectMessageTag:
-        deselectTagsMessagesConversationSummaries();
+        deselectAllConversationElements();
 
         MessageTagData messageTagData = data;
         selectedMessageTagId = messageTagData.tagId;
@@ -1068,7 +1068,7 @@ class NookController extends Controller {
         selectedTagMessageId = null;
         break;
       case UIAction.selectConversationTag:
-        deselectTagsMessagesConversationSummaries();
+        deselectAllConversationElements();
 
         ConversationTagData conversationTagData = data;
         selectedConversationTagId = conversationTagData.tagId;
@@ -1126,7 +1126,7 @@ class NookController extends Controller {
         updateFilteredAndSelectedConversationLists();
         break;
       case UIAction.selectConversationSummary:
-        deselectTagsMessagesConversationSummaries();
+        deselectAllConversationElements();
 
         ConversationData conversationData = data;
         selectedConversationSummary = conversations.firstWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
@@ -1142,7 +1142,7 @@ class NookController extends Controller {
         _view.tagPanelView.enableTagging(_enableTagging);
         break;
       case UIAction.selectMessage:
-        deselectTagsMessagesConversationSummaries();
+        deselectAllConversationElements();
 
         MessageData messageData = data;
         selectedMessage = activeConversation.messages.singleWhere((element) => element.id == messageData.messageId);
@@ -1191,7 +1191,7 @@ class NookController extends Controller {
         updateFilteredAndSelectedConversationLists();
         break;
       case UIAction.showConversation:
-        deselectTagsMessagesConversationSummaries();
+        deselectAllConversationElements();
 
         ConversationData conversationData = data;
         if (conversationData.deidentifiedPhoneNumber == activeConversation?.docId) break;
