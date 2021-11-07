@@ -227,6 +227,8 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
   bool _scrolledToBottom = true;
   SpanElement _newMessageIndicator;
 
+  DivElement get messages => _messages;
+
   ConversationPanelView() {
     conversationPanel = new DivElement()
       ..classes.add('conversation-panel')
@@ -818,7 +820,7 @@ mixin AutomaticSuggestionIndicator {
 }
 
 class EditableTagView extends NewTagViewWithSuggestions {
-  EditableTagView(List<TagSuggestion> suggestions, String messageId) : super(suggestions) {
+  EditableTagView(List<TagSuggestion> suggestions, String messageId, {DivElement boundingElement}) : super(suggestions, boundingElement: boundingElement) {
     onNewTag = (value) {
       _view.appController.command(UIAction.saveNewTagInline, new SaveTagData(value, model.generateTagId()));
     };

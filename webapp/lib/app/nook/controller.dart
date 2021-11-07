@@ -1356,9 +1356,8 @@ class NookController extends Controller {
 
         addTagInlineConversation = activeConversation;
         addTagInlineMessage = addTagInlineConversation.messages.singleWhere((element) => element.id == messageData.messageId);
-
         var suggestions = tags.map((tag) => TagSuggestion(tag.tagId, tag.text)).toList();
-        addTagInlineView = new EditableTagView(suggestions, messageData.messageId);
+        addTagInlineView = new EditableTagView(suggestions, messageData.messageId, boundingElement: _view.conversationPanelView.messages);
         _view.conversationPanelView
             .messageViewWithId(messageData.messageId)
             .addNewTag(addTagInlineView);
