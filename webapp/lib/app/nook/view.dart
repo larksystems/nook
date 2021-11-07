@@ -376,13 +376,9 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
   }
 
   void markTagSelected(String tagId, bool selected) {
-    _tags.children.forEach((Element e) {
-      if (e.dataset["id"] == tagId) {
-        e.classes.toggle("tag--selected", selected);
-      } else {
-        e.classes.toggle("tag--selected", false);
-      }
-    });
+    _tags.children
+        .where((Element t) => t.dataset["id"] == tagId)
+        .forEach((Element t) => t.classes.toggle("tag--selected", selected));
   }
 
   void removeTags() {
@@ -653,13 +649,9 @@ class MessageView {
   }
 
   void markSelectedTag(String tagId, bool selected) {
-    _messageTags.children.forEach((e) {
-      if (e.dataset["id"] == tagId) {
-        e.classes.toggle("tag--selected", selected);
-      } else {
-        e.classes.toggle("tag--selected", false);
-      }
-    });
+    _messageTags.children
+        .where((Element t) => t.dataset["id"] == tagId)
+        .forEach((Element t) => t.classes.toggle("tag--selected", selected));
   }
 
   void _select() {

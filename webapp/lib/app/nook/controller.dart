@@ -33,9 +33,9 @@ String get DEFAULT_PANEL_TAB => controller.projectConfiguration['nookDefaultPane
 enum UIActionObject {
   conversation,
   message,
+  tag,
   loadingConversations,
-  addTagInline,
-  tag
+  addTagInline
 }
 
 enum UIAction {
@@ -861,6 +861,14 @@ class NookController extends Controller {
     return filteredConversations;
   }
 
+  void deselectTagsMessagesConversationSummaries() {
+    command(UIAction.deselectConversationSummary, null);
+    command(UIAction.deselectConversationTag, null);
+    command(UIAction.deselectMessage, null);
+    command(UIAction.deselectMessageTag, null);
+    actionObjectState = null;
+  }
+
   bool get _enableTagging => selectedConversationSummary != null || selectedMessage != null;
 
   void command(action, [Data data]) {
@@ -1043,9 +1051,7 @@ class NookController extends Controller {
         }
         break;
       case UIAction.selectMessageTag:
-        command(UIAction.deselectConversationSummary, null);
-        command(UIAction.deselectConversationTag, null);
-        command(UIAction.deselectMessage, null);
+        deselectTagsMessagesConversationSummaries();
 
         MessageTagData messageTagData = data;
         selectedMessageTagId = messageTagData.tagId;
@@ -1062,9 +1068,7 @@ class NookController extends Controller {
         selectedTagMessageId = null;
         break;
       case UIAction.selectConversationTag:
-        command(UIAction.deselectConversationSummary, null);
-        command(UIAction.deselectMessage, null);
-        command(UIAction.deselectMessageTag, null);
+        deselectTagsMessagesConversationSummaries();
 
         ConversationTagData conversationTagData = data;
         selectedConversationTagId = conversationTagData.tagId;
@@ -1122,9 +1126,7 @@ class NookController extends Controller {
         updateFilteredAndSelectedConversationLists();
         break;
       case UIAction.selectConversationSummary:
-        command(UIAction.deselectConversationTag, null);
-        command(UIAction.deselectMessage, null);
-        command(UIAction.deselectMessageTag, null);
+        deselectTagsMessagesConversationSummaries();
 
         ConversationData conversationData = data;
         selectedConversationSummary = conversations.firstWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
@@ -1140,9 +1142,7 @@ class NookController extends Controller {
         _view.tagPanelView.enableTagging(_enableTagging);
         break;
       case UIAction.selectMessage:
-        command(UIAction.deselectConversationSummary, null);
-        command(UIAction.deselectConversationTag, null);
-        command(UIAction.deselectMessageTag, null);
+        deselectTagsMessagesConversationSummaries();
 
         MessageData messageData = data;
         selectedMessage = activeConversation.messages.singleWhere((element) => element.id == messageData.messageId);
@@ -1191,11 +1191,7 @@ class NookController extends Controller {
         updateFilteredAndSelectedConversationLists();
         break;
       case UIAction.showConversation:
-        command(UIAction.deselectConversationSummary, null);
-        command(UIAction.deselectConversationTag, null);
-        command(UIAction.deselectMessage, null);
-        command(UIAction.deselectMessageTag, null);
-        actionObjectState = null;
+        deselectTagsMessagesConversationSummaries();
 
         ConversationData conversationData = data;
         if (conversationData.deidentifiedPhoneNumber == activeConversation?.docId) break;
