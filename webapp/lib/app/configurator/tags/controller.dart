@@ -61,19 +61,6 @@ class TagGroupData extends Data {
   }
 }
 
-class RequestRenameTagData extends Data {
-  String text;
-  Function onUnique;
-  Function onDuplicate;
-
-  RequestRenameTagData(this.text, this.onUnique, this.onDuplicate);
-
-  @override
-  String toString() {
-    return 'RequestRenameTagData($text)';
-  }
-}
-
 TagsConfiguratorController _controller;
 TagsConfigurationPageView get _view => _controller.view;
 
@@ -106,12 +93,14 @@ class TagsConfiguratorController extends ConfiguratorController {
         break;
       
       case TagsConfigAction.requestRenameTag:
-        RequestRenameTagData requestRenameTagData = data;
+        TagData requestRenameTagData = data;
+        var tagText = requestRenameTagData.text.toLowerCase().trim();
         var presentTagTexts = tagManager._tags.map((tag) => tag.text.toLowerCase().trim()).toList();
-        if(presentTagTexts.contains(requestRenameTagData.text.toLowerCase().trim())) {
-          requestRenameTagData.onDuplicate();
+        
+        if(presentTagTexts.contains(tagText)) {
+          _showDuplicateTagWarningModal(requestRenameTagData.groupId, requestRenameTagData.id, requestRenameTagData.text);
         } else {
-          requestRenameTagData.onUnique();
+          command(TagsConfigAction.renameTag, TagData(requestRenameTagData.id, text: requestRenameTagData.text));
         }
         break;
 
