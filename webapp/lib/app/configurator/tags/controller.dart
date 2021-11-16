@@ -97,7 +97,7 @@ class TagsConfiguratorController extends ConfiguratorController {
         var tagText = requestRenameTagData.text.toLowerCase().trim();
         var presentTagTexts = tagManager._tags.map((tag) => tag.text.toLowerCase().trim()).toList();
         
-        if(presentTagTexts.contains(tagText)) {
+        if (presentTagTexts.contains(tagText)) {
           _showDuplicateTagWarningModal(requestRenameTagData.groupId, requestRenameTagData.id, requestRenameTagData.text);
         } else {
           command(TagsConfigAction.renameTag, TagData(requestRenameTagData.id, text: requestRenameTagData.text));
