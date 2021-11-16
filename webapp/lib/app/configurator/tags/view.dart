@@ -68,7 +68,7 @@ class TagGroupView extends AccordionItem {
   DivElement _tagsContainer;
   Button _addButton;
 
-  Map<String, TagView> tagViewsById;
+  Map<String, ConfigureTagView> tagViewsById;
 
   TagGroupView(id, this._groupName, this._header, this._body) : super(id, _header, _body, false) {
     _groupName = _groupName ?? '';
@@ -146,19 +146,41 @@ class TagGroupView extends AccordionItem {
       tagViewsById.remove(id);
     }
   }
+
+  void showDuplicateWarningModal(String tagId, String text) {
+    tagViewsById[tagId]?.showDuplicateTagsWarningModal(text);
+  }
 }
 
 class ConfigureTagView extends TagView {
   static bool dragInProgress = false;
   bool _tooltipInTransition = false;
+  PopupModal warningModal;
+
+  Function(String text) showDuplicateTagsWarningModal;
+
   ConfigureTagView(String tagText, String tagId, String groupId, TagStyle tagStyle)
       : super(tagText, tagId, groupId: groupId, tagStyle: tagStyle, deletable: true, editable: true) {
     var draggableTag = new dnd.Draggable(renderElement, avatarHandler: dnd.AvatarHandler.original(), draggingClass: 'tag__text');
     draggableTag..onDragStart.listen((_) => dragInProgress = true)..onDragEnd.listen((_) => dragInProgress = false);
 
     onEdit = (text) {
-      _view.appController.command(TagsConfigAction.renameTag, new TagData(tagId, text: text));
+      if (tagText.trim().toLowerCase() == text.trim().toLowerCase()) return;
+      var requestRenameTagData = new TagData(tagId, groupId: groupId, text: text);
+      _view.appController.command(TagsConfigAction.requestRenameTag, requestRenameTagData);
     };
+
+    this.showDuplicateTagsWarningModal = (String text) {
+      warningModal = PopupModal('A tag with text [${text}] already exists.', [
+        Button(ButtonType.text, buttonText: 'Go back', onClick: (_) {
+          warningModal.remove();
+          this.text = tagText;
+          beginEdit();
+        })
+      ]);
+      warningModal.parent = renderElement;
+    };
+
     onDelete = () async {
       var warningModal;
       var messages = await getSampleMessages(platform.firestoreInstance, tagId) ?? [];

@@ -72,3 +72,8 @@ TagStyle _tagTypeToKKStyle(model.TagType tagType) {
       return TagStyle.None;
   }
 }
+
+void _showDuplicateTagWarningModal(String groupId, String tagId, String text) {
+  TagGroupView group = _view.groups.queryItem(groupId);
+  group?.showDuplicateWarningModal(tagId, text);
+}
