@@ -1701,6 +1701,13 @@ class TagGroupView extends AccordionItem {
     _body.append(_tagsContainer);
     tagViewsById = {};
   }
+
+  void addTags(Map<String, TagView> tags) {
+    for (var tag in tags.keys) {
+      _tagsContainer.append(tags[tag].renderElement);
+      tagViewsById[tag] = tags[tag];
+    }
+  }
 }
 
 class TagPanelView {
