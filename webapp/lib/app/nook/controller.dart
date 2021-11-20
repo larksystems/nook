@@ -77,7 +77,6 @@ enum UIAction {
   selectAllConversations,
   deselectAllConversations,
   updateSuggestedRepliesCategory,
-  updateDisplayedTagsGroup,
   showSnackbar,
   updateConversationIdFilter,
   goToUser,
@@ -274,14 +273,6 @@ class UpdateSuggestedRepliesCategoryData extends Data {
   String toString() => 'UpdateSuggestedRepliesCategoryData: {category: $category}';
 }
 
-class UpdateTagsGroupData extends Data {
-  String group;
-  UpdateTagsGroupData(this.group);
-
-  @override
-  String toString() => 'UpdateTagsGroupData: {group: $group}';
-}
-
 class UpdateFilterTagsCategoryData extends Data {
   String category;
   UpdateFilterTagsCategoryData(this.category);
@@ -332,7 +323,6 @@ class NookController extends Controller {
   List<model.Tag> tags;
   Map<String, List<model.Tag>> tagsByGroup;
   Map<String, model.Tag> tagIdsToTags;
-  String selectedTagGroup;
   ConversationFilter conversationFilter;
   Map<String, List<model.Tag>> filterTagsByCategory;
   Map<String, List<model.Tag>> filterLastInboundTurnTagsByCategory;
@@ -380,7 +370,6 @@ class NookController extends Controller {
     selectedConversations = [];
     activeConversation = null;
     selectedSuggestedRepliesCategory = '';
-    selectedTagGroup = '';
 
     // Get any filter tags from the url
     conversationFilter = new ConversationFilter.fromUrl(currentConfig);
@@ -423,16 +412,7 @@ class NookController extends Controller {
         }
         List<String> groups = tagsByGroup.keys.toList();
         groups.sort();
-        // Replace list of groups in the UI selector
-        _view.tagPanelView.groups = groups;
-        // If the groups have changed under us and the selected one no longer exists,
-        // default to the first group, whichever it is
-        if (!groups.contains(selectedTagGroup)) {
-          selectedTagGroup = groups.first;
-        }
-
-        _view.tagPanelView.selectedGroup = selectedTagGroup;
-        _populateTagPanelView(tagsByGroup[selectedTagGroup]);
+        _populateTagPanelView(tagsByGroup);
 
         // Re-read the conversation filter from the URL since we now have the names of the tags
         conversationFilter = new ConversationFilter.fromUrl(currentConfig);
@@ -621,7 +601,7 @@ class NookController extends Controller {
     }
 
     if (oldConfig.tagsKeyboardShortcutsEnabled != newConfig.tagsKeyboardShortcutsEnabled) {
-      _view.tagPanelView.showShortcuts(newConfig.tagsKeyboardShortcutsEnabled);
+      // todo: question - do we need to handle shortcut for tag panel view
     }
 
     if (oldConfig.sendMessagesEnabled != newConfig.sendMessagesEnabled) {
@@ -636,14 +616,6 @@ class NookController extends Controller {
       _view.conversationListPanelView.showCheckboxes(newConfig.sendMultiMessageEnabled);
       // Start off with no selected conversations
       command(UIAction.deselectAllConversations, null);
-    }
-
-    if (oldConfig.tagMessagesEnabled != newConfig.tagMessagesEnabled) {
-      _view.tagPanelView.showButtons(newConfig.tagMessagesEnabled);
-    }
-
-    if (oldConfig.tagConversationsEnabled != newConfig.tagConversationsEnabled) {
-      _view.tagPanelView.showButtons(newConfig.tagConversationsEnabled);
     }
 
     if (oldConfig.editTranslationsEnabled != newConfig.editTranslationsEnabled) {
@@ -662,9 +634,9 @@ class NookController extends Controller {
           _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.include), TagFilterType.include);
           _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.exclude), TagFilterType.exclude);
 
-          if (newConfig.mandatoryExcludeTagIds.intersection(tagsByGroup[selectedTagGroup].map((t) => t.tagId).toSet()).isNotEmpty) {
-            _populateTagPanelView(tagsByGroup[selectedTagGroup]);
-          }
+          // todo: figure out this following condition
+          // if (newConfig.mandatoryExcludeTagIds.intersection(tagsByGroup[selectedTagGroup].map((t) => t.tagId).toSet()).isNotEmpty) {
+          _populateTagPanelView(tagsByGroup);
 
           updateFilteredAndSelectedConversationLists();
         }
@@ -695,7 +667,7 @@ class NookController extends Controller {
     if (oldConfig.tagsPanelVisibility != newConfig.tagsPanelVisibility ||
         oldConfig.editNotesEnabled != newConfig.editNotesEnabled ||
         oldConfig.repliesPanelVisibility != newConfig.repliesPanelVisibility) {
-      _view.showPanels(newConfig.repliesPanelVisibility, newConfig.editNotesEnabled, newConfig.tagsPanelVisibility, ENABLE_TURNLINE_PANEL, DEFAULT_PANEL_TAB);
+      _view.showPanels(newConfig.repliesPanelVisibility, newConfig.editNotesEnabled, newConfig.tagsPanelVisibility, newConfig.tagMessagesEnabled, newConfig.tagConversationsEnabled, ENABLE_TURNLINE_PANEL, DEFAULT_PANEL_TAB);
     }
 
     if (oldConfig.suggestedRepliesGroupsEnabled != newConfig.suggestedRepliesGroupsEnabled) {
@@ -759,8 +731,7 @@ class NookController extends Controller {
 
         if (actionObjectState == UIActionObject.loadingConversations) {
           actionObjectState = null;
-          _view.tagPanelView.selectedGroup = selectedTagGroup;
-          _populateTagPanelView(tagsByGroup[selectedTagGroup]);
+          _populateTagPanelView(tagsByGroup);
         }
 
         // TODO even though they are unlikely to happen, we should also handle the removals in the UI for consistency
@@ -888,7 +859,6 @@ class NookController extends Controller {
         action != UIAction.selectConversationList && action != UIAction.showConversation &&
         action != UIAction.addFilterTag && action != UIAction.removeFilterTag &&
         action != UIAction.updateSuggestedRepliesCategory &&
-        action != UIAction.updateDisplayedTagsGroup &&
         action != UIAction.selectAllConversations && action != UIAction.deselectAllConversations &&
         action != UIAction.showSnackbar && action != UIAction.updateConversationIdFilter) {
       return;
@@ -991,6 +961,7 @@ class NookController extends Controller {
         TagData tagData = data;
         switch (actionObjectState) {
           case UIActionObject.conversation:
+            if (!currentConfig.tagConversationsEnabled) return;
             model.Tag tag = tags.singleWhere((tag) => tag.tagId == tagData.tagId);
             if (!currentConfig.sendMultiMessageEnabled || selectedConversations.isEmpty) {
               setConversationTag(tag, selectedConversationSummary);
@@ -1002,6 +973,7 @@ class NookController extends Controller {
             setMultiConversationTag(tag, selectedConversations);
             break;
           case UIActionObject.message:
+            if (!currentConfig.tagMessagesEnabled) return;
             model.Tag tag = tags.singleWhere((tag) => tag.tagId == tagData.tagId);
             setMessageTag(tag, selectedMessage, activeConversation);
             break;
@@ -1132,14 +1104,14 @@ class NookController extends Controller {
         selectedConversationSummary = conversations.firstWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
         actionObjectState = UIActionObject.conversation;
         _view.conversationPanelView.selectConversationSummary();
-        _view.tagPanelView.enableTagging(_enableTagging);
+        _view.tagPanelView.enableTagging(currentConfig.tagMessagesEnabled, currentConfig.tagConversationsEnabled, _enableTagging);
         break;
       case UIAction.deselectConversationSummary: 
         if (actionObjectState != UIActionObject.conversation) return;
         selectedConversationSummary = null;
         actionObjectState = null;
         _view.conversationPanelView.deselectConversationSummary();
-        _view.tagPanelView.enableTagging(_enableTagging);
+        _view.tagPanelView.enableTagging(currentConfig.tagMessagesEnabled, currentConfig.tagConversationsEnabled, _enableTagging);
         break;
       case UIAction.selectMessage:
         deselectAllConversationElements();
@@ -1148,14 +1120,14 @@ class NookController extends Controller {
         selectedMessage = activeConversation.messages.singleWhere((element) => element.id == messageData.messageId);
         _view.conversationPanelView.selectMessage(activeConversation.messages.indexOf(selectedMessage));
         actionObjectState = UIActionObject.message;
-        _view.tagPanelView.enableTagging(true);
+        _view.tagPanelView.enableTagging(currentConfig.tagMessagesEnabled, currentConfig.tagConversationsEnabled, true);
         break;
       case UIAction.deselectMessage:
         if (actionObjectState != UIActionObject.message) return;
         selectedMessage = null;
         actionObjectState = null;
         _view.conversationPanelView.deselectMessage();
-        _view.tagPanelView.enableTagging(_enableTagging);
+        _view.tagPanelView.enableTagging(currentConfig.tagMessagesEnabled, currentConfig.tagConversationsEnabled, _enableTagging);
         break;
       case UIAction.markConversationRead:
         // TODO(mariana): the logic of marking conversations read/unread needs rethinking, likely needs to be using tags
@@ -1352,12 +1324,6 @@ class NookController extends Controller {
         UpdateSuggestedRepliesCategoryData updateCategoryData = data;
         selectedSuggestedRepliesCategory = updateCategoryData.category;
         _populateReplyPanelView(suggestedRepliesByCategory[selectedSuggestedRepliesCategory]);
-        break;
-      case UIAction.updateDisplayedTagsGroup:
-        UpdateTagsGroupData updateGroupData = data;
-        selectedTagGroup = updateGroupData.group;
-        _populateTagPanelView(tagsByGroup[selectedTagGroup]);
-        _view.tagPanelView.enableTagging(_enableTagging);
         break;
 
       case UIAction.showSnackbar:

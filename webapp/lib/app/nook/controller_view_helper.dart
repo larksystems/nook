@@ -144,39 +144,19 @@ void _populateReplyPanelView(List<model.SuggestedReply> replies) {
   }
 }
 
-void _populateTagPanelView(List<model.Tag> tags) {
+void _populateTagPanelView(Map<String, List<model.Tag>> tagsByGroup) {
   _view.tagPanelView.clear();
 
-  // Important tags first, then sort by text string
-  tags.sort((t1, t2) {
-    switch (t1.type) {
-      case model.TagType.important:
-        if (t2.type == model.TagType.important) {
-          return t1.text.compareTo(t2.text);
-        } else {
-          return -1;
-        }
-        break;
-      default:
-        if (t2.type == model.TagType.important) {
-          return 1;
-        } else {
-          return t1.text.compareTo(t2.text);
-        }
+  for (String tagGroupName in tagsByGroup.keys) {
+    var tagGroupView = TagGroupView(tagGroupName, tagGroupName, DivElement(), DivElement());
+    var tags = tagsByGroup[tagGroupName];
+    Map<String, TagView> tagViewsById = {};
+    for (model.Tag tag in tags) {
+      tagViewsById[tag.docId] = TagView(tag.text, tag.text, selectable: true)
+        ..onSelect = () { _view.appController.command(UIAction.addTag, new TagData(tag.tagId)); };
     }
-  });
-
-  for (var tag in tags) {
-    var tagView = new TagActionView(tag.text, tag.shortcut, tag.tagId, TAG_CONVERSATION_BUTTON_TEXT);
-    if (controller.currentConfig.mandatoryExcludeTagIds != null && controller.currentConfig.mandatoryExcludeTagIds.contains(tag.tagId)) {
-      var questionIcon = SpanElement()..className = "fas fa-info";
-      var tooltip = Tooltip(questionIcon, "Once you've added this tag, you won't be able to see the conversation anymore due to access restrictions on this tag.", position: TooltipPosition.bottom);
-      tooltip.renderElement.classes.add('tag-tooltip');
-      tagView.action.append(tooltip.renderElement);
-    }
-    tagView.showShortcut(controller.currentConfig.tagsKeyboardShortcutsEnabled);
-    tagView.showButtons(controller.currentConfig.tagConversationsEnabled);
-    _view.tagPanelView.addTag(tagView);
+    tagGroupView.addTags(tagViewsById);
+    _view.tagPanelView.addTagGroup(tagGroupView);
   }
 }
 
@@ -321,7 +301,7 @@ Map<String, List<model.Tag>> _groupTagsIntoCategories(List<model.Tag> tags) {
   }
   // Sort tags alphabetically
   for (var tags in result.values) {
-    tags.sort((t1, t2) => t1.text.compareTo(t2.text));
+    tags.sort((t1, t2) => t1.text.toLowerCase().compareTo(t2.text.toLowerCase()));
   }
   return result;
 }
