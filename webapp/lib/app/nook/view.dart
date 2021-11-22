@@ -1243,7 +1243,20 @@ class ConversationFilter {
     conversationFilter.append(_tagsContainer);
 
     _tagAccordion = Accordion([]);
-    _tagsMenuWrapper.append(_tagAccordion.renderElement);
+    var accordionActions = DivElement()..classes.add('filter-accordion-actions');
+    var expandButton = buttons.Button(buttons.ButtonType.text, buttonText: "Expand all", onClick: (e) {
+      _tagAccordion.items.forEach((AccordionItem item) { item.expand(); });
+    });
+    var collapseButton = buttons.Button(buttons.ButtonType.text, buttonText: "Collapse all", onClick: (e) {
+      _tagAccordion.items.forEach((AccordionItem item) { item.collapse(); });
+    });
+    accordionActions
+      ..append(expandButton.renderElement)
+      ..append(collapseButton.renderElement);
+
+    _tagsMenuWrapper
+      ..append(accordionActions)
+      ..append(_tagAccordion.renderElement);
   }
 
   void addMenuTag(FilterMenuTagView tag, String category) {

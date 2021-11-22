@@ -75,8 +75,9 @@ class ConfigurationPageView extends PageView {
     var collapseButton = Button(ButtonType.text, buttonText: "Collapse all", onClick: (e) {
       collapseAll();
     });
-    accordionActions.append(expandButton.renderElement);
-    accordionActions.append(collapseButton.renderElement);
+    accordionActions
+      ..append(expandButton.renderElement)
+      ..append(collapseButton.renderElement);
     renderElement.append(accordionActions);
 
     configurationContent = new DivElement()..classes.add('configuration-view__content');

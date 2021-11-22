@@ -131,6 +131,14 @@ main {
     min-width: 80px;
 }
 
+.filter-accordion-actions {
+    text-align: right;
+}
+
+.filter-accordion-actions .button {
+    margin-left: var(--spacer-mid);
+}
+
 .tags-menu__box {
     position: absolute;
     top: auto;
