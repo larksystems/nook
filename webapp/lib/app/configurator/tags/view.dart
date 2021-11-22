@@ -58,6 +58,20 @@ class TagsConfigurationPageView extends ConfigurationPageView {
     assert(_tagsContainer.children.length == 0);
     groups.clear();
   }
+
+  @override
+  void expandAll() {
+    groups.items.forEach((AccordionItem item) {
+      item.expand();
+    });
+  }
+
+  @override
+  void collapseAll() {
+    groups.items.forEach((AccordionItem item) {
+      item.collapse();
+    });
+  }
 }
 
 class TagGroupView extends AccordionItem {

@@ -62,3 +62,11 @@
   border: 1px dashed var(--default-border-color);
   background-color: var(--lighter-background-color);
 }
+
+.configuration-accordion-actions {
+  text-align: right;
+}
+
+.configuration-accordion-actions .button {
+  margin-left: var(--spacer-mid);
+}

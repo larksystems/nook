@@ -19,6 +19,7 @@ class ConfigurationPageView extends PageView {
   DivElement renderElement;
   DivElement headerElement;
   DivElement configurationTitle;
+  DivElement accordionActions;
   DivElement configurationContent;
 
   DivElement configurationActions;
@@ -66,6 +67,17 @@ class ConfigurationPageView extends PageView {
     configurationActions.append(saveStatusElement);
 
     headerElement.append(configurationActions);
+
+    accordionActions = DivElement()..classes.add('configuration-accordion-actions');
+    var expandButton = Button(ButtonType.text, buttonText: "Expand all", onClick: (e) {
+      expandAll();
+    });
+    var collapseButton = Button(ButtonType.text, buttonText: "Collapse all", onClick: (e) {
+      collapseAll();
+    });
+    accordionActions.append(expandButton.renderElement);
+    accordionActions.append(collapseButton.renderElement);
+    renderElement.append(accordionActions);
 
     configurationContent = new DivElement()..classes.add('configuration-view__content');
     renderElement.append(configurationContent);
@@ -119,6 +131,9 @@ class ConfigurationPageView extends PageView {
   void _removeConfirmationOnLeave() {
     window.removeEventListener('beforeunload', _onLeaveListener, true);
   }
+
+  void expandAll() { }
+  void collapseAll() { }
 }
 
 /// Helper widgets

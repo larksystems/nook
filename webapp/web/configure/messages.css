@@ -1,3 +1,11 @@
 .standard-messages__group .accordion {
   margin-top: 0;
 }
+
+.configuration-accordion-actions {
+  text-align: right;
+}
+
+.configuration-accordion-actions .button {
+  margin-left: var(--spacer-mid);
+}

@@ -59,6 +59,26 @@ class MessagesConfigurationPageView extends ConfigurationPageView {
   void clear() {
     categories.clear();
   }
+
+  @override
+  void expandAll() {
+    categories.items.forEach((AccordionItem item) {
+      item.expand();
+      (item as StandardMessagesCategoryView).groups.items.forEach((AccordionItem element) {
+        element.expand();
+      });
+    });
+  }
+
+  @override
+  void collapseAll() {
+    categories.items.forEach((AccordionItem item) {
+      item.collapse();
+      (item as StandardMessagesCategoryView).groups.items.forEach((AccordionItem element) {
+        element.collapse();
+      });
+    });
+  }
 }
 
 class StandardMessagesCategoryView extends AccordionItem {
