@@ -1384,7 +1384,7 @@ class ConversationSummary with LazyListViewItem, UserPresenceIndicator {
 
   Map<String, bool> _presentUsers = {};
 
-  ConversationSummary(this.deidentifiedPhoneNumber, this._text, this._unread, this._status, {dateTime: DateTime}) {
+  ConversationSummary(this.deidentifiedPhoneNumber, this._text, this._unread, this._status, {DateTime dateTime}) {
     _dateTime = dateTime;
     otherUserPresenceIndicator = new DivElement()..classes.add('conversation-list__user-indicators')..classes.add('user-indicators');
   }
@@ -1455,7 +1455,7 @@ class ConversationSummary with LazyListViewItem, UserPresenceIndicator {
 
   void _updateDateTime(DateTime dateTime) {
     _dateTime = dateTime;
-    _conversationItem?.updateDateTime(dateTime);
+    _conversationItem?.updateDateTime(_dateTime);
   }
 
   void _toggleDateSeparator(bool show) {
