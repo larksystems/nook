@@ -412,7 +412,7 @@ class NookController extends Controller {
         }
         List<String> groups = tagsByGroup.keys.toList();
         groups.sort();
-        _populateTagPanelView(tagsByGroup, currentConfig.tagsKeyboardShortcutsEnabled);
+        _populateTagPanelView(tagsByGroup, currentConfig.tagsKeyboardShortcutsEnabled, currentConfig.mandatoryExcludeTagIds);
 
         // Re-read the conversation filter from the URL since we now have the names of the tags
         conversationFilter = new ConversationFilter.fromUrl(currentConfig);
@@ -601,7 +601,7 @@ class NookController extends Controller {
     }
 
     if (oldConfig.tagsKeyboardShortcutsEnabled != newConfig.tagsKeyboardShortcutsEnabled) {
-      _populateTagPanelView(tagsByGroup, newConfig.tagsKeyboardShortcutsEnabled);
+      _populateTagPanelView(tagsByGroup, newConfig.tagsKeyboardShortcutsEnabled, currentConfig.mandatoryExcludeTagIds);
     }
 
     if (oldConfig.sendMessagesEnabled != newConfig.sendMessagesEnabled) {
@@ -634,7 +634,7 @@ class NookController extends Controller {
           _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.include), TagFilterType.include);
           _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.exclude), TagFilterType.exclude);
 
-          _populateTagPanelView(tagsByGroup, newConfig.tagsKeyboardShortcutsEnabled);
+          _populateTagPanelView(tagsByGroup, newConfig.tagsKeyboardShortcutsEnabled, currentConfig.mandatoryExcludeTagIds);
 
           updateFilteredAndSelectedConversationLists();
         }
@@ -729,7 +729,7 @@ class NookController extends Controller {
 
         if (actionObjectState == UIActionObject.loadingConversations) {
           actionObjectState = null;
-          _populateTagPanelView(tagsByGroup, currentConfig.tagsKeyboardShortcutsEnabled);
+          _populateTagPanelView(tagsByGroup, currentConfig.tagsKeyboardShortcutsEnabled, currentConfig.mandatoryExcludeTagIds);
         }
 
         // TODO even though they are unlikely to happen, we should also handle the removals in the UI for consistency
