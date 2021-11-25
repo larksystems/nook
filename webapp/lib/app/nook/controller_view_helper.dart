@@ -68,7 +68,7 @@ void _updateConversationPanelView(model.Conversation conversation) {
       messageView
         ..text = message.text
         ..translation = message.translation
-        ..datetime = message.datetime;
+        ..datetime = message.datetime.toLocal();
       for (var tagId in message.tagIds) {
         messageView.removeTag(tagId);
       }
@@ -110,7 +110,7 @@ MessageView _generateMessageView(model.Message message, model.Conversation conve
   List<TagView> tags = _generateMessageTagViews(message);
   var messageView = new MessageView(
       message.text,
-      message.datetime,
+      message.datetime.toLocal(),
       conversation.docId,
       message.id,
       translation: message.translation,
