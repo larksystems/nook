@@ -144,7 +144,7 @@ void _populateReplyPanelView(List<model.SuggestedReply> replies) {
   }
 }
 
-void _populateTagPanelView(Map<String, List<model.Tag>> tagsByGroup) {
+void _populateTagPanelView(Map<String, List<model.Tag>> tagsByGroup, bool showShortcut) {
   _view.tagPanelView.clear();
 
   for (String tagGroupName in tagsByGroup.keys) {
@@ -152,7 +152,7 @@ void _populateTagPanelView(Map<String, List<model.Tag>> tagsByGroup) {
     var tags = tagsByGroup[tagGroupName];
     Map<String, TagView> tagViewsById = {};
     for (model.Tag tag in tags) {
-      tagViewsById[tag.docId] = TagView(tag.text, tag.text, selectable: true)
+      tagViewsById[tag.docId] = TagView(tag.text, tag.text, selectable: true, shortcut: showShortcut ? tag.shortcut : "")
         ..onSelect = () { _view.appController.command(UIAction.addTag, new TagData(tag.tagId)); };
     }
     tagGroupView.addTags(tagViewsById);

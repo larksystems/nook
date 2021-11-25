@@ -412,7 +412,7 @@ class NookController extends Controller {
         }
         List<String> groups = tagsByGroup.keys.toList();
         groups.sort();
-        _populateTagPanelView(tagsByGroup);
+        _populateTagPanelView(tagsByGroup, currentConfig.tagsKeyboardShortcutsEnabled);
 
         // Re-read the conversation filter from the URL since we now have the names of the tags
         conversationFilter = new ConversationFilter.fromUrl(currentConfig);
@@ -601,7 +601,7 @@ class NookController extends Controller {
     }
 
     if (oldConfig.tagsKeyboardShortcutsEnabled != newConfig.tagsKeyboardShortcutsEnabled) {
-      // todo: question - do we need to handle shortcut for tag panel view
+      _populateTagPanelView(tagsByGroup, newConfig.tagsKeyboardShortcutsEnabled);
     }
 
     if (oldConfig.sendMessagesEnabled != newConfig.sendMessagesEnabled) {
@@ -634,9 +634,7 @@ class NookController extends Controller {
           _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.include), TagFilterType.include);
           _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.exclude), TagFilterType.exclude);
 
-          // todo: figure out this following condition
-          // if (newConfig.mandatoryExcludeTagIds.intersection(tagsByGroup[selectedTagGroup].map((t) => t.tagId).toSet()).isNotEmpty) {
-          _populateTagPanelView(tagsByGroup);
+          _populateTagPanelView(tagsByGroup, newConfig.tagsKeyboardShortcutsEnabled);
 
           updateFilteredAndSelectedConversationLists();
         }
@@ -731,7 +729,7 @@ class NookController extends Controller {
 
         if (actionObjectState == UIActionObject.loadingConversations) {
           actionObjectState = null;
-          _populateTagPanelView(tagsByGroup);
+          _populateTagPanelView(tagsByGroup, currentConfig.tagsKeyboardShortcutsEnabled);
         }
 
         // TODO even though they are unlikely to happen, we should also handle the removals in the UI for consistency
