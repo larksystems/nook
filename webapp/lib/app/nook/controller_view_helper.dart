@@ -147,7 +147,9 @@ void _populateReplyPanelView(List<model.SuggestedReply> replies) {
 void _populateTagPanelView(Map<String, List<model.Tag>> tagsByGroup, bool showShortcut) {
   _view.tagPanelView.clear();
 
-  for (String tagGroupName in tagsByGroup?.keys ?? []) {
+  var groupNames = (tagsByGroup?.keys ?? []).toList()..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+
+  for (String tagGroupName in groupNames) {
     var tagGroupView = TagGroupView(tagGroupName, tagGroupName, DivElement(), DivElement());
     var tags = tagsByGroup[tagGroupName];
     Map<String, TagView> tagViewsById = {};
