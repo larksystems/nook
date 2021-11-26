@@ -2,12 +2,10 @@ library controller;
 
 import 'dart:html';
 import 'package:katikati_ui_lib/components/logger.dart';
-import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
 import 'package:nook/app/configurator/controller.dart';
 export 'package:nook/app/configurator/controller.dart';
 import 'package:katikati_ui_lib/components/model/model.dart' as model;
 import 'package:katikati_ui_lib/components/tag/tag.dart';
-import 'package:katikati_ui_lib/components/menu/menu.dart';
 import 'package:nook/platform/platform.dart';
 import 'view.dart';
 
@@ -25,8 +23,7 @@ enum TagsConfigAction {
   moveTag,
   updateTagGroup,
   removeTag,
-  removeTagGroup,
-  updateTagType
+  removeTagGroup
 }
 
 class TagData extends Data {
@@ -41,9 +38,7 @@ class TagData extends Data {
   /// Used when moving a tag
   String newGroupId;
 
-  model.TagType newType;
-
-  TagData(this.id, {this.text, this.groupId, this.newGroupId, this.newType});
+  TagData(this.id, {this.text, this.groupId, this.newGroupId});
 
   @override
   String toString() {
@@ -152,12 +147,6 @@ class TagsConfiguratorController extends ConfiguratorController {
         TagGroupData groupData = data;
         tagManager.deleteTagGroup(groupData.groupName);
         _view.removeTagGroup(groupData.groupName);
-        break;
-
-      case TagsConfigAction.updateTagType:
-        TagData tagData = data;
-        var tag = tagManager.modifyTag(tagData.id, type: tagData.newType);
-        _modifyTagsInView(Map.fromEntries(tag.groups.map((g) => new MapEntry(g, [tag]))));
         break;
 
       default:

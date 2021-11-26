@@ -1,20 +1,5 @@
 part of controller;
 
-List<MenuItem> getMenuItems(model.Tag tag) {
-  bool tagImportant = tag.type == model.TagType.important;
-  var markAsImportant = DivElement()..innerText = tagImportant? "Mark tag as normal" : "Mark tag as important";
-  var copyId = DivElement()..innerText = "Copy ID";
-  return [
-    MenuItem(markAsImportant, () {
-      _view.appController.command(TagsConfigAction.updateTagType, new TagData(tag.tagId, newType: tagImportant ? model.TagType.normal : model.TagType.important));
-    }),
-    MenuItem(copyId, () {
-      window.navigator.clipboard.writeText(tag.tagId);
-      _view.snackbarView.showSnackbar("Tag ID copied!", SnackbarNotificationType.info);
-    })
-  ];
-}
-
 void _addTagsToView(Map<String, List<model.Tag>> tagsByCategory, {bool startEditing = false, bool startEditingName = false}) {
   for (var category in tagsByCategory.keys.toList()..sort()) {
     if (_view.groups.queryItem(category) == null) {
@@ -22,7 +7,7 @@ void _addTagsToView(Map<String, List<model.Tag>> tagsByCategory, {bool startEdit
     }
     Map<String, TagView> tagsById = {};
     for (var tag in tagsByCategory[category]) {
-      tagsById[tag.tagId] = new ConfigureTagView(tag.text, tag.docId, category, _tagTypeToKKStyle(tag.type), getMenuItems(tag));
+      tagsById[tag.tagId] = new ConfigureTagView(tag.text, tag.docId, category, _tagTypeToKKStyle(tag.type));
       if (startEditing) {
         tagsById[tag.tagId].beginEdit();
       }
@@ -52,7 +37,7 @@ void _modifyTagsInView(Map<String, List<model.Tag>> tagsByCategory) {
   for (var category in tagsByCategory.keys.toList()..sort()) {
     Map<String, TagView> tagViewsById = {};
     for (var tag in tagsByCategory[category]) {
-      tagViewsById[tag.tagId] = new ConfigureTagView(tag.text, tag.docId, category, _tagTypeToKKStyle(tag.type), getMenuItems(tag));
+      tagViewsById[tag.tagId] = new ConfigureTagView(tag.text, tag.docId, category, _tagTypeToKKStyle(tag.type));
     }
     (_view.groups.queryItem(category) as TagGroupView).modifyTags(tagViewsById);
   }

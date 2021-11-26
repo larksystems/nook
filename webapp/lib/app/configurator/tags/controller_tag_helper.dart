@@ -140,7 +140,7 @@ class TagManager {
 
   /// Returns a copy of the original tag with the given [id], with the given new [text] and/or [group].
   /// Also adds the tag to the list of tags that have been edited and need to be saved.
-  model.Tag modifyTag(String id, {String text, String group, model.TagType type}) {
+  model.Tag modifyTag(String id, {String text, String group}) {
     model.Tag tag = getTagById(id);
     model.Tag newTag = model.Tag.fromData(tag.toData())..docId = tag.tagId;
     if (text != null) {
@@ -148,9 +148,6 @@ class TagManager {
     }
     if (group != null) {
       newTag.groups = [group];
-    }
-    if (type != null) {
-      newTag.type = type;
     }
     updateTag(newTag);
     editedTags[newTag.tagId] = newTag;
