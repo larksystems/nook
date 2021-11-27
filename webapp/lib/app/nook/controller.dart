@@ -64,6 +64,8 @@ enum UIAction {
   selectConversationList,
   selectConversation,
   deselectConversation,
+  navigateToPrevConversation,
+  navigateToNextConversation,
   markConversationRead,
   markConversationUnread,
   changeConversationSortOrder,
@@ -855,6 +857,22 @@ class NookController extends Controller {
     return conversations.first;
   }
 
+  /// Return the element before [current],
+  /// or the first element if [current] is the last or not in the list.
+  model.Conversation prevElement(Iterable<model.Conversation> conversations, model.Conversation current) {
+    var iter = conversations.iterator;
+    var prev = conversations.last;
+    while (iter.moveNext()) {
+      if (iter.current == current) {
+        return prev;
+      } else {
+        prev = iter.current;
+      }
+    }
+    // did not find [current] in the set... return first conversation
+    return conversations.first;
+  }
+
   Set<model.Conversation> get conversationsInView {
     if (currentConfig.sendMultiMessageEnabled) {
       return conversations.where((c) => filteredConversations.contains(c) || selectedConversations.contains(c)).toSet();
@@ -1230,6 +1248,18 @@ class NookController extends Controller {
         selectedConversations.remove(conversation);
         updateFilteredAndSelectedConversationLists();
         break;
+      case UIAction.navigateToPrevConversation:
+        bool shouldRecomputeConversationList = !filteredConversations.contains(activeConversation);
+        activeConversation = prevElement(conversationsInView, activeConversation);
+        if (shouldRecomputeConversationList) updateFilteredAndSelectedConversationLists();
+        updateViewForConversation(activeConversation);
+        break;
+      case UIAction.navigateToNextConversation:
+        bool shouldRecomputeConversationList = !filteredConversations.contains(activeConversation);
+        activeConversation = nextElement(conversationsInView, activeConversation);
+        if (shouldRecomputeConversationList) updateFilteredAndSelectedConversationLists();
+        updateViewForConversation(activeConversation);
+      break;
       case UIAction.updateTranslation:
         if (data is TranslationData) {
           TranslationData messageTranslation = data;
@@ -1254,12 +1284,12 @@ class NookController extends Controller {
         break;
       case UIAction.keyPressed:
         KeyPressData keyPressData = data;
-        if (keyPressData.key == 'Enter') {
-          // Select the next conversation in the list
-          bool shouldRecomputeConversationList = !filteredConversations.contains(activeConversation);
-          activeConversation = nextElement(conversationsInView, activeConversation);
-          if (shouldRecomputeConversationList) updateFilteredAndSelectedConversationLists();
-          updateViewForConversation(activeConversation);
+        if (keyPressData.key == 'w') {
+          command(UIAction.navigateToPrevConversation, null);  
+          return;
+        }
+        if (keyPressData.key == 's') {
+          command(UIAction.navigateToNextConversation, null);  
           return;
         }
         if (keyPressData.key == 'Esc' || keyPressData.key == 'Escape') {
