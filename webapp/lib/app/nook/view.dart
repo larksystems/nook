@@ -978,7 +978,7 @@ class ConversationListPanelView {
   ChangeSortOrderActionView _changeSortOrder;
   LazyListViewModel _conversationList;
   CheckboxInputElement _selectAllCheckbox;
-  DivElement _loadSpinner;
+  ImageElement _loadSpinner;
   DivElement _selectConversationListMessage;
 
   NewConversationModal _newConversationModal;
@@ -1034,8 +1034,9 @@ class ConversationListPanelView {
       ..classes.add('conversation-list-header__sort-order')
       ..append(_changeSortOrder.renderElement));
 
-    _loadSpinner = new DivElement()
-      ..classes.add('load-spinner');
+    _loadSpinner = new ImageElement()
+      ..classes.add('load-spinner')
+      ..src = "/packages/katikati_ui_lib/components/brand_asset/logos/loading.svg";
     conversationListPanel.append(_loadSpinner);
 
     _selectConversationListMessage = new DivElement()
