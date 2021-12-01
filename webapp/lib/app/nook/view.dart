@@ -115,7 +115,7 @@ class NookPageView extends PageView {
     showNormalStatus('signed out');
   }
 
-  void showPanels(bool showReplyPanel, bool enableEditNotesPanel, bool showTagPanel, bool showTurnlinePanel, String defaultTab) {
+  void showPanels(bool showReplyPanel, bool enableEditNotesPanel, bool showTagPanel, bool tagMessagesEnabled, bool tagConversationsEnabled, bool showTurnlinePanel, String defaultTab) {
     List<TabView> tabsToSet = [];
 
     if (showReplyPanel) {
@@ -126,7 +126,7 @@ class NookPageView extends PageView {
     if (showTagPanel) {
       var tagsTab = TabView('tag', "Tags", tagPanelView.tagPanel);
       tabsToSet.add(tagsTab);
-      tagPanelView.enableTagging(false);
+      tagPanelView.enableTagging(tagMessagesEnabled, tagConversationsEnabled, false);
     }
 
     if (showTurnlinePanel) {
@@ -1695,16 +1695,38 @@ class ReplyPanelView {
 
 }
 
+class TagGroupView extends AccordionItem {
+  String _groupName;
+  DivElement _header;
+  DivElement _body;
+  DivElement _tagsContainer;
+  Map<String, TagView> tagViewsById;
+
+  TagGroupView(String id, this._groupName, this._header, this._body) : super(id, _header, _body, false) {
+    _groupName = _groupName ?? '';
+
+    var groupName = DivElement()..innerText = _groupName;
+    _header.append(groupName);
+
+    _tagsContainer = DivElement()..classes.add('tags-group__tags');
+    _body.append(_tagsContainer);
+    tagViewsById = {};
+  }
+
+  void addTags(Map<String, TagView> tags) {
+    for (var tag in tags.keys) {
+      _tagsContainer.append(tags[tag].renderElement);
+      tagViewsById[tag] = tags[tag];
+    }
+  }
+}
+
 class TagPanelView {
   DivElement tagPanel;
   DivElement _instruction;
-  SelectElement _tagGroups;
-  DivElement _tags;
-  DivElement _tagList;
+  Accordion _tagGroups;
   DivElement _statusPanel;
   Text _statusText;
-
-  List<TagActionView> _tagViews;
 
   TagPanelView() {
     tagPanel = new DivElement()
@@ -1717,83 +1739,37 @@ class TagPanelView {
     _instruction = new DivElement()
       ..classes.add('panel-instruction')
       ..text = "Select a conversation or a message to tag";
-    tagPanel.append(_instruction);
+    panelTitle.append(_instruction);
 
-    _tagGroups = new SelectElement()
-      ..onChange.listen((_) => _view.appController.command(UIAction.updateDisplayedTagsGroup, new UpdateTagsGroupData(_tagGroups.value)));
-
-    panelTitle.append(_tagGroups);
-
-    _tags = new DivElement()
-      ..classes.add('tags')
-      ..classes.add('action-list');
-    tagPanel.append(_tags);
-
-    _tagList = new DivElement();
-    _tags.append(_tagList);
-
-    // TODO(mariana): support adding tags
-    // _addTag = new AddTagActionView(ADD_TAG_INFO);
-    // _tags.append(_addTag.addAction);
+    _tagGroups = Accordion([]);
+    tagPanel.append(_tagGroups.renderElement);
 
     _statusPanel = new DivElement();
     _statusText = new Text('loading...');
     tagPanel.append(_statusPanel
       ..classes.add('status-line')
       ..append(_statusText));
-
-    _tagViews = [];
   }
 
-  set selectedGroup(String group) {
-    int index = _tagGroups.children.indexWhere((Element option) => (option as OptionElement).value == group);
-    if (index == -1) {
-      _view.showWarningStatus("Couldn't find $group in list of tag groups, using first");
-      _tagGroups.selectedIndex = 0;
-      _view.appController.command(UIAction.updateDisplayedTagsGroup, new UpdateTagsGroupData(_tagGroups.value));
-      return;
-    }
-    _tagGroups.selectedIndex = index;
-  }
-
-  set groups(List<String> groups) {
-    _tagGroups.children.clear();
-    for (var group in groups) {
-      _tagGroups.append(
-        new OptionElement()
-          ..value = group
-          ..text = group);
-    }
-  }
-
-  void addTag(ActionView action) {
-    _tagViews.add(action);
-    _tagList.append(action.action);
+  void addTagGroup(TagGroupView tagGroupView) {
+    _tagGroups.appendItem(tagGroupView);
   }
 
   void clear() {
-    int tagsNo = _tagList.children.length;
-    for (int i = 0; i < tagsNo; i++) {
-      _tagList.firstChild.remove();
-    }
-    assert(_tagList.children.length == 0);
+    _tagGroups.clear();
   }
 
-  void showShortcuts(bool show) {
-    for (var view in _tagViews) {
-      view.showShortcut(show);
+  void enableTagging(bool messageEnabled, bool conversationEnabled, bool selected) {
+    if (!messageEnabled && !conversationEnabled) {
+      _instruction.innerText = "You do not have permissions to tag messages or conversations. Please contact your admin."; 
+      return;
     }
-  }
 
-  void showButtons(bool show) {
-    for (var view in _tagViews) {
-      view.showButtons(show);
+    if (selected) {
+      _instruction.innerText = "Click to add the tag to the selected conversation or message";
+    } else {
+      _instruction.innerText = "Select a conversation or a message to tag";
     }
-  }
-
-  void enableTagging(bool show) {
-    _instruction.hidden = show;
-    showButtons(show);
   }
 }
 
@@ -1981,47 +1957,6 @@ class ReplyActionGroupView implements ActionView {
     for (var reply in replies) {
       reply.showButtons(show);
     }
-  }
-}
-
-class TagActionView implements ActionView {
-  DivElement action;
-  TagView tagView;
-  DivElement _shortcutElement;
-  DivElement _buttonElement;
-
-  TagActionView(String text, String shortcut, String tagId, String buttonText) {
-    action = new DivElement()
-      ..classes.add('action')
-      ..dataset['id'] = tagId;
-
-    _shortcutElement = new DivElement()
-      ..classes.add('action__shortcut')
-      ..text = shortcut;
-    action.append(_shortcutElement);
-
-    tagView = TagView(text, "")
-      ..onSelect = _addTagCommand;
-    action.append(tagView.renderElement);
-
-    _buttonElement = new DivElement()
-      ..classes.add('action__button')
-      ..classes.add('action__button--float')
-      ..text = buttonText
-      ..onClick.listen((_) => _addTagCommand());
-    action.append(_buttonElement);
-  }
-
-  void _addTagCommand() {
-    _view.appController.command(UIAction.addTag, new TagData(action.dataset['id']));
-  }
-
-  void showShortcut(bool show) {
-    _shortcutElement.classes.toggle('hidden', !show);
-  }
-
-  void showButtons(bool show) {
-    _buttonElement.classes.toggle('hidden', !show);
   }
 }
 
