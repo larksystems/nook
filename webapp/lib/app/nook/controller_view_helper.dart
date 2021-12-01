@@ -144,7 +144,7 @@ void _populateReplyPanelView(List<model.SuggestedReply> replies) {
   }
 }
 
-void _populateTagPanelView(Map<String, List<model.Tag>> tagsByGroup, bool showShortcut, Set<String> tagIds) {
+void _populateTagPanelView(Map<String, List<model.Tag>> tagsByGroup, bool showShortcut, Set<String> mandatoryExcludeTagIds) {
   _view.tagPanelView.clear();
 
   var groupNames = (tagsByGroup?.keys ?? []).toList()..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
@@ -155,8 +155,8 @@ void _populateTagPanelView(Map<String, List<model.Tag>> tagsByGroup, bool showSh
     Map<String, TagView> tagViewsById = {};
     for (model.Tag tag in tags) {
       tagViewsById[tag.docId] = TagView(tag.text, tag.text, selectable: true, shortcut: showShortcut ? tag.shortcut : "")
-        ..onSelect = () { _view.appController.command(UIAction.addTag, new TagData(tag.tagId)); };
-      if (tagIds != null && tagIds.contains(tag.tagId)) {
+        ..onSelect = () => _view.appController.command(UIAction.addTag, new TagData(tag.tagId));
+      if (mandatoryExcludeTagIds != null && mandatoryExcludeTagIds.contains(tag.tagId)) {
         var questionIcon = SpanElement()..className = "fas fa-info";
         var tooltip = Tooltip(questionIcon, "Once you've added this tag, you won't be able to see the conversation anymore due to access restrictions on this tag.", position: TooltipPosition.bottom);
         tooltip.renderElement.classes.add('tag-tooltip');
