@@ -11,6 +11,17 @@
   margin-bottom: 12px;
 }
 
+.tag .menu__icon {
+  background-color: none;
+  box-shadow: none;
+}
+
+.tag .menu__item {
+  display: block;
+  padding: 4px 8px;
+  line-height: 1.2;
+}
+
 .tooltip {
   position: absolute;
   top: 100%;

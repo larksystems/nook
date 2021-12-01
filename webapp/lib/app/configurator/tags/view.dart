@@ -6,6 +6,7 @@ import 'package:dnd/dnd.dart' as dnd;
 import 'package:katikati_ui_lib/components/accordion/accordion.dart';
 import 'package:katikati_ui_lib/components/editable/editable_text.dart';
 import 'package:katikati_ui_lib/components/button/button.dart';
+import 'package:katikati_ui_lib/components/menu/menu.dart';
 import 'package:katikati_ui_lib/components/model/model.dart';
 import 'package:nook/app/configurator/view.dart';
 export 'package:nook/app/configurator/view.dart';
@@ -159,8 +160,8 @@ class ConfigureTagView extends TagView {
 
   Function(String text) showDuplicateTagsWarningModal;
 
-  ConfigureTagView(String tagText, String tagId, String groupId, TagStyle tagStyle)
-      : super(tagText, tagId, groupId: groupId, tagStyle: tagStyle, deletable: true, editable: true) {
+  ConfigureTagView(String tagText, String tagId, String groupId, TagStyle tagStyle, List<MenuItem> menuItems)
+      : super(tagText, tagId, groupId: groupId, tagStyle: tagStyle, deletable: true, editable: true, menuItems: menuItems) {
     var draggableTag = new dnd.Draggable(renderElement, avatarHandler: dnd.AvatarHandler.original(), draggingClass: 'tag__text');
     draggableTag..onDragStart.listen((_) => dragInProgress = true)..onDragEnd.listen((_) => dragInProgress = false);
 
