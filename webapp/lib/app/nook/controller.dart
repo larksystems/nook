@@ -28,6 +28,7 @@ part 'controller_view_helper.dart';
 
 Logger log = new Logger('controller.dart');
 
+bool get SENDABLE_STANDARD_MESSAGE_GROUPS => controller.projectConfiguration['sendableMessageGroups'] ?? true;
 bool get ENABLE_TURNLINE_PANEL => controller.projectConfiguration['nookTurnlineEnabled'] ?? false;
 String get DEFAULT_PANEL_TAB => controller.projectConfiguration['nookDefaultPanel'] ?? 'standard_messages';
 
