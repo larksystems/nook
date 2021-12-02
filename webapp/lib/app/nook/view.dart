@@ -785,7 +785,7 @@ class MessageTagView extends TagView {
       DivElement message = getAncestors(renderElement).firstWhere((e) => e.classes.contains('message'), orElse: () => null);
       _view.appController.command(UIAction.selectMessageTag, new MessageTagData(tagId, message.dataset['messageId']));
     };
-    
+
     markHighlighted(highlight);
   }
 }
@@ -1873,6 +1873,10 @@ class ReplyActionView implements ActionView {
 
   void highlightText(bool highlight) {
     _textElement.classes.toggle('action__text--bold', highlight);
+  }
+
+  void fadeText(bool fade) {
+    _textElement.classes.toggle('action__text--faded', fade);
   }
 
   void highlightTranslation(bool highlight) {
