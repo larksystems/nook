@@ -1761,7 +1761,7 @@ class TagPanelView {
 
   void enableTagging(bool messageEnabled, bool conversationEnabled, bool selected) {
     if (!messageEnabled && !conversationEnabled) {
-      _instruction.innerText = "You do not have permissions to tag messages or conversations. Please contact your admin."; 
+      _instruction.innerText = "You do not have permissions to tag messages or conversations. Please contact your admin.";
       return;
     }
 
@@ -1957,6 +1957,10 @@ class ReplyActionGroupView implements ActionView {
   }
 
   void showButtons(bool show) {
+    _buttonElements.forEach((button) => button.classes.toggle('hidden', !show));
+  }
+
+  void showButtonsRecursive(bool show) {
     _buttonElements.forEach((button) => button.classes.toggle('hidden', !show));
     for (var reply in replies) {
       reply.showButtons(show);

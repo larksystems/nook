@@ -141,6 +141,7 @@ void _populateReplyPanelView(List<model.SuggestedReply> replies) {
       views.add(replyView);
     }
     var replyGroupView = new ReplyActionGroupView(groupId, groupDescription, buttonText + " all", views);
+    replyGroupView.showButtons(SENDABLE_STANDARD_MESSAGE_GROUPS);
     _view.replyPanelView.addReply(replyGroupView);
   }
 }
