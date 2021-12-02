@@ -135,6 +135,7 @@ void _populateReplyPanelView(List<model.SuggestedReply> replies) {
     for (var reply in repliesInGroup) {
       groupDescription = reply.groupDescription;
       var replyView = new ReplyActionView(reply.text, reply.translation, reply.shortcut, reply.suggestedReplyId, buttonText);
+      replyView.fadeText(controller.activeConversation?.messages?.where((element) => element.text == reply.text)?.isNotEmpty ?? false);
       replyView.showShortcut(controller.currentConfig.repliesKeyboardShortcutsEnabled);
       replyView.showButtons(controller.currentConfig.sendMessagesEnabled);
       views.add(replyView);

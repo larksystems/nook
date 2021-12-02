@@ -79,6 +79,10 @@
   color: #222222;
 }
 
+.action__text.action__text--faded {
+  color: #999;
+}
+
 .action__button {
   flex: 0 0 auto;
   padding: 4px;

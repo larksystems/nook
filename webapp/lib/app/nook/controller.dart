@@ -341,7 +341,7 @@ class NookController extends Controller {
   List<model.Conversation> selectedConversations;
   model.Message selectedMessage;
   model.Conversation selectedConversationSummary;
-  
+
   String selectedMessageTagId; // tag's ID
   String selectedTagMessageId; // message's ID
   String selectedConversationTagId;
@@ -1135,7 +1135,7 @@ class NookController extends Controller {
         _view.conversationPanelView.selectConversationSummary();
         _view.tagPanelView.enableTagging(_enableTagging);
         break;
-      case UIAction.deselectConversationSummary: 
+      case UIAction.deselectConversationSummary:
         if (actionObjectState != UIActionObject.conversation) return;
         selectedConversationSummary = null;
         actionObjectState = null;
@@ -1536,7 +1536,7 @@ class NookController extends Controller {
     // Replace the previous conversation in the conversation panel
     _populateConversationPanelView(conversation, updateInPlace: updateInPlace);
     _view.notesPanelView.noteText = conversation.notes;
-    
+
     if (actionObjectState == UIActionObject.message) {
       selectedMessage = conversation.messages.singleWhere((element) => element.id == selectedMessage.id);
       _view.conversationPanelView.selectMessage(conversation.messages.indexOf(selectedMessage));
@@ -1565,6 +1565,7 @@ class NookController extends Controller {
     if (conversationsInView.contains(conversation)) {
       // Select the conversation in the list of conversations
       _view.conversationListPanelView.selectConversation(conversation.docId);
+      _populateReplyPanelView(suggestedRepliesByCategory[selectedSuggestedRepliesCategory]);
     }
   }
 
