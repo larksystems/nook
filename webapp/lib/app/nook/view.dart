@@ -209,6 +209,7 @@ const ADD_TAG_INFO = 'Add new tag';
 class ConversationPanelView with AutomaticSuggestionIndicator {
   // HTML elements
   DivElement conversationPanel;
+  DivElement _conversationSummaryWrapper;
   DivElement _conversationSummary;
   DivElement _messages;
   DivElement _conversationWarning;
@@ -239,13 +240,36 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
         _view.appController.command(UIAction.deselectConversationTag, null);
       });
 
+    _conversationSummaryWrapper = DivElement()
+      ..classes.add('conversation-summary__wrapper');
+    conversationPanel.append(_conversationSummaryWrapper);
+
     _conversationSummary = new DivElement()
       ..classes.add('conversation-summary');
     _conversationSummary.onClick.listen((e) {
       e.stopPropagation(); // to stop immediate deselection
       _view.appController.command(UIAction.selectConversationSummary, new ConversationData(_conversationIdCopy.dataset['copy-value']));
     });
-    conversationPanel.append(_conversationSummary);
+
+    var prevConversationButton = DivElement()
+      ..title = "Previous conversation [W]"
+      ..className = "conversation-navigation"
+      ..append(DivElement()..className = "conversation-navigation--prev"..append(SpanElement()..className = 'fas fa-angle-left'))
+      ..onClick.listen((_) {
+        _view.appController.command(UIAction.navigateToPrevConversation, null);
+      });
+    var nextConversationButton = DivElement()
+      ..title = "Next conversation [S]"
+      ..className = "conversation-navigation"
+      ..append(DivElement()..className = "conversation-navigation--next"..append(SpanElement()..className = 'fas fa-angle-right'))
+      ..onClick.listen((_) {
+        _view.appController.command(UIAction.navigateToNextConversation, null);
+      });
+
+    _conversationSummaryWrapper
+      ..append(prevConversationButton)
+      ..append(_conversationSummary)
+      ..append(nextConversationButton);
 
     var title = new DivElement()
       ..classes.add('conversation-summary__title');

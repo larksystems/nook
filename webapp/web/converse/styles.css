@@ -34,7 +34,7 @@ main {
 
 .nook-column-wrapper {
     height: calc(100vh - 42px);
-    border: 1px solid #ccc;
+    border: 1px solid var(--default-border-color);
     overflow-y: scroll;
     flex-basis: 0;
     border-radius: 3px;
@@ -190,7 +190,7 @@ main {
     text-align: left;
     padding: 12px 8px;
     color: #666;
-    border-bottom: 1px solid #ccc;
+    border-bottom: 1px solid var(--default-border-color);
 }
 
 .panel-instruction {
@@ -206,7 +206,7 @@ main {
 
 .conversation-list-header {
     padding: 12px;
-    border-bottom: 1px solid #ccc;
+    border-bottom: 1px solid var(--default-border-color);
 }
 
 .conversation-list-header .far,
@@ -266,11 +266,35 @@ main {
     filter: brightness(var(--hover-brightness));
 }
 
+.conversation-summary__wrapper {
+    display: flex;
+}
+
+.conversation-summary__wrapper .conversation-navigation {
+    padding: 6px;
+    border-bottom: 1px solid var(--default-border-color);
+    position: relative;
+    width: 20px;
+    cursor: pointer;
+}
+
+.conversation-summary__wrapper .conversation-navigation:hover {
+    background-color: var(--default-background-color);
+}
+
+.conversation-summary__wrapper .conversation-navigation .conversation-navigation--prev span,
+.conversation-summary__wrapper .conversation-navigation .conversation-navigation--next span {
+    position: absolute;
+    top: calc(50% - 7px);
+    display: inline-block;
+}
+
 .conversation-summary {
     text-align: center;
     padding: 4px;
     border: 1px solid var(--white);
-    border-bottom: 1px solid #ccc;
+    border-bottom: 1px solid var(--default-border-color);
+    flex: 1;
 }
 
 .conversation-summary--selected {
