@@ -1212,12 +1212,14 @@ class NookController extends Controller {
         ConversationData conversationData = data;
         model.Conversation conversation = conversations.singleWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
         selectedConversations.add(conversation);
+        _view.conversationListPanelView.updateSelectedCount(selectedConversations.length);
         break;
       case UIAction.deselectConversation:
         ConversationData conversationData = data;
         model.Conversation conversation = conversations.singleWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
         selectedConversations.remove(conversation);
         updateFilteredAndSelectedConversationLists();
+        _view.conversationListPanelView.updateSelectedCount(selectedConversations.length);
         break;
       case UIAction.navigateToPrevConversation:
         bool shouldRecomputeConversationList = !filteredConversations.contains(activeConversation);
@@ -1341,6 +1343,7 @@ class NookController extends Controller {
         selectedConversations.clear();
         selectedConversations.addAll(filteredConversations);
         updateFilteredAndSelectedConversationLists();
+        _view.conversationListPanelView.updateSelectedCount(selectedConversations.length);
         break;
       case UIAction.deselectAllConversations:
         _view.conversationListPanelView.uncheckSelectAllCheckbox();
@@ -1349,6 +1352,7 @@ class NookController extends Controller {
         if (actionObjectState != UIActionObject.loadingConversations) {
           updateFilteredAndSelectedConversationLists();
         }
+        _view.conversationListPanelView.updateSelectedCount(selectedConversations.length);
         break;
       case UIAction.updateSuggestedRepliesCategory:
         UpdateSuggestedRepliesCategoryData updateCategoryData = data;
