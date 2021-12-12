@@ -74,6 +74,10 @@ class NookPageView extends PageView {
       if (ignoreShortcut(event)) return;
       appController.command(UIAction.keyPressed, new KeyPressData(event.key, event.altKey || event.ctrlKey || event.metaKey || event.shiftKey));
     });
+    document.onKeyUp.listen((event) {
+      if (ignoreShortcut(event)) return;
+      appController.command(UIAction.keyUp, new KeyPressData(event.key, event.altKey || event.ctrlKey || event.metaKey || event.shiftKey));
+    });
   }
 
   void initSignedInView(String displayName, String photoUrl) {
