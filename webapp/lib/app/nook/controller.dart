@@ -13,7 +13,6 @@ import 'package:katikati_ui_lib/components/tag/tag.dart';
 import 'package:katikati_ui_lib/components/turnline/turnline.dart';
 import 'package:katikati_ui_lib/components/logger.dart';
 import 'package:katikati_ui_lib/components/tooltip/tooltip.dart';
-import 'package:katikati_ui_lib/components/autocomplete/autocomplete.dart';
 import 'package:nook/controller.dart';
 export 'package:nook/controller.dart';
 import 'package:katikati_ui_lib/components/model/model.dart' as model;
@@ -472,24 +471,24 @@ class NookController extends Controller {
         List<model.ConversationListShard> shards = new List()
           ..addAll(added)
           ..addAll(modified);
-        _view.conversationListSelectView.updateConversationLists(shards);
 
         // Read any conversation shards from the URL
         String urlConversationListRoot = _view.urlView.getPageUrlConversationList();
         String conversationListRoot = urlConversationListRoot;
         if (urlConversationListRoot == null) {
           conversationListRoot = ConversationListData.NONE;
-          if (shards.length == 1) { // we have just one shard - select it and load the data
+          if (shards.length > 0) {
             conversationListRoot = shards.first.conversationListRoot;
           }
         } else if (shards.where((shard) => shard.conversationListRoot == urlConversationListRoot).isEmpty) {
           log.warning("Attempting to select shard ${conversationListRoot} that doesn't exist");
           conversationListRoot = ConversationListData.NONE;
         }
+        _view.conversationListPanelView.updateShardsList(shards);
         // If we try to access a list that hasn't loaded yet, keep it in the URL
         // so it can be picked up on the next data snapshot from firebase.
         _view.urlView.setPageUrlConversationList(urlConversationListRoot);
-        _view.conversationListSelectView.selectShard(conversationListRoot);
+        _view.conversationListPanelView.selectShard(conversationListRoot);
         command(UIAction.selectConversationList, ConversationListData(conversationListRoot));
       }, (error, stacktrace) {
         _view.conversationListPanelView.hideLoadSpinner();
@@ -1204,6 +1203,7 @@ class NookController extends Controller {
         if (conversationListData.conversationListRoot == ConversationListData.NONE) {
           _view.conversationListPanelView.showSelectConversationListMessage();
         } else {
+          _view.conversationListPanelView.selectShard(conversationListData.conversationListRoot);
           _view.conversationListPanelView.showLoadSpinner();
         }
         conversationListSelected(conversationListData.conversationListRoot);
