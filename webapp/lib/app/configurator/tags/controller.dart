@@ -71,6 +71,8 @@ TagsConfigurationPageView get _view => _controller.view;
 
 class TagsConfiguratorController extends ConfiguratorController {
   TagManager tagManager = new TagManager();
+  Set<String> unsavedTagIds = {};
+  Set<String> unsavedGroupIds = {};
 
   TagsConfiguratorController() : super() {
     _controller = this;
@@ -105,6 +107,8 @@ class TagsConfiguratorController extends ConfiguratorController {
         if (presentTagTexts.contains(tagText)) {
           _showDuplicateTagWarningModal(requestRenameTagData.groupId, requestRenameTagData.id, requestRenameTagData.text);
         } else {
+          unsavedTagIds.add(requestRenameTagData.id);
+          unsavedGroupIds.add(requestRenameTagData.groupId);
           command(TagsConfigAction.renameTag, TagData(requestRenameTagData.id, text: requestRenameTagData.text));
         }
         break;
@@ -112,16 +116,18 @@ class TagsConfiguratorController extends ConfiguratorController {
       case TagsConfigAction.renameTag:
         TagData tagData = data;
         var tag = tagManager.modifyTag(tagData.id, text: tagData.text);
-        _modifyTagsInView(Map.fromEntries(tag.groups.map((g) => new MapEntry(g, [tag]))));
+        unsavedTagIds.add(tagData.id);
+        unsavedGroupIds.add(tagData.groupId);
+        _modifyTagsInView(Map.fromEntries(tag.groups.map((g) => new MapEntry(g, [tag]))), unsavedTagIds, unsavedGroupIds);
         break;
 
       case TagsConfigAction.moveTag:
         TagData tagData = data;
         model.Tag tag = tagManager.modifyTag(tagData.id, group: tagData.newGroupId);
+        unsavedTagIds.add(tagData.id);
+        unsavedGroupIds.add(tagData.groupId);
         // update the view by removing the tag and then adding it
-        _removeTagsFromView({
-          tagData.groupId: [tag]
-        });
+        _removeTagsFromView({ tagData.groupId: [tag] }, unsavedTagIds, unsavedGroupIds);
         _addTagsToView({
           tagData.newGroupId: [tag]
         });
@@ -129,10 +135,9 @@ class TagsConfiguratorController extends ConfiguratorController {
 
       case TagsConfigAction.removeTag:
         TagData tagData = data;
+        unsavedGroupIds.add(tagData.groupId);
         model.Tag tag = tagManager.deleteTag(tagData.id);
-        _removeTagsFromView({
-          tagData.groupId: [tag]
-        });
+        _removeTagsFromView({ tagData.groupId: [tag] }, unsavedTagIds, unsavedGroupIds);
         break;
 
       case TagsConfigAction.addTagGroup:
@@ -145,11 +150,13 @@ class TagsConfiguratorController extends ConfiguratorController {
         tagManager.renameTagGroup(groupData.groupName, groupData.newGroupName);
         var groupView = _view.groups.queryItem(groupData.groupName);
         groupView.id = groupData.newGroupName;
+        unsavedGroupIds.add(groupView.id);
         _view.groups.updateItem(groupData.newGroupName, groupView);
         break;
 
       case TagsConfigAction.removeTagGroup:
         TagGroupData groupData = data;
+        unsavedGroupIds.add(groupData.groupName);
         tagManager.deleteTagGroup(groupData.groupName);
         _view.removeTagGroup(groupData.groupName);
         break;
@@ -157,7 +164,9 @@ class TagsConfiguratorController extends ConfiguratorController {
       case TagsConfigAction.updateTagType:
         TagData tagData = data;
         var tag = tagManager.modifyTag(tagData.id, type: tagData.newType);
-        _modifyTagsInView(Map.fromEntries(tag.groups.map((g) => new MapEntry(g, [tag]))));
+        unsavedTagIds.add(tagData.id);
+        unsavedGroupIds.add(tagData.groupId);
+        _modifyTagsInView(Map.fromEntries(tag.groups.map((g) => new MapEntry(g, [tag]))), unsavedTagIds, unsavedGroupIds);
         break;
 
       default:
@@ -174,8 +183,8 @@ class TagsConfiguratorController extends ConfiguratorController {
       var tagsRemoved = tagManager.removeTags(removed);
 
       _addTagsToView(_groupTagsIntoCategories(tagsAdded));
-      _modifyTagsInView(_groupTagsIntoCategories(tagsModified));
-      _removeTagsFromView(_groupTagsIntoCategories(tagsRemoved));
+      _modifyTagsInView(_groupTagsIntoCategories(tagsModified), unsavedTagIds, unsavedGroupIds);
+      _removeTagsFromView(_groupTagsIntoCategories(tagsRemoved), unsavedTagIds, unsavedGroupIds);
     });
   }
 
@@ -189,6 +198,8 @@ class TagsConfiguratorController extends ConfiguratorController {
       if (otherPartSaved) {
         _view.showSaveStatus('Saved!');
         _view.unsavedChanges = false;
+        unsavedTagIds = {};
+        unsavedGroupIds = {};
         return;
       }
       otherPartSaved = true;
@@ -201,6 +212,8 @@ class TagsConfiguratorController extends ConfiguratorController {
       if (otherPartSaved) {
         _view.showSaveStatus('Saved!');
         _view.unsavedChanges = false;
+        unsavedTagIds = {};
+        unsavedGroupIds = {};
         return;
       }
       otherPartSaved = true;

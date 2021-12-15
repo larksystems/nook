@@ -42,13 +42,13 @@ void _addTagsToView(Map<String, List<model.Tag>> tagsByCategory, {bool startEdit
   }
 }
 
-void _removeTagsFromView(Map<String, List<model.Tag>> tagsByCategory) {
+void _removeTagsFromView(Map<String, List<model.Tag>> tagsByCategory, Set<String> unsavedTagIds, Set<String> unsavedGroupIds) {
   for (var category in tagsByCategory.keys.toList()..sort()) {
     (_view.groups.queryItem(category) as TagGroupView).removeTags(tagsByCategory[category].map((t) => t.tagId).toList());
   }
 }
 
-void _modifyTagsInView(Map<String, List<model.Tag>> tagsByCategory) {
+void _modifyTagsInView(Map<String, List<model.Tag>> tagsByCategory, Set<String> unsavedTagIds, Set<String> unsavedGroupIds) {
   for (var category in tagsByCategory.keys.toList()..sort()) {
     Map<String, TagView> tagViewsById = {};
     for (var tag in tagsByCategory[category]) {

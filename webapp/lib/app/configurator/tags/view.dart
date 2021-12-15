@@ -151,6 +151,8 @@ class TagGroupView extends AccordionItem {
   void showDuplicateWarningModal(String tagId, String text) {
     tagViewsById[tagId]?.showDuplicateTagsWarningModal(text);
   }
+
+  // todo: mark as unsaved function
 }
 
 class ConfigureTagView extends TagView {
@@ -223,6 +225,8 @@ class ConfigureTagView extends TagView {
       });
     };
   }
+
+  // todo: mark as unsaved function
 }
 
 class SampleMessagesTooltip {
