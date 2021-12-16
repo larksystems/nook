@@ -15,6 +15,11 @@ List<Element> getAncestors(Element element) {
 bool ignoreShortcut(KeyboardEvent event) {
   var target = (event.target as HtmlElement);
   var targetType = target.tagName;
+  var isCheckbox = targetType == "INPUT" && target.getAttribute('type') == "checkbox";
+
+  if (isCheckbox) { // allow holding shift key for multiselect
+    return false;
+  }
 
   if (IGNORE_ON_ELEMENTS.contains(targetType)) {
     return true;
