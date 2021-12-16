@@ -73,3 +73,8 @@
   border: 1px dashed var(--default-border-color);
   background-color: var(--lighter-background-color);
 }
+
+.text-edit.unsaved::before {
+  content: '•';
+  color: var(--orange);
+}

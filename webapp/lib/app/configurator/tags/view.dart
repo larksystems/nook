@@ -153,6 +153,10 @@ class TagGroupView extends AccordionItem {
   }
 
   // todo: mark as unsaved function
+  void markAsUnsaved(bool unsaved) {
+    window.console.error(unsaved);
+    editableTitle.renderElement.classes.toggle("unsaved", unsaved);
+  }
 }
 
 class ConfigureTagView extends TagView {

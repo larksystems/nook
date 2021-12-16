@@ -54,7 +54,10 @@ void _modifyTagsInView(Map<String, List<model.Tag>> tagsByCategory, Set<String> 
     for (var tag in tagsByCategory[category]) {
       tagViewsById[tag.tagId] = new ConfigureTagView(tag.text, tag.docId, category, _tagTypeToKKStyle(tag.type), getMenuItems(tag));
     }
-    (_view.groups.queryItem(category) as TagGroupView).modifyTags(tagViewsById);
+    window.console.error(unsavedGroupIds.join(','));
+    var categoryView = (_view.groups.queryItem(category) as TagGroupView);
+    categoryView.modifyTags(tagViewsById);
+    categoryView.markAsUnsaved(unsavedGroupIds.contains(category));
   }
 }
 
