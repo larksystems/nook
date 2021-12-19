@@ -96,7 +96,7 @@ class TagsConfiguratorController extends ConfiguratorController {
         var tag = tagManager.createTag(tagData.groupId);
         _addTagsToView({
           tagData.groupId: [tag]
-        }, startEditing: true);
+        }, unsavedTagIds, unsavedGroupIds, startEditing: true);
         break;
       
       case TagsConfigAction.requestRenameTag:
@@ -126,11 +126,12 @@ class TagsConfiguratorController extends ConfiguratorController {
         model.Tag tag = tagManager.modifyTag(tagData.id, group: tagData.newGroupId);
         unsavedTagIds.add(tagData.id);
         unsavedGroupIds.add(tagData.groupId);
+        unsavedGroupIds.add(tagData.newGroupId);
         // update the view by removing the tag and then adding it
         _removeTagsFromView({ tagData.groupId: [tag] }, unsavedTagIds, unsavedGroupIds);
         _addTagsToView({
           tagData.newGroupId: [tag]
-        });
+        }, unsavedTagIds, unsavedGroupIds);
         break;
 
       case TagsConfigAction.removeTag:
@@ -142,7 +143,8 @@ class TagsConfiguratorController extends ConfiguratorController {
 
       case TagsConfigAction.addTagGroup:
         var newGroupName = tagManager.createTagGroup();
-        _addTagsToView({newGroupName: []}, startEditingName: true);
+        unsavedGroupIds.add(newGroupName);
+        _addTagsToView({newGroupName: []}, unsavedTagIds, unsavedGroupIds, startEditingName: true);
         break;
 
       case TagsConfigAction.updateTagGroup:
@@ -187,7 +189,7 @@ class TagsConfiguratorController extends ConfiguratorController {
       var tagsModified = tagManager.updateTags(modified);
       var tagsRemoved = tagManager.removeTags(removed);
 
-      _addTagsToView(_groupTagsIntoCategories(tagsAdded));
+      _addTagsToView(_groupTagsIntoCategories(tagsAdded), unsavedTagIds, unsavedGroupIds);
       _modifyTagsInView(_groupTagsIntoCategories(tagsModified), unsavedTagIds, unsavedGroupIds);
       _removeTagsFromView(_groupTagsIntoCategories(tagsRemoved), unsavedTagIds, unsavedGroupIds);
     });

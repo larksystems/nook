@@ -15,7 +15,7 @@ List<MenuItem> getMenuItems(model.Tag tag) {
   ];
 }
 
-void _addTagsToView(Map<String, List<model.Tag>> tagsByCategory, {bool startEditing = false, bool startEditingName = false}) {
+void _addTagsToView(Map<String, List<model.Tag>> tagsByCategory, Set<String> unsavedTagIds, Set<String> unsavedGroupIds, {bool startEditing = false, bool startEditingName = false}) {
   for (var category in tagsByCategory.keys.toList()..sort()) {
     if (_view.groups.queryItem(category) == null) {
       _view.addTagCategory(category, new TagGroupView(category, category, DivElement(), DivElement()));
@@ -23,12 +23,14 @@ void _addTagsToView(Map<String, List<model.Tag>> tagsByCategory, {bool startEdit
     Map<String, TagView> tagsById = {};
     for (var tag in tagsByCategory[category]) {
       tagsById[tag.tagId] = new ConfigureTagView(tag.text, tag.docId, category, _tagTypeToKKStyle(tag.type), getMenuItems(tag));
+      (tagsById[tag.tagId] as ConfigureTagView).markAsUnsaved(unsavedTagIds.contains(tag.tagId));
       if (startEditing) {
         tagsById[tag.tagId].beginEdit();
       }
     }
     var groupView = _view.groups.queryItem(category) as TagGroupView;
     groupView.addTags(tagsById);
+    groupView.markAsUnsaved(unsavedGroupIds.contains(category));
     if (startEditing) {
       tagsById[tagsByCategory[category].last.tagId].focus();
       tagsById[tagsByCategory[category].last.tagId].onCancel = () {
