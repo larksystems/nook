@@ -44,7 +44,9 @@ void _addTagsToView(Map<String, List<model.Tag>> tagsByCategory, {bool startEdit
 
 void _removeTagsFromView(Map<String, List<model.Tag>> tagsByCategory, Set<String> unsavedTagIds, Set<String> unsavedGroupIds) {
   for (var category in tagsByCategory.keys.toList()..sort()) {
-    (_view.groups.queryItem(category) as TagGroupView).removeTags(tagsByCategory[category].map((t) => t.tagId).toList());
+    var categoryView = (_view.groups.queryItem(category) as TagGroupView);
+    categoryView.removeTags(tagsByCategory[category].map((t) => t.tagId).toList());
+    categoryView.markAsUnsaved(unsavedGroupIds.contains(category));
   }
 }
 
@@ -54,7 +56,6 @@ void _modifyTagsInView(Map<String, List<model.Tag>> tagsByCategory, Set<String> 
     for (var tag in tagsByCategory[category]) {
       tagViewsById[tag.tagId] = new ConfigureTagView(tag.text, tag.docId, category, _tagTypeToKKStyle(tag.type), getMenuItems(tag));
     }
-    window.console.error(unsavedGroupIds.join(','));
     var categoryView = (_view.groups.queryItem(category) as TagGroupView);
     categoryView.modifyTags(tagViewsById);
     categoryView.markAsUnsaved(unsavedGroupIds.contains(category));

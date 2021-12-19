@@ -152,9 +152,7 @@ class TagGroupView extends AccordionItem {
     tagViewsById[tagId]?.showDuplicateTagsWarningModal(text);
   }
 
-  // todo: mark as unsaved function
   void markAsUnsaved(bool unsaved) {
-    window.console.error(unsaved);
     editableTitle.renderElement.classes.toggle("unsaved", unsaved);
   }
 }
