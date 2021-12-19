@@ -74,7 +74,8 @@
   background-color: var(--lighter-background-color);
 }
 
-.text-edit.unsaved::before {
+.text-edit.unsaved::before,
+.tag.unsaved::before {
   font-family: "Font Awesome 5 Free";
   content: "\f853";
   display: inline-block;

@@ -6,7 +6,7 @@ List<MenuItem> getMenuItems(model.Tag tag) {
   var copyId = DivElement()..innerText = "Copy ID";
   return [
     MenuItem(markAsImportant, () {
-      _view.appController.command(TagsConfigAction.updateTagType, new TagData(tag.tagId, newType: tagImportant ? model.TagType.normal : model.TagType.important));
+      _view.appController.command(TagsConfigAction.updateTagType, new TagData(tag.tagId, groupId: tag.groups.first, newType: tagImportant ? model.TagType.normal : model.TagType.important));
     }),
     MenuItem(copyId, () {
       window.navigator.clipboard.writeText(tag.tagId);
@@ -55,6 +55,7 @@ void _modifyTagsInView(Map<String, List<model.Tag>> tagsByCategory, Set<String> 
     Map<String, TagView> tagViewsById = {};
     for (var tag in tagsByCategory[category]) {
       tagViewsById[tag.tagId] = new ConfigureTagView(tag.text, tag.docId, category, _tagTypeToKKStyle(tag.type), getMenuItems(tag));
+      (tagViewsById[tag.tagId] as ConfigureTagView).markAsUnsaved(unsavedTagIds.contains(tag.tagId));
     }
     var categoryView = (_view.groups.queryItem(category) as TagGroupView);
     categoryView.modifyTags(tagViewsById);

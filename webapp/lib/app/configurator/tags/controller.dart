@@ -152,6 +152,11 @@ class TagsConfiguratorController extends ConfiguratorController {
         groupView.id = groupData.newGroupName;
         unsavedGroupIds.add(groupView.id);
         _view.groups.updateItem(groupData.newGroupName, groupView);
+        _view.groups.items.forEach((element) {
+          if (element.id == groupView.id) {
+            (element as TagGroupView).markAsUnsaved(true);
+          }
+        });
         break;
 
       case TagsConfigAction.removeTagGroup:

@@ -228,7 +228,9 @@ class ConfigureTagView extends TagView {
     };
   }
 
-  // todo: mark as unsaved function
+  void markAsUnsaved(bool unsaved) {
+    renderElement.classes.toggle("unsaved", unsaved);
+  }
 }
 
 class SampleMessagesTooltip {
