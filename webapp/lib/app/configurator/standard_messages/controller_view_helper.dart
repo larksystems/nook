@@ -28,11 +28,13 @@ void _addMessagesToView(Map<String, Map<String, List<model.SuggestedReply>>> mes
   }
 }
 
-void _removeMessagesFromView(Map<String, Map<String, List<model.SuggestedReply>>> messagesByGroupByCategory) {
+void _removeMessagesFromView(Map<String, Map<String, List<model.SuggestedReply>>> messagesByGroupByCategory, Set<String> unsavedMessageIds, Set<String> unsavedGroupIds, Set<String> unsavedCategoryIds) {
   for (var category in messagesByGroupByCategory.keys.toList()) {
     var categoryView = _view.categoriesByName[category];
+    categoryView.markAsUnsaved(unsavedCategoryIds.contains(category));
     for (var group in messagesByGroupByCategory[category].keys.toList()) {
       var groupView = categoryView.groupsByName[group];
+      groupView.markAsUnsaved(unsavedGroupIds.contains(group));
       for (var message in messagesByGroupByCategory[category][group]) {
         groupView.removeMessage(message.suggestedReplyId);
       }
@@ -40,13 +42,17 @@ void _removeMessagesFromView(Map<String, Map<String, List<model.SuggestedReply>>
   }
 }
 
-void _modifyMessagesInView(Map<String, Map<String, List<model.SuggestedReply>>> messagesByGroupByCategory) {
+void _modifyMessagesInView(Map<String, Map<String, List<model.SuggestedReply>>> messagesByGroupByCategory, Set<String> unsavedMessageIds, Set<String> unsavedGroupIds, Set<String> unsavedCategoryIds) {
   for (var category in messagesByGroupByCategory.keys.toList()) {
     var categoryView = _view.categoriesByName[category];
+    categoryView.markAsUnsaved(unsavedCategoryIds.contains(category));
     for (var group in messagesByGroupByCategory[category].keys.toList()) {
       var groupView = categoryView.groupsByName[group];
+      groupView.markAsUnsaved(unsavedGroupIds.contains(group));
       for (var message in messagesByGroupByCategory[category][group]) {
-        groupView.modifyMessage(message.suggestedReplyId, new StandardMessageView(message.suggestedReplyId, message.text, message.translation));
+        var messageView = new StandardMessageView(message.suggestedReplyId, message.text, message.translation);
+        groupView.modifyMessage(message.suggestedReplyId, messageView);
+        messageView.markAsUnsaved(true);
       }
     }
   }

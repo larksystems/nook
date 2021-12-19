@@ -49,6 +49,7 @@ class MessagesConfigurationPageView extends ConfigurationPageView {
     categoryView.name = newCategoryName;
     categoriesByName[newCategoryName] = categoryView;
     categories.updateItem(newCategoryName, categoryView);
+    categoryView.markAsUnsaved(true);
   }
 
   void removeCategory(String category) {
@@ -58,6 +59,18 @@ class MessagesConfigurationPageView extends ConfigurationPageView {
 
   void clear() {
     categories.clear();
+  }
+
+  void clearUnsavedIndicators() {
+    categoriesByName.keys.forEach((categoryName) {
+      categoriesByName[categoryName].markAsUnsaved(false);
+      categoriesByName[categoryName].groupsByName.keys.forEach((groupName) {
+        categoriesByName[categoryName].groupsByName[groupName].markAsUnsaved(false);
+        categoriesByName[categoryName].groupsByName[groupName].messagesById.keys.forEach((messageId) {
+          categoriesByName[categoryName].groupsByName[groupName].messagesById[messageId].markAsUnsaved(false);
+        });
+      });
+    });
   }
 }
 
@@ -136,6 +149,10 @@ class StandardMessagesCategoryView extends AccordionItem {
       ]);
     renderElement.append(removeWarningModal.inlineOverlayModal);
   }
+
+  void markAsUnsaved(bool unsaved) {
+    editableTitle.renderElement.classes.toggle("unsaved", unsaved);
+  }
 }
 
 class StandardMessagesGroupView extends AccordionItem {
@@ -200,6 +217,10 @@ class StandardMessagesGroupView extends AccordionItem {
       ]);
     renderElement.append(removeWarningModal.inlineOverlayModal);
   }
+
+  void markAsUnsaved(bool unsaved) {
+    editableTitle.renderElement.classes.toggle("unsaved", unsaved);
+  }
 }
 
 class StandardMessageView {
@@ -230,6 +251,10 @@ class StandardMessageView {
   }
 
   Element get renderElement => _standardMessageElement;
+
+  void markAsUnsaved(bool unsaved) {
+    _standardMessageElement.classes.toggle("unsaved", unsaved);
+  }
 }
 
 class MessageView {
