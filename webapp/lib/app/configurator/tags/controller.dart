@@ -207,6 +207,7 @@ class TagsConfiguratorController extends ConfiguratorController {
         _view.unsavedChanges = false;
         unsavedTagIds = {};
         unsavedGroupIds = {};
+        _view.clearUnsavedIndicators();
         return;
       }
       otherPartSaved = true;
@@ -221,6 +222,7 @@ class TagsConfiguratorController extends ConfiguratorController {
         _view.unsavedChanges = false;
         unsavedTagIds = {};
         unsavedGroupIds = {};
+        _view.clearUnsavedIndicators();
         return;
       }
       otherPartSaved = true;

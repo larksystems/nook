@@ -59,6 +59,12 @@ class TagsConfigurationPageView extends ConfigurationPageView {
     assert(_tagsContainer.children.length == 0);
     groups.clear();
   }
+
+  void clearUnsavedIndicators() {
+    groups.items.forEach((element) {
+      (element as TagGroupView).markAsUnsaved(false);
+    });
+  }
 }
 
 class TagGroupView extends AccordionItem {
