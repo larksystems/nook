@@ -334,6 +334,8 @@ class NookController extends Controller {
   model.Message selectedMessage;
   model.Conversation selectedConversationSummary;
 
+  List<model.ConversationListShard> shards = [];
+
   String selectedMessageTagId; // tag's ID
   String selectedTagMessageId; // message's ID
   String selectedConversationTagId;
@@ -467,24 +469,33 @@ class NookController extends Controller {
 
     platform.listenForConversationListShards(
       (added, modified, removed) {
-        // TODO: handle removed shards as well
-        List<model.ConversationListShard> shards = new List()
-          ..addAll(added)
-          ..addAll(modified);
+        // add, change, remove shards
+        shards.addAll(added);
+        var modifiedIds = modified.map((e) => e.docId).toList();
+        shards = shards.map((shard) {
+          var index = modifiedIds.indexOf(shard.docId);
+          return index >= 0 ? modified[index] : shard;
+        }).toList();
+        var removedIds = removed.map((e) => e.docId).toList();
+        shards.removeWhere((shard) =>  removedIds.contains(shard.docId));
 
+        // even though there might be 3 shard present, the num_shards could be 1
+        int shardCountToConsider = shards.first.numShards;
+        var shardsToConsider = shards.take(shardCountToConsider).toList();
+        
         // Read any conversation shards from the URL
         String urlConversationListRoot = _view.urlView.getPageUrlConversationList();
         String conversationListRoot = urlConversationListRoot;
         if (urlConversationListRoot == null) {
           conversationListRoot = ConversationListData.NONE;
-          if (shards.length > 0) {
-            conversationListRoot = shards.first.conversationListRoot;
+          if (shardsToConsider.length == 1) {
+            conversationListRoot = shardsToConsider.first.conversationListRoot;
           }
-        } else if (shards.where((shard) => shard.conversationListRoot == urlConversationListRoot).isEmpty) {
-          log.warning("Attempting to select shard ${conversationListRoot} that doesn't exist");
-          conversationListRoot = ConversationListData.NONE;
+        } else if (shardsToConsider.where((shard) => shard.conversationListRoot == urlConversationListRoot).isEmpty) {
+          log.warning("Attempting to select shard ${conversationListRoot} that doesn't exist, choosing the first available shard.");
+          conversationListRoot = shardsToConsider.first.conversationListRoot;
         }
-        _view.conversationListPanelView.updateShardsList(shards);
+        _view.conversationListPanelView.updateShardsList(shardsToConsider);
         // If we try to access a list that hasn't loaded yet, keep it in the URL
         // so it can be picked up on the next data snapshot from firebase.
         _view.urlView.setPageUrlConversationList(urlConversationListRoot);
@@ -1200,9 +1211,7 @@ class NookController extends Controller {
         _view.conversationPanelView.clear();
         _view.notesPanelView.noteText = '';
         activeConversation = null;
-        if (conversationListData.conversationListRoot == ConversationListData.NONE) {
-          _view.conversationListPanelView.showSelectConversationListMessage();
-        } else {
+        if (conversationListData.conversationListRoot != ConversationListData.NONE) {
           _view.conversationListPanelView.selectShard(conversationListData.conversationListRoot);
           _view.conversationListPanelView.showLoadSpinner();
         }
