@@ -21,6 +21,38 @@ class StandardMessagesManager {
   int get lastStandardMessagesCategorySeqNo => _lastStandardMessagesCategorySeqNo;
   int get nextStandardMessagesCategorySeqNo => ++_lastStandardMessagesCategorySeqNo;
 
+  Set<String> _unsavedMessageIds = {};
+  Set<String> _unsavedGroupIds = {};
+  Set<String> _unsavedCategoryIds = {};
+
+  Set<String> get unsavedMessageIds => _unsavedMessageIds;
+  Set<String> get unsavedGroupIds => _unsavedGroupIds;
+  Set<String> get unsavedCategoryIds => _unsavedCategoryIds;
+
+  void addUnsavedMessageIds(String messageId) {
+    _unsavedMessageIds.add(messageId);
+  }
+
+  void clearUnsavedMessageIds() {
+    _unsavedMessageIds = {};
+  }
+
+  void addUnsavedGroupIds(String groupId) {
+    _unsavedGroupIds.add(groupId);
+  }
+
+  void clearUnsavedGroupIds() {
+    _unsavedGroupIds = {};
+  }
+
+  void addUnsavedCategoryIds(String categoryId) {
+    _unsavedCategoryIds.add(categoryId);
+  }
+
+  void clearUnsavedCategoryIds() {
+    _unsavedCategoryIds = {};
+  }
+
   void _updateLastStandardMessageSeqNo(int seqNo) {
     if (seqNo < _lastStandardMessageSeqNo) return;
     _lastStandardMessageSeqNo = seqNo;

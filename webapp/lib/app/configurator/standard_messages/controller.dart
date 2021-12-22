@@ -69,9 +69,6 @@ MessagesConfigurationPageView get _view => _controller.view;
 
 class MessagesConfiguratorController extends ConfiguratorController {
   StandardMessagesManager standardMessagesManager = new StandardMessagesManager();
-  Set<String> unsavedMessageIds = {};
-  Set<String> unsavedGroupIds = {};
-  Set<String> unsavedCategoryIds = {};
 
   MessagesConfiguratorController() : super() {
     _controller = this;
@@ -105,29 +102,39 @@ class MessagesConfiguratorController extends ConfiguratorController {
       case MessagesConfigAction.updateStandardMessage:
         StandardMessageData messageData = data;
         var standardMessage = standardMessagesManager.modifyMessage(messageData.id, messageData.text, messageData.translation);
-        unsavedMessageIds.add(messageData.id);
-        unsavedGroupIds.add(standardMessage.groupDescription);
-        unsavedCategoryIds.add(standardMessage.category);
+        standardMessagesManager.unsavedMessageIds.add(messageData.id);
+        standardMessagesManager.unsavedGroupIds.add(standardMessage.groupDescription);
+        standardMessagesManager.unsavedCategoryIds.add(standardMessage.category);
 
         _modifyMessagesInView({
           standardMessage.category: {
             standardMessage.groupDescription: [standardMessage]
           }
-        }, unsavedMessageIds, unsavedGroupIds, unsavedCategoryIds);
+        });
+        _updateUnsavedIndicators({
+          standardMessage.category: {
+            standardMessage.groupDescription: [standardMessage]
+          }
+        }, standardMessagesManager.unsavedMessageIds, standardMessagesManager.unsavedGroupIds, standardMessagesManager.unsavedCategoryIds);
         break;
 
       case MessagesConfigAction.removeStandardMessage:
         StandardMessageData messageData = data;
         var standardMessage = standardMessagesManager.deleteMessage(messageData.id);
-        unsavedMessageIds.add(messageData.id);
-        unsavedGroupIds.add(standardMessage.groupDescription);
-        unsavedCategoryIds.add(standardMessage.category);
+        standardMessagesManager.unsavedMessageIds.add(messageData.id);
+        standardMessagesManager.unsavedGroupIds.add(standardMessage.groupDescription);
+        standardMessagesManager.unsavedCategoryIds.add(standardMessage.category);
 
         _removeMessagesFromView({
           standardMessage.category: {
             standardMessage.groupDescription: [standardMessage]
           }
-        }, unsavedMessageIds, unsavedGroupIds, unsavedCategoryIds);
+        });
+        _updateUnsavedIndicators({
+          standardMessage.category: {
+            standardMessage.groupDescription: []
+          }
+        }, standardMessagesManager.unsavedMessageIds, standardMessagesManager.unsavedGroupIds, standardMessagesManager.unsavedCategoryIds);
         break;
 
       case MessagesConfigAction.addStandardMessagesGroup:
@@ -139,17 +146,22 @@ class MessagesConfiguratorController extends ConfiguratorController {
       case MessagesConfigAction.updateStandardMessagesGroup:
         StandardMessagesGroupData groupData = data;
         standardMessagesManager.renameStandardMessageGroup(groupData.category, groupData.group, groupData.newGroupName);
-        unsavedGroupIds.add(groupData.newGroupName);
-        unsavedCategoryIds.add(groupData.category);
+        standardMessagesManager.unsavedGroupIds.add(groupData.newGroupName);
+        standardMessagesManager.unsavedCategoryIds.add(groupData.category);
         _view.categoriesByName[groupData.category].renameGroup(groupData.group, groupData.newGroupName);
         _view.categoriesByName[groupData.category].markAsUnsaved(true);
         _view.categoriesByName[groupData.category].groupsByName[groupData.newGroupName].markAsUnsaved(true);
+        _updateUnsavedIndicators({
+          groupData.category: {
+            groupData.newGroupName: []
+          }
+        }, standardMessagesManager.unsavedMessageIds, standardMessagesManager.unsavedGroupIds, standardMessagesManager.unsavedCategoryIds);
         break;
 
       case MessagesConfigAction.removeStandardMessagesGroup:
         StandardMessagesGroupData groupData = data;
         standardMessagesManager.deleteStandardMessagesGroup(groupData.category, groupData.group);
-        unsavedCategoryIds.add(groupData.category);
+        standardMessagesManager.unsavedCategoryIds.add(groupData.category);
         _view.categoriesByName[groupData.category].removeGroup(groupData.group);
         _view.categoriesByName[groupData.category].markAsUnsaved(true);
         break;
@@ -162,8 +174,13 @@ class MessagesConfiguratorController extends ConfiguratorController {
       case MessagesConfigAction.updateStandardMessagesCategory:
         StandardMessagesCategoryData categoryData = data;
         standardMessagesManager.renameStandardMessageCategory(categoryData.category, categoryData.newCategoryName);
-        unsavedCategoryIds.add(categoryData.newCategoryName);
+        standardMessagesManager.unsavedCategoryIds.add(categoryData.newCategoryName);
         _view.renameCategory(categoryData.category, categoryData.newCategoryName);
+        _updateUnsavedIndicators({
+          categoryData.newCategoryName: {
+            
+          }
+        }, standardMessagesManager.unsavedMessageIds, standardMessagesManager.unsavedGroupIds, standardMessagesManager.unsavedCategoryIds);
         break;
 
       case MessagesConfigAction.removeStandardMessagesCategory:
@@ -186,8 +203,8 @@ class MessagesConfiguratorController extends ConfiguratorController {
       var messagesRemoved = standardMessagesManager.removeStandardMessages(removed);
 
       _addMessagesToView(_groupMessagesIntoCategoriesAndGroups(messagesAdded));
-      _modifyMessagesInView(_groupMessagesIntoCategoriesAndGroups(messagesModified), unsavedMessageIds, unsavedGroupIds, unsavedCategoryIds);
-      _removeMessagesFromView(_groupMessagesIntoCategoriesAndGroups(messagesRemoved), unsavedMessageIds, unsavedGroupIds, unsavedCategoryIds);
+      _modifyMessagesInView(_groupMessagesIntoCategoriesAndGroups(messagesModified));
+      _removeMessagesFromView(_groupMessagesIntoCategoriesAndGroups(messagesRemoved));
     });
   }
 
