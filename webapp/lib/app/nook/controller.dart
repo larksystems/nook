@@ -75,6 +75,7 @@ enum UIAction {
   selectMessage,
   deselectMessage,
   keyPressed,
+  keyUp,
   startAddNewTagInline,
   cancelAddNewTagInline,
   saveNewTagInline,
@@ -338,6 +339,7 @@ class NookController extends Controller {
   String selectedMessageTagId; // tag's ID
   String selectedTagMessageId; // message's ID
   String selectedConversationTagId;
+  bool shiftKeyPressed = false;
 
   model.UserConfiguration defaultUserConfig;
   model.UserConfiguration currentUserConfig;
@@ -858,6 +860,19 @@ class NookController extends Controller {
     actionObjectState = null;
   }
 
+  void sortSelectedConversations() {
+    selectedConversations.sort((a, b) {
+      if (conversationSortOrder == UIConversationSort.alphabeticalById) {
+        return a.shortDeidentifiedPhoneNumber.compareTo(b.shortDeidentifiedPhoneNumber);
+      } else if (conversationSortOrder == UIConversationSort.mostRecentInMessageFirst) {
+        return b.mostRecentMessageInbound.datetime.compareTo(a.mostRecentMessageInbound.datetime);
+      } else if (conversationSortOrder == UIConversationSort.mostRecentMessageFirst) {
+        return b.messages.last.datetime.compareTo(a.messages.last.datetime);
+      }
+      return 1;
+    });
+  }
+
   bool get _enableTagging => selectedConversationSummary != null || selectedMessage != null;
 
   void command(action, [Data data]) {
@@ -1211,13 +1226,38 @@ class NookController extends Controller {
       case UIAction.selectConversation:
         ConversationData conversationData = data;
         model.Conversation conversation = conversations.singleWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
+        var lastSelectedMessageId = selectedConversations.isEmpty ? null : selectedConversations.last.docId;
         selectedConversations.add(conversation);
+        var selectedConversationIds = selectedConversations.map((c) => c.docId).toSet();
+        if (shiftKeyPressed && lastSelectedMessageId != null) {
+          bool addConversation = false;
+          for (var c in conversationsInView) {
+            if (c.docId == conversation.docId || c.docId == lastSelectedMessageId) {
+              addConversation = !addConversation;
+            }
+            if (addConversation && !selectedConversationIds.contains(c.docId)) {
+              selectedConversations.add(c);
+              _view.conversationListPanelView.checkConversation(c.docId);
+            }
+          }
+        }
+        // to maintain the order for bulk deselect
+        sortSelectedConversations();
+        _view.conversationListPanelView.updateSelectedCount(selectedConversations.length);
         break;
       case UIAction.deselectConversation:
         ConversationData conversationData = data;
         model.Conversation conversation = conversations.singleWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
-        selectedConversations.remove(conversation);
+        if (shiftKeyPressed) {
+          var indexToRemove = selectedConversations.indexWhere((c) => c.docId == conversationData.deidentifiedPhoneNumber);
+          if (indexToRemove >= 0) {
+            selectedConversations = selectedConversations.take(indexToRemove).toList();
+          }
+        } else {
+          selectedConversations.remove(conversation);
+        }
         updateFilteredAndSelectedConversationLists();
+        _view.conversationListPanelView.updateSelectedCount(selectedConversations.length);
         break;
       case UIAction.navigateToPrevConversation:
         bool shouldRecomputeConversationList = !filteredConversations.contains(activeConversation);
@@ -1274,6 +1314,10 @@ class NookController extends Controller {
           } else if (selectedMessageTagId != null) {
             command(UIAction.removeMessageTag, new MessageTagData(selectedMessageTagId, selectedTagMessageId));
           }
+        }
+        if (keyPressData.key == 'Shift') {
+          shiftKeyPressed = true;
+          return;
         }
         // If the keypress it has a modifier key, prevent all replies and tags
         if (keyPressData.hasModifierKey) return;
@@ -1332,6 +1376,12 @@ class NookController extends Controller {
         }
         // There is no matching shortcut in either replies or tags, ignore
         break;
+      case UIAction.keyUp:
+        KeyPressData keyPressData = data;
+        if (keyPressData.key == "Shift") {
+          shiftKeyPressed = false;
+        }
+        break;
       case UIAction.startAddNewTagInline:
         actionObjectState = UIActionObject.addTagInline;
         subCommandForAddTagInline(action, data);
@@ -1341,6 +1391,7 @@ class NookController extends Controller {
         selectedConversations.clear();
         selectedConversations.addAll(filteredConversations);
         updateFilteredAndSelectedConversationLists();
+        _view.conversationListPanelView.updateSelectedCount(selectedConversations.length);
         break;
       case UIAction.deselectAllConversations:
         _view.conversationListPanelView.uncheckSelectAllCheckbox();
@@ -1349,6 +1400,7 @@ class NookController extends Controller {
         if (actionObjectState != UIActionObject.loadingConversations) {
           updateFilteredAndSelectedConversationLists();
         }
+        _view.conversationListPanelView.updateSelectedCount(selectedConversations.length);
         break;
       case UIAction.updateSuggestedRepliesCategory:
         UpdateSuggestedRepliesCategoryData updateCategoryData = data;
@@ -1468,6 +1520,8 @@ class NookController extends Controller {
     conversationsInView.forEach((conversation) {
       if (selectedConversations.contains(conversation)) {
         _view.conversationListPanelView.checkConversation(conversation.docId);
+      } else {
+        _view.conversationListPanelView.uncheckConversation(conversation.docId);
       }
       if (filteredConversations.contains(conversation)) {
         _view.conversationListPanelView.clearWarning(conversation.docId);

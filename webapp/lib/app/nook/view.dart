@@ -74,6 +74,10 @@ class NookPageView extends PageView {
       if (ignoreShortcut(event)) return;
       appController.command(UIAction.keyPressed, new KeyPressData(event.key, event.altKey || event.ctrlKey || event.metaKey || event.shiftKey));
     });
+    document.onKeyUp.listen((event) {
+      if (ignoreShortcut(event)) return;
+      appController.command(UIAction.keyUp, new KeyPressData(event.key, event.altKey || event.ctrlKey || event.metaKey || event.shiftKey));
+    });
   }
 
   void initSignedInView(String displayName, String photoUrl) {
@@ -1002,6 +1006,7 @@ class ConversationListPanelView {
   ChangeSortOrderActionView _changeSortOrder;
   LazyListViewModel _conversationList;
   CheckboxInputElement _selectAllCheckbox;
+  SpanElement _selectedCount;
   ImageElement _loadSpinner;
   DivElement _selectConversationListMessage;
 
@@ -1039,6 +1044,10 @@ class ConversationListPanelView {
       ..checked = false
       ..onClick.listen((_) => _selectAllCheckbox.checked ? _view.appController.command(UIAction.selectAllConversations, null) : _view.appController.command(UIAction.deselectAllConversations, null));
     panelHeader.append(_selectAllCheckbox);
+
+    _selectedCount = new SpanElement()
+      ..className = 'conversation-list-header__selected-count';
+    panelHeader.append(_selectedCount);
 
     _conversationPanelTitle = new SpanElement()
       // ..classes.add('panel-title')
@@ -1235,6 +1244,19 @@ class ConversationListPanelView {
   void showSelectConversationListMessage() {
     hideLoadSpinner();
     _selectConversationListMessage.hidden = false;
+  }
+
+  void updateSelectedCount(num count) {
+    if (count == 0) {
+      _selectedCount.children.clear();
+    } else {
+      var iconDisplay = SpanElement()..className = 'fas fa-check';
+      var countDisplay = SpanElement()..innerText = count.toString();
+      _selectedCount
+        ..children.clear()
+        ..append(iconDisplay)
+        ..append(countDisplay);
+    }
   }
 }
 
