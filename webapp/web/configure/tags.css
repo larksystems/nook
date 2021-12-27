@@ -73,3 +73,13 @@
   border: 1px dashed var(--default-border-color);
   background-color: var(--lighter-background-color);
 }
+
+.tag__text--dragging {
+  z-index: 2;
+}
+
+.tag__text--dragging .tag__text {
+  background-color: white;
+  border-style: dashed;
+  box-shadow: var(--shadow-standard);
+}
