@@ -15,6 +15,12 @@ class TagManager {
   Map<String, List<model.Tag>> get tagsByGroup => _tagsByGroup;
   Map<String, List<model.Tag>> _tagsByGroup = {};
 
+  // unsaved tag Ids, group Ids
+  Set<String> _unsavedTagIds = {};
+  Set<String> get unsavedTagIds => _unsavedTagIds;
+  Set<String> _unsavedGroupIds = {};
+  Set<String> get unsavedGroupIds => _unsavedGroupIds;
+
   /// Returns an automatically generated name for a new tag group.
   /// The name is based on an internal sequence, and verified against existing tag group names.
   /// If the next group in the sequence already exists, it will recursively try to generate a new one.
@@ -32,6 +38,22 @@ class TagManager {
 
   /// Returns the [Tag] with the given [id].
   model.Tag getTagById(String id) => _tags.singleWhere((t) => t.tagId == id);
+
+  void addUnsavedTagIds(String tagId) {
+    _unsavedTagIds.add(tagId);
+  }
+
+  void clearUnsavedTagIds() {
+    _unsavedTagIds = {};
+  }
+
+  void addUnsavedGroupIds(String groupId) {
+    _unsavedGroupIds.add(groupId);
+  }
+
+  void clearUnsavedGroupIds() {
+    _unsavedGroupIds = {};
+  }
 
   /// Adds the given [tag] to the list of tags being managed.
   /// Returns either the [tag] if it's a new tag, or [null] if it already exists and it's an update operation.
