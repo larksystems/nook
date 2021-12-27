@@ -1009,6 +1009,8 @@ class ConversationListPanelView {
   SpanElement _selectedCount;
   ImageElement _loadSpinner;
   DivElement _selectConversationListMessage;
+  DivElement _panelFilters;
+  DivElement _expandPanelFilters;
 
   NewConversationModal _newConversationModal;
 
@@ -1083,21 +1085,47 @@ class ConversationListPanelView {
     _conversationList = new LazyListViewModel(conversationListElement, onAddItemCallback: _onAddConversation);
     conversationListPanel.append(conversationListElement);
 
-    var panelFilters = new DivElement()
+    _panelFilters = new DivElement()
       ..classes.add('conversation-list-filters');
-    conversationListPanel.append(panelFilters);
+    conversationListPanel.append(_panelFilters);
 
-    conversationIdFilter = new ConversationIdFilter();
-    panelFilters.append(conversationIdFilter.conversationFilter);
+    var collapsePanelFilters = new DivElement()
+      ..append(SpanElement()..className = "fas fa-chevron-circle-down")
+      ..className = "conversation-filters-toggle"
+      ..onClick.listen((_) { toggleFiltersMenu(false); });
+
+    conversationIdFilter = new ConversationIdFilter(collapsePanelFilters);
+    _panelFilters.append(conversationIdFilter.conversationFilter);
 
     conversationIncludeFilter = new ConversationIncludeFilter();
-    panelFilters.append(conversationIncludeFilter.conversationFilter);
+    _panelFilters.append(conversationIncludeFilter.conversationFilter);
 
     conversationExcludeFilter = new ConversationExcludeFilter();
-    panelFilters.append(conversationExcludeFilter.conversationFilter);
+    _panelFilters.append(conversationExcludeFilter.conversationFilter);
 
     conversationTurnsFilter = new ConversationTurnsFilter();
-    panelFilters.append(conversationTurnsFilter.conversationFilter);
+    _panelFilters.append(conversationTurnsFilter.conversationFilter);
+
+    _expandPanelFilters = new DivElement()
+      ..className = "conversation-filter-expand"
+      ..append(DivElement()
+          ..append(SpanElement()..className = "fas fa-filter")
+          ..append(SpanElement()..innerText = "Conversation filters")
+        )
+      ..append(DivElement()..append(SpanElement()..className = "fas fa-chevron-circle-up")..className = "conversation-filters-toggle")
+      ..onClick.listen((_) { toggleFiltersMenu(true); }) // todo: go via controller
+      ..hidden = true;
+    conversationListPanel.append(_expandPanelFilters);
+  }
+
+  void toggleFiltersMenu(bool show) {
+    if (!show) {
+      _panelFilters.hidden = true;
+      _expandPanelFilters.hidden = false;
+    } else {
+      _panelFilters.hidden = false;
+      _expandPanelFilters.hidden = true;
+    }
   }
 
   void _onAddConversation(ConversationSummary item) {
@@ -1394,7 +1422,7 @@ class ConversationIdFilter {
   SpanElement _descriptionText;
   TextInputElement _idInput;
 
-  ConversationIdFilter() {
+  ConversationIdFilter(DivElement node) {
     conversationFilter = new DivElement()
       ..classes.add('conversation-filter')
       ..classes.add('conversation-filter--id-filter');
@@ -1411,6 +1439,7 @@ class ConversationIdFilter {
         _view.appController.command(UIAction.updateConversationIdFilter, new ConversationIdFilterData(_idInput.value));
       });
     conversationFilter.append(_idInput);
+    conversationFilter.append(node);
   }
 
   set filter(String text) => _idInput.value = text;

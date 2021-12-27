@@ -124,6 +124,7 @@ main {
     flex-direction: row;
     flex-wrap: wrap;
     align-items: center;
+    position: relative;
 }
 
 .conversation-filter.conversation-filter--id-filter .conversation-filter__description {
@@ -437,4 +438,35 @@ main {
     overflow-x: scroll;
     padding-top: 6px;
     height: 100%;
+}
+
+.conversation-filter-expand {
+    position: relative;
+    padding: 8px 16px 8px 21px;
+    border-top: 1px solid var(--default-border-color);
+    background: var(--lighter-background-color);
+}
+
+.conversation-filter-expand:hover {
+    background: var(--default-background-color);
+    cursor: pointer;
+}
+
+.conversation-filter-expand .fas {
+    display: inline-block;
+    margin-right: 8px;
+    color: var(--secondary-text-color);
+}
+
+.conversation-filters-toggle {
+    display: inline-block;
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    color: var(--secondary-text-color);
+}
+
+.conversation-filters-toggle:hover {
+    color: black;
+    cursor: pointer;
 }
