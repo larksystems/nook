@@ -93,7 +93,7 @@ class TagsConfiguratorController extends ConfiguratorController {
         TagData tagData = data;
         var tag = tagManager.createTag(tagData.groupId);
         _addTagsToView({
-          tagData.groupId: [tag] 
+          tagData.groupId: [tag]
         }, startEditing: true);
         break;
       
@@ -127,11 +127,11 @@ class TagsConfiguratorController extends ConfiguratorController {
         tagManager.addUnsavedGroupIds(tagData.groupId);
         tagManager.addUnsavedGroupIds(tagData.newGroupId);
         // update the view by removing the tag and then adding it
-        _removeTagsFromView({ 
-          tagData.groupId: [tag] 
+        _removeTagsFromView({
+          tagData.groupId: [tag]
         });
-        _addTagsToView({ 
-          tagData.newGroupId: [tag] 
+        _addTagsToView({
+          tagData.newGroupId: [tag]
         });
         _updateUnsavedIndicators(tagManager.tagsByGroup, tagManager.unsavedTagIds, tagManager.unsavedGroupIds);
         break;
@@ -140,8 +140,8 @@ class TagsConfiguratorController extends ConfiguratorController {
         TagData tagData = data;
         tagManager.addUnsavedGroupIds(tagData.groupId);
         model.Tag tag = tagManager.deleteTag(tagData.id);
-        _removeTagsFromView({ 
-          tagData.groupId: [tag] 
+        _removeTagsFromView({
+          tagData.groupId: [tag]
         });
         _updateUnsavedIndicators(tagManager.tagsByGroup, tagManager.unsavedTagIds, tagManager.unsavedGroupIds);
         break;
