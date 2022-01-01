@@ -167,16 +167,16 @@ class ConfigureTagView extends TagView {
       : super(tagText, tagId, groupId: groupId, tagStyle: tagStyle, deletable: true, editable: true, menuItems: menuItems) {
     var draggableTag = new dnd.Draggable(renderElement, avatarHandler: dnd.AvatarHandler.original(), draggingClass: 'tag__text--dragging');
     draggableTag
-    ..onDragStart.listen((_) => dragInProgress = true)
-    ..onDragEnd.listen((event) => dragInProgress = false)
-    ..onDrag.listen((event) {
-      num relativePositionY = event.position.y - window.pageYOffset;
-      if (relativePositionY > window.innerHeight - window.screenY - DRAG_AUTOSCROLL_OFFSET) {
-        window.scrollBy(0, DRAG_AUTOSCROLL_SPEED);
-      } else if (relativePositionY < DRAG_AUTOSCROLL_OFFSET) {
-        window.scrollBy(0, -DRAG_AUTOSCROLL_SPEED);
-      }
-    });
+      ..onDragStart.listen((_) => dragInProgress = true)
+      ..onDragEnd.listen((event) => dragInProgress = false)
+      ..onDrag.listen((event) {
+        num relativePositionY = event.position.y - window.pageYOffset;
+        if (relativePositionY > window.innerHeight - window.screenY - DRAG_AUTOSCROLL_OFFSET) {
+          window.scrollBy(0, DRAG_AUTOSCROLL_SPEED);
+        } else if (relativePositionY < DRAG_AUTOSCROLL_OFFSET) {
+          window.scrollBy(0, -DRAG_AUTOSCROLL_SPEED);
+        }
+      });
 
     onEdit = (text) {
       if (tagText.trim().toLowerCase() == text.trim().toLowerCase()) return;
