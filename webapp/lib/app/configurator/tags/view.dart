@@ -168,7 +168,7 @@ class ConfigureTagView extends TagView {
     var draggableTag = new dnd.Draggable(renderElement, avatarHandler: dnd.AvatarHandler.original(), draggingClass: 'tag__text--dragging');
     draggableTag
       ..onDragStart.listen((_) => dragInProgress = true)
-      ..onDragEnd.listen((event) => dragInProgress = false)
+      ..onDragEnd.listen((_) => dragInProgress = false)
       ..onDrag.listen((event) {
         num relativePositionY = event.position.y - window.pageYOffset;
         if (relativePositionY > window.innerHeight - window.screenY - DRAG_AUTOSCROLL_OFFSET) {
