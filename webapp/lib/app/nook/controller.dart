@@ -918,7 +918,7 @@ class NookController extends Controller {
           selectedReply = translationReply;
         }
         if (!currentConfig.sendMultiMessageEnabled || selectedConversations.isEmpty) {
-          sendReply(selectedReply, activeConversation);
+          sendMultiReply(selectedReply, [activeConversation]);
           return;
         }
         if (!_view.sendingMultiMessagesUserConfirmation(selectedConversations.length)) {
@@ -942,7 +942,7 @@ class NookController extends Controller {
           selectedReplies = translationReplies;
         }
         if (!currentConfig.sendMultiMessageEnabled || selectedConversations.isEmpty) {
-          sendReplyGroup(selectedReplies, activeConversation);
+          sendMultiReplyGroup(selectedReplies, [activeConversation]);
           return;
         }
         if (!_view.sendingMultiMessageGroupUserConfirmation(selectedReplies.length, selectedConversations.length)) {
@@ -962,7 +962,7 @@ class NookController extends Controller {
             log.verbose('User cancelled sending manual message reply: "${oneoffReply.text}"');
             return;
           }
-          sendReply(oneoffReply, activeConversation);
+          sendMultiReply(oneoffReply, [activeConversation]);
           _view.conversationPanelView.clearNewMessageBox();
           return;
         }
@@ -982,7 +982,7 @@ class NookController extends Controller {
             ..translation = suggestedMessage.translation;
           repliesToSend.add(reply);
         }
-        sendReplyGroup(repliesToSend, activeConversation, wasSuggested: true);
+        sendMultiReplyGroup(repliesToSend, [activeConversation], wasSuggested: true);
         break;
 
       case UIAction.rejectSuggestedMessages:
@@ -1330,7 +1330,7 @@ class NookController extends Controller {
           if (selectedReply.isNotEmpty) {
             assert (selectedReply.length == 1);
             if (!currentConfig.sendMultiMessageEnabled || selectedConversations.isEmpty) {
-              sendReply(selectedReply.first, activeConversation);
+              sendMultiReply(selectedReply.first, [activeConversation]);
               return;
             }
             String text = 'Cannot send multiple messages using keyboard shortcuts. '
@@ -1618,35 +1618,6 @@ class NookController extends Controller {
     }
   }
 
-  void sendReply(model.SuggestedReply reply, model.Conversation conversation) {
-    log.verbose('Preparing to send reply "${reply.text}" to conversation ${conversation.docId}');
-    model.Message newMessage = new model.Message()
-      ..id = model.generatePendingMessageId(conversation)
-      ..text = reply.text
-      ..datetime = new DateTime.now()
-      ..direction = model.MessageDirection.Out
-      ..translation = reply.translation
-      ..tagIds = []
-      ..status = model.MessageStatus.pending;
-    _view.conversationListPanelView.updateConversationStatus(conversation.docId, ConversationItemStatus.pending);
-    log.verbose('Adding reply "${reply.text}" to conversation ${conversation.docId}');
-    conversation.messages.add(newMessage);
-    _view.conversationPanelView.addMessage(_generateMessageView(newMessage, conversation));
-    log.verbose('Sending reply "${reply.text}" to conversation ${conversation.docId}');
-    platform.sendMessage(conversation.docId, reply.text, onError: (error) {
-      log.error('Reply "${reply.text}" failed to be sent to conversation ${conversation.docId}');
-      log.error('Error: ${error}');
-      command(UIAction.showSnackbar, new SnackbarData('Send Reply Failed', SnackbarNotificationType.error));
-      _view.conversationListPanelView.updateConversationStatus(conversation.docId, ConversationItemStatus.failed);
-      newMessage.status = model.MessageStatus.failed;
-      if (conversation.docId == activeConversation.docId) {
-        int newMessageIndex = activeConversation.messages.indexOf(newMessage);
-        _view.conversationPanelView.messageViewAtIndex(newMessageIndex).setStatus(newMessage.status);
-      }
-    });
-    log.verbose('Reply "${reply.text}" queued for sending to conversation ${conversation.docId}');
-  }
-
   void sendMultiReply(model.SuggestedReply reply, List<model.Conversation> conversations) {
     List<String> conversationIds = conversations.map((conversation) => conversation.docId).toList();
     log.verbose('Preparing to send reply "${reply.text}" to conversations $conversationIds');
@@ -1688,44 +1659,7 @@ class NookController extends Controller {
     log.verbose('Reply "${reply.text}" queued for sending to conversations ${conversationIds}');
   }
 
-  void sendReplyGroup(List<model.SuggestedReply> replies, model.Conversation conversation, {bool wasSuggested = false}) {
-    List<String> textReplies = replies.map((r) => r.text).toList();
-    String repliesStr = textReplies.join("; ");
-    log.verbose('Preparing to send ${textReplies.length} replies "${repliesStr}" to conversation ${conversation.docId}');
-    List<model.Message> newMessages = [];
-    for (var reply in replies) {
-      model.Message newMessage = new model.Message()
-        ..id = model.generatePendingMessageId(conversation)
-        ..text = reply.text
-        ..datetime = new DateTime.now()
-        ..direction = model.MessageDirection.Out
-        ..translation = reply.translation
-        ..tagIds = []
-        ..status = model.MessageStatus.pending;
-        _view.conversationListPanelView.updateConversationStatus(conversation.docId, ConversationItemStatus.pending);
-      newMessages.add(newMessage);
-      conversation.messages.add(newMessage);
-      _view.conversationPanelView.addMessage(_generateMessageView(newMessage, conversation));
-    }
-
-    log.verbose('Sending ${textReplies.length} replies "${repliesStr}" to conversation ${conversation.docId}');
-    platform.sendMessages(conversation.docId, textReplies, wasSuggested: wasSuggested, onError: (error) {
-      log.error('${textReplies.length} replies "${repliesStr}" failed to be sent to conversation ${conversation.docId}');
-      log.error('Error: ${error}');
-      command(UIAction.showSnackbar, new SnackbarData('Send Reply Failed', SnackbarNotificationType.error));
-      _view.conversationListPanelView.updateConversationStatus(conversation.docId, ConversationItemStatus.failed);
-      for (var message in newMessages) {
-        message.status = model.MessageStatus.failed;
-        if (conversation.docId == activeConversation.docId) {
-          int messageIndex = activeConversation.messages.indexOf(message);
-          _view.conversationPanelView.messageViewAtIndex(messageIndex).setStatus(message.status);
-        }
-      }
-    });
-    log.verbose('${textReplies.length} replies "${repliesStr}" queued for sending to conversation ${conversation.docId}');
-  }
-
-  void sendMultiReplyGroup(List<model.SuggestedReply> replies, List<model.Conversation> conversations) {
+  void sendMultiReplyGroup(List<model.SuggestedReply> replies, List<model.Conversation> conversations, {bool wasSuggested = false}) {
     List<String> conversationIds = conversations.map((conversation) => conversation.docId).toList();
     List<String> textReplies = replies.map((r) => r.text).toList();
     String repliesStr = textReplies.join("; ");
@@ -1752,7 +1686,7 @@ class NookController extends Controller {
       newMessagesByConversation[conversation.docId] = newMessages;
     }
     log.verbose('Sending ${textReplies.length} replies "${repliesStr}" to conversation ${conversationIds}');
-    platform.sendMultiMessages(conversationIds, textReplies, onError: (error) {
+    platform.sendMultiMessages(conversationIds, textReplies, wasSuggested: wasSuggested, onError: (error) {
       log.error('${textReplies.length} replies "${repliesStr}" failed to be sent to conversations ${conversationIds}');
       log.error('Error: ${error}');
       command(UIAction.showSnackbar, new SnackbarData('Send Multi Reply Failed', SnackbarNotificationType.error));
