@@ -18,6 +18,9 @@ import 'sample_data_helper.dart';
 
 import 'package:katikati_ui_lib/components/logger.dart';
 
+const DRAG_AUTOSCROLL_OFFSET = 30;
+const DRAG_AUTOSCROLL_SPEED = 5;
+
 Logger log = new Logger('view.dart');
 
 TagsConfigurationPageView _view;
@@ -162,8 +165,18 @@ class ConfigureTagView extends TagView {
 
   ConfigureTagView(String tagText, String tagId, String groupId, TagStyle tagStyle, List<MenuItem> menuItems)
       : super(tagText, tagId, groupId: groupId, tagStyle: tagStyle, deletable: true, editable: true, menuItems: menuItems) {
-    var draggableTag = new dnd.Draggable(renderElement, avatarHandler: dnd.AvatarHandler.original(), draggingClass: 'tag__text');
-    draggableTag..onDragStart.listen((_) => dragInProgress = true)..onDragEnd.listen((_) => dragInProgress = false);
+    var draggableTag = new dnd.Draggable(renderElement, avatarHandler: dnd.AvatarHandler.original(), draggingClass: 'tag__text--dragging');
+    draggableTag
+      ..onDragStart.listen((_) => dragInProgress = true)
+      ..onDragEnd.listen((_) => dragInProgress = false)
+      ..onDrag.listen((event) {
+        num relativePositionY = event.position.y - window.pageYOffset;
+        if (relativePositionY > window.innerHeight - window.screenY - DRAG_AUTOSCROLL_OFFSET) {
+          window.scrollBy(0, DRAG_AUTOSCROLL_SPEED);
+        } else if (relativePositionY < DRAG_AUTOSCROLL_OFFSET) {
+          window.scrollBy(0, -DRAG_AUTOSCROLL_SPEED);
+        }
+      });
 
     onEdit = (text) {
       if (tagText.trim().toLowerCase() == text.trim().toLowerCase()) return;
