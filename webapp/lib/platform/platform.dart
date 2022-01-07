@@ -204,6 +204,10 @@ class Platform {
     }
   }
 
+  void listenForProjects(ProjectCollectionListener listener, [OnErrorListener onErrorListener]) {
+    Project.listen(_docStorage, listener, onError: onErrorListener);
+  }
+
   void listenForUserConfigurations(UserConfigurationCollectionListener listener, [OnErrorListener onErrorListener]) {
     UserConfiguration.listen(_docStorage, listener, onErrorListener: onErrorListener);
   }
