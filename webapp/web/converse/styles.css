@@ -35,7 +35,7 @@ main {
 .nook-column-wrapper {
     height: calc(100vh - 42px);
     border: 1px solid var(--default-border-color);
-    overflow-y: scroll;
+    overflow-y: auto;
     flex-basis: 0;
     border-radius: 3px;
 }
@@ -68,7 +68,7 @@ main {
 .tag-panel .accordion {
     margin-top: 0;
     margin-bottom: 0;
-    overflow-y: scroll;
+    overflow-y: auto;
 }
 
 .tag-panel .tag {
@@ -85,7 +85,7 @@ main {
 
 .conversation-list {
     flex: 1;
-    overflow-y: scroll;
+    overflow-y: auto;
 }
 
 .conversation-filter {
@@ -136,7 +136,7 @@ main {
     background: #ffffff;
     padding: 0 4px;
     height: 24px;
-    overflow: scroll;
+    overflow: auto;
     color: #555;
     font-size: 12px;
     flex: 1 1 auto;
@@ -177,7 +177,7 @@ main {
     width: 450px;
     height: auto;
     max-height: 400px;
-    overflow-y: scroll;
+    overflow-y: auto;
 }
 
 .tags-menu__container {
@@ -219,15 +219,17 @@ main {
 
 .conversation-list-header .far,
 .conversation-list-header .fas {
-    margin-right: 6px;
+    margin-right: 4px;
 }
 
 .conversation-sort-order__select {
     max-width: 150px;
 }
 
-.conversation-list-header__checkbox {
-    margin: 0 16px 0 0;
+.conversation-list-header__selected-count {
+    display: inline-block;
+    margin-right: 12px;
+    margin-left: 4px;
 }
 
 .conversation-list-header__sort-order {
@@ -359,8 +361,8 @@ main {
 .conversation-summary__tags {
     display: flex;
     flex-wrap: wrap;
-    max-height: 90px;
-    overflow-y: scroll;
+    max-height: 55px;
+    overflow-y: auto;
     align-items: center;
     justify-content: center;
 }
@@ -400,7 +402,7 @@ main {
     height: 100%;
     display: flex;
     flex-direction: row;
-    overflow-y: scroll;
+    overflow-y: auto;
 }
 
 .notes-box__textarea {
@@ -409,7 +411,7 @@ main {
     border-top: 1px solid #ddd;
     flex: 1 1 auto;
     padding: 8px;
-    overflow: scroll;
+    overflow: auto;
     color: #555;
     font-size: 12px;
     background: #fafafa;
@@ -440,7 +442,7 @@ main {
     grid-auto-flow: column;
     grid-gap: 0;
     justify-content: start;
-    overflow-x: scroll;
+    overflow-x: auto;
     padding-top: 6px;
     height: 100%;
 }
