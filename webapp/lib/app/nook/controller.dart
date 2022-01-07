@@ -483,6 +483,9 @@ class NookController extends Controller {
 
         // even though there might be 3 shard present, the num_shards could be 1
         int shardCountToConsider = shards.first.numShards;
+        if (shards.length != shardCountToConsider) {
+          _view.snackbarView.showSnackbar("num_shards in shard #1 is different from the number of shards in the list. This can cause unexpected data inconsistencies. Please contact your project administrator.", SnackbarNotificationType.error);
+        }
         var shardsToConsider = shards.take(shardCountToConsider).toList();
         
         // Read any conversation shards from the URL
@@ -500,7 +503,7 @@ class NookController extends Controller {
         _view.conversationListPanelView.updateShardsList(shardsToConsider);
         // If we try to access a list that hasn't loaded yet, keep it in the URL
         // so it can be picked up on the next data snapshot from firebase.
-        _view.urlView.setPageUrlConversationList(urlConversationListRoot);
+        _view.urlView.conversationList = urlConversationListRoot;
         _view.conversationListPanelView.selectShard(conversationListRoot);
         command(UIAction.selectConversationList, ConversationListData(conversationListRoot));
       }, (error, stacktrace) {
