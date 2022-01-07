@@ -27,7 +27,7 @@
   top: 100%;
   width: 300px;
   max-height: 300px;
-  overflow-y: scroll;
+  overflow-y: auto;
   background: white;
   box-shadow: 0px 0px 20px 0px var(--black-10);
   border: 1px solid var(--black-10);
@@ -84,4 +84,14 @@
   color: var(--orange);
   font-weight: 900;
   margin-right: 3px;
+}
+
+.tag__text--dragging {
+  z-index: 2;
+}
+
+.tag__text--dragging .tag__text {
+  background-color: white;
+  border-style: dashed;
+  box-shadow: var(--shadow-standard);
 }

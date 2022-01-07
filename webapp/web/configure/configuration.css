@@ -73,7 +73,7 @@
 }
 
 .message__text {
-  overflow-y: scroll;
+  overflow-y: auto;
   border: 1px solid var(--default-border-color);
   padding: 6px;
   min-height: 96px;
