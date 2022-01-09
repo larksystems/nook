@@ -54,15 +54,18 @@ void _modifyMessagesInView(Map<String, Map<String, List<model.SuggestedReply>>> 
   }
 }
 
-void _updateUnsavedIndicators(Map<String, Map<String, List<model.SuggestedReply>>> messagesByGroupByCategory, Set<String> unsavedMessageIds, Set<String> unsavedGroupIds, Set<String> unsavedCategoryIds) {
-  for (var category in messagesByGroupByCategory.keys.toList()) {
+void _updateUnsavedIndicators(Map<String, MessageCategory> categories, Set<String> unsavedMessageIds, Set<String> unsavedGroupIds, Set<String> unsavedCategoryIds) {
+  for (var category in categories.keys) {
     var categoryView = _view.categoriesByName[category];
     categoryView.markAsUnsaved(unsavedCategoryIds.contains(category));
-    for (var group in messagesByGroupByCategory[category].keys.toList()) {
+
+    for (var group in categories[category].groups.keys) {
       var groupView = categoryView.groupsByName[group];
       groupView.markAsUnsaved(unsavedGroupIds.contains(group));
-      for (var message in messagesByGroupByCategory[category][group]) {
-        groupView.messagesById[message.docId].markAsUnsaved(unsavedMessageIds.contains(message.docId));
+
+      for (var message in categories[category].groups[group].messages.keys) {
+        var messageView = groupView.messagesById[message];
+        messageView.markAsUnsaved(unsavedMessageIds.contains(message));
       }
     }
   }
