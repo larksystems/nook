@@ -36,7 +36,6 @@ NookPageView _view;
 
 class NookPageView extends PageView {
   OtherLoggedInUsers otherLoggedInUsers;
-  ConversationListSelectHeader conversationListSelectView;
   ConversationListPanelView conversationListPanelView;
   ConversationIdFilter conversationIdFilter;
   Map<TagFilterType, ConversationFilter> conversationFilter;
@@ -52,7 +51,6 @@ class NookPageView extends PageView {
     _view = this;
 
     otherLoggedInUsers = new OtherLoggedInUsers();
-    conversationListSelectView = new ConversationListSelectHeader();
     conversationListPanelView = new ConversationListPanelView();
     conversationPanelView = new ConversationPanelView();
     replyPanelView = new ReplyPanelView();
@@ -109,8 +107,7 @@ class NookPageView extends PageView {
 
     navHeaderView.navContent = new DivElement()
       ..style.display = 'flex'
-      ..append(links.renderElement)
-      ..append(conversationListSelectView.panel);
+      ..append(links.renderElement);
     navHeaderView.navViewElement.insertBefore(otherLoggedInUsers.loggedInUsers, navHeaderView.navViewElement.querySelector('.nav__auth_header'));
   }
 
@@ -913,96 +910,10 @@ class FilterTagView extends TagView {
   }
 }
 
-// A drop down to select which conversation list to display
-class ConversationListSelectHeader {
-  DivElement panel;
-  SelectElement _selectElement;
-  List<ConversationListShard> _shards;
-
-  ConversationListSelectHeader() {
-    panel = new DivElement()
-      ..classes.add('conversation-list-select-header')
-      ..style.display = 'none';
-
-    panel.append(
-      new SpanElement()
-        ..classes.add('conversation-list-select-label')
-        ..text = 'Conversation List:');
-
-    panel.append(
-      _selectElement = new SelectElement()
-        ..classes.add('conversation-list-select')
-        ..add(OptionElement(data: '... loading conversation lists ...'), null)
-        ..onChange.listen(shardSelected));
-  }
-
-  void updateConversationLists(List<ConversationListShard> shards) {
-    // TODO Consider displaying summary information about each shard... e.g. # of unread conversations
-    if (_shards == null) {
-      _selectElement.options.first.remove();
-      _shards = [];
-      if (shards.isEmpty) {
-        _shards.add(ConversationListShard()..name = 'nook_conversations');
-      } else {
-        _shards.addAll(shards);
-      }
-      if (_shards.length > 1) {
-        _selectElement.add(OptionElement(
-            data: 'Select the conversations to be displayed',
-            value: ConversationListData.NONE
-        ), null);
-      }
-      for (var shard in _shards) {
-        _selectElement.add(OptionElement(
-            data: shard.displayName,
-            value: shard.conversationListRoot
-        ), null);
-      }
-      if (_shards.length > 1) {
-        _view.conversationListSelectView.panel.style.visibility = 'visible';
-      }
-    } else {
-      bool shardingHasChanged = false;
-      for (var newShard in shards) {
-        shardingHasChanged = true;
-        int optionIndex = _shards.length > 1 ? 1 : 0;
-        for (int shardIndex = 0; shardIndex < _shards.length; ++shardIndex) {
-          if (_shards[shardIndex].docId == newShard.docId) {
-            shardingHasChanged = false;
-            var oldOption = _selectElement.options[optionIndex];
-            var isSelected = oldOption.selected;
-            oldOption.replaceWith(OptionElement(
-                data: newShard.displayName,
-                value: newShard.conversationListRoot,
-                selected: isSelected
-            ));
-            _shards[shardIndex] = newShard;
-            break;
-          }
-          ++optionIndex;
-        }
-        if (shardingHasChanged) {
-          break;
-        }
-      }
-      if (shardingHasChanged) {
-        // TODO Prevent all user changes until page is refreshed and display a system message indicating as much
-      }
-    }
-  }
-
-  void shardSelected([Event event]) {
-    _view.appController.command(UIAction.selectConversationList, ConversationListData(_selectElement.value));
-  }
-
-  void selectShard(String shard) {
-    _selectElement.value = shard;
-  }
-}
-
 class ConversationListPanelView {
   DivElement conversationListPanel;
   SpanElement _conversationPanelTitle;
+  SelectElement _shardChooser;
   ChangeSortOrderActionView _changeSortOrder;
   LazyListViewModel _conversationList;
   CheckboxInputElement _selectAllCheckbox;
@@ -1035,6 +946,15 @@ class ConversationListPanelView {
   ConversationListPanelView() {
     conversationListPanel = new DivElement()
       ..classes.add('conversation-list-panel');
+
+    _shardChooser = SelectElement()
+      ..hidden = true
+      ..value = null
+      ..className = "conversation-list-shard-chooser"
+      ..onChange.listen((event) {
+        _view.appController.command(UIAction.selectConversationList, ConversationListData((event.target as SelectElement).value));
+      });
+    conversationListPanel.append(_shardChooser);
 
     var panelHeader = new DivElement()
       ..classes.add('conversation-list-header');
@@ -1125,6 +1045,29 @@ class ConversationListPanelView {
     } else {
       _panelFilters.hidden = false;
       _expandPanelFilters.hidden = true;
+    }
+  }
+
+  void updateShardsList(List<ConversationListShard> shards) {
+    _shardChooser.children.clear();
+    if (shards.length > 0) {
+      _shardChooser.append(OptionElement(value: null, data: "Choose a conversation list…")..disabled = true);
+      shards.forEach((shard) {
+        _shardChooser.append(OptionElement(value: shard.conversationListRoot, data: shard.name));
+      });
+      _shardChooser.hidden = shards.length == 1;
+    }
+  }
+
+  void selectShard(String shard) {
+    if (shard == ConversationListData.NONE) {
+      _shardChooser
+        ..value = null
+        ..classes.toggle("danger", true);
+    } else {
+      _shardChooser
+        ..value = shard
+        ..classes.toggle("danger", false);
     }
   }
 

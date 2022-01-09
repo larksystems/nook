@@ -5,7 +5,7 @@ import 'package:firebase/firebase.dart' as firebase;
 import 'package:nook/controller.dart' as controller;
 import 'package:katikati_ui_lib/components/logger.dart';
 import 'package:katikati_ui_lib/components/model/model.dart';
-import 'model_firebase.dart';
+import 'package:katikati_ui_lib/components/platform/doc_storage_firebase.dart';
 import 'package:katikati_ui_lib/components/platform/platform_constants.dart' as platform_constants;
 import 'package:katikati_ui_lib/components/platform/platform.dart' as platform;
 export 'package:katikati_ui_lib/components/platform/platform.dart';
@@ -171,23 +171,10 @@ class Platform {
 
   bool isUserSignedIn() => platform.isUserSignedIn();
 
-
-  Future<void> sendMessage(String id, String message, {bool wasSuggested = false, onError(dynamic)}) {
-    log.verbose("Sending message $id : $message");
-
-    return sendMultiMessage([id], message, wasSuggested: wasSuggested, onError: onError);
-  }
-
   Future<void> sendMultiMessage(List<String> ids, String message, {bool wasSuggested = false, onError(dynamic)}) async {
     log.verbose("Sending multi-message $ids : $message");
 
     return sendMultiMessages(ids, [message], wasSuggested: wasSuggested, onError: onError);
-  }
-
-  Future<void> sendMessages(String id, List<String> messages, {bool wasSuggested = false, onError(dynamic)}) {
-    log.verbose("Sending message $id : $messages");
-
-    return sendMultiMessages([id], messages, wasSuggested: wasSuggested, onError: onError);
   }
 
   Future<void> sendMultiMessages(List<String> ids, List<String> messages, {bool wasSuggested = false, onError(dynamic)}) async {

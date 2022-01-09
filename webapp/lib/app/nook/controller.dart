@@ -13,7 +13,6 @@ import 'package:katikati_ui_lib/components/tag/tag.dart';
 import 'package:katikati_ui_lib/components/turnline/turnline.dart';
 import 'package:katikati_ui_lib/components/logger.dart';
 import 'package:katikati_ui_lib/components/tooltip/tooltip.dart';
-import 'package:katikati_ui_lib/components/autocomplete/autocomplete.dart';
 import 'package:nook/controller.dart';
 export 'package:nook/controller.dart';
 import 'package:katikati_ui_lib/components/model/model.dart' as model;
@@ -336,6 +335,8 @@ class NookController extends Controller {
   model.Message selectedMessage;
   model.Conversation selectedConversationSummary;
 
+  List<model.ConversationListShard> shards = [];
+
   String selectedMessageTagId; // tag's ID
   String selectedTagMessageId; // message's ID
   String selectedConversationTagId;
@@ -470,28 +471,41 @@ class NookController extends Controller {
 
     platform.listenForConversationListShards(
       (added, modified, removed) {
-        // TODO: handle removed shards as well
-        List<model.ConversationListShard> shards = new List()
-          ..addAll(added)
-          ..addAll(modified);
-        _view.conversationListSelectView.updateConversationLists(shards);
+        // add, change, remove shards
+        shards.addAll(added);
+        var modifiedIds = modified.map((e) => e.docId).toList();
+        shards = shards.map((shard) {
+          var index = modifiedIds.indexOf(shard.docId);
+          return index >= 0 ? modified[index] : shard;
+        }).toList();
+        var removedIds = removed.map((e) => e.docId).toList();
+        shards.removeWhere((shard) =>  removedIds.contains(shard.docId));
 
+        // even though there might be 3 shard present, the num_shards could be 1
+        int shardCountToConsider = shards.first.numShards;
+        // TODO: consider refusing to load any of the shards and don't show any conversations, as shard inconsistency can indicate a bigger data problem
+        if (shards.length != shardCountToConsider) {
+          _view.snackbarView.showSnackbar("There may be an inconsistency in the number of conversation lists available. Please contact your project administrator and inform them of this error.", SnackbarNotificationType.error);
+        }
+        var shardsToConsider = shards.take(shardCountToConsider).toList();
+        
         // Read any conversation shards from the URL
-        String urlConversationListRoot = _view.urlView.getPageUrlConversationList();
+        String urlConversationListRoot = _view.urlView.conversationList;
         String conversationListRoot = urlConversationListRoot;
         if (urlConversationListRoot == null) {
           conversationListRoot = ConversationListData.NONE;
-          if (shards.length == 1) { // we have just one shard - select it and load the data
-            conversationListRoot = shards.first.conversationListRoot;
+          if (shardsToConsider.length == 1) {
+            conversationListRoot = shardsToConsider.first.conversationListRoot;
           }
-        } else if (shards.where((shard) => shard.conversationListRoot == urlConversationListRoot).isEmpty) {
-          log.warning("Attempting to select shard ${conversationListRoot} that doesn't exist");
-          conversationListRoot = ConversationListData.NONE;
+        } else if (shardsToConsider.where((shard) => shard.conversationListRoot == urlConversationListRoot).isEmpty) {
+          log.warning("Attempting to select shard ${conversationListRoot} that doesn't exist, choosing the first available shard.");
+          conversationListRoot = shardsToConsider.first.conversationListRoot;
         }
+        _view.conversationListPanelView.updateShardsList(shardsToConsider);
         // If we try to access a list that hasn't loaded yet, keep it in the URL
         // so it can be picked up on the next data snapshot from firebase.
-        _view.urlView.setPageUrlConversationList(urlConversationListRoot);
-        _view.conversationListSelectView.selectShard(conversationListRoot);
+        _view.urlView.conversationList = urlConversationListRoot;
+        _view.conversationListPanelView.selectShard(conversationListRoot);
         command(UIAction.selectConversationList, ConversationListData(conversationListRoot));
       }, (error, stacktrace) {
         _view.conversationListPanelView.hideLoadSpinner();
@@ -651,7 +665,7 @@ class NookController extends Controller {
         // only clear things up after we've received the config from the server
         conversationFilter.clearFilters(TagFilterType.lastInboundTurn);
 
-        _view.urlView.setPageUrlFilterTags(TagFilterType.lastInboundTurn, conversationFilter.filterTagIdsManuallySet[TagFilterType.lastInboundTurn]);
+        _view.urlView.tagsFilter[TagFilterType.lastInboundTurn] = conversationFilter.filterTagIdsManuallySet[TagFilterType.lastInboundTurn];
       } else {
         _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.lastInboundTurn), TagFilterType.lastInboundTurn);
       }
@@ -662,7 +676,7 @@ class NookController extends Controller {
         // only clear things up after we've received the config from the server
         conversationFilter.clearFilters(TagFilterType.exclude);
 
-        _view.urlView.setPageUrlFilterTags(TagFilterType.exclude, conversationFilter.filterTagIdsManuallySet[TagFilterType.exclude]);
+        _view.urlView.tagsFilter[TagFilterType.exclude] = conversationFilter.filterTagIdsManuallySet[TagFilterType.exclude];
       } else {
         _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.exclude), TagFilterType.exclude);
       }
@@ -688,15 +702,15 @@ class NookController extends Controller {
     conversationListSubscription?.cancel();
     if (conversationListSubscription != null) {
       // Only clear up the conversation id after the initial page loading
-      _view.urlView.setPageUrlConversationId(null);
+      _view.urlView.conversationId = null;
     }
     conversationListSubscription = null;
     if (conversationListRoot == ConversationListData.NONE) {
-      _view.urlView.setPageUrlConversationList(null);
+      _view.urlView.conversationList = null;
       _view.conversationListPanelView.totalConversations = 0;
       return;
     }
-    _view.urlView.setPageUrlConversationList(conversationListRoot);
+    _view.urlView.conversationList = conversationListRoot;
     conversationListSubscription = platform.listenForConversations(
       (added, modified, removed) {
         if (added.length > 0) {
@@ -741,7 +755,7 @@ class NookController extends Controller {
         // TODO even though they are unlikely to happen, we should also handle the removals in the UI for consistency
 
         // Determine if we need to display the conversation from the url
-        String urlConversationId = _view.urlView.getPageUrlConversationId();
+        String urlConversationId = _view.urlView.conversationId;
         if (activeConversation == null && urlConversationId != null) {
           var matches = conversations.where((c) => c.docId == urlConversationId).toList();
           if (matches.length == 0) {
@@ -918,7 +932,7 @@ class NookController extends Controller {
           selectedReply = translationReply;
         }
         if (!currentConfig.sendMultiMessageEnabled || selectedConversations.isEmpty) {
-          sendReply(selectedReply, activeConversation);
+          sendMultiReply(selectedReply, [activeConversation]);
           return;
         }
         if (!_view.sendingMultiMessagesUserConfirmation(selectedConversations.length)) {
@@ -942,7 +956,7 @@ class NookController extends Controller {
           selectedReplies = translationReplies;
         }
         if (!currentConfig.sendMultiMessageEnabled || selectedConversations.isEmpty) {
-          sendReplyGroup(selectedReplies, activeConversation);
+          sendMultiReplyGroup(selectedReplies, [activeConversation]);
           return;
         }
         if (!_view.sendingMultiMessageGroupUserConfirmation(selectedReplies.length, selectedConversations.length)) {
@@ -962,7 +976,7 @@ class NookController extends Controller {
             log.verbose('User cancelled sending manual message reply: "${oneoffReply.text}"');
             return;
           }
-          sendReply(oneoffReply, activeConversation);
+          sendMultiReply(oneoffReply, [activeConversation]);
           _view.conversationPanelView.clearNewMessageBox();
           return;
         }
@@ -982,7 +996,7 @@ class NookController extends Controller {
             ..translation = suggestedMessage.translation;
           repliesToSend.add(reply);
         }
-        sendReplyGroup(repliesToSend, activeConversation, wasSuggested: true);
+        sendMultiReplyGroup(repliesToSend, [activeConversation], wasSuggested: true);
         break;
 
       case UIAction.rejectSuggestedMessages:
@@ -1023,7 +1037,7 @@ class NookController extends Controller {
         model.Tag unifierTag = unifierTagForTag(tag, tagIdsToTags);
         var added = conversationFilter.addFilter(tagData.filterType, unifierTag);
         if (!added) return; // No change, nothing further to do
-        _view.urlView.setPageUrlFilterTags(tagData.filterType, conversationFilter.filterTagIdsManuallySet[tagData.filterType]);
+        _view.urlView.tagsFilter[tagData.filterType] = conversationFilter.filterTagIdsManuallySet[tagData.filterType];
         _view.conversationFilter[tagData.filterType].addFilterTag(new FilterTagView(unifierTag.text, unifierTag.tagId, tagTypeToKKStyle(unifierTag.type), tagData.filterType));
         if (actionObjectState == UIActionObject.loadingConversations) return;
         updateFilteredAndSelectedConversationLists();
@@ -1117,7 +1131,7 @@ class NookController extends Controller {
         model.Tag tag = tagIdToTag(tagData.tagId, tagIdsToTags);
         var changed = conversationFilter.removeFilter(tagData.filterType, tag);
         if (!changed) return; // No change, nothing further to do
-        _view.urlView.setPageUrlFilterTags(tagData.filterType, conversationFilter.filterTagIdsManuallySet[tagData.filterType]);
+        _view.urlView.tagsFilter[tagData.filterType] = conversationFilter.filterTagIdsManuallySet[tagData.filterType];
         _view.conversationFilter[tagData.filterType].removeFilterTag(tag.tagId);
         if (actionObjectState == UIActionObject.loadingConversations) return;
         updateFilteredAndSelectedConversationLists();
@@ -1126,7 +1140,7 @@ class NookController extends Controller {
       case UIAction.updateConversationIdFilter:
         ConversationIdFilterData filterData = data;
         conversationFilter.conversationIdFilter = filterData.idFilter;
-        _view.urlView.setPageUrlFilterConversationId(filterData.idFilter.isEmpty ? null : filterData.idFilter);
+        _view.urlView.conversationIdFilter = filterData.idFilter.isEmpty ? null : filterData.idFilter;
         if (actionObjectState == UIActionObject.loadingConversations) return;
         updateFilteredAndSelectedConversationLists();
         break;
@@ -1216,9 +1230,8 @@ class NookController extends Controller {
         _view.conversationPanelView.clear();
         _view.notesPanelView.noteText = '';
         activeConversation = null;
-        if (conversationListData.conversationListRoot == ConversationListData.NONE) {
-          _view.conversationListPanelView.showSelectConversationListMessage();
-        } else {
+        if (conversationListData.conversationListRoot != ConversationListData.NONE) {
+          _view.conversationListPanelView.selectShard(conversationListData.conversationListRoot);
           _view.conversationListPanelView.showLoadSpinner();
         }
         conversationListSelected(conversationListData.conversationListRoot);
@@ -1296,11 +1309,11 @@ class NookController extends Controller {
       case UIAction.keyPressed:
         KeyPressData keyPressData = data;
         if (keyPressData.key == 'w') {
-          command(UIAction.navigateToPrevConversation, null);  
+          command(UIAction.navigateToPrevConversation, null);
           return;
         }
         if (keyPressData.key == 's') {
-          command(UIAction.navigateToNextConversation, null);  
+          command(UIAction.navigateToNextConversation, null);
           return;
         }
         if (keyPressData.key == 'Esc' || keyPressData.key == 'Escape') {
@@ -1330,7 +1343,7 @@ class NookController extends Controller {
           if (selectedReply.isNotEmpty) {
             assert (selectedReply.length == 1);
             if (!currentConfig.sendMultiMessageEnabled || selectedConversations.isEmpty) {
-              sendReply(selectedReply.first, activeConversation);
+              sendMultiReply(selectedReply.first, [activeConversation]);
               return;
             }
             String text = 'Cannot send multiple messages using keyboard shortcuts. '
@@ -1610,41 +1623,12 @@ class NookController extends Controller {
   }
 
   void _selectConversationInView(model.Conversation conversation) {
-    _view.urlView.setPageUrlConversationId(conversation.docId);
+    _view.urlView.conversationId = conversation.docId;
     if (conversationsInView.contains(conversation)) {
       // Select the conversation in the list of conversations
       _view.conversationListPanelView.selectConversation(conversation.docId);
       _populateReplyPanelView(suggestedRepliesByCategory[selectedSuggestedRepliesCategory]);
     }
-  }
-
-  void sendReply(model.SuggestedReply reply, model.Conversation conversation) {
-    log.verbose('Preparing to send reply "${reply.text}" to conversation ${conversation.docId}');
-    model.Message newMessage = new model.Message()
-      ..id = model.generatePendingMessageId(conversation)
-      ..text = reply.text
-      ..datetime = new DateTime.now()
-      ..direction = model.MessageDirection.Out
-      ..translation = reply.translation
-      ..tagIds = []
-      ..status = model.MessageStatus.pending;
-    _view.conversationListPanelView.updateConversationStatus(conversation.docId, ConversationItemStatus.pending);
-    log.verbose('Adding reply "${reply.text}" to conversation ${conversation.docId}');
-    conversation.messages.add(newMessage);
-    _view.conversationPanelView.addMessage(_generateMessageView(newMessage, conversation));
-    log.verbose('Sending reply "${reply.text}" to conversation ${conversation.docId}');
-    platform.sendMessage(conversation.docId, reply.text, onError: (error) {
-      log.error('Reply "${reply.text}" failed to be sent to conversation ${conversation.docId}');
-      log.error('Error: ${error}');
-      command(UIAction.showSnackbar, new SnackbarData('Send Reply Failed', SnackbarNotificationType.error));
-      _view.conversationListPanelView.updateConversationStatus(conversation.docId, ConversationItemStatus.failed);
-      newMessage.status = model.MessageStatus.failed;
-      if (conversation.docId == activeConversation.docId) {
-        int newMessageIndex = activeConversation.messages.indexOf(newMessage);
-        _view.conversationPanelView.messageViewAtIndex(newMessageIndex).setStatus(newMessage.status);
-      }
-    });
-    log.verbose('Reply "${reply.text}" queued for sending to conversation ${conversation.docId}');
   }
 
   void sendMultiReply(model.SuggestedReply reply, List<model.Conversation> conversations) {
@@ -1688,44 +1672,7 @@ class NookController extends Controller {
     log.verbose('Reply "${reply.text}" queued for sending to conversations ${conversationIds}');
   }
 
-  void sendReplyGroup(List<model.SuggestedReply> replies, model.Conversation conversation, {bool wasSuggested = false}) {
-    List<String> textReplies = replies.map((r) => r.text).toList();
-    String repliesStr = textReplies.join("; ");
-    log.verbose('Preparing to send ${textReplies.length} replies "${repliesStr}" to conversation ${conversation.docId}');
-    List<model.Message> newMessages = [];
-    for (var reply in replies) {
-      model.Message newMessage = new model.Message()
-        ..id = model.generatePendingMessageId(conversation)
-        ..text = reply.text
-        ..datetime = new DateTime.now()
-        ..direction = model.MessageDirection.Out
-        ..translation = reply.translation
-        ..tagIds = []
-        ..status = model.MessageStatus.pending;
-        _view.conversationListPanelView.updateConversationStatus(conversation.docId, ConversationItemStatus.pending);
-      newMessages.add(newMessage);
-      conversation.messages.add(newMessage);
-      _view.conversationPanelView.addMessage(_generateMessageView(newMessage, conversation));
-    }
-
-    log.verbose('Sending ${textReplies.length} replies "${repliesStr}" to conversation ${conversation.docId}');
-    platform.sendMessages(conversation.docId, textReplies, wasSuggested: wasSuggested, onError: (error) {
-      log.error('${textReplies.length} replies "${repliesStr}" failed to be sent to conversation ${conversation.docId}');
-      log.error('Error: ${error}');
-      command(UIAction.showSnackbar, new SnackbarData('Send Reply Failed', SnackbarNotificationType.error));
-      _view.conversationListPanelView.updateConversationStatus(conversation.docId, ConversationItemStatus.failed);
-      for (var message in newMessages) {
-        message.status = model.MessageStatus.failed;
-        if (conversation.docId == activeConversation.docId) {
-          int messageIndex = activeConversation.messages.indexOf(message);
-          _view.conversationPanelView.messageViewAtIndex(messageIndex).setStatus(message.status);
-        }
-      }
-    });
-    log.verbose('${textReplies.length} replies "${repliesStr}" queued for sending to conversation ${conversation.docId}');
-  }
-
-  void sendMultiReplyGroup(List<model.SuggestedReply> replies, List<model.Conversation> conversations) {
+  void sendMultiReplyGroup(List<model.SuggestedReply> replies, List<model.Conversation> conversations, {bool wasSuggested = false}) {
     List<String> conversationIds = conversations.map((conversation) => conversation.docId).toList();
     List<String> textReplies = replies.map((r) => r.text).toList();
     String repliesStr = textReplies.join("; ");
@@ -1752,7 +1699,7 @@ class NookController extends Controller {
       newMessagesByConversation[conversation.docId] = newMessages;
     }
     log.verbose('Sending ${textReplies.length} replies "${repliesStr}" to conversation ${conversationIds}');
-    platform.sendMultiMessages(conversationIds, textReplies, onError: (error) {
+    platform.sendMultiMessages(conversationIds, textReplies, wasSuggested: wasSuggested, onError: (error) {
       log.error('${textReplies.length} replies "${repliesStr}" failed to be sent to conversations ${conversationIds}');
       log.error('Error: ${error}');
       command(UIAction.showSnackbar, new SnackbarData('Send Multi Reply Failed', SnackbarNotificationType.error));
