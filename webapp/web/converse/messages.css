@@ -165,5 +165,5 @@
 .suggested-message-panel__messages {
   margin: 0 0 12px 56px;
   max-height: 100px;
-  overflow: scroll;
+  overflow: auto;
 }

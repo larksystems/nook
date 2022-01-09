@@ -92,7 +92,9 @@ class TagsConfiguratorController extends ConfiguratorController {
       case TagsConfigAction.addTag:
         TagData tagData = data;
         var tag = tagManager.createTag(tagData.groupId);
-        _addTagsToView({ tagData.groupId: [tag] }, startEditing: true);
+        _addTagsToView({
+          tagData.groupId: [tag]
+        }, startEditing: true);
         break;
       
       case TagsConfigAction.requestRenameTag:
@@ -103,8 +105,6 @@ class TagsConfiguratorController extends ConfiguratorController {
         if (presentTagTexts.contains(tagText)) {
           _showDuplicateTagWarningModal(requestRenameTagData.groupId, requestRenameTagData.id, requestRenameTagData.text);
         } else {
-          tagManager.addUnsavedTagIds(requestRenameTagData.id);
-          tagManager.addUnsavedGroupIds(requestRenameTagData.groupId);
           command(TagsConfigAction.renameTag, TagData(requestRenameTagData.id, text: requestRenameTagData.text));
         }
         break;
@@ -112,8 +112,6 @@ class TagsConfiguratorController extends ConfiguratorController {
       case TagsConfigAction.renameTag:
         TagData tagData = data;
         var tag = tagManager.modifyTag(tagData.id, text: tagData.text);
-        tagManager.addUnsavedTagIds(tagData.id);
-        tagManager.addUnsavedGroupIds(tagData.groupId);
         _modifyTagsInView(Map.fromEntries(tag.groups.map((g) => new MapEntry(g, [tag]))));
         _updateUnsavedIndicators(tagManager.tagsByGroup, tagManager.unsavedTagIds, tagManager.unsavedGroupIds);
         break;
@@ -121,26 +119,28 @@ class TagsConfiguratorController extends ConfiguratorController {
       case TagsConfigAction.moveTag:
         TagData tagData = data;
         model.Tag tag = tagManager.modifyTag(tagData.id, group: tagData.newGroupId);
-        tagManager.addUnsavedTagIds(tagData.id);
-        tagManager.addUnsavedGroupIds(tagData.groupId);
-        tagManager.addUnsavedGroupIds(tagData.newGroupId);
         // update the view by removing the tag and then adding it
-        _removeTagsFromView({ tagData.groupId: [tag] });
-        _addTagsToView({ tagData.newGroupId: [tag] });
+        _removeTagsFromView({
+          tagData.groupId: [tag]
+        });
+        _addTagsToView({
+          tagData.newGroupId: [tag]
+        });
+        tagManager.movedFromGroupIds.add(tagData.groupId);
         _updateUnsavedIndicators(tagManager.tagsByGroup, tagManager.unsavedTagIds, tagManager.unsavedGroupIds);
         break;
 
       case TagsConfigAction.removeTag:
         TagData tagData = data;
-        tagManager.addUnsavedGroupIds(tagData.groupId);
         model.Tag tag = tagManager.deleteTag(tagData.id);
-        _removeTagsFromView({ tagData.groupId: [tag] });
+        _removeTagsFromView({
+          tagData.groupId: [tag]
+        });
         _updateUnsavedIndicators(tagManager.tagsByGroup, tagManager.unsavedTagIds, tagManager.unsavedGroupIds);
         break;
 
       case TagsConfigAction.addTagGroup:
         var newGroupName = tagManager.createTagGroup();
-        tagManager.addUnsavedGroupIds(newGroupName);
         _addTagsToView({newGroupName: []}, startEditingName: true);
         _updateUnsavedIndicators(tagManager.tagsByGroup, tagManager.unsavedTagIds, tagManager.unsavedGroupIds);
         break;
@@ -150,14 +150,12 @@ class TagsConfiguratorController extends ConfiguratorController {
         tagManager.renameTagGroup(groupData.groupName, groupData.newGroupName);
         var groupView = _view.groups.queryItem(groupData.groupName);
         groupView.id = groupData.newGroupName;
-        tagManager.addUnsavedGroupIds(groupView.id);
         _view.groups.updateItem(groupData.newGroupName, groupView);
         _updateUnsavedIndicators(tagManager.tagsByGroup, tagManager.unsavedTagIds, tagManager.unsavedGroupIds);
         break;
 
       case TagsConfigAction.removeTagGroup:
         TagGroupData groupData = data;
-        tagManager.addUnsavedGroupIds(groupData.groupName);
         tagManager.deleteTagGroup(groupData.groupName);
         _view.removeTagGroup(groupData.groupName);
         break;
@@ -165,8 +163,6 @@ class TagsConfiguratorController extends ConfiguratorController {
       case TagsConfigAction.updateTagType:
         TagData tagData = data;
         var tag = tagManager.modifyTag(tagData.id, type: tagData.newType);
-        tagManager.addUnsavedTagIds(tagData.id);
-        tagManager.addUnsavedGroupIds(tagData.groupId);
         _modifyTagsInView(Map.fromEntries(tag.groups.map((g) => new MapEntry(g, [tag]))));
         _updateUnsavedIndicators(tagManager.tagsByGroup, tagManager.unsavedTagIds, tagManager.unsavedGroupIds);
         break;
@@ -197,11 +193,10 @@ class TagsConfiguratorController extends ConfiguratorController {
 
     platform.updateTags(tagManager.editedTags.values.toList()).then((value) {
       tagManager.editedTags.clear();
+      tagManager.movedFromGroupIds.clear();
       if (otherPartSaved) {
         _view.showSaveStatus('Saved!');
         _view.unsavedChanges = false;
-        tagManager.clearUnsavedTagIds();
-        tagManager.clearUnsavedGroupIds();
         _updateUnsavedIndicators(tagManager.tagsByGroup, tagManager.unsavedTagIds, tagManager.unsavedGroupIds);
         return;
       }
@@ -215,8 +210,6 @@ class TagsConfiguratorController extends ConfiguratorController {
       if (otherPartSaved) {
         _view.showSaveStatus('Saved!');
         _view.unsavedChanges = false;
-        tagManager.clearUnsavedTagIds();
-        tagManager.clearUnsavedGroupIds();
         _updateUnsavedIndicators(tagManager.tagsByGroup, tagManager.unsavedTagIds, tagManager.unsavedGroupIds);
         return;
       }

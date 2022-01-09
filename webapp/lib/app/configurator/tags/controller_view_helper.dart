@@ -44,8 +44,7 @@ void _addTagsToView(Map<String, List<model.Tag>> tagsByCategory, {bool startEdit
 
 void _removeTagsFromView(Map<String, List<model.Tag>> tagsByCategory) {
   for (var category in tagsByCategory.keys.toList()..sort()) {
-    var categoryView = (_view.groups.queryItem(category) as TagGroupView);
-    categoryView.removeTags(tagsByCategory[category].map((t) => t.tagId).toList());
+    (_view.groups.queryItem(category) as TagGroupView).removeTags(tagsByCategory[category].map((t) => t.tagId).toList());
   }
 }
 
@@ -55,8 +54,7 @@ void _modifyTagsInView(Map<String, List<model.Tag>> tagsByCategory) {
     for (var tag in tagsByCategory[category]) {
       tagViewsById[tag.tagId] = new ConfigureTagView(tag.text, tag.docId, category, _tagTypeToKKStyle(tag.type), getMenuItems(tag));
     }
-    var categoryView = (_view.groups.queryItem(category) as TagGroupView);
-    categoryView.modifyTags(tagViewsById);
+    (_view.groups.queryItem(category) as TagGroupView).modifyTags(tagViewsById);
   }
 }
 
