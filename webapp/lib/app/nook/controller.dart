@@ -13,7 +13,6 @@ import 'package:katikati_ui_lib/components/tag/tag.dart';
 import 'package:katikati_ui_lib/components/turnline/turnline.dart';
 import 'package:katikati_ui_lib/components/logger.dart';
 import 'package:katikati_ui_lib/components/tooltip/tooltip.dart';
-import 'package:katikati_ui_lib/components/autocomplete/autocomplete.dart';
 import 'package:nook/controller.dart';
 export 'package:nook/controller.dart';
 import 'package:katikati_ui_lib/components/model/model.dart' as model;
@@ -336,6 +335,8 @@ class NookController extends Controller {
   model.Message selectedMessage;
   model.Conversation selectedConversationSummary;
 
+  List<model.ConversationListShard> shards = [];
+
   String selectedMessageTagId; // tag's ID
   String selectedTagMessageId; // message's ID
   String selectedConversationTagId;
@@ -470,28 +471,41 @@ class NookController extends Controller {
 
     platform.listenForConversationListShards(
       (added, modified, removed) {
-        // TODO: handle removed shards as well
-        List<model.ConversationListShard> shards = new List()
-          ..addAll(added)
-          ..addAll(modified);
-        _view.conversationListSelectView.updateConversationLists(shards);
+        // add, change, remove shards
+        shards.addAll(added);
+        var modifiedIds = modified.map((e) => e.docId).toList();
+        shards = shards.map((shard) {
+          var index = modifiedIds.indexOf(shard.docId);
+          return index >= 0 ? modified[index] : shard;
+        }).toList();
+        var removedIds = removed.map((e) => e.docId).toList();
+        shards.removeWhere((shard) =>  removedIds.contains(shard.docId));
 
+        // even though there might be 3 shard present, the num_shards could be 1
+        int shardCountToConsider = shards.first.numShards;
+        // TODO: consider refusing to load any of the shards and don't show any conversations, as shard inconsistency can indicate a bigger data problem
+        if (shards.length != shardCountToConsider) {
+          _view.snackbarView.showSnackbar("There may be an inconsistency in the number of conversation lists available. Please contact your project administrator and inform them of this error.", SnackbarNotificationType.error);
+        }
+        var shardsToConsider = shards.take(shardCountToConsider).toList();
+        
         // Read any conversation shards from the URL
         String urlConversationListRoot = _view.urlView.conversationList;
         String conversationListRoot = urlConversationListRoot;
         if (urlConversationListRoot == null) {
           conversationListRoot = ConversationListData.NONE;
-          if (shards.length == 1) { // we have just one shard - select it and load the data
-            conversationListRoot = shards.first.conversationListRoot;
+          if (shardsToConsider.length == 1) {
+            conversationListRoot = shardsToConsider.first.conversationListRoot;
           }
-        } else if (shards.where((shard) => shard.conversationListRoot == urlConversationListRoot).isEmpty) {
-          log.warning("Attempting to select shard ${conversationListRoot} that doesn't exist");
-          conversationListRoot = ConversationListData.NONE;
+        } else if (shardsToConsider.where((shard) => shard.conversationListRoot == urlConversationListRoot).isEmpty) {
+          log.warning("Attempting to select shard ${conversationListRoot} that doesn't exist, choosing the first available shard.");
+          conversationListRoot = shardsToConsider.first.conversationListRoot;
         }
+        _view.conversationListPanelView.updateShardsList(shardsToConsider);
         // If we try to access a list that hasn't loaded yet, keep it in the URL
         // so it can be picked up on the next data snapshot from firebase.
         _view.urlView.conversationList = urlConversationListRoot;
-        _view.conversationListSelectView.selectShard(conversationListRoot);
+        _view.conversationListPanelView.selectShard(conversationListRoot);
         command(UIAction.selectConversationList, ConversationListData(conversationListRoot));
       }, (error, stacktrace) {
         _view.conversationListPanelView.hideLoadSpinner();
@@ -1216,9 +1230,8 @@ class NookController extends Controller {
         _view.conversationPanelView.clear();
         _view.notesPanelView.noteText = '';
         activeConversation = null;
-        if (conversationListData.conversationListRoot == ConversationListData.NONE) {
-          _view.conversationListPanelView.showSelectConversationListMessage();
-        } else {
+        if (conversationListData.conversationListRoot != ConversationListData.NONE) {
+          _view.conversationListPanelView.selectShard(conversationListData.conversationListRoot);
           _view.conversationListPanelView.showLoadSpinner();
         }
         conversationListSelected(conversationListData.conversationListRoot);

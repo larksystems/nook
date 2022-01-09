@@ -204,8 +204,16 @@ main {
     justify-content: space-between;
 }
 
+.conversation-list-shard-chooser {
+    margin: 6px 12px 0 12px;
+}
+
+.conversation-list-shard-chooser.danger {
+    border-color: var(--red);
+}
+
 .conversation-list-header {
-    padding: 12px;
+    padding: 6px 12px;
     border-bottom: 1px solid var(--default-border-color);
 }
 
