@@ -77,7 +77,7 @@
 .text-edit.unsaved::before,
 .tag.unsaved::before {
   font-family: "Font Awesome 5 Free";
-  content: "\f853";
+  content: "\f071";
   display: inline-block;
   padding-right: 3px;
   vertical-align: middle;

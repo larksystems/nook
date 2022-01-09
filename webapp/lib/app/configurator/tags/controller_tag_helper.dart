@@ -15,12 +15,6 @@ class TagManager {
   Map<String, List<model.Tag>> get tagsByGroup => _tagsByGroup;
   Map<String, List<model.Tag>> _tagsByGroup = {};
 
-  // unsaved tag Ids, group Ids
-  Set<String> _unsavedTagIds = {};
-  Set<String> get unsavedTagIds => _unsavedTagIds;
-  Set<String> _unsavedGroupIds = {};
-  Set<String> get unsavedGroupIds => _unsavedGroupIds;
-
   /// Returns an automatically generated name for a new tag group.
   /// The name is based on an internal sequence, and verified against existing tag group names.
   /// If the next group in the sequence already exists, it will recursively try to generate a new one.
@@ -38,22 +32,6 @@ class TagManager {
 
   /// Returns the [Tag] with the given [id].
   model.Tag getTagById(String id) => _tags.singleWhere((t) => t.tagId == id);
-
-  void addUnsavedTagIds(String tagId) {
-    _unsavedTagIds.add(tagId);
-  }
-
-  void clearUnsavedTagIds() {
-    _unsavedTagIds = {};
-  }
-
-  void addUnsavedGroupIds(String groupId) {
-    _unsavedGroupIds.add(groupId);
-  }
-
-  void clearUnsavedGroupIds() {
-    _unsavedGroupIds = {};
-  }
 
   /// Adds the given [tag] to the list of tags being managed.
   /// Returns either the [tag] if it's a new tag, or [null] if it already exists and it's an update operation.
@@ -224,6 +202,20 @@ class TagManager {
   /// The tags that have been deleted and need to be saved, stored as a `Map<tagId, Tag>`.
   Map<String, model.Tag> deletedTags = {};
 
+  /// When a tag is moved across groups, we need to remember the origin group
+  Set<String> movedFromGroupIds = {};
+
+  /// Getters for unsaved tag Ids, group Ids derived from editedTags, deletedTags
+  Set<String> get unsavedTagIds => Set.from(List.from(editedTags.keys)..addAll(deletedTags.keys));
+  Set<String> get unsavedGroupIds {
+    window.console.error(movedFromGroupIds);
+    var editedTagGroups = editedTags.values.map((tag) => tag.groups).expand((e) => e); //.toList();
+    var deletedTagGroups = deletedTags.values.map((tag) => tag.groups).expand((e) => e); //.toList();
+    Set<String> setString = Set.from(List.from(editedTagGroups)..addAll(deletedTagGroups))..addAll(movedFromGroupIds);
+    window.console.error(setString);
+    return setString;
+  }
+
   /// Returns whether there's any edited or deleted tags to be saved.
-  bool get hasUnsavedTags => editedTags.isNotEmpty || deletedTags.isNotEmpty;
+  bool get hasUnsavedTags => editedTags.isNotEmpty || deletedTags.isNotEmpty || movedFromGroupIds.isNotEmpty;
 }
