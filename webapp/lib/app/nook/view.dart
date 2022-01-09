@@ -1012,7 +1012,7 @@ class ConversationListPanelView {
     var collapsePanelFilters = new DivElement()
       ..append(SpanElement()..className = "fas fa-chevron-circle-down")
       ..className = "conversation-filters-toggle"
-      ..onClick.listen((_) { toggleFiltersMenu(false); });
+      ..onClick.listen((_) { _view.appController.command(UIAction.toggleFiltersPanel, ToggleFiltersPanelData(false)); });
 
     conversationIdFilter = new ConversationIdFilter(collapsePanelFilters);
     _panelFilters.append(conversationIdFilter.conversationFilter);
@@ -1033,7 +1033,7 @@ class ConversationListPanelView {
           ..append(SpanElement()..innerText = "Conversation filters")
         )
       ..append(DivElement()..append(SpanElement()..className = "fas fa-chevron-circle-up")..className = "conversation-filters-toggle")
-      ..onClick.listen((_) { toggleFiltersMenu(true); }) // todo: go via controller
+      ..onClick.listen((_) { _view.appController.command(UIAction.toggleFiltersPanel, ToggleFiltersPanelData(true)); })
       ..hidden = true;
     conversationListPanel.append(_expandPanelFilters);
   }

@@ -49,6 +49,7 @@ enum UIAction {
   rejectSuggestedMessages,
   addTag,
   addFilterTag,
+  toggleFiltersPanel,
   removeConversationTag,
   removeMessageTag,
   selectMessageTag,
@@ -309,6 +310,15 @@ class NewConversationsData extends Data {
 
   @override
   String toString() => 'NewConversationsData: {conversations: $conversations}';
+}
+
+class ToggleFiltersPanelData extends Data {
+  bool showPanel;
+
+  ToggleFiltersPanelData(this.showPanel);
+
+  @override
+  String toString() => 'ToggleFiltersPanelData: {showPanel: ${showPanel}}';
 }
 
 NookController controller;
@@ -1042,6 +1052,10 @@ class NookController extends Controller {
         if (actionObjectState == UIActionObject.loadingConversations) return;
         updateFilteredAndSelectedConversationLists();
         updateViewForConversation(activeConversation, updateInPlace: true);
+        break;
+      case UIAction.toggleFiltersPanel:
+        ToggleFiltersPanelData panelData = data;
+        _view.conversationListPanelView.toggleFiltersMenu(panelData.showPanel);
         break;
       case UIAction.removeConversationTag:
         ConversationTagData conversationTagData = data;
