@@ -21,38 +21,6 @@ class StandardMessagesManager {
   int get lastStandardMessagesCategorySeqNo => _lastStandardMessagesCategorySeqNo;
   int get nextStandardMessagesCategorySeqNo => ++_lastStandardMessagesCategorySeqNo;
 
-  Set<String> _unsavedMessageIds = {};
-  Set<String> _unsavedGroupIds = {};
-  Set<String> _unsavedCategoryIds = {};
-
-  Set<String> get unsavedMessageIds => _unsavedMessageIds;
-  Set<String> get unsavedGroupIds => _unsavedGroupIds;
-  Set<String> get unsavedCategoryIds => _unsavedCategoryIds;
-
-  void addUnsavedMessageIds(String messageId) {
-    _unsavedMessageIds.add(messageId);
-  }
-
-  void clearUnsavedMessageIds() {
-    _unsavedMessageIds = {};
-  }
-
-  void addUnsavedGroupIds(String groupId) {
-    _unsavedGroupIds.add(groupId);
-  }
-
-  void clearUnsavedGroupIds() {
-    _unsavedGroupIds = {};
-  }
-
-  void addUnsavedCategoryIds(String categoryId) {
-    _unsavedCategoryIds.add(categoryId);
-  }
-
-  void clearUnsavedCategoryIds() {
-    _unsavedCategoryIds = {};
-  }
-
   void _updateLastStandardMessageSeqNo(int seqNo) {
     if (seqNo < _lastStandardMessageSeqNo) return;
     _lastStandardMessageSeqNo = seqNo;
@@ -227,6 +195,11 @@ class StandardMessagesManager {
 
   /// The messages that have been deleted and need to be saved, stored as a `Map<tagId, Tag>`.
   Map<String, model.SuggestedReply> deletedMessages = {};
+
+  /// The message IDs that are arrived from editedMessages, deletedMessages
+  Set<String> get unsavedMessageIds => editedMessages.entries.map((e) => e.value.docId);
+  Set<String> get unsavedGroupIds => editedMessages.entries.map((e) => e.value.groupId);
+  Set<String> get unsavedCategoryIds => editedMessages.entries.map((e) => e.value.category);
 
   /// Returns whether there's any edited or deleted messages to be saved.
   bool get hasUnsavedMessages => editedMessages.isNotEmpty || deletedMessages.isNotEmpty;
