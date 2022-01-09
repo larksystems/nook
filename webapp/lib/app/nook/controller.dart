@@ -484,7 +484,7 @@ class NookController extends Controller {
         // even though there might be 3 shard present, the num_shards could be 1
         int shardCountToConsider = shards.first.numShards;
         if (shards.length != shardCountToConsider) {
-          _view.snackbarView.showSnackbar("num_shards in shard #1 is different from the number of shards in the list. This can cause unexpected data inconsistencies. Please contact your project administrator.", SnackbarNotificationType.error);
+          _view.snackbarView.showSnackbar("There may be an inconsistency in the number of conversation lists available. Please contact your project administrator and inform them of this error.", SnackbarNotificationType.error);
         }
         var shardsToConsider = shards.take(shardCountToConsider).toList();
         
