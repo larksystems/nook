@@ -48,7 +48,6 @@ void _modifyMessagesInView(Map<String, Map<String, List<model.SuggestedReply>>> 
       for (var message in messagesByGroupByCategory[category][group]) {
         var messageView = new StandardMessageView(message.suggestedReplyId, message.text, message.translation);
         groupView.modifyMessage(message.suggestedReplyId, messageView);
-        messageView.markAsUnsaved(true);
       }
     }
   }

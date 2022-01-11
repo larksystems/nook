@@ -133,8 +133,6 @@ class MessagesConfiguratorController extends ConfiguratorController {
         StandardMessagesGroupData groupData = data;
         standardMessagesManager.renameStandardMessageGroup(groupData.category, groupData.group, groupData.newGroupName);
         _view.categoriesByName[groupData.category].renameGroup(groupData.group, groupData.newGroupName);
-        _view.categoriesByName[groupData.category].markAsUnsaved(true);
-        _view.categoriesByName[groupData.category].groupsByName[groupData.newGroupName].markAsUnsaved(true);
         _updateUnsavedIndicators(standardMessagesManager.categories, standardMessagesManager.unsavedMessageIds, standardMessagesManager.unsavedGroupIds, standardMessagesManager.unsavedCategoryIds);
         break;
 
@@ -142,7 +140,6 @@ class MessagesConfiguratorController extends ConfiguratorController {
         StandardMessagesGroupData groupData = data;
         standardMessagesManager.deleteStandardMessagesGroup(groupData.category, groupData.group);
         _view.categoriesByName[groupData.category].removeGroup(groupData.group);
-        _view.categoriesByName[groupData.category].markAsUnsaved(true);
         _updateUnsavedIndicators(standardMessagesManager.categories, standardMessagesManager.unsavedMessageIds, standardMessagesManager.unsavedGroupIds, standardMessagesManager.unsavedCategoryIds);
         break;
 

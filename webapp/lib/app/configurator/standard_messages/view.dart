@@ -49,7 +49,6 @@ class MessagesConfigurationPageView extends ConfigurationPageView {
     categoryView.name = newCategoryName;
     categoriesByName[newCategoryName] = categoryView;
     categories.updateItem(newCategoryName, categoryView);
-    categoryView.markAsUnsaved(true);
   }
 
   void removeCategory(String category) {
