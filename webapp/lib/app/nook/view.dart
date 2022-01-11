@@ -1009,12 +1009,7 @@ class ConversationListPanelView {
       ..classes.add('conversation-list-filters');
     conversationListPanel.append(_panelFilters);
 
-    var collapsePanelFilters = new DivElement()
-      ..append(SpanElement()..className = "fas fa-chevron-circle-down")
-      ..className = "conversation-filters-toggle"
-      ..onClick.listen((_) { _view.appController.command(UIAction.toggleFiltersPanel, ToggleFiltersPanelData(false)); });
-
-    conversationIdFilter = new ConversationIdFilter(collapsePanelFilters);
+    conversationIdFilter = new ConversationIdFilter();
     _panelFilters.append(conversationIdFilter.conversationFilter);
 
     conversationIncludeFilter = new ConversationIncludeFilter();
@@ -1033,19 +1028,14 @@ class ConversationListPanelView {
           ..append(SpanElement()..innerText = "Conversation filters")
         )
       ..append(DivElement()..append(SpanElement()..className = "fas fa-chevron-circle-up")..className = "conversation-filters-toggle")
-      ..onClick.listen((_) { _view.appController.command(UIAction.toggleFiltersPanel, ToggleFiltersPanelData(true)); })
+      ..onClick.listen((_) => _view.appController.command(UIAction.toggleFiltersPanel, ToggleFiltersPanelData(true)))
       ..hidden = true;
     conversationListPanel.append(_expandPanelFilters);
   }
 
   void toggleFiltersMenu(bool show) {
-    if (!show) {
-      _panelFilters.hidden = true;
-      _expandPanelFilters.hidden = false;
-    } else {
-      _panelFilters.hidden = false;
-      _expandPanelFilters.hidden = true;
-    }
+    _panelFilters.hidden = show;
+    _expandPanelFilters.hidden = !show;
   }
 
   void updateShardsList(List<ConversationListShard> shards) {
@@ -1365,7 +1355,7 @@ class ConversationIdFilter {
   SpanElement _descriptionText;
   TextInputElement _idInput;
 
-  ConversationIdFilter(DivElement node) {
+  ConversationIdFilter() {
     conversationFilter = new DivElement()
       ..classes.add('conversation-filter')
       ..classes.add('conversation-filter--id-filter');
@@ -1382,7 +1372,12 @@ class ConversationIdFilter {
         _view.appController.command(UIAction.updateConversationIdFilter, new ConversationIdFilterData(_idInput.value));
       });
     conversationFilter.append(_idInput);
-    conversationFilter.append(node);
+
+    var collapsePanelFilters = new DivElement()
+      ..append(SpanElement()..className = "fas fa-chevron-circle-down")
+      ..className = "conversation-filters-toggle"
+      ..onClick.listen((_) => _view.appController.command(UIAction.toggleFiltersPanel, ToggleFiltersPanelData(false)));
+    conversationFilter.append(collapsePanelFilters);
   }
 
   set filter(String text) => _idInput.value = text;
