@@ -1,34 +1,45 @@
+rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    function isEmailVerified() {
-      return
-        request.auth != null &&
-        request.auth.token.email_verified;
-    }
+    match /projects/{project} {
+      function isEmailVerified() {
+        return
+          request.auth != null &&
+          request.auth.token.email_verified;
+      }
+      
+      function isEmailDomainAllowed() {
+        let allowedEmailDomainsRegex = get(/databases/$(database)/documents/projects/$(project)).data.allowedEmailDomainsRegex;
+        return request.auth.token.email.matches(allowedEmailDomainsRegex);
+      }
 
-    function isEmailDomainAllowed() {
-      return
-        request.auth.token.email.matches(".*@katikati.world$") ||
-        request.auth.token.email.matches(".*@lark.systems$");
-    }
-
-    function isUserAllowed() {
-      return exists(/databases/$(database)/documents/users/$(request.auth.token.email))
-    }
-
-    match /{collection}/{docId} {
-      allow read, write: if
-        isEmailVerified() &&
-        isEmailDomainAllowed() &&
-        isUserAllowed();
-
-      match /{nestedCollection2}/{nestedDocId2} {
-        allow read, write: if
+      function isUserListed() {
+        return exists(/databases/$(database)/documents/projects/$(project)/users/$(request.auth.token.email));
+      }
+      
+      function isUserAllowed() {
+        return 
           isEmailVerified() &&
           isEmailDomainAllowed() &&
-          isUserAllowed() &&
-          (collection != "tables" ||
-          docId != "uuid-table");
+          isUserListed();
+      }
+
+      allow read: if isUserAllowed();
+
+      match /user_presence/{user} {
+        allow read: if isUserAllowed();
+        allow write: if isUserAllowed() && user == request.auth.token.email;
+      }
+
+      match /{collection}/{docId} {
+        allow read: if isUserAllowed();
+
+        match /{nestedCollection}/{nestedDocId} {
+          allow read: if
+            isUserAllowed() &&
+            (collection != "tables" || docId != "uuid-table");
+        }
       }
     }
   }
