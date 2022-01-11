@@ -212,7 +212,6 @@ class TagManager {
     var editedTagGroups = editedTags.values.map((tag) => tag.groups).expand((e) => e); //.toList();
     var deletedTagGroups = deletedTags.values.map((tag) => tag.groups).expand((e) => e); //.toList();
     Set<String> setString = Set.from(List.from(editedTagGroups)..addAll(deletedTagGroups))..addAll(movedFromGroupIds);
-    window.console.error(setString);
     return setString;
   }
 
