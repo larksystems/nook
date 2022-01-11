@@ -196,6 +196,11 @@ class StandardMessagesManager {
   /// The messages that have been deleted and need to be saved, stored as a `Map<tagId, Tag>`.
   Map<String, model.SuggestedReply> deletedMessages = {};
 
+  /// The message IDs that are arrived from editedMessages, deletedMessages
+  Set<String> get unsavedMessageIds => editedMessages.entries.map((e) => e.value.docId).toSet()..addAll(deletedMessages.entries.map((e) => e.value.docId).toSet());
+  Set<String> get unsavedGroupIds => editedMessages.entries.map((e) => e.value.groupDescription).toSet()..addAll(deletedMessages.entries.map((e) => e.value.groupDescription).toSet());
+  Set<String> get unsavedCategoryIds => editedMessages.entries.map((e) => e.value.category).toSet()..addAll(deletedMessages.entries.map((e) => e.value.category).toSet());
+
   /// Returns whether there's any edited or deleted messages to be saved.
   bool get hasUnsavedMessages => editedMessages.isNotEmpty || deletedMessages.isNotEmpty;
 }

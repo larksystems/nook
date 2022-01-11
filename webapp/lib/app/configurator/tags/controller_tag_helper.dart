@@ -202,6 +202,19 @@ class TagManager {
   /// The tags that have been deleted and need to be saved, stored as a `Map<tagId, Tag>`.
   Map<String, model.Tag> deletedTags = {};
 
+  /// When a tag is moved across groups, we need to remember the origin group
+  Set<String> movedFromGroupIds = {};
+
+  /// Getters for unsaved tag Ids, group Ids derived from editedTags, deletedTags
+  Set<String> get unsavedTagIds => Set.from(List.from(editedTags.keys)..addAll(deletedTags.keys));
+  Set<String> get unsavedGroupIds {
+    window.console.error(movedFromGroupIds);
+    var editedTagGroups = editedTags.values.map((tag) => tag.groups).expand((e) => e); //.toList();
+    var deletedTagGroups = deletedTags.values.map((tag) => tag.groups).expand((e) => e); //.toList();
+    Set<String> setString = Set.from(List.from(editedTagGroups)..addAll(deletedTagGroups))..addAll(movedFromGroupIds);
+    return setString;
+  }
+
   /// Returns whether there's any edited or deleted tags to be saved.
-  bool get hasUnsavedTags => editedTags.isNotEmpty || deletedTags.isNotEmpty;
+  bool get hasUnsavedTags => editedTags.isNotEmpty || deletedTags.isNotEmpty || movedFromGroupIds.isNotEmpty;
 }

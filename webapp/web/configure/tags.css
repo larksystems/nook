@@ -74,6 +74,18 @@
   background-color: var(--lighter-background-color);
 }
 
+.text-edit.unsaved::before,
+.tag.unsaved::before {
+  font-family: "Font Awesome 5 Free";
+  content: "\f071";
+  display: inline-block;
+  padding-right: 3px;
+  vertical-align: middle;
+  color: var(--orange);
+  font-weight: 900;
+  margin-right: 3px;
+}
+
 .tag__text--dragging {
   z-index: 2;
 }

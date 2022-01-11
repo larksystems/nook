@@ -6,7 +6,7 @@ List<MenuItem> getMenuItems(model.Tag tag) {
   var copyId = DivElement()..innerText = "Copy ID";
   return [
     MenuItem(markAsImportant, () {
-      _view.appController.command(TagsConfigAction.updateTagType, new TagData(tag.tagId, newType: tagImportant ? model.TagType.normal : model.TagType.important));
+      _view.appController.command(TagsConfigAction.updateTagType, new TagData(tag.tagId, groupId: tag.groups.first, newType: tagImportant ? model.TagType.normal : model.TagType.important));
     }),
     MenuItem(copyId, () {
       window.navigator.clipboard.writeText(tag.tagId);
@@ -55,6 +55,16 @@ void _modifyTagsInView(Map<String, List<model.Tag>> tagsByCategory) {
       tagViewsById[tag.tagId] = new ConfigureTagView(tag.text, tag.docId, category, _tagTypeToKKStyle(tag.type), getMenuItems(tag));
     }
     (_view.groups.queryItem(category) as TagGroupView).modifyTags(tagViewsById);
+  }
+}
+
+void _updateUnsavedIndicators(Map<String, List<model.Tag>> tagsByGroup, Set<String> unsavedTagIds, Set<String> unsavedGroupIds) {
+  for (var category in tagsByGroup.keys) {
+    var categoryView = (_view.groups.queryItem(category) as TagGroupView);
+    categoryView.markAsUnsaved(unsavedGroupIds.contains(category));
+    categoryView.tagViewsById.keys.forEach((key) {
+      categoryView.tagViewsById[key].markAsUnsaved(unsavedTagIds.contains(key));
+    });
   }
 }
 

@@ -154,6 +154,10 @@ class TagGroupView extends AccordionItem {
   void showDuplicateWarningModal(String tagId, String text) {
     tagViewsById[tagId]?.showDuplicateTagsWarningModal(text);
   }
+
+  void markAsUnsaved(bool unsaved) {
+    editableTitle.renderElement.classes.toggle("unsaved", unsaved);
+  }
 }
 
 class ConfigureTagView extends TagView {
@@ -235,6 +239,10 @@ class ConfigureTagView extends TagView {
         }
       });
     };
+  }
+
+  void markAsUnsaved(bool unsaved) {
+    renderElement.classes.toggle("unsaved", unsaved);
   }
 }
 

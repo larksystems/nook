@@ -46,7 +46,25 @@ void _modifyMessagesInView(Map<String, Map<String, List<model.SuggestedReply>>> 
     for (var group in messagesByGroupByCategory[category].keys.toList()) {
       var groupView = categoryView.groupsByName[group];
       for (var message in messagesByGroupByCategory[category][group]) {
-        groupView.modifyMessage(message.suggestedReplyId, new StandardMessageView(message.suggestedReplyId, message.text, message.translation));
+        var messageView = new StandardMessageView(message.suggestedReplyId, message.text, message.translation);
+        groupView.modifyMessage(message.suggestedReplyId, messageView);
+      }
+    }
+  }
+}
+
+void _updateUnsavedIndicators(Map<String, MessageCategory> categories, Set<String> unsavedMessageIds, Set<String> unsavedGroupIds, Set<String> unsavedCategoryIds) {
+  for (var category in categories.keys) {
+    var categoryView = _view.categoriesByName[category];
+    categoryView.markAsUnsaved(unsavedCategoryIds.contains(category));
+
+    for (var group in categories[category].groups.keys) {
+      var groupView = categoryView.groupsByName[group];
+      groupView.markAsUnsaved(unsavedGroupIds.contains(group));
+
+      for (var message in categories[category].groups[group].messages.keys) {
+        var messageView = groupView.messagesById[message];
+        messageView.markAsUnsaved(unsavedMessageIds.contains(message));
       }
     }
   }
