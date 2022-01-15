@@ -8,30 +8,6 @@ class StandardMessagesManager {
 
   factory StandardMessagesManager() => _singleton;
 
-  int _lastStandardMessageSeqNo = 0;
-  int _lastStandardMessagesGroupSeqNo = 0;
-  int _lastStandardMessagesCategorySeqNo = 0;
-
-  int get lastStandardMessageSeqNo => _lastStandardMessageSeqNo;
-  int get nextStandardMessageSeqNo => ++_lastStandardMessageSeqNo;
-
-  int get lastStandardMessagesGroupSeqNo => _lastStandardMessagesGroupSeqNo;
-  int get nextStandardMessagesGroupSeqNo => ++_lastStandardMessagesGroupSeqNo;
-
-  int get lastStandardMessagesCategorySeqNo => _lastStandardMessagesCategorySeqNo;
-  int get nextStandardMessagesCategorySeqNo => ++_lastStandardMessagesCategorySeqNo;
-
-  void _updateLastStandardMessageSeqNo(int seqNo) {
-    if (seqNo < _lastStandardMessageSeqNo) return;
-    _lastStandardMessageSeqNo = seqNo;
-  }
-
-  void _updateLastStandardMessagesGroupSeqNo(String groupId) {
-    var seqNo = int.parse(groupId.split('reply-group-').last);
-    if (seqNo < _lastStandardMessagesGroupSeqNo) return;
-    _lastStandardMessagesGroupSeqNo = seqNo;
-  }
-
   int getNextIndexInGroup(String category, String groupId) {
     var standardMessagesInGroup = categories[category].groups[groupId].messages.values;
     var lastIndexInGroup = standardMessagesInGroup.fold(0, (previousValue, r) => previousValue > r.indexInGroup ? previousValue : r.indexInGroup);
@@ -51,7 +27,7 @@ class StandardMessagesManager {
       updateStandardMessage(standardMessage);
       return null;
     }
-    categories.putIfAbsent(standardMessage.category, () => new MessageCategory(standardMessage.category));
+    categories.putIfAbsent(standardMessage.category, () => new MessageCategory(standardMessage.categoryId, standardMessage.category));
     categories[standardMessage.category].groups.putIfAbsent(standardMessage.groupDescription, () => MessageGroup(standardMessage.groupId, standardMessage.groupDescription));
     categories[standardMessage.category].groups[standardMessage.groupDescription].messages[standardMessage.suggestedReplyId] = standardMessage;
     return standardMessage;
@@ -109,7 +85,7 @@ class StandardMessagesManager {
       ..text = ''
       ..translation = ''
       ..shortcut = ''
-      ..seqNumber = lastStandardMessageSeqNo
+      ..seqNumber = 0
       ..category = category
       ..groupId = categories[category].groups[groupDescription].groupId
       ..groupDescription = groupDescription
@@ -142,7 +118,7 @@ class StandardMessagesManager {
 
   MessageGroup createStandardMessagesGroup(String category, {String groupId, String groupDescription}) {
     var newGroupId = groupId ?? model.generateStandardMessageGroupId();
-    var newMessageGroup = new MessageGroup(newGroupId, groupDescription ?? "message group $nextStandardMessagesGroupSeqNo");
+    var newMessageGroup = new MessageGroup(newGroupId, groupDescription ?? "message group $newGroupId");
     categories[category].groups[newMessageGroup.groupDescription] = newMessageGroup;
     return newMessageGroup;
   }
@@ -165,8 +141,9 @@ class StandardMessagesManager {
   /// Creates a new messages category and returns its name.
   /// If [categoryName] is given, it will use that name, otherwise it will generate a placeholder name.
   String createStandardMessagesCategory([String categoryName]) {
-    var newCategoryName = categoryName ?? "message category $nextStandardMessagesCategorySeqNo";
-    var newCategory = new MessageCategory(newCategoryName);
+    var categoryId = model.generateStandardMessageCategoryId();
+    var newCategoryName = categoryName ?? "message category $categoryId";
+    var newCategory = new MessageCategory(categoryId, newCategoryName);
     categories[newCategoryName] = newCategory;
     return newCategoryName;
   }
@@ -207,15 +184,16 @@ class StandardMessagesManager {
 
 
 class MessageCategory {
+  String categoryId;
   String categoryName;
   Map<String, MessageGroup> groups = {};
 
-  MessageCategory(this.categoryName);
+  MessageCategory(this.categoryId ,this.categoryName);
 
   List<model.SuggestedReply> get messages => groups.values.fold([], (result, group) => result..addAll(group.messages.values));
 
   String toString() {
-    return 'MessageGroup($categoryName, $groups)';
+    return 'MessageGroup(${categoryId}, $categoryName, $groups)';
   }
 }
 
