@@ -189,8 +189,8 @@ class StandardMessagesManager {
 
   /// The message IDs that are arrived from editedMessages, deletedMessages
   Set<String> get unsavedMessageIds => editedMessages.entries.map((e) => e.value.docId).toSet()..addAll(deletedMessages.entries.map((e) => e.value.docId).toSet());
-  Set<String> get unsavedGroupIds => editedMessages.entries.map((e) => e.value.groupDescription).toSet()..addAll(deletedMessages.entries.map((e) => e.value.groupDescription).toSet());
-  Set<String> get unsavedCategoryIds => editedMessages.entries.map((e) => e.value.category).toSet()..addAll(deletedMessages.entries.map((e) => e.value.category).toSet());
+  Set<String> get unsavedGroupIds => editedMessages.entries.map((e) => e.value.groupId).toSet()..addAll(deletedMessages.entries.map((e) => e.value.groupId).toSet());
+  Set<String> get unsavedCategoryIds => editedMessages.entries.map((e) => e.value.categoryId).toSet()..addAll(deletedMessages.entries.map((e) => e.value.categoryId).toSet());
 
   /// Returns whether there's any edited or deleted messages to be saved.
   bool get hasUnsavedMessages => editedMessages.isNotEmpty || deletedMessages.isNotEmpty;
