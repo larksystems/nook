@@ -96,41 +96,58 @@ class MessagesConfiguratorController extends ConfiguratorController {
       case MessagesConfigAction.addStandardMessage:
         StandardMessageData messageData = data;
         var message = standardMessagesManager.createMessage(messageData.categoryId, messageData.category, messageData.groupId, messageData.group);
-
-        _addMessagesToView({
-          message.categoryId: {
-            message.groupId: [message]
-          }
-        });
+        var messageCategoryMap = {
+          message.categoryId: MessageCategory(messageData.categoryId, messageData.category)
+            ..groups = {
+              message.groupId: MessageGroup(messageData.groupId, messageData.group)
+            }
+        };
+        _addMessagesToView(messageCategoryMap);
         _updateUnsavedIndicators(standardMessagesManager.categories, standardMessagesManager.unsavedMessageIds, standardMessagesManager.unsavedGroupIds, standardMessagesManager.unsavedCategoryIds);
         break;
 
       case MessagesConfigAction.updateStandardMessage:
         StandardMessageData messageData = data;
         var standardMessage = standardMessagesManager.modifyMessage(messageData.messageId, messageData.text, messageData.translation);
-        _modifyMessagesInView({
-          standardMessage.categoryId: {
-            standardMessage.groupId: [standardMessage]
-          }
-        });
+        var messageCategoryMap = {
+          standardMessage.categoryId: MessageCategory(standardMessage.categoryId, standardMessage.category)
+            ..groups = {
+              standardMessage.groupId: MessageGroup(messageData.groupId, messageData.group)
+                ..messages = {
+                  standardMessage.docId: standardMessage
+                }
+            }
+        };
+        _modifyMessagesInView(messageCategoryMap);
         _updateUnsavedIndicators(standardMessagesManager.categories, standardMessagesManager.unsavedMessageIds, standardMessagesManager.unsavedGroupIds, standardMessagesManager.unsavedCategoryIds);
         break;
 
       case MessagesConfigAction.removeStandardMessage:
         StandardMessageData messageData = data;
         var standardMessage = standardMessagesManager.deleteMessage(messageData.messageId);
-        _removeMessagesFromView({
-          standardMessage.categoryId: {
-            standardMessage.groupId: [standardMessage]
-          }
-        });
+        var messageCategoryMap = {
+          standardMessage.categoryId: MessageCategory(standardMessage.categoryId, standardMessage.category)
+            ..groups = {
+              standardMessage.groupId: MessageGroup(messageData.groupId, messageData.group)
+                ..messages = {
+                  standardMessage.docId: standardMessage
+                }
+            }
+        };
+        _removeMessagesFromView(messageCategoryMap);
         _updateUnsavedIndicators(standardMessagesManager.categories, standardMessagesManager.unsavedMessageIds, standardMessagesManager.unsavedGroupIds, standardMessagesManager.unsavedCategoryIds);
         break;
 
       case MessagesConfigAction.addStandardMessagesGroup:
         StandardMessagesGroupData groupData = data;
         var newGroup = standardMessagesManager.createStandardMessagesGroup(groupData.categoryId, groupData.categoryName);
-        _addMessagesToView({groupData.categoryId: {newGroup.groupId: []}}, startEditingName: true);
+        var messageCategoryMap = {
+          groupData.categoryId: MessageCategory(groupData.categoryId, groupData.categoryName)
+            ..groups = {
+              newGroup.groupId: MessageGroup(newGroup.groupId, newGroup.groupName)
+            }
+        };
+        _addMessagesToView(messageCategoryMap, startEditingName: true);
         _updateUnsavedIndicators(standardMessagesManager.categories, standardMessagesManager.unsavedMessageIds, standardMessagesManager.unsavedGroupIds, standardMessagesManager.unsavedCategoryIds);
         break;
 
@@ -150,7 +167,10 @@ class MessagesConfiguratorController extends ConfiguratorController {
 
       case MessagesConfigAction.addStandardMessagesCategory:
         var newCategory = standardMessagesManager.createStandardMessagesCategory();
-        _addMessagesToView({newCategory.categoryId: {}}, startEditingName: true);
+        var messageCategoryMap = {
+          newCategory.categoryId: MessageCategory(newCategory.categoryId, newCategory.categoryName)
+        };
+        _addMessagesToView(messageCategoryMap, startEditingName: true);
         _updateUnsavedIndicators(standardMessagesManager.categories, standardMessagesManager.unsavedMessageIds, standardMessagesManager.unsavedGroupIds, standardMessagesManager.unsavedCategoryIds);
         break;
 
