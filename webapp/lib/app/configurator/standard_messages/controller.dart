@@ -99,7 +99,6 @@ class MessagesConfiguratorController extends ConfiguratorController {
         var groupName = standardMessagesManager.categories[messageData.categoryId].groups[messageData.groupId].groupName;
 
         var message = standardMessagesManager.createMessage(messageData.categoryId, categoryName, messageData.groupId, groupName);
-        // todo: unwanted map since we use only the category Id, group Id
         var messageCategoryMap = {
           message.categoryId: MessageCategory(messageData.categoryId, categoryName)
             ..groups = {

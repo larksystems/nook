@@ -80,7 +80,6 @@ Map<String, MessageCategory> _groupMessagesIntoCategoriesAndGroups(List<model.Su
     result[message.categoryId].groups.putIfAbsent(message.groupId, () => MessageGroup(message.groupId, message.groupDescription));
     result[message.categoryId].groups[message.groupId].messages.putIfAbsent(message.docId, () => message);
   }
-  // todo: bring back the sequence number
   for (String category in result.keys) {
     for (String group in result[category].groups.keys) {
       // TODO (mariana): once we've transitioned to using groups, we can remove the sequence number comparison
