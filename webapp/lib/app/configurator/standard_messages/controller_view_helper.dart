@@ -81,11 +81,11 @@ Map<String, MessageCategory> _groupMessagesIntoCategoriesAndGroups(List<model.Su
     result[message.categoryId].groups[message.groupId].messages.putIfAbsent(message.docId, () => message);
   }
   // todo: bring back the sequence number
-  // for (String category in result.keys) {
-  //   for (String group in result[category].keys) {
-  //     // TODO (mariana): once we've transitioned to using groups, we can remove the sequence number comparison
-  //     result[category][group].sort((message1, message2) => (message1.indexInGroup ?? message1.seqNumber).compareTo(message2.indexInGroup ?? message2.seqNumber));
-  //   }
-  // }
+  for (String category in result.keys) {
+    for (String group in result[category].groups.keys) {
+      // TODO (mariana): once we've transitioned to using groups, we can remove the sequence number comparison
+      result[category].groups[group].messages.values.toList().sort((message1, message2) => (message1.indexInGroup ?? message1.seqNumber).compareTo(message2.indexInGroup ?? message2.seqNumber));
+    }
+  }
   return result;
 }
