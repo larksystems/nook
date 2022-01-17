@@ -44,9 +44,10 @@ class MessagesConfigurationPageView extends ConfigurationPageView {
   }
 
   void renameCategory(String categoryId, String newCategoryName) {
-    var categoryView = _view.categoriesById.remove(categoryId); // why remove?
-    categoryView.id = categoryId;
-    categoryView.name = newCategoryName;
+    var categoryView = _view.categoriesById[categoryId];
+    categoryView
+      ..id = categoryId
+      ..name = newCategoryName;
     categoriesById[categoryId] = categoryView;
     categories.updateItem(categoryId, categoryView);
   }
@@ -127,8 +128,8 @@ class StandardMessagesCategoryView extends AccordionItem {
   }
 
   void renameGroup(String groupId, String newGroupName) {
-    var groupView = groupsById.remove(groupId);
-    // groupView.id = newGroupName;
+    var groupView = groupsById[groupId];
+    groupView._groupName = newGroupName;
     groupsById[groupId] = groupView;
     groups.updateItem(groupId, groupView);
   }
@@ -224,6 +225,8 @@ class StandardMessagesGroupView extends AccordionItem {
   void markAsUnsaved(bool unsaved) {
     editableTitle.renderElement.classes.toggle("unsaved", unsaved);
   }
+
+  // todo: add a message to reflect group name change
 }
 
 class StandardMessageView {

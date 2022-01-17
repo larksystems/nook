@@ -138,13 +138,12 @@ class StandardMessagesManager {
   }
 
   void renameStandardMessageGroup(String categoryId, String groupId, String newGroupName) {
-    var group = categories[categoryId].groups.remove(groupId); // todo: why remove?
+    var group = categories[categoryId].groups[groupId];
     group.groupName = newGroupName;
     for (var standardMessage in group.messages.values) {
       standardMessage.groupDescription = newGroupName;
       editedMessages[standardMessage.suggestedReplyId] = standardMessage;
     }
-    categories[categoryId].groups[groupId] = group;
   }
 
   void deleteStandardMessagesGroup(String categoryId, String groupId) {
@@ -165,13 +164,12 @@ class StandardMessagesManager {
   /// Renames a messages category and propagates the change to all the messages in that category.
   /// Also adds these messages to the list of messages that have been edited and need to be saved.
   void renameStandardMessageCategory(String categoryId, String newCategoryName) {
-    var category = categories.remove(categoryId);  // todo: why remove?
+    var category = categories[categoryId];
     category.categoryName = newCategoryName;
     for (var standardMessage in category.messages) {
       standardMessage.category = newCategoryName;
       editedMessages[standardMessage.suggestedReplyId] = standardMessage;
     }
-    categories[categoryId] = category;
   }
 
   /// Deletes the messages category with the given [categoryName], and the messages in that category.
