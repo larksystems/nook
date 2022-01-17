@@ -44,7 +44,7 @@ class MessagesConfigurationPageView extends ConfigurationPageView {
   }
 
   void renameCategory(String categoryId, String categoryName, String newCategoryName) {
-    var categoryView = _view.categoriesById.remove(categoriesById); // why remove?
+    var categoryView = _view.categoriesById.remove(categoryId); // why remove?
     categoryView.id = categoryId;
     categoryView.name = newCategoryName;
     categoriesById[categoryId] = categoryView;
@@ -84,7 +84,7 @@ class StandardMessagesCategoryView extends AccordionItem {
 
   Map<String, StandardMessagesGroupView> groupsById = {};
 
-  StandardMessagesCategoryView(String this._categoryId, this._categoryName, DivElement header, DivElement body) : super(_categoryName, header, body, false) {
+  StandardMessagesCategoryView(String this._categoryId, this._categoryName, DivElement header, DivElement body) : super(_categoryId, header, body, false) {
     _categoryName = _categoryName ?? '';
 
     editableTitle = TextEdit(_categoryName, removable: true)
@@ -109,7 +109,7 @@ class StandardMessagesCategoryView extends AccordionItem {
     groups = new Accordion([]);
     _standardMessagesGroupContainer.append(groups.renderElement);
 
-    _addButton = Button(ButtonType.add, hoverText: 'Add a new group of standard messages', onClick: (event) => _view.appController.command(MessagesConfigAction.addStandardMessagesGroup, new StandardMessagesGroupData(_categoryId, _categoryName, null, '')));
+    _addButton = Button(ButtonType.add, hoverText: 'Add a new group of standard messages', onClick: (event) => _view.appController.command(MessagesConfigAction.addStandardMessagesGroup, new StandardMessagesGroupData(_categoryId, _categoryName, null, 'New group')));
 
     body.append(_addButton.renderElement);
   }
@@ -130,7 +130,7 @@ class StandardMessagesCategoryView extends AccordionItem {
     var groupView = groupsById.remove(groupId);
     // groupView.id = newGroupName;
     groupsById[groupId] = groupView;
-    groups.updateItem(newGroupName, groupView);
+    groups.updateItem(groupId, groupView);
   }
 
   void removeGroup(String groupName) {
@@ -166,7 +166,7 @@ class StandardMessagesGroupView extends AccordionItem {
 
   Map<String, StandardMessageView> messagesById = {};
 
-  StandardMessagesGroupView(this._categoryId, this._categoryName, this._groupId, this._groupName, DivElement header, DivElement body) : super(_groupName, header, body, false) {
+  StandardMessagesGroupView(this._categoryId, this._categoryName, this._groupId, this._groupName, DivElement header, DivElement body) : super(_groupId, header, body, false) {
     editableTitle = TextEdit(_groupName, removable: true)
       ..testInput = (String value) {
         var messageManager = (_view.appController as MessagesConfiguratorController).standardMessagesManager;
@@ -187,7 +187,7 @@ class StandardMessagesGroupView extends AccordionItem {
 
     _addButton = Button(ButtonType.add);
     _addButton.renderElement.onClick.listen((e) {
-      _view.appController.command(MessagesConfigAction.addStandardMessage, new StandardMessageData('', groupId: _groupId, categoryId: _categoryId));
+      _view.appController.command(MessagesConfigAction.addStandardMessage, new StandardMessageData(null, groupId: _groupId, categoryId: _categoryId));
     });
 
     body.append(_addButton.renderElement);
