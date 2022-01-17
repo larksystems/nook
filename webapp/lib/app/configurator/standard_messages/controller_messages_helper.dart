@@ -147,7 +147,7 @@ class StandardMessagesManager {
     categories[categoryId].groups[groupId] = group;
   }
 
-  void deleteStandardMessagesGroup(String categoryId, String category, String groupId, String groupDescription) {
+  void deleteStandardMessagesGroup(String categoryId, String groupId) {
     var group = categories[categoryId].groups.remove(groupId);
     deletedMessages.addAll(group.messages);
   }
@@ -176,7 +176,7 @@ class StandardMessagesManager {
 
   /// Deletes the messages category with the given [categoryName], and the messages in that category.
   /// Also adds these messages to the list of messages to be deleted and need to be saved.
-  void deleteStandardMessagesCategory(String categoryId, String categoryName) {
+  void deleteStandardMessagesCategory(String categoryId) {
     var category = categories.remove(categoryId);
     deletedMessages.addEntries(category.messages.map((e) => MapEntry(e.suggestedReplyId, e)));
   }

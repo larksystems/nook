@@ -182,7 +182,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
 
       case MessagesConfigAction.removeStandardMessagesGroup:
         StandardMessagesGroupData groupData = data;
-        standardMessagesManager.deleteStandardMessagesGroup(groupData.categoryId, groupData.categoryName, groupData.groupId, groupData.groupName);
+        standardMessagesManager.deleteStandardMessagesGroup(groupData.categoryId, groupData.groupId);
         _view.categoriesById[groupData.categoryId].removeGroup(groupData.groupId);
         _updateUnsavedIndicators(standardMessagesManager.categories, standardMessagesManager.unsavedMessageIds, standardMessagesManager.unsavedGroupIds, standardMessagesManager.unsavedCategoryIds);
         break;
@@ -205,7 +205,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
 
       case MessagesConfigAction.removeStandardMessagesCategory:
         StandardMessagesCategoryData categoryData = data;
-        standardMessagesManager.deleteStandardMessagesCategory(categoryData.categoryId, categoryData.categoryName);
+        standardMessagesManager.deleteStandardMessagesCategory(categoryData.categoryId);
         _view.categories.removeItem(categoryData.categoryId);
         _updateUnsavedIndicators(standardMessagesManager.categories, standardMessagesManager.unsavedMessageIds, standardMessagesManager.unsavedGroupIds, standardMessagesManager.unsavedCategoryIds);
         break;
