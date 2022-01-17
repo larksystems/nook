@@ -43,7 +43,7 @@ class MessagesConfigurationPageView extends ConfigurationPageView {
     categoriesById[categoryId] = categoryView;
   }
 
-  void renameCategory(String categoryId, String categoryName, String newCategoryName) {
+  void renameCategory(String categoryId, String newCategoryName) {
     var categoryView = _view.categoriesById.remove(categoryId); // why remove?
     categoryView.id = categoryId;
     categoryView.name = newCategoryName;
@@ -126,7 +126,7 @@ class StandardMessagesCategoryView extends AccordionItem {
     groupsById[groupId] = standardMessagesGroupView;
   }
 
-  void renameGroup(String groupId, String groupName, String newGroupName) {
+  void renameGroup(String groupId, String newGroupName) {
     var groupView = groupsById.remove(groupId);
     // groupView.id = newGroupName;
     groupsById[groupId] = groupView;

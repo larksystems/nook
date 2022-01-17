@@ -175,8 +175,8 @@ class MessagesConfiguratorController extends ConfiguratorController {
 
       case MessagesConfigAction.updateStandardMessagesGroup:
         StandardMessagesGroupData groupData = data;
-        standardMessagesManager.renameStandardMessageGroup(groupData.categoryId, groupData.categoryName, groupData.groupId, groupData.groupName, groupData.newGroupName);
-        _view.categoriesById[groupData.categoryId].renameGroup(groupData.groupId, groupData.groupName, groupData.newGroupName);
+        standardMessagesManager.renameStandardMessageGroup(groupData.categoryId, groupData.groupId, groupData.newGroupName);
+        _view.categoriesById[groupData.categoryId].renameGroup(groupData.groupId, groupData.newGroupName);
         _updateUnsavedIndicators(standardMessagesManager.categories, standardMessagesManager.unsavedMessageIds, standardMessagesManager.unsavedGroupIds, standardMessagesManager.unsavedCategoryIds);
         break;
 
@@ -198,8 +198,8 @@ class MessagesConfiguratorController extends ConfiguratorController {
 
       case MessagesConfigAction.updateStandardMessagesCategory:
         StandardMessagesCategoryData categoryData = data;
-        standardMessagesManager.renameStandardMessageCategory(categoryData.categoryId, categoryData.categoryName, categoryData.newCategoryName);
-        _view.renameCategory(categoryData.categoryId, categoryData.categoryName, categoryData.newCategoryName);
+        standardMessagesManager.renameStandardMessageCategory(categoryData.categoryId, categoryData.newCategoryName);
+        _view.renameCategory(categoryData.categoryId, categoryData.newCategoryName);
         _updateUnsavedIndicators(standardMessagesManager.categories, standardMessagesManager.unsavedMessageIds, standardMessagesManager.unsavedGroupIds, standardMessagesManager.unsavedCategoryIds);
         break;
 
