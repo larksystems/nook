@@ -8,19 +8,6 @@ class StandardMessagesManager {
 
   factory StandardMessagesManager() => _singleton;
 
-  int _lastStandardMessageSeqNo = 0;
-  int _lastStandardMessagesGroupSeqNo = 0;
-  int _lastStandardMessagesCategorySeqNo = 0;
-
-  int get lastStandardMessageSeqNo => _lastStandardMessageSeqNo;
-  int get nextStandardMessageSeqNo => ++_lastStandardMessageSeqNo;
-
-  int get lastStandardMessagesGroupSeqNo => _lastStandardMessagesGroupSeqNo;
-  int get nextStandardMessagesGroupSeqNo => ++_lastStandardMessagesGroupSeqNo;
-
-  int get lastStandardMessagesCategorySeqNo => _lastStandardMessagesCategorySeqNo;
-  int get nextStandardMessagesCategorySeqNo => ++_lastStandardMessagesCategorySeqNo;
-
   int getNextIndexInGroup(String categoryId, String groupId) {
     var standardMessagesInGroup = categories[categoryId].groups[groupId].messages.values;
     var lastIndexInGroup = standardMessagesInGroup.fold(0, (previousValue, r) => previousValue > r.indexInGroup ? previousValue : r.indexInGroup);
@@ -98,7 +85,7 @@ class StandardMessagesManager {
       ..text = ''
       ..translation = ''
       ..shortcut = ''
-      ..seqNumber = lastStandardMessageSeqNo
+      ..seqNumber = 0
       ..categoryId = categoryId
       ..category = categoryName
       ..groupId = categories[categoryId].groups[groupId].groupId
@@ -132,7 +119,7 @@ class StandardMessagesManager {
 
   MessageGroup createStandardMessagesGroup(String categoryId, String category, {String groupId, String groupName}) {
     var newGroupId = groupId ?? model.generateStandardMessageGroupId();
-    var newMessageGroup = new MessageGroup(newGroupId, groupName ?? "message group $nextStandardMessagesGroupSeqNo");
+    var newMessageGroup = new MessageGroup(newGroupId, groupName ?? "message group $newGroupId");
     categories[categoryId].groups[newMessageGroup.groupId] = newMessageGroup;
     return newMessageGroup;
   }
@@ -154,8 +141,8 @@ class StandardMessagesManager {
   /// Creates a new messages category and return it.
   /// If [categoryName] is given, it will use that name, otherwise it will generate a placeholder name.
   MessageCategory createStandardMessagesCategory([String categoryName]) {
-    var newCategoryName = categoryName ?? "message category $nextStandardMessagesCategorySeqNo";
     var newCategoryId = model.generateStandardMessageCategoryId();
+    var newCategoryName = categoryName ?? "message category $newCategoryId";
     var newCategory = new MessageCategory(newCategoryId, newCategoryName);
     categories[newCategoryId] = newCategory;
     return newCategory;
