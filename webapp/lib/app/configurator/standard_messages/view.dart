@@ -21,7 +21,7 @@ class MessagesConfigurationPageView extends ConfigurationPageView {
 
   Accordion categories;
 
-  Map<String, StandardMessagesCategoryView> categoriesByName = {};
+  Map<String, StandardMessagesCategoryView> categoriesById = {};
 
   MessagesConfigurationPageView(MessagesConfiguratorController controller) : super(controller) {
     _view = this;
@@ -38,22 +38,23 @@ class MessagesConfigurationPageView extends ConfigurationPageView {
     configurationContent.append(_addButton.renderElement);
   }
 
-  void addCategory(String category, StandardMessagesCategoryView categoryView) {
+  void addCategory(String categoryId, StandardMessagesCategoryView categoryView) {
     categories.appendItem(categoryView);
-    categoriesByName[category] = categoryView;
+    categoriesById[categoryId] = categoryView;
   }
 
-  void renameCategory(String categoryName, String newCategoryName) {
-    var categoryView = _view.categoriesByName.remove(categoryName);
-    categoryView.id = newCategoryName;
-    categoryView.name = newCategoryName;
-    categoriesByName[newCategoryName] = categoryView;
-    categories.updateItem(newCategoryName, categoryView);
+  void renameCategory(String categoryId, String newCategoryName) {
+    var categoryView = _view.categoriesById[categoryId];
+    categoryView
+      ..id = categoryId
+      ..name = newCategoryName;
+    categoriesById[categoryId] = categoryView;
+    categories.updateItem(categoryId, categoryView);
   }
 
-  void removeCategory(String category) {
-    categories.removeItem(category);
-    categoriesByName.remove(category);
+  void removeCategory(String categoryId) {
+    categories.removeItem(categoryId);
+    categoriesById.remove(categoryId);
   }
 
   void clear() {
@@ -61,12 +62,12 @@ class MessagesConfigurationPageView extends ConfigurationPageView {
   }
 
   void clearUnsavedIndicators() {
-    categoriesByName.keys.forEach((categoryName) {
-      categoriesByName[categoryName].markAsUnsaved(false);
-      categoriesByName[categoryName].groupsByName.keys.forEach((groupName) {
-        categoriesByName[categoryName].groupsByName[groupName].markAsUnsaved(false);
-        categoriesByName[categoryName].groupsByName[groupName].messagesById.keys.forEach((messageId) {
-          categoriesByName[categoryName].groupsByName[groupName].messagesById[messageId].markAsUnsaved(false);
+    categoriesById.keys.forEach((categoryId) {
+      categoriesById[categoryId].markAsUnsaved(false);
+      categoriesById[categoryId].groupsById.keys.forEach((groupId) {
+        categoriesById[categoryId].groupsById[groupId].markAsUnsaved(false);
+        categoriesById[categoryId].groupsById[groupId].messagesById.keys.forEach((messageId) {
+          categoriesById[categoryId].groupsById[groupId].messagesById[messageId].markAsUnsaved(false);
         });
       });
     });
@@ -74,6 +75,7 @@ class MessagesConfigurationPageView extends ConfigurationPageView {
 }
 
 class StandardMessagesCategoryView extends AccordionItem {
+  String _categoryId;
   String _categoryName;
   DivElement _standardMessagesGroupContainer;
   Button _addButton;
@@ -81,9 +83,9 @@ class StandardMessagesCategoryView extends AccordionItem {
 
   Accordion groups;
 
-  Map<String, StandardMessagesGroupView> groupsByName = {};
+  Map<String, StandardMessagesGroupView> groupsById = {};
 
-  StandardMessagesCategoryView(this._categoryName, DivElement header, DivElement body) : super(_categoryName, header, body, false) {
+  StandardMessagesCategoryView(String this._categoryId, this._categoryName, DivElement header, DivElement body) : super(_categoryId, header, body, false) {
     _categoryName = _categoryName ?? '';
 
     editableTitle = TextEdit(_categoryName, removable: true)
@@ -94,7 +96,7 @@ class StandardMessagesCategoryView extends AccordionItem {
         return !categories.contains(value);
       }
       ..onEdit = (value) {
-        _view.appController.command(MessagesConfigAction.updateStandardMessagesCategory, new StandardMessagesCategoryData(_categoryName, newCategoryName: value));
+        _view.appController.command(MessagesConfigAction.updateStandardMessagesCategory, new StandardMessagesCategoryData(_categoryId, _categoryName, newCategoryName: value));
         _categoryName = value;
       }
       ..onDelete = () {
@@ -108,7 +110,7 @@ class StandardMessagesCategoryView extends AccordionItem {
     groups = new Accordion([]);
     _standardMessagesGroupContainer.append(groups.renderElement);
 
-    _addButton = Button(ButtonType.add, hoverText: 'Add a new group of standard messages', onClick: (event) => _view.appController.command(MessagesConfigAction.addStandardMessagesGroup, new StandardMessagesGroupData(_categoryName, '')));
+    _addButton = Button(ButtonType.add, hoverText: 'Add a new group of standard messages', onClick: (event) => _view.appController.command(MessagesConfigAction.addStandardMessagesGroup, new StandardMessagesGroupData(_categoryId, _categoryName, null, 'New group')));
 
     body.append(_addButton.renderElement);
   }
@@ -116,30 +118,30 @@ class StandardMessagesCategoryView extends AccordionItem {
   void set name(String value) => _categoryName = value;
   String get name => _categoryName;
 
-  void addGroup(String groupName, StandardMessagesGroupView standardMessagesGroupView, [int index]) {
+  void addGroup(String groupId, StandardMessagesGroupView standardMessagesGroupView, [int index]) {
     if (index == null || groups.items.length == index) {
       groups.appendItem(standardMessagesGroupView);
     } else {
       groups.insertItem(standardMessagesGroupView, index);
     }
-    groupsByName[groupName] = standardMessagesGroupView;
+    groupsById[groupId] = standardMessagesGroupView;
   }
 
-  void renameGroup(String groupName, String newGroupName) {
-    var groupView = groupsByName.remove(groupName);
-    groupView.id = newGroupName;
-    groupsByName[newGroupName] = groupView;
-    groups.updateItem(newGroupName, groupView);
+  void renameGroup(String groupId, String newGroupName) {
+    var groupView = groupsById[groupId];
+    groupView._groupName = newGroupName;
+    groupsById[groupId] = groupView;
+    groups.updateItem(groupId, groupView);
   }
 
   void removeGroup(String groupName) {
-    groupsByName[groupName].renderElement.remove();
-    groupsByName.remove(groupName);
+    groupsById[groupName].renderElement.remove();
+    groupsById.remove(groupName);
   }
 
   void requestToDelete() {
     expand();
-    var standardMessagesCategoryData = new StandardMessagesCategoryData(id);
+    var standardMessagesCategoryData = new StandardMessagesCategoryData(_categoryId, _categoryName);
     var removeWarningModal;
     removeWarningModal = new InlineOverlayModal('Are you sure you want to remove this category?', [
         new Button(ButtonType.text,
@@ -155,15 +157,18 @@ class StandardMessagesCategoryView extends AccordionItem {
 }
 
 class StandardMessagesGroupView extends AccordionItem {
+  String _categoryId;
   String _categoryName;
+  String _groupId;
+  String _groupName;
   DivElement _standardMessagesContainer;
   Button _addButton;
   TextEdit editableTitle;
 
   Map<String, StandardMessageView> messagesById = {};
 
-  StandardMessagesGroupView(this._categoryName, String groupName, DivElement header, DivElement body) : super(groupName, header, body, false) {
-    editableTitle = TextEdit(groupName, removable: true)
+  StandardMessagesGroupView(this._categoryId, this._categoryName, this._groupId, this._groupName, DivElement header, DivElement body) : super(_groupId, header, body, false) {
+    editableTitle = TextEdit(_groupName, removable: true)
       ..testInput = (String value) {
         var messageManager = (_view.appController as MessagesConfiguratorController).standardMessagesManager;
         var groups = messageManager.standardMessages.map((e) => e.group_description).toSet();
@@ -171,7 +176,7 @@ class StandardMessagesGroupView extends AccordionItem {
         return !groups.contains(value);
       }
       ..onEdit = (value) {
-        _view.appController.command(MessagesConfigAction.updateStandardMessagesGroup, new StandardMessagesGroupData(_categoryName, id, newGroupName: value));
+        _view.appController.command(MessagesConfigAction.updateStandardMessagesGroup, new StandardMessagesGroupData(_categoryId, _categoryName, _groupId, _groupName, newGroupName: value));
       }
       ..onDelete = () {
         requestToDelete();
@@ -183,31 +188,31 @@ class StandardMessagesGroupView extends AccordionItem {
 
     _addButton = Button(ButtonType.add);
     _addButton.renderElement.onClick.listen((e) {
-      _view.appController.command(MessagesConfigAction.addStandardMessage, new StandardMessageData('', group: id, category: _categoryName));
+      _view.appController.command(MessagesConfigAction.addStandardMessage, new StandardMessageData(null, groupId: _groupId, categoryId: _categoryId));
     });
 
     body.append(_addButton.renderElement);
   }
 
-  void addMessage(String id, StandardMessageView standardMessageView) {
+  void addMessage(String messageId, StandardMessageView standardMessageView) {
     _standardMessagesContainer.append(standardMessageView.renderElement);
-    messagesById[id] = standardMessageView;
+    messagesById[messageId] = standardMessageView;
   }
 
-  void modifyMessage(String id, StandardMessageView standardMessageView) {
-    _standardMessagesContainer.insertBefore(standardMessageView.renderElement, messagesById[id].renderElement);
-    messagesById[id].renderElement.remove();
-    messagesById[id] = standardMessageView;
+  void modifyMessage(String messageId, StandardMessageView standardMessageView) {
+    _standardMessagesContainer.insertBefore(standardMessageView.renderElement, messagesById[messageId].renderElement);
+    messagesById[messageId].renderElement.remove();
+    messagesById[messageId] = standardMessageView;
   }
 
-  void removeMessage(String id) {
-    messagesById[id].renderElement.remove();
-    messagesById.remove(id);
+  void removeMessage(String messageId) {
+    messagesById[messageId].renderElement.remove();
+    messagesById.remove(messageId);
   }
 
   void requestToDelete() {
     expand();
-    var standardMessagesGroupData = new StandardMessagesGroupData(_categoryName, id);
+    var standardMessagesGroupData = new StandardMessagesGroupData(_categoryId, _categoryName, _groupId, _groupName);
     var removeWarningModal;
     removeWarningModal = new InlineOverlayModal('Are you sure you want to remove this group?', [
         new Button(ButtonType.text,
@@ -220,18 +225,20 @@ class StandardMessagesGroupView extends AccordionItem {
   void markAsUnsaved(bool unsaved) {
     editableTitle.renderElement.classes.toggle("unsaved", unsaved);
   }
+
+  // todo: add a message to reflect group name change
 }
 
 class StandardMessageView {
   Element _standardMessageElement;
 
-  StandardMessageView(String id, String text, String translation) {
+  StandardMessageView(String messageId, String text, String translation) {
     _standardMessageElement = new DivElement()
       ..classes.add('standard-message')
-      ..dataset['id'] = '$id';
+      ..dataset['id'] = '$messageId';
 
-    var textView = new MessageView(text, (text) => _view.appController.command(MessagesConfigAction.updateStandardMessage, new StandardMessageData(id, text: text)));
-    var translationView = new MessageView(translation, (translation) => _view.appController.command(MessagesConfigAction.updateStandardMessage, new StandardMessageData(id, translation: translation)), placeholder: '(optional) Translate the message in a secondary language here');
+    var textView = new MessageView(text, (text) => _view.appController.command(MessagesConfigAction.updateStandardMessage, new StandardMessageData(messageId, text: text)));
+    var translationView = new MessageView(translation, (translation) => _view.appController.command(MessagesConfigAction.updateStandardMessage, new StandardMessageData(messageId, translation: translation)), placeholder: '(optional) Translate the message in a secondary language here');
     _standardMessageElement
       ..append(textView.renderElement)
       ..append(translationView.renderElement);
@@ -241,7 +248,7 @@ class StandardMessageView {
       var removeWarningModal;
       removeWarningModal = new InlineOverlayModal('Are you sure you want to remove this message?', [
         new Button(ButtonType.text,
-            buttonText: 'Yes', onClick: (_) => _view.appController.command(MessagesConfigAction.removeStandardMessage, new StandardMessageData(id))),
+            buttonText: 'Yes', onClick: (_) => _view.appController.command(MessagesConfigAction.removeStandardMessage, new StandardMessageData(messageId))),
         new Button(ButtonType.text, buttonText: 'No', onClick: (_) => removeWarningModal.remove()),
       ]);
       removeWarningModal.parent = _standardMessageElement;
