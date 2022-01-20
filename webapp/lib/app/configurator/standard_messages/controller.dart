@@ -115,18 +115,8 @@ class MessagesConfiguratorController extends ConfiguratorController {
       case MessagesConfigAction.updateStandardMessage:
         StandardMessageData messageData = data;
         var standardMessage = standardMessagesManager.modifyMessage(messageData.messageId, messageData.text, messageData.translation);
-        String categoryName;
-        String groupName;
-        for(var category in standardMessagesManager.categories.values) {
-          for(var group in category.groups.values) {
-            var messageIds = group.messages.keys;
-            if (messageIds.contains(messageData.messageId)) {
-              categoryName = category.categoryName;
-              groupName = group.groupName;
-              break;
-            }
-          }
-        }
+        var categoryName = standardMessagesManager.categories[standardMessage.categoryId].categoryName;
+        var groupName = standardMessagesManager.categories[standardMessage.categoryId].groups[standardMessage.groupId].groupName;
 
         // todo: unwanted map since we use only the category Id, group Id
         var messageCategoryMap = {
