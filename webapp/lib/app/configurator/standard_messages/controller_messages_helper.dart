@@ -8,8 +8,8 @@ class StandardMessagesManager {
 
   factory StandardMessagesManager() => _singleton;
 
-  int getNextIndexInGroup(String category, String groupId) {
-    var standardMessagesInGroup = categories[category].groups[groupId].messages.values;
+  int getNextIndexInGroup(String categoryId, String groupId) {
+    var standardMessagesInGroup = categories[categoryId].groups[groupId].messages.values;
     var lastIndexInGroup = standardMessagesInGroup.fold(0, (previousValue, r) => previousValue > r.indexInGroup ? previousValue : r.indexInGroup);
     return lastIndexInGroup + 1;
   }
@@ -119,7 +119,7 @@ class StandardMessagesManager {
 
   MessageGroup createStandardMessagesGroup(String categoryId, String category, {String groupId, String groupName}) {
     var newGroupId = groupId ?? model.generateStandardMessageGroupId();
-    var newMessageGroup = new MessageGroup(newGroupId, groupName ?? "message group $groupId");
+    var newMessageGroup = new MessageGroup(newGroupId, groupName ?? "message group $newGroupId");
     categories[categoryId].groups[newMessageGroup.groupId] = newMessageGroup;
     return newMessageGroup;
   }
