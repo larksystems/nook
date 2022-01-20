@@ -27,9 +27,9 @@ class StandardMessagesManager {
       updateStandardMessage(standardMessage);
       return null;
     }
-    categories.putIfAbsent(standardMessage.category, () => new MessageCategory(standardMessage.categoryId, standardMessage.category));
-    categories[standardMessage.category].groups.putIfAbsent(standardMessage.groupDescription, () => MessageGroup(standardMessage.groupId, standardMessage.groupDescription));
-    categories[standardMessage.category].groups[standardMessage.groupDescription].messages[standardMessage.suggestedReplyId] = standardMessage;
+    categories.putIfAbsent(standardMessage.categoryId, () => new MessageCategory(standardMessage.categoryId, standardMessage.category));
+    categories[standardMessage.categoryId].groups.putIfAbsent(standardMessage.groupId, () => MessageGroup(standardMessage.groupId, standardMessage.groupDescription));
+    categories[standardMessage.categoryId].groups[standardMessage.groupId].messages[standardMessage.suggestedReplyId] = standardMessage;
     return standardMessage;
   }
 
@@ -66,7 +66,7 @@ class StandardMessagesManager {
       return null;
     }
     var oldStandardMessage = standardMessages.singleWhere((element) => element.suggestedReplyId == standardMessage.suggestedReplyId);
-    categories[oldStandardMessage.category].groups[oldStandardMessage.groupDescription].messages.remove(oldStandardMessage.suggestedReplyId);
+    categories[oldStandardMessage.categoryId].groups[oldStandardMessage.groupId].messages.remove(oldStandardMessage.suggestedReplyId);
     return standardMessage;
   }
 
@@ -79,24 +79,25 @@ class StandardMessagesManager {
     return removed;
   }
 
-  model.SuggestedReply createMessage(String category, String groupDescription) {
+  model.SuggestedReply createMessage(String categoryId, String categoryName, String groupId, String groupName) {
     var newStandardMessage = model.SuggestedReply()
       ..docId = model.generateStandardMessageId()
       ..text = ''
       ..translation = ''
       ..shortcut = ''
       ..seqNumber = 0
-      ..category = category
-      ..groupId = categories[category].groups[groupDescription].groupId
-      ..groupDescription = groupDescription
-      ..indexInGroup = getNextIndexInGroup(category, groupDescription);
+      ..categoryId = categoryId
+      ..category = categoryName
+      ..groupId = categories[categoryId].groups[groupId].groupId
+      ..groupDescription = groupName
+      ..indexInGroup = getNextIndexInGroup(categoryId, groupId);
     addStandardMessage(newStandardMessage);
     editedMessages[newStandardMessage.suggestedReplyId] = newStandardMessage;
     return newStandardMessage;
   }
 
-  model.SuggestedReply modifyMessage(String id, String text, String translation) {
-    var message = standardMessages.singleWhere((element) => element.suggestedReplyId == id);
+  model.SuggestedReply modifyMessage(String messageId, String text, String translation) {
+    var message = standardMessages.singleWhere((element) => element.suggestedReplyId == messageId);
     if (text != null) {
       message.text = text;
     }
@@ -108,62 +109,60 @@ class StandardMessagesManager {
     return message;
   }
 
-  model.SuggestedReply deleteMessage(String id) {
-    var message = standardMessages.singleWhere((element) => element.suggestedReplyId == id);
+  model.SuggestedReply deleteMessage(String messageId) {
+    var message = standardMessages.singleWhere((element) => element.suggestedReplyId == messageId);
     removeStandardMessage(message);
-    editedMessages.remove(id);
-    deletedMessages[id] = message;
+    editedMessages.remove(messageId);
+    deletedMessages[messageId] = message;
     return message;
   }
 
-  MessageGroup createStandardMessagesGroup(String category, {String groupId, String groupDescription}) {
+  MessageGroup createStandardMessagesGroup(String categoryId, String category, {String groupId, String groupName}) {
     var newGroupId = groupId ?? model.generateStandardMessageGroupId();
-    var newMessageGroup = new MessageGroup(newGroupId, groupDescription ?? "message group $newGroupId");
-    categories[category].groups[newMessageGroup.groupDescription] = newMessageGroup;
+    var newMessageGroup = new MessageGroup(newGroupId, groupName ?? "message group $groupId");
+    categories[categoryId].groups[newMessageGroup.groupId] = newMessageGroup;
     return newMessageGroup;
   }
 
-  void renameStandardMessageGroup(String category, String groupDescription, String newGroupDescription) {
-    var group = categories[category].groups.remove(groupDescription);
-    group.groupDescription = newGroupDescription;
+  void renameStandardMessageGroup(String categoryId, String groupId, String newGroupName) {
+    var group = categories[categoryId].groups[groupId];
+    group.groupName = newGroupName;
     for (var standardMessage in group.messages.values) {
-      standardMessage.groupDescription = newGroupDescription;
+      standardMessage.groupDescription = newGroupName;
       editedMessages[standardMessage.suggestedReplyId] = standardMessage;
     }
-    categories[category].groups[newGroupDescription] = group;
   }
 
-  void deleteStandardMessagesGroup(String category, String groupDescription) {
-    var group = categories[category].groups.remove(groupDescription);
+  void deleteStandardMessagesGroup(String categoryId, String groupId) {
+    var group = categories[categoryId].groups.remove(groupId);
     deletedMessages.addAll(group.messages);
   }
 
-  /// Creates a new messages category and returns its name.
+  /// Creates a new messages category and return it.
   /// If [categoryName] is given, it will use that name, otherwise it will generate a placeholder name.
-  String createStandardMessagesCategory([String categoryName]) {
-    var categoryId = model.generateStandardMessageCategoryId();
-    var newCategoryName = categoryName ?? "message category $categoryId";
-    var newCategory = new MessageCategory(categoryId, newCategoryName);
-    categories[newCategoryName] = newCategory;
-    return newCategoryName;
+  MessageCategory createStandardMessagesCategory([String categoryName]) {
+    var newCategoryId = model.generateStandardMessageCategoryId();
+    var newCategoryName = categoryName ?? "message category $newCategoryId";
+    var newCategory = new MessageCategory(newCategoryId, newCategoryName);
+    categories[newCategoryId] = newCategory;
+    return newCategory;
   }
 
   /// Renames a messages category and propagates the change to all the messages in that category.
   /// Also adds these messages to the list of messages that have been edited and need to be saved.
-  void renameStandardMessageCategory(String categoryName, String newCategoryName) {
-    var category = categories.remove(categoryName);
+  void renameStandardMessageCategory(String categoryId, String newCategoryName) {
+    var category = categories[categoryId];
     category.categoryName = newCategoryName;
     for (var standardMessage in category.messages) {
       standardMessage.category = newCategoryName;
       editedMessages[standardMessage.suggestedReplyId] = standardMessage;
     }
-    categories[newCategoryName] = category;
   }
 
   /// Deletes the messages category with the given [categoryName], and the messages in that category.
   /// Also adds these messages to the list of messages to be deleted and need to be saved.
-  void deleteStandardMessagesCategory(String categoryName) {
-    var category = categories.remove(categoryName);
+  void deleteStandardMessagesCategory(String categoryId) {
+    var category = categories.remove(categoryId);
     deletedMessages.addEntries(category.messages.map((e) => MapEntry(e.suggestedReplyId, e)));
   }
 
@@ -175,8 +174,8 @@ class StandardMessagesManager {
 
   /// The message IDs that are arrived from editedMessages, deletedMessages
   Set<String> get unsavedMessageIds => editedMessages.entries.map((e) => e.value.docId).toSet()..addAll(deletedMessages.entries.map((e) => e.value.docId).toSet());
-  Set<String> get unsavedGroupIds => editedMessages.entries.map((e) => e.value.groupDescription).toSet()..addAll(deletedMessages.entries.map((e) => e.value.groupDescription).toSet());
-  Set<String> get unsavedCategoryIds => editedMessages.entries.map((e) => e.value.category).toSet()..addAll(deletedMessages.entries.map((e) => e.value.category).toSet());
+  Set<String> get unsavedGroupIds => editedMessages.entries.map((e) => e.value.groupId).toSet()..addAll(deletedMessages.entries.map((e) => e.value.groupId).toSet());
+  Set<String> get unsavedCategoryIds => editedMessages.entries.map((e) => e.value.categoryId).toSet()..addAll(deletedMessages.entries.map((e) => e.value.categoryId).toSet());
 
   /// Returns whether there's any edited or deleted messages to be saved.
   bool get hasUnsavedMessages => editedMessages.isNotEmpty || deletedMessages.isNotEmpty;
@@ -188,24 +187,24 @@ class MessageCategory {
   String categoryName;
   Map<String, MessageGroup> groups = {};
 
-  MessageCategory(this.categoryId ,this.categoryName);
+  MessageCategory(this.categoryId, this.categoryName);
 
   List<model.SuggestedReply> get messages => groups.values.fold([], (result, group) => result..addAll(group.messages.values));
 
   String toString() {
-    return 'MessageGroup(${categoryId}, $categoryName, $groups)';
+    return 'MessageGroup($categoryId, $categoryName, $groups)';
   }
 }
 
 class MessageGroup {
   String groupId;
-  String groupDescription;
+  String groupName;
   Map<String, model.SuggestedReply> messages = {};
 
-  MessageGroup(this.groupId, this.groupDescription);
+  MessageGroup(this.groupId, this.groupName);
 
   @override
   String toString() {
-    return 'MessageGroup($groupId, $groupDescription, ${messages.length})';
+    return 'MessageGroup($groupId, $groupName, ${messages.length})';
   }
 }
