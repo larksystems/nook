@@ -83,7 +83,7 @@ Map<String, MessageCategory> _groupMessagesIntoCategoriesAndGroups(List<model.Su
   for (String category in result.keys) {
     for (String group in result[category].groups.keys) {
       // TODO (mariana): once we've transitioned to using groups, we can remove the sequence number comparison
-      result[category].groups[group].messages.values.toList().sort((message1, message2) => (message1.indexInGroup ?? message1.seqNumber).compareTo(message2.indexInGroup ?? message2.seqNumber));
+      result[category].groups[group].messages.values.toList().sort((message1, message2) => (message1.indexInGroup).compareTo(message2.indexInGroup));
     }
   }
   return result;

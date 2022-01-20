@@ -165,7 +165,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
         var messageCategoryMap = {
           groupData.categoryId: MessageCategory(groupData.categoryId, groupData.categoryName)
             ..groups = {
-              newGroup.groupId: MessageGroup(newGroup.groupId ?? model.generateStandardMessageGroupId(), newGroup.groupName)
+              newGroup.groupId: MessageGroup(newGroup.groupId, newGroup.groupName)
             }
         };
         _addMessagesToView(messageCategoryMap, startEditingName: true);
