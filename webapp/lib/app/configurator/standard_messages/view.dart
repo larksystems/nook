@@ -110,7 +110,9 @@ class StandardMessagesCategoryView extends AccordionItem {
     groups = new Accordion([]);
     _standardMessagesGroupContainer.append(groups.renderElement);
 
-    _addButton = Button(ButtonType.add, hoverText: 'Add a new group of standard messages', onClick: (event) => _view.appController.command(MessagesConfigAction.addStandardMessagesGroup, new StandardMessagesGroupData(_categoryId, _categoryName, null, 'New group')));
+    _addButton = Button(ButtonType.add, 
+      hoverText: 'Add a new group of standard messages', 
+      onClick: (event) => _view.appController.command(MessagesConfigAction.addStandardMessagesGroup, new StandardMessagesGroupData(_categoryId, _categoryName, null, null, 'New group', null)));
 
     body.append(_addButton.renderElement);
   }
@@ -119,6 +121,7 @@ class StandardMessagesCategoryView extends AccordionItem {
   String get name => _categoryName;
 
   void addGroup(String groupId, StandardMessagesGroupView standardMessagesGroupView, [int index]) {
+    // todo: test for multiple groups added from firebase at the same time after adding a group by
     if (index == null || groups.items.length == index) {
       groups.appendItem(standardMessagesGroupView);
     } else {
@@ -176,7 +179,7 @@ class StandardMessagesGroupView extends AccordionItem {
         return !groups.contains(value);
       }
       ..onEdit = (value) {
-        _view.appController.command(MessagesConfigAction.updateStandardMessagesGroup, new StandardMessagesGroupData(_categoryId, _categoryName, _groupId, _groupName, newGroupName: value));
+        _view.appController.command(MessagesConfigAction.updateStandardMessagesGroup, new StandardMessagesGroupData(_categoryId, _categoryName, null, _groupId, _groupName, null, newGroupName: value));
       }
       ..onDelete = () {
         requestToDelete();
@@ -195,6 +198,7 @@ class StandardMessagesGroupView extends AccordionItem {
   }
 
   void addMessage(String messageId, StandardMessageView standardMessageView) {
+    // todo: append after last
     _standardMessagesContainer.append(standardMessageView.renderElement);
     messagesById[messageId] = standardMessageView;
   }
@@ -212,7 +216,7 @@ class StandardMessagesGroupView extends AccordionItem {
 
   void requestToDelete() {
     expand();
-    var standardMessagesGroupData = new StandardMessagesGroupData(_categoryId, _categoryName, _groupId, _groupName);
+    var standardMessagesGroupData = new StandardMessagesGroupData(_categoryId, _categoryName, null, _groupId, _groupName, null);
     var removeWarningModal;
     removeWarningModal = new InlineOverlayModal('Are you sure you want to remove this group?', [
         new Button(ButtonType.text,
