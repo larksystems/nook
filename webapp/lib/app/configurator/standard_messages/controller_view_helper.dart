@@ -47,9 +47,13 @@ void _removeMessagesFromView(List<model.SuggestedReply> messages) {
 
 void _modifyMessagesInView(List<model.SuggestedReply> messages) {
   for (var message in messages) {
-    var groupView = _view.categoriesById[message.categoryId].groupsById[message.groupId];
+    var categoryView = _view.categoriesById[message.categoryId];
+    var groupView = categoryView.groupsById[message.groupId];
     var messageView = new StandardMessageView(message.suggestedReplyId, message.text, message.translation);
     groupView.modifyMessage(message.suggestedReplyId, messageView);
+    
+    categoryView.updateName(message.categoryName);
+    groupView.updateName(message.groupName);
   }
 }
 

@@ -120,6 +120,12 @@ class StandardMessagesCategoryView extends AccordionItem {
   void set name(String value) => _categoryName = value;
   String get name => _categoryName;
 
+  void updateName(String newCategoryName) {
+    if (_categoryName.compareTo(newCategoryName) != 0) {
+      editableTitle.updateText(newCategoryName);
+    }
+  }
+
   void addGroup(String groupId, StandardMessagesGroupView standardMessagesGroupView, [int index]) {
     // todo: test for multiple groups added from firebase at the same time after adding a group by
     if (index == null || groups.items.length <= index) {
@@ -197,7 +203,6 @@ class StandardMessagesGroupView extends AccordionItem {
   }
 
   void addMessage(String messageId, StandardMessageView standardMessageView) {
-    // todo: append after last
     _standardMessagesContainer.append(standardMessageView.renderElement);
     messagesById[messageId] = standardMessageView;
   }
@@ -206,6 +211,12 @@ class StandardMessagesGroupView extends AccordionItem {
     _standardMessagesContainer.insertBefore(standardMessageView.renderElement, messagesById[messageId].renderElement);
     messagesById[messageId].renderElement.remove();
     messagesById[messageId] = standardMessageView;
+  }
+
+  void updateName(String newGroupName) {
+    if (_groupName.compareTo(newGroupName) != 0) {
+      editableTitle.updateText(newGroupName);
+    }
   }
 
   void removeMessage(String messageId) {
