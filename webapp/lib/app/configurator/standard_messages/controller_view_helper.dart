@@ -21,9 +21,8 @@ void _addMessagesToView(Map<String, MessageCategory> messagesByGroupByCategory, 
     List<String> groupIds = groups.map((g) => g.groupId).toList();
     for (var groupId in groupIds) {
       if (categoryView.groups.queryItem(groupId) == null) {
-        var categoryName = messagesByGroupByCategory[categoryId].categoryName;
         var groupName = messagesByGroupByCategory[categoryId].groups[groupId].groupName;
-        categoryView.addGroup(groupId, new StandardMessagesGroupView(categoryId, categoryName, groupId, groupName, DivElement(), DivElement()), groupIndex);
+        categoryView.addGroup(groupId, new StandardMessagesGroupView(categoryId, groupId, groupName, DivElement(), DivElement()), groupIndex);
         if (startEditingName) {
           categoryView.groupsById[groupId].expand();
           categoryView.groupsById[groupId].editableTitle.beginEdit(selectAllOnFocus: true);

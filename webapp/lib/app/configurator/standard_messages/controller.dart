@@ -28,49 +28,39 @@ enum MessagesConfigAction {
 }
 
 class StandardMessageData extends Data {
+  String categoryId;
+  String groupId;
   String messageId;
   String text;
   String translation;
-  int indexInGroup;
-  String groupId;
-  String group;
-  int groupIndexInCategory;
-  String categoryId;
-  String category;
-  int categoryIndex;
-  StandardMessageData(this.messageId, {this.text, this.translation, this.indexInGroup, this.groupId, this.group, this.groupIndexInCategory, this.categoryId, this.category, this.categoryIndex});
+  StandardMessageData(this.messageId, {this.text, this.translation, this.groupId, this.categoryId});
 
   @override
   String toString() {
-    return "StandardMessageData($messageId, '$text', '$translation', $indexInGroup, $groupId, $group, $groupIndexInCategory, $categoryId, $category, $categoryIndex";
+    return "StandardMessageData(messageId: $messageId, groupId: $groupId, categoryId: $categoryId, '$text', '$translation'";
   }
 }
 
 class StandardMessagesGroupData extends Data {
-  String groupId;
-  String groupName;
-  String newGroupName;
   String categoryId;
-  String categoryName;
-  int categoryIndex;
-  int groupIndexInCategory;
-  StandardMessagesGroupData(this.categoryId, this.categoryName, this.categoryIndex, this.groupId, this.groupName, this.groupIndexInCategory, {this.newGroupName});
+  String groupId;
+  String newGroupName;
+  StandardMessagesGroupData(this.categoryId, this.groupId, {this.newGroupName});
 
   @override
   String toString() {
-    return "StandardMessagesGroupData($categoryId, $categoryName, $groupId, $groupName, '$newGroupName')";
+    return "StandardMessagesGroupData(groupId: $groupId, categoryId: $categoryId, '$newGroupName')";
   }
 }
 
 class StandardMessagesCategoryData extends Data {
   String categoryId;
-  String categoryName;
   String newCategoryName;
-  StandardMessagesCategoryData(this.categoryId, category, {this.newCategoryName});
+  StandardMessagesCategoryData(this.categoryId, {this.newCategoryName});
 
   @override
   String toString() {
-    return "StandardMessagesCategoryData($categoryId, $categoryName, '$newCategoryName')";
+    return "StandardMessagesCategoryData($categoryId, '$newCategoryName')";
   }
 }
 
@@ -100,16 +90,19 @@ class MessagesConfiguratorController extends ConfiguratorController {
     switch (action) {
       case MessagesConfigAction.addStandardMessage:
         StandardMessageData messageData = data;
-        var category = standardMessagesManager.categories[messageData.categoryId];
-        var group = standardMessagesManager.categories[messageData.categoryId].groups[messageData.groupId];
+        var categoryId = messageData.categoryId;
+        var groupId = messageData.groupId;
 
-        var message = standardMessagesManager.createMessage(messageData.categoryId, category.categoryName, category.categoryIndex, messageData.groupId, group.groupName, group.groupIndexInCategory);
+        var category = standardMessagesManager.categories[categoryId];
+        var group = standardMessagesManager.categories[categoryId].groups[groupId];
+        var standardMessage = standardMessagesManager.createMessage(category.categoryId, category.categoryName, category.categoryIndex, group.groupId, group.groupName, group.groupIndexInCategory);
+
         var messageCategoryMap = {
-          message.categoryId: MessageCategory(messageData.categoryId, category.categoryName, messageData.categoryIndex)
+          category.categoryId: MessageCategory(category.categoryId, category.categoryName, category.categoryIndex)
             ..groups = {
-              message.groupId: MessageGroup(messageData.groupId, group.groupName, messageData.groupIndexInCategory)
+              group.groupId: MessageGroup(group.groupId, group.groupName, group.groupIndexInCategory)
                 ..messages = {
-                  message.docId: message
+                  standardMessage.docId: standardMessage
                 }
             }
         };
@@ -120,14 +113,11 @@ class MessagesConfiguratorController extends ConfiguratorController {
       case MessagesConfigAction.updateStandardMessage:
         StandardMessageData messageData = data;
         var standardMessage = standardMessagesManager.modifyMessage(messageData.messageId, messageData.text, messageData.translation);
-        var categoryName = standardMessagesManager.categories[standardMessage.categoryId].categoryName;
-        var groupName = standardMessagesManager.categories[standardMessage.categoryId].groups[standardMessage.groupId].groupName;
-
         // todo: unwanted map since we use only the category Id, group Id
         var messageCategoryMap = {
-          standardMessage.categoryId: MessageCategory(standardMessage.categoryId, categoryName, messageData.categoryIndex)
+          standardMessage.categoryId: MessageCategory(standardMessage.categoryId, standardMessage.categoryName, standardMessage.categoryIndex)
             ..groups = {
-              standardMessage.groupId: MessageGroup(messageData.groupId, groupName, messageData.groupIndexInCategory)
+              standardMessage.groupId: MessageGroup(standardMessage.groupId, standardMessage.groupName, standardMessage.groupIndexInCategory)
                 ..messages = {
                   standardMessage.docId: standardMessage
                 }
@@ -143,7 +133,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
         var messageCategoryMap = {
           standardMessage.categoryId: MessageCategory(standardMessage.categoryId, standardMessage.category, standardMessage.categoryIndex)
             ..groups = {
-              standardMessage.groupId: MessageGroup(messageData.groupId, messageData.group, messageData.groupIndexInCategory )
+              standardMessage.groupId: MessageGroup(standardMessage.groupId, standardMessage.groupName, standardMessage.groupIndexInCategory )
                 ..messages = {
                   standardMessage.docId: standardMessage
                 }
@@ -156,9 +146,10 @@ class MessagesConfiguratorController extends ConfiguratorController {
 
       case MessagesConfigAction.addStandardMessagesGroup:
         StandardMessagesGroupData groupData = data;
-        var newGroup = standardMessagesManager.createStandardMessagesGroup(groupData.categoryId, groupData.categoryName);
+        var category = standardMessagesManager.categories[groupData.categoryId];
+        var newGroup = standardMessagesManager.createStandardMessagesGroup(category.categoryId, category.categoryName);
         var messageCategoryMap = {
-          groupData.categoryId: MessageCategory(groupData.categoryId, groupData.categoryName, groupData.categoryIndex)
+          category.categoryId: MessageCategory(category.categoryId, category.categoryName, category.categoryIndex)
             ..groups = {
               newGroup.groupId: MessageGroup(newGroup.groupId, newGroup.groupName, newGroup.groupIndexInCategory)
             }
