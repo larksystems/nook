@@ -40,28 +40,18 @@ void _addMessagesToView(Map<String, MessageCategory> messagesByGroupByCategory, 
   }
 }
 
-void _removeMessagesFromView(Map<String, MessageCategory> messagesByGroupByCategory) {
-  for (var categoryId in messagesByGroupByCategory.keys.toList()) {
-    var categoryView = _view.categoriesById[categoryId];
-    for (var groupId in messagesByGroupByCategory[categoryId].groups.keys.toList()) {
-      var groupView = categoryView.groupsById[groupId];
-      for (var message in messagesByGroupByCategory[categoryId].groups[groupId].messages.values) {
-        groupView.removeMessage(message.suggestedReplyId);
-      }
-    }
+void _removeMessagesFromView(List<model.SuggestedReply> messages) {
+  for (var message in messages) {
+    var groupView = _view.categoriesById[message.categoryId].groupsById[message.groupId];
+    groupView.removeMessage(message.suggestedReplyId);
   }
 }
 
-void _modifyMessagesInView(Map<String, MessageCategory> messagesByGroupByCategory) {
-  for (var categoryId in messagesByGroupByCategory.keys.toList()) {
-    var categoryView = _view.categoriesById[categoryId];
-    for (var groupId in messagesByGroupByCategory[categoryId].groups.keys.toList()) {
-      var groupView = categoryView.groupsById[groupId];
-      for (var message in messagesByGroupByCategory[categoryId].groups[groupId].messages.values) {
-        var messageView = new StandardMessageView(message.suggestedReplyId, message.text, message.translation);
-        groupView.modifyMessage(message.suggestedReplyId, messageView);
-      }
-    }
+void _modifyMessagesInView(List<model.SuggestedReply> messages) {
+  for (var message in messages) {
+    var groupView = _view.categoriesById[message.categoryId].groupsById[message.groupId];
+    var messageView = new StandardMessageView(message.suggestedReplyId, message.text, message.translation);
+    groupView.modifyMessage(message.suggestedReplyId, messageView);
   }
 }
 
@@ -91,7 +81,6 @@ Map<String, MessageCategory> _groupMessagesIntoCategoriesAndGroups(List<model.Su
   }
   for (String category in result.keys) {
     for (String group in result[category].groups.keys) {
-      // TODO (mariana): once we've transitioned to using groups, we can remove the sequence number comparison
       result[category].groups[group].messages.values.toList().sort((message1, message2) => (message1.indexInGroup).compareTo(message2.indexInGroup));
     }
   }
