@@ -127,13 +127,13 @@ void _populateReplyPanelView(List<model.SuggestedReply> replies) {
   _view.replyPanelView.clear();
   String buttonText = SEND_REPLY_BUTTON_TEXT;
   var groupIdsSortedByDescription = repliesByGroups.keys.toList();
-  groupIdsSortedByDescription.sort((group1, group2) => repliesByGroups[group1].first.groupDescription.compareTo(repliesByGroups[group2].first.groupDescription));
+  groupIdsSortedByDescription.sort((group1, group2) => repliesByGroups[group1].first.groupName.compareTo(repliesByGroups[group2].first.groupName));
   for (var groupId in groupIdsSortedByDescription) {
     var repliesInGroup = repliesByGroups[groupId];
     List<ReplyActionView> views = [];
     var groupDescription = "";
     for (var reply in repliesInGroup) {
-      groupDescription = reply.groupDescription;
+      groupDescription = reply.groupName;
       var replyView = new ReplyActionView(reply.text, reply.translation, reply.shortcut, reply.suggestedReplyId, buttonText);
       replyView.fadeText(controller.activeConversation?.messages?.where((element) => element.text == reply.text)?.isNotEmpty ?? false);
       replyView.showShortcut(controller.currentConfig.repliesKeyboardShortcutsEnabled);
