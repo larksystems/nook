@@ -96,7 +96,7 @@ class StandardMessagesCategoryView extends AccordionItem {
         return !categories.contains(value);
       }
       ..onEdit = (value) {
-        _view.appController.command(MessagesConfigAction.updateStandardMessagesCategory, new StandardMessagesCategoryData(_categoryId, _categoryName, newCategoryName: value));
+        _view.appController.command(MessagesConfigAction.updateStandardMessagesCategory, new StandardMessagesCategoryData(_categoryId, newCategoryName: value));
         _categoryName = value;
       }
       ..onDelete = () {
@@ -112,7 +112,7 @@ class StandardMessagesCategoryView extends AccordionItem {
 
     _addButton = Button(ButtonType.add, 
       hoverText: 'Add a new group of standard messages', 
-      onClick: (event) => _view.appController.command(MessagesConfigAction.addStandardMessagesGroup, new StandardMessagesGroupData(_categoryId, _categoryName, null, null, 'New group', null)));
+      onClick: (event) => _view.appController.command(MessagesConfigAction.addStandardMessagesGroup, new StandardMessagesGroupData(_categoryId, null)));
 
     body.append(_addButton.renderElement);
   }
@@ -144,7 +144,7 @@ class StandardMessagesCategoryView extends AccordionItem {
 
   void requestToDelete() {
     expand();
-    var standardMessagesCategoryData = new StandardMessagesCategoryData(_categoryId, _categoryName);
+    var standardMessagesCategoryData = new StandardMessagesCategoryData(_categoryId);
     var removeWarningModal;
     removeWarningModal = new InlineOverlayModal('Are you sure you want to remove this category?', [
         new Button(ButtonType.text,
@@ -161,7 +161,6 @@ class StandardMessagesCategoryView extends AccordionItem {
 
 class StandardMessagesGroupView extends AccordionItem {
   String _categoryId;
-  String _categoryName;
   String _groupId;
   String _groupName;
   DivElement _standardMessagesContainer;
@@ -170,7 +169,7 @@ class StandardMessagesGroupView extends AccordionItem {
 
   Map<String, StandardMessageView> messagesById = {};
 
-  StandardMessagesGroupView(this._categoryId, this._categoryName, this._groupId, this._groupName, DivElement header, DivElement body) : super(_groupId, header, body, false) {
+  StandardMessagesGroupView(this._categoryId, this._groupId, this._groupName, DivElement header, DivElement body) : super(_groupId, header, body, false) {
     editableTitle = TextEdit(_groupName, removable: true)
       ..testInput = (String value) {
         var messageManager = (_view.appController as MessagesConfiguratorController).standardMessagesManager;
@@ -179,7 +178,7 @@ class StandardMessagesGroupView extends AccordionItem {
         return !groups.contains(value);
       }
       ..onEdit = (value) {
-        _view.appController.command(MessagesConfigAction.updateStandardMessagesGroup, new StandardMessagesGroupData(_categoryId, _categoryName, null, _groupId, _groupName, null, newGroupName: value));
+        _view.appController.command(MessagesConfigAction.updateStandardMessagesGroup, new StandardMessagesGroupData(_categoryId, _groupId, newGroupName: value));
       }
       ..onDelete = () {
         requestToDelete();
@@ -216,7 +215,7 @@ class StandardMessagesGroupView extends AccordionItem {
 
   void requestToDelete() {
     expand();
-    var standardMessagesGroupData = new StandardMessagesGroupData(_categoryId, _categoryName, null, _groupId, _groupName, null);
+    var standardMessagesGroupData = new StandardMessagesGroupData(_categoryId, _groupId);
     var removeWarningModal;
     removeWarningModal = new InlineOverlayModal('Are you sure you want to remove this group?', [
         new Button(ButtonType.text,
