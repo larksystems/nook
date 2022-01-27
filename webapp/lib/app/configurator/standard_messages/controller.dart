@@ -113,34 +113,14 @@ class MessagesConfiguratorController extends ConfiguratorController {
       case MessagesConfigAction.updateStandardMessage:
         StandardMessageData messageData = data;
         var standardMessage = standardMessagesManager.modifyMessage(messageData.messageId, messageData.text, messageData.translation);
-        // todo: unwanted map since we use only the category Id, group Id
-        var messageCategoryMap = {
-          standardMessage.categoryId: MessageCategory(standardMessage.categoryId, standardMessage.categoryName, standardMessage.categoryIndex)
-            ..groups = {
-              standardMessage.groupId: MessageGroup(standardMessage.groupId, standardMessage.groupName, standardMessage.groupIndexInCategory)
-                ..messages = {
-                  standardMessage.docId: standardMessage
-                }
-            }
-        };
-        _modifyMessagesInView(messageCategoryMap);
+        _modifyMessagesInView([standardMessage]);
         _updateUnsavedIndicators(standardMessagesManager.categories, standardMessagesManager.unsavedMessageIds, standardMessagesManager.unsavedGroupIds, standardMessagesManager.unsavedCategoryIds);
         break;
 
       case MessagesConfigAction.removeStandardMessage:
         StandardMessageData messageData = data;
         var standardMessage = standardMessagesManager.deleteMessage(messageData.messageId);
-        var messageCategoryMap = {
-          standardMessage.categoryId: MessageCategory(standardMessage.categoryId, standardMessage.category, standardMessage.categoryIndex)
-            ..groups = {
-              standardMessage.groupId: MessageGroup(standardMessage.groupId, standardMessage.groupName, standardMessage.groupIndexInCategory )
-                ..messages = {
-                  standardMessage.docId: standardMessage
-                }
-            }
-        };
-        // todo: unwanted map since we use only the category Id, group Id
-        _removeMessagesFromView(messageCategoryMap);
+        _removeMessagesFromView([standardMessage]);
         _updateUnsavedIndicators(standardMessagesManager.categories, standardMessagesManager.unsavedMessageIds, standardMessagesManager.unsavedGroupIds, standardMessagesManager.unsavedCategoryIds);
         break;
 
@@ -209,8 +189,8 @@ class MessagesConfiguratorController extends ConfiguratorController {
       var messagesRemoved = standardMessagesManager.removeStandardMessages(removed);
 
       _addMessagesToView(_groupMessagesIntoCategoriesAndGroups(messagesAdded));
-      _modifyMessagesInView(_groupMessagesIntoCategoriesAndGroups(messagesModified));
-      _removeMessagesFromView(_groupMessagesIntoCategoriesAndGroups(messagesRemoved));
+      _modifyMessagesInView(messagesModified);
+      _removeMessagesFromView(messagesRemoved);
     });
   }
 
