@@ -1,7 +1,10 @@
 part of controller;
 
 void _addMessagesToView(Map<String, MessageCategory> messagesByGroupByCategory, {bool startEditingName = false}) {
-  for (var categoryId in messagesByGroupByCategory.keys.toList()) {
+  var categories = messagesByGroupByCategory.values.toList();
+  categories.sort((c1, c2) => c1.categoryIndex.compareTo(c2.categoryIndex));
+  List<String> categoryIds = categories.map((c) => c.categoryId).toList();
+  for (var categoryId in categoryIds) {
     if (_view.categories.queryItem(categoryId) == null) {
       var categoryName = messagesByGroupByCategory[categoryId].categoryName;
       _view.addCategory(categoryId, new StandardMessagesCategoryView(categoryId, categoryName, DivElement(), DivElement()));
@@ -12,7 +15,11 @@ void _addMessagesToView(Map<String, MessageCategory> messagesByGroupByCategory, 
     }
     var categoryView = _view.categoriesById[categoryId];
     int groupIndex = 0;
-    for (var groupId in messagesByGroupByCategory[categoryId].groups.keys.toList()..sort()) {
+
+    var groups = messagesByGroupByCategory[categoryId].groups.values.toList();
+    groups.sort((g1, g2) => g1.groupIndexInCategory.compareTo(g2.groupIndexInCategory));
+    List<String> groupIds = groups.map((g) => g.groupId).toList();
+    for (var groupId in groupIds) {
       if (categoryView.groups.queryItem(groupId) == null) {
         var categoryName = messagesByGroupByCategory[categoryId].categoryName;
         var groupName = messagesByGroupByCategory[categoryId].groups[groupId].groupName;
@@ -23,7 +30,10 @@ void _addMessagesToView(Map<String, MessageCategory> messagesByGroupByCategory, 
         }
       }
       var groupView = categoryView.groupsById[groupId];
-      for (var message in messagesByGroupByCategory[categoryId].groups[groupId].messages.values) {
+      
+      var messages = messagesByGroupByCategory[categoryId].groups[groupId].messages.values.toList();
+      messages.sort((m1, m2) => m1.indexInGroup.compareTo(m2.indexInGroup));
+      for (var message in messages) {
         groupView.addMessage(message.suggestedReplyId, new StandardMessageView(message.suggestedReplyId, message.text, message.translation));
       }
       groupIndex++;
@@ -76,8 +86,8 @@ void _updateUnsavedIndicators(Map<String, MessageCategory> categories, Set<Strin
 Map<String, MessageCategory> _groupMessagesIntoCategoriesAndGroups(List<model.SuggestedReply> messages) {
   Map<String, MessageCategory> result = {};
   for (model.SuggestedReply message in messages) {
-    result.putIfAbsent(message.categoryId, () => MessageCategory(message.categoryId, message.category));
-    result[message.categoryId].groups.putIfAbsent(message.groupId, () => MessageGroup(message.groupId, message.groupName));
+    result.putIfAbsent(message.categoryId, () => MessageCategory(message.categoryId, message.category, message.categoryIndex));
+    result[message.categoryId].groups.putIfAbsent(message.groupId, () => MessageGroup(message.groupId, message.groupName, message.groupIndexInCategory));
     result[message.categoryId].groups[message.groupId].messages.putIfAbsent(message.docId, () => message);
   }
   for (String category in result.keys) {

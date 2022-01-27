@@ -31,15 +31,18 @@ class StandardMessageData extends Data {
   String messageId;
   String text;
   String translation;
+  int indexInGroup;
   String groupId;
   String group;
+  int groupIndexInCategory;
   String categoryId;
   String category;
-  StandardMessageData(this.messageId, {this.text, this.translation, this.groupId, this.group, this.categoryId, this.category});
+  int categoryIndex;
+  StandardMessageData(this.messageId, {this.text, this.translation, this.indexInGroup, this.groupId, this.group, this.groupIndexInCategory, this.categoryId, this.category, this.categoryIndex});
 
   @override
   String toString() {
-    return "StandardMessageData($messageId, '$text', '$translation', $groupId, $group, $categoryId, $category)";
+    return "StandardMessageData($messageId, '$text', '$translation', $indexInGroup, $groupId, $group, $groupIndexInCategory, $categoryId, $category, $categoryIndex";
   }
 }
 
@@ -49,7 +52,9 @@ class StandardMessagesGroupData extends Data {
   String newGroupName;
   String categoryId;
   String categoryName;
-  StandardMessagesGroupData(this.categoryId, this.categoryName, this.groupId, this.groupName, {this.newGroupName});
+  int categoryIndex;
+  int groupIndexInCategory;
+  StandardMessagesGroupData(this.categoryId, this.categoryName, this.categoryIndex, this.groupId, this.groupName, this.groupIndexInCategory, {this.newGroupName});
 
   @override
   String toString() {
@@ -95,14 +100,14 @@ class MessagesConfiguratorController extends ConfiguratorController {
     switch (action) {
       case MessagesConfigAction.addStandardMessage:
         StandardMessageData messageData = data;
-        var categoryName = standardMessagesManager.categories[messageData.categoryId].categoryName;
-        var groupName = standardMessagesManager.categories[messageData.categoryId].groups[messageData.groupId].groupName;
+        var category = standardMessagesManager.categories[messageData.categoryId];
+        var group = standardMessagesManager.categories[messageData.categoryId].groups[messageData.groupId];
 
-        var message = standardMessagesManager.createMessage(messageData.categoryId, categoryName, messageData.groupId, groupName);
+        var message = standardMessagesManager.createMessage(messageData.categoryId, category.categoryName, category.categoryIndex, messageData.groupId, group.groupName, group.groupIndexInCategory);
         var messageCategoryMap = {
-          message.categoryId: MessageCategory(messageData.categoryId, categoryName)
+          message.categoryId: MessageCategory(messageData.categoryId, category.categoryName, messageData.categoryIndex)
             ..groups = {
-              message.groupId: MessageGroup(messageData.groupId, groupName)
+              message.groupId: MessageGroup(messageData.groupId, group.groupName, messageData.groupIndexInCategory)
                 ..messages = {
                   message.docId: message
                 }
@@ -120,9 +125,9 @@ class MessagesConfiguratorController extends ConfiguratorController {
 
         // todo: unwanted map since we use only the category Id, group Id
         var messageCategoryMap = {
-          standardMessage.categoryId: MessageCategory(standardMessage.categoryId, categoryName)
+          standardMessage.categoryId: MessageCategory(standardMessage.categoryId, categoryName, messageData.categoryIndex)
             ..groups = {
-              standardMessage.groupId: MessageGroup(messageData.groupId, groupName)
+              standardMessage.groupId: MessageGroup(messageData.groupId, groupName, messageData.groupIndexInCategory)
                 ..messages = {
                   standardMessage.docId: standardMessage
                 }
@@ -136,9 +141,9 @@ class MessagesConfiguratorController extends ConfiguratorController {
         StandardMessageData messageData = data;
         var standardMessage = standardMessagesManager.deleteMessage(messageData.messageId);
         var messageCategoryMap = {
-          standardMessage.categoryId: MessageCategory(standardMessage.categoryId, standardMessage.category)
+          standardMessage.categoryId: MessageCategory(standardMessage.categoryId, standardMessage.category, standardMessage.categoryIndex)
             ..groups = {
-              standardMessage.groupId: MessageGroup(messageData.groupId, messageData.group)
+              standardMessage.groupId: MessageGroup(messageData.groupId, messageData.group, messageData.groupIndexInCategory )
                 ..messages = {
                   standardMessage.docId: standardMessage
                 }
@@ -153,9 +158,9 @@ class MessagesConfiguratorController extends ConfiguratorController {
         StandardMessagesGroupData groupData = data;
         var newGroup = standardMessagesManager.createStandardMessagesGroup(groupData.categoryId, groupData.categoryName);
         var messageCategoryMap = {
-          groupData.categoryId: MessageCategory(groupData.categoryId, groupData.categoryName)
+          groupData.categoryId: MessageCategory(groupData.categoryId, groupData.categoryName, groupData.categoryIndex)
             ..groups = {
-              newGroup.groupId: MessageGroup(newGroup.groupId, newGroup.groupName)
+              newGroup.groupId: MessageGroup(newGroup.groupId, newGroup.groupName, newGroup.groupIndexInCategory)
             }
         };
         _addMessagesToView(messageCategoryMap, startEditingName: true);
@@ -179,7 +184,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
       case MessagesConfigAction.addStandardMessagesCategory:
         var newCategory = standardMessagesManager.createStandardMessagesCategory();
         var messageCategoryMap = {
-          newCategory.categoryId: MessageCategory(newCategory.categoryId, newCategory.categoryName)
+          newCategory.categoryId: MessageCategory(newCategory.categoryId, newCategory.categoryName, newCategory.categoryIndex)
         };
         _addMessagesToView(messageCategoryMap, startEditingName: true);
         _updateUnsavedIndicators(standardMessagesManager.categories, standardMessagesManager.unsavedMessageIds, standardMessagesManager.unsavedGroupIds, standardMessagesManager.unsavedCategoryIds);

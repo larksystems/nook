@@ -8,7 +8,17 @@ class StandardMessagesManager {
 
   factory StandardMessagesManager() => _singleton;
 
-  int getNextIndexInGroup(String categoryId, String groupId) {
+  int getNextCategoryIndex() {
+    var lastIndex = categories.values.fold(0, (previousValue, category) => previousValue > category.categoryIndex ? previousValue : category.categoryIndex);
+    return lastIndex + 1;
+  }
+
+  int getNextGroupIndexInCategory(String categoryId) {
+    var lastIndex = categories[categoryId].groups.values.fold(0, (previousValue, group) => previousValue > group.groupIndexInCategory ? previousValue : group.groupIndexInCategory);
+    return lastIndex + 1;
+  }
+
+  int getNextMessageIndexInGroup(String categoryId, String groupId) {
     var standardMessagesInGroup = categories[categoryId].groups[groupId].messages.values;
     var lastIndexInGroup = standardMessagesInGroup.fold(0, (previousValue, r) => previousValue > r.indexInGroup ? previousValue : r.indexInGroup);
     return lastIndexInGroup + 1;
@@ -27,8 +37,8 @@ class StandardMessagesManager {
       updateStandardMessage(standardMessage);
       return null;
     }
-    categories.putIfAbsent(standardMessage.categoryId, () => new MessageCategory(standardMessage.categoryId, standardMessage.category));
-    categories[standardMessage.categoryId].groups.putIfAbsent(standardMessage.groupId, () => MessageGroup(standardMessage.groupId, standardMessage.groupName));
+    categories.putIfAbsent(standardMessage.categoryId, () => new MessageCategory(standardMessage.categoryId, standardMessage.category, standardMessage.categoryIndex));
+    categories[standardMessage.categoryId].groups.putIfAbsent(standardMessage.groupId, () => MessageGroup(standardMessage.groupId, standardMessage.groupName, standardMessage.groupIndexInCategory));
     categories[standardMessage.categoryId].groups[standardMessage.groupId].messages[standardMessage.suggestedReplyId] = standardMessage;
     return standardMessage;
   }
@@ -79,7 +89,7 @@ class StandardMessagesManager {
     return removed;
   }
 
-  model.SuggestedReply createMessage(String categoryId, String categoryName, String groupId, String groupName) {
+  model.SuggestedReply createMessage(String categoryId, String categoryName, int categoryIndex, String groupId, String groupName, int groupIndexInCategory) {
     var newStandardMessage = model.SuggestedReply()
       ..docId = model.generateStandardMessageId()
       ..text = ''
@@ -90,7 +100,9 @@ class StandardMessagesManager {
       ..category = categoryName
       ..groupId = categories[categoryId].groups[groupId].groupId
       ..groupName = groupName
-      ..indexInGroup = getNextIndexInGroup(categoryId, groupId);
+      ..indexInGroup = getNextMessageIndexInGroup(categoryId, groupId)
+      ..categoryIndex = categoryIndex
+      ..groupIndexInCategory = groupIndexInCategory;
     addStandardMessage(newStandardMessage);
     editedMessages[newStandardMessage.suggestedReplyId] = newStandardMessage;
     return newStandardMessage;
@@ -119,7 +131,8 @@ class StandardMessagesManager {
 
   MessageGroup createStandardMessagesGroup(String categoryId, String category, {String groupId, String groupName}) {
     var newGroupId = groupId ?? model.generateStandardMessageGroupId();
-    var newMessageGroup = new MessageGroup(newGroupId, groupName ?? "message group $newGroupId");
+    var newGroupIndex = getNextGroupIndexInCategory(categoryId);
+    var newMessageGroup = new MessageGroup(newGroupId, groupName ?? "Message group $newGroupIndex", newGroupIndex);
     categories[categoryId].groups[newMessageGroup.groupId] = newMessageGroup;
     return newMessageGroup;
   }
@@ -142,8 +155,9 @@ class StandardMessagesManager {
   /// If [categoryName] is given, it will use that name, otherwise it will generate a placeholder name.
   MessageCategory createStandardMessagesCategory([String categoryName]) {
     var newCategoryId = model.generateStandardMessageCategoryId();
-    var newCategoryName = categoryName ?? "message category $newCategoryId";
-    var newCategory = new MessageCategory(newCategoryId, newCategoryName);
+    var newCategoryIndex = getNextCategoryIndex();
+    var newCategoryName = categoryName ?? "Message category $newCategoryIndex";
+    var newCategory = new MessageCategory(newCategoryId, newCategoryName, newCategoryIndex);
     categories[newCategoryId] = newCategory;
     return newCategory;
   }
@@ -185,9 +199,10 @@ class StandardMessagesManager {
 class MessageCategory {
   String categoryId;
   String categoryName;
+  int categoryIndex;
   Map<String, MessageGroup> groups = {};
 
-  MessageCategory(this.categoryId, this.categoryName);
+  MessageCategory(this.categoryId, this.categoryName, this.categoryIndex);
 
   List<model.SuggestedReply> get messages => groups.values.fold([], (result, group) => result..addAll(group.messages.values));
 
@@ -199,9 +214,10 @@ class MessageCategory {
 class MessageGroup {
   String groupId;
   String groupName;
+  int groupIndexInCategory;
   Map<String, model.SuggestedReply> messages = {};
 
-  MessageGroup(this.groupId, this.groupName);
+  MessageGroup(this.groupId, this.groupName, this.groupIndexInCategory);
 
   @override
   String toString() {
