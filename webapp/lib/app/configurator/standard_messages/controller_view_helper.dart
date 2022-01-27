@@ -14,15 +14,14 @@ void _addMessagesToView(Map<String, MessageCategory> messagesByGroupByCategory, 
       }
     }
     var categoryView = _view.categoriesById[categoryId];
-    int groupIndex = 0;
 
     var groups = messagesByGroupByCategory[categoryId].groups.values.toList();
     groups.sort((g1, g2) => g1.groupIndexInCategory.compareTo(g2.groupIndexInCategory));
     List<String> groupIds = groups.map((g) => g.groupId).toList();
     for (var groupId in groupIds) {
       if (categoryView.groups.queryItem(groupId) == null) {
-        var groupName = messagesByGroupByCategory[categoryId].groups[groupId].groupName;
-        categoryView.addGroup(groupId, new StandardMessagesGroupView(categoryId, groupId, groupName, DivElement(), DivElement()), groupIndex);
+        var group = messagesByGroupByCategory[categoryId].groups[groupId];
+        categoryView.addGroup(groupId, new StandardMessagesGroupView(categoryId, groupId, group.groupName, DivElement(), DivElement()), group.groupIndexInCategory);
         if (startEditingName) {
           categoryView.groupsById[groupId].expand();
           categoryView.groupsById[groupId].editableTitle.beginEdit(selectAllOnFocus: true);
@@ -35,7 +34,6 @@ void _addMessagesToView(Map<String, MessageCategory> messagesByGroupByCategory, 
       for (var message in messages) {
         groupView.addMessage(message.suggestedReplyId, new StandardMessageView(message.suggestedReplyId, message.text, message.translation));
       }
-      groupIndex++;
     }
   }
 }

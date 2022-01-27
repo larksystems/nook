@@ -122,7 +122,7 @@ class StandardMessagesCategoryView extends AccordionItem {
 
   void addGroup(String groupId, StandardMessagesGroupView standardMessagesGroupView, [int index]) {
     // todo: test for multiple groups added from firebase at the same time after adding a group by
-    if (index == null || groups.items.length == index) {
+    if (index == null || groups.items.length <= index) {
       groups.appendItem(standardMessagesGroupView);
     } else {
       groups.insertItem(standardMessagesGroupView, index);
