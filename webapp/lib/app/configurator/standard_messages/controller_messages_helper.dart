@@ -14,8 +14,6 @@ class MessagesDiffData {
   MessagesDiffData(this.unsavedCategoryIds, this.unsavedGroupIds, this.unsavedMessageIds, this.editedMessages, this.deletedMessages);
 }
 
-model.SuggestedReply clonedSuggestedReply(model.SuggestedReply standardMessage) => model.SuggestedReply.fromData(standardMessage.toData())..docId = standardMessage.docId;
-
 class StandardMessagesManager {
   static final StandardMessagesManager _singleton = StandardMessagesManager._internal();
 
@@ -140,9 +138,7 @@ class StandardMessagesManager {
   model.SuggestedReply onAddStandardMessageFromFb(model.SuggestedReply standardMessage) {
     fbCategories.putIfAbsent(standardMessage.categoryId, () => MessageCategory(standardMessage.categoryId, standardMessage.categoryName, standardMessage.categoryIndex));
     fbCategories[standardMessage.categoryId].groups.putIfAbsent(standardMessage.groupId, () => MessageGroup(standardMessage.groupId, standardMessage.groupName, standardMessage.groupIndexInCategory));
-    fbCategories[standardMessage.categoryId].groups[standardMessage.groupId].messages.putIfAbsent(standardMessage.suggestedReplyId, () {
-      return clonedSuggestedReply(standardMessage);
-    });
+    fbCategories[standardMessage.categoryId].groups[standardMessage.groupId].messages.putIfAbsent(standardMessage.suggestedReplyId, () => standardMessage.clone());
     return standardMessage;
   }
 
@@ -177,8 +173,8 @@ class StandardMessagesManager {
   model.SuggestedReply onUpdateStandardMessageFromFb(model.SuggestedReply standardMessage) {
     fbCategories.putIfAbsent(standardMessage.categoryId, () => MessageCategory(standardMessage.categoryId, standardMessage.categoryName, standardMessage.categoryIndex));
     fbCategories[standardMessage.categoryId].groups.putIfAbsent(standardMessage.groupId, () => MessageGroup(standardMessage.groupId, standardMessage.groupName, standardMessage.groupIndexInCategory));
-    fbCategories[standardMessage.categoryId].groups[standardMessage.groupId].messages.putIfAbsent(standardMessage.suggestedReplyId, () => model.SuggestedReply.fromData(standardMessage.toData())..docId = standardMessage.docId);
-    fbCategories[standardMessage.categoryId].groups[standardMessage.groupId].messages[standardMessage.suggestedReplyId] = model.SuggestedReply.fromData(standardMessage.toData())..docId = standardMessage.docId;
+    fbCategories[standardMessage.categoryId].groups[standardMessage.groupId].messages.putIfAbsent(standardMessage.suggestedReplyId, () => standardMessage.clone());
+    fbCategories[standardMessage.categoryId].groups[standardMessage.groupId].messages[standardMessage.suggestedReplyId] = standardMessage.clone();
     return standardMessage;
   }
 
@@ -195,6 +191,7 @@ class StandardMessagesManager {
   }
 
   model.SuggestedReply removeStandardMessage(model.SuggestedReply standardMessage) {
+    // todo: this might not be relevant
     if (!standardMessages.any((element) => element.suggestedReplyId == standardMessage.suggestedReplyId)) {
       log.warning("Standard messages consistency error: Removing message that doesn't exist: ${standardMessage.suggestedReplyId}");
       return null;
