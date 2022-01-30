@@ -107,21 +107,18 @@ class MessagesConfiguratorController extends ConfiguratorController {
             }
         };
         _addMessagesToView(messageCategoryMap);
-        _updateUnsavedIndicators(standardMessagesManager.categories, standardMessagesManager.unsavedMessageIds, standardMessagesManager.unsavedGroupIds, standardMessagesManager.unsavedCategoryIds);
         break;
 
       case MessagesConfigAction.updateStandardMessage:
         StandardMessageData messageData = data;
         var standardMessage = standardMessagesManager.modifyMessage(messageData.messageId, messageData.text, messageData.translation);
         _modifyMessagesInView([standardMessage]);
-        _updateUnsavedIndicators(standardMessagesManager.categories, standardMessagesManager.unsavedMessageIds, standardMessagesManager.unsavedGroupIds, standardMessagesManager.unsavedCategoryIds);
         break;
 
       case MessagesConfigAction.removeStandardMessage:
         StandardMessageData messageData = data;
         var standardMessage = standardMessagesManager.deleteMessage(messageData.messageId);
         _removeMessagesFromView([standardMessage]);
-        _updateUnsavedIndicators(standardMessagesManager.categories, standardMessagesManager.unsavedMessageIds, standardMessagesManager.unsavedGroupIds, standardMessagesManager.unsavedCategoryIds);
         break;
 
       case MessagesConfigAction.addStandardMessagesGroup:
@@ -135,21 +132,18 @@ class MessagesConfiguratorController extends ConfiguratorController {
             }
         };
         _addMessagesToView(messageCategoryMap, startEditingName: true);
-        _updateUnsavedIndicators(standardMessagesManager.categories, standardMessagesManager.unsavedMessageIds, standardMessagesManager.unsavedGroupIds, standardMessagesManager.unsavedCategoryIds);
         break;
 
       case MessagesConfigAction.updateStandardMessagesGroup:
         StandardMessagesGroupData groupData = data;
         standardMessagesManager.renameStandardMessageGroup(groupData.categoryId, groupData.groupId, groupData.newGroupName);
         _view.categoriesById[groupData.categoryId].renameGroup(groupData.groupId, groupData.newGroupName);
-        _updateUnsavedIndicators(standardMessagesManager.categories, standardMessagesManager.unsavedMessageIds, standardMessagesManager.unsavedGroupIds, standardMessagesManager.unsavedCategoryIds);
         break;
 
       case MessagesConfigAction.removeStandardMessagesGroup:
         StandardMessagesGroupData groupData = data;
         standardMessagesManager.deleteStandardMessagesGroup(groupData.categoryId, groupData.groupId);
         _view.categoriesById[groupData.categoryId].removeGroup(groupData.groupId);
-        _updateUnsavedIndicators(standardMessagesManager.categories, standardMessagesManager.unsavedMessageIds, standardMessagesManager.unsavedGroupIds, standardMessagesManager.unsavedCategoryIds);
         break;
 
       case MessagesConfigAction.addStandardMessagesCategory:
@@ -158,35 +152,34 @@ class MessagesConfiguratorController extends ConfiguratorController {
           newCategory.categoryId: MessageCategory(newCategory.categoryId, newCategory.categoryName, newCategory.categoryIndex)
         };
         _addMessagesToView(messageCategoryMap, startEditingName: true);
-        _updateUnsavedIndicators(standardMessagesManager.categories, standardMessagesManager.unsavedMessageIds, standardMessagesManager.unsavedGroupIds, standardMessagesManager.unsavedCategoryIds);
         break;
 
       case MessagesConfigAction.updateStandardMessagesCategory:
         StandardMessagesCategoryData categoryData = data;
         standardMessagesManager.renameStandardMessageCategory(categoryData.categoryId, categoryData.newCategoryName);
         _view.renameCategory(categoryData.categoryId, categoryData.newCategoryName);
-        _updateUnsavedIndicators(standardMessagesManager.categories, standardMessagesManager.unsavedMessageIds, standardMessagesManager.unsavedGroupIds, standardMessagesManager.unsavedCategoryIds);
         break;
 
       case MessagesConfigAction.removeStandardMessagesCategory:
         StandardMessagesCategoryData categoryData = data;
         standardMessagesManager.deleteStandardMessagesCategory(categoryData.categoryId);
         _view.categories.removeItem(categoryData.categoryId);
-        _updateUnsavedIndicators(standardMessagesManager.categories, standardMessagesManager.unsavedMessageIds, standardMessagesManager.unsavedGroupIds, standardMessagesManager.unsavedCategoryIds);
         break;
     }
 
     log.verbose('After -- ${standardMessagesManager.categories}');
-
-    _view.unsavedChanges = standardMessagesManager.hasUnsavedMessages;
+    var diffData = standardMessagesManager.diffData;
+    _updateUnsavedIndicators(standardMessagesManager.categories, diffData.unsavedMessageIds, diffData.unsavedGroupIds, diffData.unsavedCategoryIds);
+    // todo: show diffs when categories are edited vs changes from firebase
+    _view.unsavedChanges = diffData.editedMessages.isNotEmpty || diffData.deletedMessages.isNotEmpty;
   }
 
   @override
   void setUpOnLogin() {
     platform.listenForSuggestedReplies((added, modified, removed) {
-      var messagesAdded = standardMessagesManager.addStandardMessages(added);
-      var messagesModified = standardMessagesManager.updateStandardMessages(modified);
-      var messagesRemoved = standardMessagesManager.removeStandardMessages(removed);
+      var messagesAdded = standardMessagesManager.onAddStandardMessagesFromFb(added);
+      var messagesModified = standardMessagesManager.onUpdateStandardMessagesFromFb(modified);
+      var messagesRemoved = standardMessagesManager.onRemoveStandardMessagesFromFb(removed);
 
       _addMessagesToView(_groupMessagesIntoCategoriesAndGroups(messagesAdded));
       _modifyMessagesInView(messagesModified);
@@ -195,34 +188,21 @@ class MessagesConfiguratorController extends ConfiguratorController {
   }
 
   @override
-  void saveConfiguration() {
+  void saveConfiguration() async {
     _view.showSaveStatus('Saving...');
-    bool otherPartSaved = false;
+    _view.disableSaveButton();
+    var diffData = standardMessagesManager.diffData;
 
-    platform.updateSuggestedReplies(standardMessagesManager.editedMessages.values.toList()).then((value) {
-      standardMessagesManager.editedMessages.clear();
-      if (otherPartSaved) {
-        _view.showSaveStatus('Saved!');
-        _view.unsavedChanges = false;
-        _view.clearUnsavedIndicators();
-        return;
-      }
-      otherPartSaved = true;
-    }, onError: (error, stacktrace) {
-      _view.showSaveStatus('Unable to save. Please check your connection and try again. If the issue persists, please contact your project administrator');
-    });
-
-    platform.deleteSuggestedReplies(standardMessagesManager.deletedMessages.values.toList()).then((value) {
-      standardMessagesManager.deletedMessages.clear();
-      if (otherPartSaved) {
-        _view.showSaveStatus('Saved!');
-        _view.unsavedChanges = false;
-        _view.clearUnsavedIndicators();
-        return;
-      }
-      otherPartSaved = true;
-    }, onError: (error, stacktrace) {
-      _view.showSaveStatus('Unable to save. Please check your connection and try again. If the issue persists, please contact your project administrator');
-    });
+    try {
+      await Future.wait([platform.updateSuggestedReplies(diffData.editedMessages), platform.deleteSuggestedReplies(diffData.deletedMessages)]);
+      _view
+        ..unsavedChanges = false
+        ..showSaveStatus('Saved!', autoHide: true)
+        ..clearUnsavedIndicators();
+    } catch (err) {
+      _view
+        ..hideSaveStatus()
+        ..showSaveStatus('Unable to save. Please check your connection and try again. If the issue persists, please contact your project administrator');
+    }
   }
 }

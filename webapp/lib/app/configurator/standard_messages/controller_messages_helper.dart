@@ -1,5 +1,20 @@
 part of controller;
 
+// todo: renaming categories, groups are not updated
+// todo: deleting messages doesnot remove empty categories
+
+class MessagesDiffData {
+  Set<String> unsavedCategoryIds;
+  Set<String> unsavedGroupIds;
+  Set<String> unsavedMessageIds;
+
+  List<model.SuggestedReply> editedMessages;
+  List<model.SuggestedReply> deletedMessages;
+
+  MessagesDiffData(this.unsavedCategoryIds, this.unsavedGroupIds, this.unsavedMessageIds, this.editedMessages, this.deletedMessages);
+}
+
+model.SuggestedReply clonedSuggestedReply(model.SuggestedReply standardMessage) => model.SuggestedReply.fromData(standardMessage.toData())..docId = standardMessage.docId;
 
 class StandardMessagesManager {
   static final StandardMessagesManager _singleton = StandardMessagesManager._internal();
@@ -24,9 +39,79 @@ class StandardMessagesManager {
     return lastIndexInGroup + 1;
   }
 
+  Map<String, MessageCategory> fbCategories = {};
   Map<String, MessageCategory> categories = {};
 
+  MessagesDiffData get diffData {
+    Set<String> unsavedCategoryIds = {};
+    Set<String> unsavedGroupIds = {};
+    Set<String> unsavedMessageIds = {};
+
+    List<model.SuggestedReply> editedMessages = [];
+    List<model.SuggestedReply> deletedMessages = [];
+
+    Map<String, model.SuggestedReply> fbMessages = {};
+    Map<String, model.SuggestedReply> messages = {};
+
+    for (var category in categories.values) {
+      category.messages.forEach((message) {
+        messages[message.suggestedReplyId] = message;
+      });
+    }
+
+    for (var category in fbCategories.values) {
+      category.messages.forEach((message) {
+        fbMessages[message.suggestedReplyId] = message;
+      });
+    }
+
+    Set<String> allMessageKeys = Set()..addAll(messages.keys)..addAll(fbMessages.keys);
+    for (var messageId in allMessageKeys) {
+      var fbMessage = fbMessages[messageId];
+      var localMessage = messages[messageId];
+
+      if (localMessage == null) { // message deleted
+        deletedMessages.add(fbMessage);
+        unsavedMessageIds.add(fbMessage.suggestedReplyId);
+        unsavedGroupIds.add(fbMessage.groupId);
+        unsavedCategoryIds.add(fbMessage.categoryId);
+      } else if (fbMessage == null) { // message added
+        editedMessages.add(localMessage);
+        unsavedMessageIds.add(localMessage.suggestedReplyId);
+        unsavedGroupIds.add(localMessage.groupId);
+        unsavedCategoryIds.add(localMessage.categoryId);
+      } else { // message edited
+        var isMessageEdited = false;
+        if (localMessage.categoryName != fbMessage.categoryName) { // renamed category
+          unsavedCategoryIds.add(localMessage.categoryId);
+          isMessageEdited = true;
+        }
+        if (localMessage.groupName != fbMessage.groupName) { // renamed group
+          unsavedGroupIds.add(localMessage.groupId);
+          unsavedCategoryIds.add(localMessage.categoryId);
+          isMessageEdited = true;
+        }
+        if (localMessage.text != fbMessage.text || localMessage.translation != fbMessage.translation) { // message / translation changed. TODO: split the check
+          unsavedMessageIds.add(localMessage.suggestedReplyId);
+          unsavedGroupIds.add(localMessage.groupId);
+          unsavedCategoryIds.add(localMessage.categoryId);
+          isMessageEdited = true;
+        }
+
+        // todo: moved across categories
+        // todo: moved across groups
+        // todo: rearranged within groups
+        if (isMessageEdited) {
+          editedMessages.add(localMessage);
+        }
+      }
+    }
+
+    return MessagesDiffData(unsavedCategoryIds, unsavedGroupIds, unsavedMessageIds, editedMessages, deletedMessages);
+  }
+
   /// Returns the list of messages being managed.
+  List<model.SuggestedReply> get standardFbMessages => fbCategories.values.fold([], (result, category) => result..addAll(category.messages));
   List<model.SuggestedReply> get standardMessages => categories.values.fold([], (result, category) => result..addAll(category.messages));
 
   model.SuggestedReply getStandardMessageById(String id) => standardMessages.singleWhere((r) => r.suggestedReplyId == id);
@@ -52,6 +137,25 @@ class StandardMessagesManager {
     return added;
   }
 
+  model.SuggestedReply onAddStandardMessageFromFb(model.SuggestedReply standardMessage) {
+    fbCategories.putIfAbsent(standardMessage.categoryId, () => MessageCategory(standardMessage.categoryId, standardMessage.categoryName, standardMessage.categoryIndex));
+    fbCategories[standardMessage.categoryId].groups.putIfAbsent(standardMessage.groupId, () => MessageGroup(standardMessage.groupId, standardMessage.groupName, standardMessage.groupIndexInCategory));
+    fbCategories[standardMessage.categoryId].groups[standardMessage.groupId].messages.putIfAbsent(standardMessage.suggestedReplyId, () {
+      return clonedSuggestedReply(standardMessage);
+    });
+    return standardMessage;
+  }
+
+  List<model.SuggestedReply> onAddStandardMessagesFromFb(List<model.SuggestedReply> standardMessagesToAdd) {
+    List<model.SuggestedReply> added = [];
+    for (var standardMessage in standardMessagesToAdd) {
+      var result = addStandardMessage(standardMessage);
+      onAddStandardMessageFromFb(standardMessage);
+      if (result != null) added.add(result);
+    }
+    return added;
+  }
+
   model.SuggestedReply updateStandardMessage(model.SuggestedReply standardMessage) {
     var removed = removeStandardMessage(standardMessage);
     var updated = addStandardMessage(standardMessage);
@@ -68,6 +172,26 @@ class StandardMessagesManager {
       if (result != null) updated.add(result);
     }
     return updated;
+  }
+
+  model.SuggestedReply onUpdateStandardMessageFromFb(model.SuggestedReply standardMessage) {
+    fbCategories.putIfAbsent(standardMessage.categoryId, () => MessageCategory(standardMessage.categoryId, standardMessage.categoryName, standardMessage.categoryIndex));
+    fbCategories[standardMessage.categoryId].groups.putIfAbsent(standardMessage.groupId, () => MessageGroup(standardMessage.groupId, standardMessage.groupName, standardMessage.groupIndexInCategory));
+    fbCategories[standardMessage.categoryId].groups[standardMessage.groupId].messages.putIfAbsent(standardMessage.suggestedReplyId, () => model.SuggestedReply.fromData(standardMessage.toData())..docId = standardMessage.docId);
+    fbCategories[standardMessage.categoryId].groups[standardMessage.groupId].messages[standardMessage.suggestedReplyId] = model.SuggestedReply.fromData(standardMessage.toData())..docId = standardMessage.docId;
+    return standardMessage;
+  }
+
+  List<model.SuggestedReply> onUpdateStandardMessagesFromFb(List<model.SuggestedReply> standardMessagesToAdd) {
+    List<model.SuggestedReply> added = [];
+    for (var standardMessage in standardMessagesToAdd) {
+      onUpdateStandardMessageFromFb(standardMessage);
+
+      // todo: check if unedited
+      var result = updateStandardMessage(standardMessage);
+      if (result != null) added.add(result);
+    }
+    return added;
   }
 
   model.SuggestedReply removeStandardMessage(model.SuggestedReply standardMessage) {
@@ -89,6 +213,28 @@ class StandardMessagesManager {
     return removed;
   }
 
+  model.SuggestedReply onRemoveStandardMessageFromFb(model.SuggestedReply standardMessage) {
+    if (!standardMessages.any((element) => element.suggestedReplyId == standardMessage.suggestedReplyId)) {
+      log.warning("Standard messages consistency error: Removing message that doesn't exist: ${standardMessage.suggestedReplyId}");
+      return null;
+    }
+    var oldStandardMessage = standardFbMessages.singleWhere((element) => element.suggestedReplyId == standardMessage.suggestedReplyId);
+    fbCategories[oldStandardMessage.categoryId].groups[oldStandardMessage.groupId].messages.remove(oldStandardMessage.suggestedReplyId);
+    return standardMessage;
+  }
+
+  List<model.SuggestedReply> onRemoveStandardMessagesFromFb(List<model.SuggestedReply> standardMessages) {
+    List<model.SuggestedReply> removed = [];
+    for (var standardMessage in standardMessages) {
+      onRemoveStandardMessageFromFb(standardMessage);
+
+      // todo: check if unedited
+      var result = removeStandardMessage(standardMessage);
+      if (result != null) removed.add(result);
+    }
+    return removed;
+  }
+
   model.SuggestedReply createMessage(String categoryId, String categoryName, int categoryIndex, String groupId, String groupName, int groupIndexInCategory) {
     var newStandardMessage = model.SuggestedReply()
       ..docId = model.generateStandardMessageId()
@@ -104,7 +250,6 @@ class StandardMessagesManager {
       ..categoryIndex = categoryIndex
       ..groupIndexInCategory = groupIndexInCategory;
     addStandardMessage(newStandardMessage);
-    editedMessages[newStandardMessage.suggestedReplyId] = newStandardMessage;
     return newStandardMessage;
   }
 
@@ -121,15 +266,12 @@ class StandardMessagesManager {
       message.translation = translation;
     }
     updateStandardMessage(message);
-    editedMessages[message.suggestedReplyId] = message;
     return message;
   }
 
   model.SuggestedReply deleteMessage(String messageId) {
     var message = standardMessages.singleWhere((element) => element.suggestedReplyId == messageId);
     removeStandardMessage(message);
-    editedMessages.remove(messageId);
-    deletedMessages[messageId] = message;
     return message;
   }
 
@@ -146,13 +288,11 @@ class StandardMessagesManager {
     group.groupName = newGroupName;
     for (var standardMessage in group.messages.values) {
       standardMessage.groupName = newGroupName;
-      editedMessages[standardMessage.suggestedReplyId] = standardMessage;
     }
   }
 
   void deleteStandardMessagesGroup(String categoryId, String groupId) {
     var group = categories[categoryId].groups.remove(groupId);
-    deletedMessages.addAll(group.messages);
   }
 
   /// Creates a new messages category and return it.
@@ -173,7 +313,6 @@ class StandardMessagesManager {
     category.categoryName = newCategoryName;
     for (var standardMessage in category.messages) {
       standardMessage.category = newCategoryName;
-      editedMessages[standardMessage.suggestedReplyId] = standardMessage;
     }
   }
 
@@ -181,22 +320,7 @@ class StandardMessagesManager {
   /// Also adds these messages to the list of messages to be deleted and need to be saved.
   void deleteStandardMessagesCategory(String categoryId) {
     var category = categories.remove(categoryId);
-    deletedMessages.addEntries(category.messages.map((e) => MapEntry(e.suggestedReplyId, e)));
   }
-
-  /// The messages that have been edited and need to be saved, stored as a `Map<tagId, Tag>`.
-  Map<String, model.SuggestedReply> editedMessages = {};
-
-  /// The messages that have been deleted and need to be saved, stored as a `Map<tagId, Tag>`.
-  Map<String, model.SuggestedReply> deletedMessages = {};
-
-  /// The message IDs that are arrived from editedMessages, deletedMessages
-  Set<String> get unsavedMessageIds => editedMessages.entries.map((e) => e.value.docId).toSet()..addAll(deletedMessages.entries.map((e) => e.value.docId).toSet());
-  Set<String> get unsavedGroupIds => editedMessages.entries.map((e) => e.value.groupId).toSet()..addAll(deletedMessages.entries.map((e) => e.value.groupId).toSet());
-  Set<String> get unsavedCategoryIds => editedMessages.entries.map((e) => e.value.categoryId).toSet()..addAll(deletedMessages.entries.map((e) => e.value.categoryId).toSet());
-
-  /// Returns whether there's any edited or deleted messages to be saved.
-  bool get hasUnsavedMessages => editedMessages.isNotEmpty || deletedMessages.isNotEmpty;
 }
 
 
