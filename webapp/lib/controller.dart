@@ -24,7 +24,8 @@ enum Page {
   configureMessages,
   configureTags,
   converse,
-  explore
+  explore,
+  coda,
 }
 
 final pages = {
@@ -33,6 +34,7 @@ final pages = {
   Page.configureMessages: PageInfo('What standard messages do you want to send?', 'Configure messages', 'configure/messages.html'),
   Page.converse: PageInfo('View conversations and send messages', 'Conversations', '/converse/index.html'),
   Page.explore: PageInfo('Explore trends and analyse themes', 'Explore', '/explore'),
+  Page.coda: PageInfo('Efficiently tag large sets of messages', 'Survey tagging', '/coda'),
 };
 
 
