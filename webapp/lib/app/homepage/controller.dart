@@ -15,10 +15,13 @@ class HomePageController extends Controller {
 
   @override
   void init() {
-    view = new HomePageView(this,
-      [pages[Page.converse]],
-      [pages[Page.configureMessages], pages[Page.configureTags]],
-      [pages[Page.explore]]);
+    view = new HomePageView(
+      this,
+      {
+        'Converse': [pages[Page.converse]],
+        'Configure': [pages[Page.configureMessages], pages[Page.configureTags]],
+        'Explore': [pages[Page.explore]],
+      });
     platform = new Platform(this);
   }
 }
