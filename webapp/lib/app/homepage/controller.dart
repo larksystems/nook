@@ -21,6 +21,7 @@ class HomePageController extends Controller {
         'Converse': [pages[Page.converse]],
         'Configure': [pages[Page.configureMessages], pages[Page.configureTags]],
         'Explore': [pages[Page.explore]],
+        // 'Tag': [pages[Page.coda]],
       });
     platform = new Platform(this);
   }
