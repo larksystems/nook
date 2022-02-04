@@ -488,7 +488,7 @@ class NookController extends Controller {
           _view.snackbarView.showSnackbar("There may be an inconsistency in the number of conversation lists available. Please contact your project administrator and inform them of this error.", SnackbarNotificationType.error);
         }
         var shardsToConsider = shards.take(shardCountToConsider).toList();
-        
+
         // Read any conversation shards from the URL
         String urlConversationListRoot = _view.urlView.conversationList;
         String conversationListRoot = urlConversationListRoot;
@@ -923,7 +923,7 @@ class NookController extends Controller {
     switch (action) {
       case UIAction.sendMessage:
         ReplyData replyData = data;
-        model.SuggestedReply selectedReply = suggestedRepliesByCategory[selectedSuggestedRepliesCategory].singleWhere((reply) => reply.suggestedReplyId == replyData.replyId);
+        model.SuggestedReply selectedReply = suggestedReplies.singleWhere((reply) => reply.suggestedReplyId == replyData.replyId);
         if (replyData.replyWithTranslation) {
           model.SuggestedReply translationReply = new model.SuggestedReply();
           translationReply
@@ -943,7 +943,7 @@ class NookController extends Controller {
         break;
       case UIAction.sendMessageGroup:
         GroupReplyData replyData = data;
-        List<model.SuggestedReply> selectedReplies = suggestedRepliesByCategory[selectedSuggestedRepliesCategory].where((reply) => reply.groupId == replyData.replyGroupId).toList();
+        List<model.SuggestedReply> selectedReplies = suggestedReplies.where((reply) => reply.groupId == replyData.replyGroupId).toList();
         selectedReplies.sort((reply1, reply2) => reply1.indexInGroup.compareTo(reply2.indexInGroup));
         if (replyData.replyWithTranslation) {
           List<model.SuggestedReply> translationReplies = [];
