@@ -86,15 +86,15 @@ class MessagesConfiguratorController extends ConfiguratorController {
       return;
     }
     log.verbose('command => $action : $data');
-    log.verbose('Before -- ${standardMessagesManager.categories}');
+    log.verbose('Before -- ${standardMessagesManager.localCategories}');
     switch (action) {
       case MessagesConfigAction.addStandardMessage:
         StandardMessageData messageData = data;
         var categoryId = messageData.categoryId;
         var groupId = messageData.groupId;
 
-        var category = standardMessagesManager.categories[categoryId];
-        var group = standardMessagesManager.categories[categoryId].groups[groupId];
+        var category = standardMessagesManager.localCategories[categoryId];
+        var group = standardMessagesManager.localCategories[categoryId].groups[groupId];
         var standardMessage = standardMessagesManager.createMessage(category.categoryId, category.categoryName, category.categoryIndex, group.groupId, group.groupName, group.groupIndexInCategory);
 
         var messageCategoryMap = {
@@ -123,7 +123,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
 
       case MessagesConfigAction.addStandardMessagesGroup:
         StandardMessagesGroupData groupData = data;
-        var category = standardMessagesManager.categories[groupData.categoryId];
+        var category = standardMessagesManager.localCategories[groupData.categoryId];
         var newGroup = standardMessagesManager.createStandardMessagesGroup(category.categoryId, category.categoryName);
         var messageCategoryMap = {
           category.categoryId: MessageCategory(category.categoryId, category.categoryName, category.categoryIndex)
@@ -167,9 +167,9 @@ class MessagesConfiguratorController extends ConfiguratorController {
         break;
     }
 
-    log.verbose('After -- ${standardMessagesManager.categories}');
+    log.verbose('After -- ${standardMessagesManager.localCategories}');
     var diffData = standardMessagesManager.diffData;
-    _updateUnsavedIndicators(standardMessagesManager.categories, diffData.unsavedMessageIds, diffData.unsavedGroupIds, diffData.unsavedCategoryIds);
+    _updateUnsavedIndicators(standardMessagesManager.localCategories, diffData.unsavedMessageIds, diffData.unsavedGroupIds, diffData.unsavedCategoryIds);
     // todo: show diffs when categories are edited vs changes from firebase
     _view.unsavedChanges = diffData.editedMessages.isNotEmpty || diffData.deletedMessages.isNotEmpty;
   }
@@ -177,9 +177,9 @@ class MessagesConfiguratorController extends ConfiguratorController {
   @override
   void setUpOnLogin() {
     platform.listenForSuggestedReplies((added, modified, removed) {
-      var messagesAdded = standardMessagesManager.onAddStandardMessagesFromFb(added);
-      var messagesModified = standardMessagesManager.onUpdateStandardMessagesFromFb(modified);
-      var messagesRemoved = standardMessagesManager.onRemoveStandardMessagesFromFb(removed);
+      var messagesAdded = standardMessagesManager.onAddStandardMessagesFromStorage(added);
+      var messagesModified = standardMessagesManager.onUpdateStandardMessagesFromStorage(modified);
+      var messagesRemoved = standardMessagesManager.onRemoveStandardMessagesFromStorage(removed);
 
       _addMessagesToView(_groupMessagesIntoCategoriesAndGroups(messagesAdded));
       _modifyMessagesInView(messagesModified);
