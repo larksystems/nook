@@ -289,7 +289,7 @@ class StandardMessagesManager {
   /// Deletes the messages category with the given [categoryName], and the messages in that category.
   /// Also adds these messages to the list of messages to be deleted and need to be saved.
   void deleteStandardMessagesCategory(String categoryId) {
-    var category = localCategories.remove(categoryId);
+    localCategories.remove(categoryId);
   }
 }
 
