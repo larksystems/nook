@@ -11,6 +11,10 @@ import 'package:katikati_ui_lib/components/platform/platform.dart' as platform;
 export 'package:katikati_ui_lib/components/platform/platform.dart';
 import 'package:katikati_ui_lib/components/platform/pubsub.dart';
 
+/// The client version used to track client/server API changes
+/// and passed to the server during each heartbeat
+String clientVersion = '1.0.0';
+
 Logger log = new Logger('platform.dart');
 
 const _SEND_MESSAGES_TO_IDS_ACTION = "send_messages_to_ids";
@@ -54,7 +58,8 @@ class Platform {
       return new Timer.periodic(fiveSeconds, (Timer tt) {
         Map payload = {
           'ping': '${t.tick}.${tt.tick}',
-          'lastUserActivity': appController.lastUserActivity.toIso8601String()
+          'lastUserActivity': appController.lastUserActivity.toIso8601String(),
+          'clientVersion': clientVersion,
         };
         _uptimePubSubInstance.publish(platform_constants.statuszTopic, payload).then(
           (_) {
@@ -103,11 +108,14 @@ class Platform {
       });
     };
 
+    // Heartbeat to check internet connectivity and notify server of the version being used
     new Timer.periodic(oneMinute, (Timer t) {
       Map payload = {
         'ping': '${t.tick}',
-        'lastUserActivity': appController.lastUserActivity.toIso8601String()
+        'lastUserActivity': appController.lastUserActivity.toIso8601String(),
+        'clientVersion': clientVersion,
       };
+      // TODO Prompt user to refresh browser if a heartbeat response from server indicates that the client is out of date
       _uptimePubSubInstance.publish(platform_constants.statuszTopic, payload).then(
         (_) {
           log.debug('Uptime ping ${t.tick} successful');
