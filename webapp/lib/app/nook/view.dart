@@ -94,8 +94,6 @@ class NookPageView extends PageView {
     messagesViewColumn.append(conversationPanelView.conversationPanel);
     tabsViewColumn.append(tabsView.renderElement);
 
-    bodyElement.append(snackbarView.snackbarElement);
-
     showNormalStatus('signed in');
 
     HttpRequest.getString('/assets/latest_commit_hash.json').then((latestCommitHashConfigJson) {
