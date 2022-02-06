@@ -74,6 +74,12 @@ class MessagesConfiguratorController extends ConfiguratorController {
     _controller = this;
   }
 
+  void _updateDiffUnsavedIndicators() {
+    var diffData = standardMessagesManager.diffData;
+    _updateUnsavedIndicators(standardMessagesManager.localCategories, diffData.unsavedMessageIds, diffData.unsavedGroupIds, diffData.unsavedCategoryIds);
+    _view.unsavedChanges = diffData.editedMessages.isNotEmpty || diffData.deletedMessages.isNotEmpty;
+  }
+
   @override
   void init() {
     view = new MessagesConfigurationPageView(this);
@@ -168,10 +174,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
     }
 
     log.verbose('After -- ${standardMessagesManager.localCategories}');
-    var diffData = standardMessagesManager.diffData;
-    _updateUnsavedIndicators(standardMessagesManager.localCategories, diffData.unsavedMessageIds, diffData.unsavedGroupIds, diffData.unsavedCategoryIds);
-    // todo: show diffs when categories are edited vs changes from firebase
-    _view.unsavedChanges = diffData.editedMessages.isNotEmpty || diffData.deletedMessages.isNotEmpty;
+    _updateDiffUnsavedIndicators();
   }
 
   @override
@@ -184,6 +187,8 @@ class MessagesConfiguratorController extends ConfiguratorController {
       _addMessagesToView(_groupMessagesIntoCategoriesAndGroups(messagesAdded));
       _modifyMessagesInView(messagesModified);
       _removeMessagesFromView(messagesRemoved);
+
+      _updateDiffUnsavedIndicators();
     });
   }
 
