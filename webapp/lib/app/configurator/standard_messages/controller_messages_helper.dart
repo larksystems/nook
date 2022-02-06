@@ -114,7 +114,7 @@ class StandardMessagesManager {
 
   model.SuggestedReply getStandardMessageById(String id) => standardMessagesInLocal.singleWhere((r) => r.suggestedReplyId == id);
 
-
+  // methods for manipulating local data
   model.SuggestedReply _addStandardMessageInLocal(model.SuggestedReply standardMessage) {
     if (standardMessagesInLocal.any((element) => element.suggestedReplyId == standardMessage.suggestedReplyId)) {
       _updateStandardMessageInLocal(standardMessage);
@@ -126,23 +126,6 @@ class StandardMessagesManager {
     return standardMessage;
   }
 
-  model.SuggestedReply _addStandardMessageInStorage(model.SuggestedReply standardMessage) {
-    storageCategories.putIfAbsent(standardMessage.categoryId, () => MessageCategory(standardMessage.categoryId, standardMessage.categoryName, standardMessage.categoryIndex));
-    storageCategories[standardMessage.categoryId].groups.putIfAbsent(standardMessage.groupId, () => MessageGroup(standardMessage.groupId, standardMessage.groupName, standardMessage.groupIndexInCategory));
-    storageCategories[standardMessage.categoryId].groups[standardMessage.groupId].messages.putIfAbsent(standardMessage.suggestedReplyId, () => standardMessage.clone());
-    return standardMessage;
-  }
-
-  List<model.SuggestedReply> onAddStandardMessagesFromStorage(List<model.SuggestedReply> standardMessagesToAdd) {
-    List<model.SuggestedReply> added = [];
-    for (var standardMessage in standardMessagesToAdd) {
-      var result = _addStandardMessageInLocal(standardMessage);
-      _addStandardMessageInStorage(standardMessage);
-      if (result != null) added.add(result);
-    }
-    return added;
-  }
-
   model.SuggestedReply _updateStandardMessageInLocal(model.SuggestedReply standardMessage) {
     var removed = _removeStandardMessageInLocal(standardMessage);
     var updated = _addStandardMessageInLocal(standardMessage);
@@ -152,12 +135,52 @@ class StandardMessagesManager {
     return updated;
   }
 
+  model.SuggestedReply _removeStandardMessageInLocal(model.SuggestedReply standardMessage) {
+    // todo: this might not be relevant
+    if (!standardMessagesInLocal.any((element) => element.suggestedReplyId == standardMessage.suggestedReplyId)) {
+      log.warning("Standard messages consistency error: Removing message that doesn't exist: ${standardMessage.suggestedReplyId}");
+      return null;
+    }
+    var oldStandardMessage = standardMessagesInLocal.singleWhere((element) => element.suggestedReplyId == standardMessage.suggestedReplyId);
+    localCategories[oldStandardMessage.categoryId].groups[oldStandardMessage.groupId].messages.remove(oldStandardMessage.suggestedReplyId);
+    return standardMessage;
+  }
+
+  // methods for manipulating data from storage
+  model.SuggestedReply _addStandardMessageInStorage(model.SuggestedReply standardMessage) {
+    storageCategories.putIfAbsent(standardMessage.categoryId, () => MessageCategory(standardMessage.categoryId, standardMessage.categoryName, standardMessage.categoryIndex));
+    storageCategories[standardMessage.categoryId].groups.putIfAbsent(standardMessage.groupId, () => MessageGroup(standardMessage.groupId, standardMessage.groupName, standardMessage.groupIndexInCategory));
+    storageCategories[standardMessage.categoryId].groups[standardMessage.groupId].messages.putIfAbsent(standardMessage.suggestedReplyId, () => standardMessage.clone());
+    return standardMessage;
+  }
+
   model.SuggestedReply _updateStandardMessageInStorage(model.SuggestedReply standardMessage) {
     storageCategories.putIfAbsent(standardMessage.categoryId, () => MessageCategory(standardMessage.categoryId, standardMessage.categoryName, standardMessage.categoryIndex));
     storageCategories[standardMessage.categoryId].groups.putIfAbsent(standardMessage.groupId, () => MessageGroup(standardMessage.groupId, standardMessage.groupName, standardMessage.groupIndexInCategory));
     storageCategories[standardMessage.categoryId].groups[standardMessage.groupId].messages.putIfAbsent(standardMessage.suggestedReplyId, () => standardMessage.clone());
     storageCategories[standardMessage.categoryId].groups[standardMessage.groupId].messages[standardMessage.suggestedReplyId] = standardMessage.clone();
     return standardMessage;
+  }
+
+  model.SuggestedReply _removeStandardMessageInStorage(model.SuggestedReply standardMessage) {
+    if (!standardMessagesInLocal.any((element) => element.suggestedReplyId == standardMessage.suggestedReplyId)) {
+      log.warning("Standard messages consistency error: Removing message that doesn't exist: ${standardMessage.suggestedReplyId}");
+      return null;
+    }
+    var oldStandardMessage = standardMessagesInStorage.singleWhere((element) => element.suggestedReplyId == standardMessage.suggestedReplyId);
+    storageCategories[oldStandardMessage.categoryId].groups[oldStandardMessage.groupId].messages.remove(oldStandardMessage.suggestedReplyId);
+    return standardMessage;
+  }
+
+  // methods to be called when updates are received from storage
+  List<model.SuggestedReply> onAddStandardMessagesFromStorage(List<model.SuggestedReply> standardMessagesToAdd) {
+    List<model.SuggestedReply> added = [];
+    for (var standardMessage in standardMessagesToAdd) {
+      var result = _addStandardMessageInLocal(standardMessage);
+      _addStandardMessageInStorage(standardMessage);
+      if (result != null) added.add(result);
+    }
+    return added;
   }
 
   List<model.SuggestedReply> onUpdateStandardMessagesFromStorage(List<model.SuggestedReply> standardMessagesToAdd) {
@@ -172,27 +195,6 @@ class StandardMessagesManager {
     return added;
   }
 
-  model.SuggestedReply _removeStandardMessageInLocal(model.SuggestedReply standardMessage) {
-    // todo: this might not be relevant
-    if (!standardMessagesInLocal.any((element) => element.suggestedReplyId == standardMessage.suggestedReplyId)) {
-      log.warning("Standard messages consistency error: Removing message that doesn't exist: ${standardMessage.suggestedReplyId}");
-      return null;
-    }
-    var oldStandardMessage = standardMessagesInLocal.singleWhere((element) => element.suggestedReplyId == standardMessage.suggestedReplyId);
-    localCategories[oldStandardMessage.categoryId].groups[oldStandardMessage.groupId].messages.remove(oldStandardMessage.suggestedReplyId);
-    return standardMessage;
-  }
-
-  model.SuggestedReply _removeStandardMessageInStorage(model.SuggestedReply standardMessage) {
-    if (!standardMessagesInLocal.any((element) => element.suggestedReplyId == standardMessage.suggestedReplyId)) {
-      log.warning("Standard messages consistency error: Removing message that doesn't exist: ${standardMessage.suggestedReplyId}");
-      return null;
-    }
-    var oldStandardMessage = standardMessagesInStorage.singleWhere((element) => element.suggestedReplyId == standardMessage.suggestedReplyId);
-    storageCategories[oldStandardMessage.categoryId].groups[oldStandardMessage.groupId].messages.remove(oldStandardMessage.suggestedReplyId);
-    return standardMessage;
-  }
-
   List<model.SuggestedReply> onRemoveStandardMessagesFromStorage(List<model.SuggestedReply> standardMessages) {
     List<model.SuggestedReply> removed = [];
     for (var standardMessage in standardMessages) {
@@ -205,6 +207,7 @@ class StandardMessagesManager {
     return removed;
   }
 
+  // methods to be called when the user makes changes to the local configuration
   model.SuggestedReply createMessage(String categoryId, String categoryName, int categoryIndex, String groupId, String groupName, int groupIndexInCategory) {
     var newStandardMessage = model.SuggestedReply()
       ..docId = model.generateStandardMessageId()
