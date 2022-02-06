@@ -22,18 +22,18 @@ class StandardMessagesManager {
   factory StandardMessagesManager() => _singleton;
 
   int getNextCategoryIndex() {
-    var lastIndex = localCategories.values.fold(0, (previousValue, category) => previousValue > category.categoryIndex ? previousValue : category.categoryIndex);
+    var lastIndex = localCategories.values.fold(0, (maxIndex, category) => maxIndex > category.categoryIndex ? maxIndex : category.categoryIndex);
     return lastIndex + 1;
   }
 
   int getNextGroupIndexInCategory(String categoryId) {
-    var lastIndex = localCategories[categoryId].groups.values.fold(0, (previousValue, group) => previousValue > group.groupIndexInCategory ? previousValue : group.groupIndexInCategory);
+    var lastIndex = localCategories[categoryId].groups.values.fold(0, (maxIndex, group) => maxIndex > group.groupIndexInCategory ? maxIndex : group.groupIndexInCategory);
     return lastIndex + 1;
   }
 
   int getNextMessageIndexInGroup(String categoryId, String groupId) {
     var standardMessagesInGroup = localCategories[categoryId].groups[groupId].messages.values;
-    var lastIndexInGroup = standardMessagesInGroup.fold(0, (previousValue, r) => previousValue > r.indexInGroup ? previousValue : r.indexInGroup);
+    var lastIndexInGroup = standardMessagesInGroup.fold(0, (maxIndex, r) => maxIndex > r.indexInGroup ? maxIndex : r.indexInGroup);
     return lastIndexInGroup + 1;
   }
 
@@ -52,18 +52,18 @@ class StandardMessagesManager {
     Map<String, model.SuggestedReply> localMessages = {};
 
     for (var category in localCategories.values) {
-      category.messages.forEach((message) {
+      for (var message in category.messages) {
         localMessages[message.suggestedReplyId] = message;
-      });
+      }
     }
 
     for (var category in storageCategories.values) {
-      category.messages.forEach((message) {
+      for (var message in category.messages) {
         storageMessages[message.suggestedReplyId] = message;
-      });
+      }
     }
 
-    Set<String> allMessageKeys = Set()..addAll(localMessages.keys)..addAll(storageMessages.keys);
+    Set<String> allMessageKeys = {...localMessages.keys, ...storageMessages.keys};
     for (var messageId in allMessageKeys) {
       var storageMessage = storageMessages[messageId];
       var localMessage = localMessages[messageId];
@@ -115,9 +115,9 @@ class StandardMessagesManager {
   model.SuggestedReply getStandardMessageById(String id) => standardMessagesInLocal.singleWhere((r) => r.suggestedReplyId == id);
 
 
-  model.SuggestedReply addStandardMessageInLocal(model.SuggestedReply standardMessage) {
+  model.SuggestedReply _addStandardMessageInLocal(model.SuggestedReply standardMessage) {
     if (standardMessagesInLocal.any((element) => element.suggestedReplyId == standardMessage.suggestedReplyId)) {
-      updateStandardMessageInLocal(standardMessage);
+      _updateStandardMessageInLocal(standardMessage);
       return null;
     }
     localCategories.putIfAbsent(standardMessage.categoryId, () => new MessageCategory(standardMessage.categoryId, standardMessage.category, standardMessage.categoryIndex));
@@ -126,7 +126,7 @@ class StandardMessagesManager {
     return standardMessage;
   }
 
-  model.SuggestedReply onAddStandardMessageFromStorage(model.SuggestedReply standardMessage) {
+  model.SuggestedReply _addStandardMessageInStorage(model.SuggestedReply standardMessage) {
     storageCategories.putIfAbsent(standardMessage.categoryId, () => MessageCategory(standardMessage.categoryId, standardMessage.categoryName, standardMessage.categoryIndex));
     storageCategories[standardMessage.categoryId].groups.putIfAbsent(standardMessage.groupId, () => MessageGroup(standardMessage.groupId, standardMessage.groupName, standardMessage.groupIndexInCategory));
     storageCategories[standardMessage.categoryId].groups[standardMessage.groupId].messages.putIfAbsent(standardMessage.suggestedReplyId, () => standardMessage.clone());
@@ -136,23 +136,23 @@ class StandardMessagesManager {
   List<model.SuggestedReply> onAddStandardMessagesFromStorage(List<model.SuggestedReply> standardMessagesToAdd) {
     List<model.SuggestedReply> added = [];
     for (var standardMessage in standardMessagesToAdd) {
-      var result = addStandardMessageInLocal(standardMessage);
-      onAddStandardMessageFromStorage(standardMessage);
+      var result = _addStandardMessageInLocal(standardMessage);
+      _addStandardMessageInStorage(standardMessage);
       if (result != null) added.add(result);
     }
     return added;
   }
 
-  model.SuggestedReply updateStandardMessageInLocal(model.SuggestedReply standardMessage) {
-    var removed = removeStandardMessageInLocal(standardMessage);
-    var updated = addStandardMessageInLocal(standardMessage);
+  model.SuggestedReply _updateStandardMessageInLocal(model.SuggestedReply standardMessage) {
+    var removed = _removeStandardMessageInLocal(standardMessage);
+    var updated = _addStandardMessageInLocal(standardMessage);
     if (removed == null || updated == null) {
       throw "Standard message consistency error: The two-step update process has found an inconsistency for updating tag ${standardMessage.suggestedReplyId}";
     }
     return updated;
   }
 
-  model.SuggestedReply onUpdateStandardMessageFromStorage(model.SuggestedReply standardMessage) {
+  model.SuggestedReply _updateStandardMessageInStorage(model.SuggestedReply standardMessage) {
     storageCategories.putIfAbsent(standardMessage.categoryId, () => MessageCategory(standardMessage.categoryId, standardMessage.categoryName, standardMessage.categoryIndex));
     storageCategories[standardMessage.categoryId].groups.putIfAbsent(standardMessage.groupId, () => MessageGroup(standardMessage.groupId, standardMessage.groupName, standardMessage.groupIndexInCategory));
     storageCategories[standardMessage.categoryId].groups[standardMessage.groupId].messages.putIfAbsent(standardMessage.suggestedReplyId, () => standardMessage.clone());
@@ -163,16 +163,16 @@ class StandardMessagesManager {
   List<model.SuggestedReply> onUpdateStandardMessagesFromStorage(List<model.SuggestedReply> standardMessagesToAdd) {
     List<model.SuggestedReply> added = [];
     for (var standardMessage in standardMessagesToAdd) {
-      onUpdateStandardMessageFromStorage(standardMessage);
+      _updateStandardMessageInStorage(standardMessage);
 
       // todo: check if unedited
-      var result = updateStandardMessageInLocal(standardMessage);
+      var result = _updateStandardMessageInLocal(standardMessage);
       if (result != null) added.add(result);
     }
     return added;
   }
 
-  model.SuggestedReply removeStandardMessageInLocal(model.SuggestedReply standardMessage) {
+  model.SuggestedReply _removeStandardMessageInLocal(model.SuggestedReply standardMessage) {
     // todo: this might not be relevant
     if (!standardMessagesInLocal.any((element) => element.suggestedReplyId == standardMessage.suggestedReplyId)) {
       log.warning("Standard messages consistency error: Removing message that doesn't exist: ${standardMessage.suggestedReplyId}");
@@ -183,7 +183,7 @@ class StandardMessagesManager {
     return standardMessage;
   }
 
-  model.SuggestedReply onRemoveStandardMessageFromStorage(model.SuggestedReply standardMessage) {
+  model.SuggestedReply _removeStandardMessageInStorage(model.SuggestedReply standardMessage) {
     if (!standardMessagesInLocal.any((element) => element.suggestedReplyId == standardMessage.suggestedReplyId)) {
       log.warning("Standard messages consistency error: Removing message that doesn't exist: ${standardMessage.suggestedReplyId}");
       return null;
@@ -196,10 +196,10 @@ class StandardMessagesManager {
   List<model.SuggestedReply> onRemoveStandardMessagesFromStorage(List<model.SuggestedReply> standardMessages) {
     List<model.SuggestedReply> removed = [];
     for (var standardMessage in standardMessages) {
-      onRemoveStandardMessageFromStorage(standardMessage);
+      _removeStandardMessageInStorage(standardMessage);
 
       // todo: check if unedited
-      var result = removeStandardMessageInLocal(standardMessage);
+      var result = _removeStandardMessageInLocal(standardMessage);
       if (result != null) removed.add(result);
     }
     return removed;
@@ -219,7 +219,7 @@ class StandardMessagesManager {
       ..indexInGroup = getNextMessageIndexInGroup(categoryId, groupId)
       ..categoryIndex = categoryIndex
       ..groupIndexInCategory = groupIndexInCategory;
-    addStandardMessageInLocal(newStandardMessage);
+    _addStandardMessageInLocal(newStandardMessage);
     return newStandardMessage;
   }
 
@@ -235,13 +235,13 @@ class StandardMessagesManager {
     if (translation != null) {
       message.translation = translation;
     }
-    updateStandardMessageInLocal(message);
+    _updateStandardMessageInLocal(message);
     return message;
   }
 
   model.SuggestedReply deleteMessage(String messageId) {
     var message = standardMessagesInLocal.singleWhere((element) => element.suggestedReplyId == messageId);
-    removeStandardMessageInLocal(message);
+    _removeStandardMessageInLocal(message);
     return message;
   }
 
