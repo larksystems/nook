@@ -77,7 +77,7 @@ Map<String, MessageCategory> _groupMessagesIntoCategoriesAndGroups(List<model.Su
   Map<String, MessageCategory> result = {};
   for (model.SuggestedReply message in messages) {
     result.putIfAbsent(message.categoryId, () => MessageCategory(message.categoryId, message.category));
-    result[message.categoryId].groups.putIfAbsent(message.groupId, () => MessageGroup(message.groupId, message.groupDescription));
+    result[message.categoryId].groups.putIfAbsent(message.groupId, () => MessageGroup(message.groupId, message.groupName));
     result[message.categoryId].groups[message.groupId].messages.putIfAbsent(message.docId, () => message);
   }
   for (String category in result.keys) {
