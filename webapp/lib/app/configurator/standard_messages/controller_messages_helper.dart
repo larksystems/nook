@@ -28,7 +28,7 @@ class StandardMessagesManager {
       return null;
     }
     categories.putIfAbsent(standardMessage.categoryId, () => new MessageCategory(standardMessage.categoryId, standardMessage.category));
-    categories[standardMessage.categoryId].groups.putIfAbsent(standardMessage.groupId, () => MessageGroup(standardMessage.groupId, standardMessage.groupDescription));
+    categories[standardMessage.categoryId].groups.putIfAbsent(standardMessage.groupId, () => MessageGroup(standardMessage.groupId, standardMessage.groupName));
     categories[standardMessage.categoryId].groups[standardMessage.groupId].messages[standardMessage.suggestedReplyId] = standardMessage;
     return standardMessage;
   }
@@ -89,7 +89,7 @@ class StandardMessagesManager {
       ..categoryId = categoryId
       ..category = categoryName
       ..groupId = categories[categoryId].groups[groupId].groupId
-      ..groupDescription = groupName
+      ..groupName = groupName
       ..indexInGroup = getNextIndexInGroup(categoryId, groupId);
     addStandardMessage(newStandardMessage);
     editedMessages[newStandardMessage.suggestedReplyId] = newStandardMessage;
@@ -128,7 +128,7 @@ class StandardMessagesManager {
     var group = categories[categoryId].groups[groupId];
     group.groupName = newGroupName;
     for (var standardMessage in group.messages.values) {
-      standardMessage.groupDescription = newGroupName;
+      standardMessage.groupName = newGroupName;
       editedMessages[standardMessage.suggestedReplyId] = standardMessage;
     }
   }
