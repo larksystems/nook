@@ -100,14 +100,12 @@ class TagsConfiguratorController extends ConfiguratorController {
     log.verbose('command => $action : $data');
     switch (action) {
       case TagsConfigAction.addTag:
-        print(currentConfig);
+        TagData tagData = data;
         if (!currentConfig.editTagsEnabled) {
-          command(UIAction.showSnackbar, SnackbarData('Adding a new tag is disabled', SnackbarNotificationType.warning));
-          
+          command(BaseAction.showSnackbar, SnackbarData('Adding a new tag is disabled', SnackbarNotificationType.warning));
           return;
         }
 
-        TagData tagData = data;
         var tag = tagManager.createTag(tagData.groupId);
         _addTagsToView({
           tagData.groupId: [tag]
@@ -115,41 +113,47 @@ class TagsConfiguratorController extends ConfiguratorController {
         break;
 
       case TagsConfigAction.requestRenameTag:
+        TagData tagData = data;
         if (!currentConfig.editTagsEnabled) {
-          command(UIAction.showSnackbar, SnackbarData('Renaming a tag is disabled', SnackbarNotificationType.warning));
+          command(BaseAction.showSnackbar, SnackbarData('Renaming a tag is disabled', SnackbarNotificationType.warning));
+          // Reshow the tag as the view edits it anyway
+          _modifyTagsInView(Map.fromEntries(tagManager.getTagById(tagData.id).groups.map((g) => new MapEntry(g, [tagManager.getTagById(tagData.id)]))));
           return;
         }
 
-        TagData requestRenameTagData = data;
-        var tagText = requestRenameTagData.text.toLowerCase().trim();
+        var tagText = tagData.text.toLowerCase().trim();
         var presentTagTexts = tagManager._tags.map((tag) => tag.text.toLowerCase().trim()).toList();
 
         if (presentTagTexts.contains(tagText)) {
-          _showDuplicateTagWarningModal(requestRenameTagData.groupId, requestRenameTagData.id, requestRenameTagData.text);
+          _showDuplicateTagWarningModal(tagData.groupId, tagData.id, tagData.text);
         } else {
-          command(TagsConfigAction.renameTag, TagData(requestRenameTagData.id, text: requestRenameTagData.text));
+          command(TagsConfigAction.renameTag, TagData(tagData.id, text: tagData.text));
         }
         break;
 
       case TagsConfigAction.renameTag:
+        TagData tagData = data;
         if (!currentConfig.editTagsEnabled) {
-          command(UIAction.showSnackbar, SnackbarData('Renaming a tag is disabled', SnackbarNotificationType.warning));
+          command(BaseAction.showSnackbar, SnackbarData('Renaming a tag is disabled', SnackbarNotificationType.warning));
+          // Reshow the tag as the view edits it anyway
+          _modifyTagsInView(Map.fromEntries(tagManager.getTagById(tagData.id).groups.map((g) => new MapEntry(g, [tagManager.getTagById(tagData.id)]))));
           return;
         }
 
-        TagData tagData = data;
         var tag = tagManager.modifyTag(tagData.id, text: tagData.text);
         _modifyTagsInView(Map.fromEntries(tag.groups.map((g) => new MapEntry(g, [tag]))));
         _updateUnsavedIndicators(tagManager.tagsByGroup, tagManager.unsavedTagIds, tagManager.unsavedGroupIds);
         break;
 
       case TagsConfigAction.moveTag:
+        TagData tagData = data;
         if (!currentConfig.editTagsEnabled) {
-          command(UIAction.showSnackbar, SnackbarData('Moving a tag is disabled', SnackbarNotificationType.warning));
+          command(BaseAction.showSnackbar, SnackbarData('Moving a tag is disabled', SnackbarNotificationType.warning));
+          // Reshow the tag as the view edits it anyway
+          _modifyTagsInView(Map.fromEntries(tagManager.getTagById(tagData.id).groups.map((g) => new MapEntry(g, [tagManager.getTagById(tagData.id)]))));
           return;
         }
 
-        TagData tagData = data;
         model.Tag tag = tagManager.modifyTag(tagData.id, group: tagData.newGroupId);
         // update the view by removing the tag and then adding it
         _removeTagsFromView({
@@ -163,12 +167,12 @@ class TagsConfiguratorController extends ConfiguratorController {
         break;
 
       case TagsConfigAction.removeTag:
+        TagData tagData = data;
         if (!currentConfig.editTagsEnabled) {
-          command(UIAction.showSnackbar, SnackbarData('Deleting a tag is disabled', SnackbarNotificationType.warning));
+          command(BaseAction.showSnackbar, SnackbarData('Deleting a tag is disabled', SnackbarNotificationType.warning));
           return;
         }
 
-        TagData tagData = data;
         model.Tag tag = tagManager.deleteTag(tagData.id);
         _removeTagsFromView({
           tagData.groupId: [tag]
@@ -178,7 +182,7 @@ class TagsConfiguratorController extends ConfiguratorController {
 
       case TagsConfigAction.addTagGroup:
         if (!currentConfig.editTagsEnabled) {
-          command(UIAction.showSnackbar, SnackbarData('Adding a new tag group is disabled', SnackbarNotificationType.warning));
+          command(BaseAction.showSnackbar, SnackbarData('Adding a new tag group is disabled', SnackbarNotificationType.warning));
           return;
         }
 
@@ -188,12 +192,13 @@ class TagsConfiguratorController extends ConfiguratorController {
         break;
 
       case TagsConfigAction.updateTagGroup:
+        TagGroupData groupData = data;
         if (!currentConfig.editTagsEnabled) {
-          command(UIAction.showSnackbar, SnackbarData('Renaming a tag group is disabled', SnackbarNotificationType.warning));
+          command(BaseAction.showSnackbar, SnackbarData('Renaming a tag group is disabled', SnackbarNotificationType.warning));
+          // TODO: the tag group name still remains edited in the UI, work out how to change it
           return;
         }
 
-        TagGroupData groupData = data;
         tagManager.renameTagGroup(groupData.groupName, groupData.newGroupName);
         var groupView = _view.groups.queryItem(groupData.groupName);
         groupView.id = groupData.newGroupName;
@@ -203,7 +208,7 @@ class TagsConfiguratorController extends ConfiguratorController {
 
       case TagsConfigAction.removeTagGroup:
         if (!currentConfig.editTagsEnabled) {
-          command(UIAction.showSnackbar, SnackbarData('Deleting a tag group is disabled', SnackbarNotificationType.warning));
+          command(BaseAction.showSnackbar, SnackbarData('Deleting a tag group is disabled', SnackbarNotificationType.warning));
           return;
         }
 
@@ -214,7 +219,7 @@ class TagsConfiguratorController extends ConfiguratorController {
 
       case TagsConfigAction.updateTagType:
         if (!currentConfig.editTagsEnabled) {
-          command(UIAction.showSnackbar, SnackbarData('Changing the tag type is disabled', SnackbarNotificationType.warning));
+          command(BaseAction.showSnackbar, SnackbarData('Changing the tag type is disabled', SnackbarNotificationType.warning));
           return;
         }
 
