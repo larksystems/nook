@@ -229,8 +229,8 @@ class ConfigureTagView extends TagView {
 
     onMouseEnter = () {
       if (dragInProgress) return;
-      tooltip.parent = renderElement;
       if ((_view.appController as TagsConfiguratorController).currentConfig.sampleMessagesEnabled) {
+        tooltip.parent = renderElement;
         getSampleMessages(platform.firestoreInstance, tagId).then((value) => tooltip.displayMessages(value));
       }
     };
