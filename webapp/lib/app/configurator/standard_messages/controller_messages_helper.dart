@@ -228,7 +228,7 @@ class StandardMessagesManager {
 
   model.SuggestedReply modifyMessage(String messageId, String text, String translation) {
     var message = standardMessagesInLocal.singleWhere((element) => element.suggestedReplyId == messageId);
-    if ((message.text != null && message.text == text) || (message.translation != null && message.translation == translation)) {
+    if ((message.text != null && message.text == text) && (message.translation != null && message.translation == translation)) {
       return message;
     }
 
