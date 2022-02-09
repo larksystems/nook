@@ -91,7 +91,7 @@ class StandardMessagesCategoryView extends AccordionItem {
     editableTitle = TextEdit(_categoryName, removable: true)
       ..testInput = (String value) {
         var messageManager = (_view.appController as MessagesConfiguratorController).standardMessagesManager;
-        var categories = messageManager.standardMessages.map((e) => e.category).toSet();
+        var categories = messageManager.standardMessagesInLocal.map((e) => e.category).toSet();
         categories.remove(id);
         return !categories.contains(value);
       }
@@ -179,7 +179,7 @@ class StandardMessagesGroupView extends AccordionItem {
     editableTitle = TextEdit(_groupName, removable: true)
       ..testInput = (String value) {
         var messageManager = (_view.appController as MessagesConfiguratorController).standardMessagesManager;
-        var groups = messageManager.standardMessages.map((e) => e.group_description).toSet();
+        var groups = messageManager.standardMessagesInLocal.map((e) => e.group_description).toSet();
         groups.remove(id);
         return !groups.contains(value);
       }

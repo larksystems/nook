@@ -2,7 +2,8 @@ part of controller;
 
 void _addMessagesToView(Map<String, MessageCategory> messagesByGroupByCategory, {bool startEditingName = false}) {
   var categories = messagesByGroupByCategory.values.toList();
-  categories.sort((c1, c2) => c1.categoryIndex.compareTo(c2.categoryIndex));
+  // todo: remove ?? check when we have the guarantee that the categoryIndex is always present
+  categories.sort((c1, c2) => (c1.categoryIndex ?? 0).compareTo(c2.categoryIndex ?? 0));
   List<String> categoryIds = categories.map((c) => c.categoryId).toList();
   for (var categoryId in categoryIds) {
     if (_view.categories.queryItem(categoryId) == null) {
@@ -16,7 +17,8 @@ void _addMessagesToView(Map<String, MessageCategory> messagesByGroupByCategory, 
     var categoryView = _view.categoriesById[categoryId];
 
     var groups = messagesByGroupByCategory[categoryId].groups.values.toList();
-    groups.sort((g1, g2) => g1.groupIndexInCategory.compareTo(g2.groupIndexInCategory));
+    // todo: remove ?? check when we have the guarantee that the groupIndex is always present
+    groups.sort((g1, g2) => (g1.groupIndexInCategory ?? 0).compareTo(g2.groupIndexInCategory ?? 0));
     List<String> groupIds = groups.map((g) => g.groupId).toList();
     for (var groupId in groupIds) {
       if (categoryView.groups.queryItem(groupId) == null) {
