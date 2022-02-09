@@ -51,7 +51,9 @@ void _modifyMessagesInView(List<model.SuggestedReply> messages) {
   for (var message in messages) {
     var categoryView = _view.categoriesById[message.categoryId];
     var groupView = categoryView.groupsById[message.groupId];
-    var messageView = new StandardMessageView(message.suggestedReplyId, message.text, message.translation);
+    var messageView = groupView.messagesById[message.docId];
+    messageView.updateText(message.text);
+    messageView.updateTranslation(message.translation);
     groupView.modifyMessage(message.suggestedReplyId, messageView);
     
     categoryView.updateName(message.categoryName);
@@ -59,7 +61,7 @@ void _modifyMessagesInView(List<model.SuggestedReply> messages) {
   }
 }
 
-void _updateUnsavedIndicators(Map<String, MessageCategory> categories, Set<String> unsavedMessageIds, Set<String> unsavedGroupIds, Set<String> unsavedCategoryIds) {
+void _updateUnsavedIndicators(Map<String, MessageCategory> categories, Set<String> unsavedMessageTextIds, Set<String> unsavedMessageTranslationIds, Set<String> unsavedGroupIds, Set<String> unsavedCategoryIds) {
   for (var categoryId in categories.keys) {
     var categoryView = _view.categoriesById[categoryId];
     categoryView.markAsUnsaved(unsavedCategoryIds.contains(categoryId));
@@ -70,7 +72,15 @@ void _updateUnsavedIndicators(Map<String, MessageCategory> categories, Set<Strin
 
       for (var messageId in categories[categoryId].groups[groupId].messages.keys) {
         var messageView = groupView.messagesById[messageId];
-        messageView.markAsUnsaved(unsavedMessageIds.contains(messageId));
+        messageView.markTextAsUnsaved(unsavedMessageTextIds.contains(messageId));
+        messageView.markTranslationAsUnsaved(unsavedMessageTranslationIds.contains(messageId));
+
+        if (!unsavedMessageTextIds.contains(messageId)) {
+          messageView.hideAlternativeText();
+        }
+        if (!unsavedMessageTranslationIds.contains(messageId)) {
+          messageView.hideAlternativeTranslation();
+        }
       }
     }
   }

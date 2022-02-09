@@ -67,7 +67,8 @@ class MessagesConfigurationPageView extends ConfigurationPageView {
       categoriesById[categoryId].groupsById.keys.forEach((groupId) {
         categoriesById[categoryId].groupsById[groupId].markAsUnsaved(false);
         categoriesById[categoryId].groupsById[groupId].messagesById.keys.forEach((messageId) {
-          categoriesById[categoryId].groupsById[groupId].messagesById[messageId].markAsUnsaved(false);
+          categoriesById[categoryId].groupsById[groupId].messagesById[messageId].markTextAsUnsaved(false);
+          categoriesById[categoryId].groupsById[groupId].messagesById[messageId].markTranslationAsUnsaved(false);
         });
       });
     });
@@ -208,8 +209,6 @@ class StandardMessagesGroupView extends AccordionItem {
   }
 
   void modifyMessage(String messageId, StandardMessageView standardMessageView) {
-    _standardMessagesContainer.insertBefore(standardMessageView.renderElement, messagesById[messageId].renderElement);
-    messagesById[messageId].renderElement.remove();
     messagesById[messageId] = standardMessageView;
   }
 
@@ -245,18 +244,20 @@ class StandardMessagesGroupView extends AccordionItem {
 
 class StandardMessageView {
   Element _standardMessageElement;
+  MessageView _textView;
+  MessageView _translationView;
 
   StandardMessageView(String messageId, String text, String translation) {
     _standardMessageElement = new DivElement()
       ..classes.add('standard-message')
       ..dataset['id'] = '$messageId';
 
-    var textView = new MessageView(text, (text) => _view.appController.command(MessagesConfigAction.updateStandardMessage, new StandardMessageData(messageId, text: text)));
-    var translationView = new MessageView(translation, (translation) => _view.appController.command(MessagesConfigAction.updateStandardMessage, new StandardMessageData(messageId, translation: translation)), placeholder: '(optional) Translate the message in a secondary language here');
+    _textView = new MessageView(text, (text) => _view.appController.command(MessagesConfigAction.updateStandardMessage, new StandardMessageData(messageId, text: text)));
+    _translationView = new MessageView(translation, (translation) => _view.appController.command(MessagesConfigAction.updateStandardMessage, new StandardMessageData(messageId, translation: translation)), placeholder: '(optional) Translate the message in a secondary language here');
     _standardMessageElement
-      ..append(textView.renderElement)
-      ..append(translationView.renderElement);
-    _makeStandardMessageViewTextareasSynchronisable([textView, translationView]);
+      ..append(_textView.renderElement)
+      ..append(_translationView.renderElement);
+    _makeStandardMessageViewTextareasSynchronisable([_textView, _translationView]);
 
     var removeButton = new Button(ButtonType.remove, hoverText: 'Remove standard message', onClick: (_) {
       var removeWarningModal;
@@ -272,21 +273,55 @@ class StandardMessageView {
 
   Element get renderElement => _standardMessageElement;
 
-  void markAsUnsaved(bool unsaved) {
-    _standardMessageElement.classes.toggle("unsaved", unsaved);
+  void markTextAsUnsaved(bool unsaved) {
+    _textView.markAsUnsaved(unsaved);
+  }
+
+  void markTranslationAsUnsaved(bool unsaved) {
+    _translationView.markAsUnsaved(unsaved);
+  }
+
+  void updateText(String text) {
+    _textView.updateText(text);
+  }
+
+  void updateTranslation(String text) {
+    _translationView.updateText(text);
+  }
+
+  void showAlternativeText(String text) {
+    _textView.showAlternative(text);
+  }
+
+  void showAlternativeTranslation(String translation) {
+    _translationView.showAlternative(translation);
+  }
+
+  void hideAlternativeText() {
+    _textView.hideAlternative();
+  }
+
+  void hideAlternativeTranslation() {
+    _translationView.hideAlternative();
   }
 }
 
 class MessageView {
   Element _messageElement;
+  Element _messageWrapper;
   TextAreaElement _messageText;
   Function onMessageUpdateCallback;
   Function _onTextareaHeightChangeCallback;
+  SpanElement _textLengthIndicator;
+
+  DivElement _alternateElement;
 
   MessageView(String message, this.onMessageUpdateCallback, {String placeholder = ''}) {
     _messageElement = new DivElement()..classes.add('message');
+    _messageWrapper = new DivElement()..classes.add('message-wrapper');
+    _alternateElement = new DivElement()..classes.add('message-alternative')..hidden = true;
 
-    var textLengthIndicator = new SpanElement()
+    _textLengthIndicator = new SpanElement()
       ..classes.add('message__length-indicator')
       ..classes.toggle('message__length-indicator--alert', message.length > _view.appController.MESSAGE_MAX_LENGTH)
       ..text = '${message.length}/${_view.appController.MESSAGE_MAX_LENGTH}';
@@ -300,13 +335,14 @@ class MessageView {
       ..onBlur.listen((event) => onMessageUpdateCallback((event.target as TextAreaElement).value))
       ..onInput.listen((event) {
         int count = _messageText.value.split('').length;
-        textLengthIndicator.text = '${count}/${_view.appController.MESSAGE_MAX_LENGTH}';
+        _textLengthIndicator.text = '${count}/${_view.appController.MESSAGE_MAX_LENGTH}';
         _messageText.classes.toggle('message__text--alert', count > _view.appController.MESSAGE_MAX_LENGTH);
-        textLengthIndicator.classes.toggle('message__length-indicator--alert', count > _view.appController.MESSAGE_MAX_LENGTH);
+        _textLengthIndicator.classes.toggle('message__length-indicator--alert', count > _view.appController.MESSAGE_MAX_LENGTH);
         _handleTextareaHeightChange();
       });
-
-    _messageElement..append(_messageText)..append(textLengthIndicator);
+    
+    _messageWrapper..append(_messageText)..append(_textLengthIndicator);
+    _messageElement..append(_messageWrapper)..append(_alternateElement);
     finaliseRenderAsync();
   }
 
@@ -339,6 +375,40 @@ class MessageView {
       _handleTextareaHeightChange();
       timer.cancel();
     });
+  }
+
+  void markAsUnsaved(bool unsaved) {
+    _messageWrapper.classes.toggle('unsaved', unsaved);
+  }
+
+  void updateText(String text) {
+    _messageText.value = text;
+
+    int count = _messageText.value.split('').length;
+    _textLengthIndicator.text = '${count}/${_view.appController.MESSAGE_MAX_LENGTH}';
+    _messageText.classes.toggle('message__text--alert', count > _view.appController.MESSAGE_MAX_LENGTH);
+    _textLengthIndicator.classes.toggle('message__length-indicator--alert', count > _view.appController.MESSAGE_MAX_LENGTH);
+    _handleTextareaHeightChange();
+  }
+
+  void showAlternative(String text) {
+    _alternateElement.children.clear();
+    var instructions = DivElement()..className = "message-alternative__instruction"..innerText = "This text has been updated in the storage to:";
+    var altText = DivElement()..innerText = text;
+    var acceptButton = Button(ButtonType.confirm, onClick: (_) => onMessageUpdateCallback(text));
+    var discardButton = Button(ButtonType.cancel, onClick: (_) => _alternateElement..hidden = true);
+    var actions = DivElement()..append(acceptButton.renderElement)..append(discardButton.renderElement);
+    _alternateElement
+      ..hidden = false
+      ..append(instructions)
+      ..append(altText)
+      ..append(actions);
+  }
+
+  void hideAlternative() {
+    _alternateElement
+      ..children.clear()
+      ..hidden = true;
   }
 }
 

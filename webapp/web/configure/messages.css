@@ -3,7 +3,7 @@
 }
 
 .text-edit.unsaved::before,
-.standard-message.unsaved .message::before {
+.message-wrapper.unsaved::before {
   font-family: "Font Awesome 5 Free";
   content: "\f071";
   display: inline-block;

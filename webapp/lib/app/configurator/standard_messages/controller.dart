@@ -76,7 +76,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
 
   void _updateDiffUnsavedIndicators() {
     var diffData = standardMessagesManager.diffData;
-    _updateUnsavedIndicators(standardMessagesManager.localCategories, diffData.unsavedMessageIds, diffData.unsavedGroupIds, diffData.unsavedCategoryIds);
+    _updateUnsavedIndicators(standardMessagesManager.localCategories, diffData.unsavedMessageTextIds, diffData.unsavedMessageTranslationIds, diffData.unsavedGroupIds, diffData.unsavedCategoryIds);
     _view.unsavedChanges = diffData.editedMessages.isNotEmpty || diffData.deletedMessages.isNotEmpty;
   }
 
