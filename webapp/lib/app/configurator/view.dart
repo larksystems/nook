@@ -35,10 +35,10 @@ class ConfigurationPageView extends PageView {
 
     _unsavedChanges = status;
     if (_unsavedChanges) {
-      _enableSaveButton();
+      enableSaveButton();
       _addConfirmationOnLeave();
     } else {
-      _disableSaveButton();
+      disableSaveButton();
       _removeConfirmationOnLeave();
     }
   }
@@ -83,10 +83,12 @@ class ConfigurationPageView extends PageView {
   /// This must match the animation length set in snackbar.css
   static const _ANIMATION_LENGTH_MS = 200;
 
-  void showSaveStatus(String status) {
+  void showSaveStatus(String status, {bool autoHide = false}) {
     saveStatusElement.text = status;
     saveStatusElement.classes.remove('hidden');
-    new Timer(new Duration(seconds: _SECONDS_ON_SCREEN), () => hideSaveStatus());
+    if (autoHide) {
+      new Timer(new Duration(milliseconds: 15 * _ANIMATION_LENGTH_MS), () => saveStatusElement.text = '');
+    }
   }
 
   hideSaveStatus() {
@@ -95,11 +97,11 @@ class ConfigurationPageView extends PageView {
     new Timer(new Duration(milliseconds: _ANIMATION_LENGTH_MS), () => saveStatusElement.text = '');
   }
 
-  void _enableSaveButton() {
+  void enableSaveButton() {
     saveConfigurationButton.hidden = false;
   }
 
-  void _disableSaveButton() {
+  void disableSaveButton() {
     saveConfigurationButton.hidden = true;
     new Timer(new Duration(milliseconds: 10 * _ANIMATION_LENGTH_MS), () {
       saveStatusElement.text = '';
