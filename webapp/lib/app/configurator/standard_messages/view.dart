@@ -81,6 +81,7 @@ class StandardMessagesCategoryView extends AccordionItem {
   DivElement _standardMessagesGroupContainer;
   Button _addButton;
   TextEdit editableTitle;
+  Element _alternativeElement;
 
   Accordion groups;
 
@@ -103,7 +104,10 @@ class StandardMessagesCategoryView extends AccordionItem {
       ..onDelete = () {
         requestToDelete();
       };
-    header.append(editableTitle.renderElement);
+    _alternativeElement = DivElement()..className = "category-alternative"..hidden = true;
+    header
+      ..append(editableTitle.renderElement)
+      ..append(_alternativeElement);
 
     _standardMessagesGroupContainer = new DivElement()..classes.add('standard-messages__group');
     body.append(_standardMessagesGroupContainer);
@@ -125,6 +129,29 @@ class StandardMessagesCategoryView extends AccordionItem {
     if (_categoryName.compareTo(newCategoryName) != 0) {
       editableTitle.updateText(newCategoryName);
     }
+  }
+
+  void showAlternative(String categoryName) {
+    _alternativeElement.children.clear();
+    var instructions = SpanElement()..className = "category-alternative__instruction"..innerText = "This category has been renamed in the storage to:";
+    var altText = SpanElement()..innerText = categoryName;
+    var acceptButton = Button(ButtonType.confirm, onClick: (_) {
+      editableTitle.updateText(categoryName);
+      _view.appController.command(MessagesConfigAction.updateStandardMessagesCategory, new StandardMessagesCategoryData(_categoryId, newCategoryName: categoryName));
+    });
+    var discardButton = Button(ButtonType.cancel, onClick: (_) => _alternativeElement..hidden = true);
+    var actions = SpanElement()..append(acceptButton.renderElement)..append(discardButton.renderElement);
+    _alternativeElement
+      ..hidden = false
+      ..append(instructions)
+      ..append(altText)
+      ..append(actions);
+  }
+
+  void hideAlternative() {
+    _alternativeElement
+      ..children.clear()
+      ..hidden = true;
   }
 
   void addGroup(String groupId, StandardMessagesGroupView standardMessagesGroupView, [int index]) {
@@ -173,6 +200,7 @@ class StandardMessagesGroupView extends AccordionItem {
   DivElement _standardMessagesContainer;
   Button _addButton;
   TextEdit editableTitle;
+  Element _alternativeElement;
 
   Map<String, StandardMessageView> messagesById = {};
 
@@ -190,7 +218,10 @@ class StandardMessagesGroupView extends AccordionItem {
       ..onDelete = () {
         requestToDelete();
       };
-    header.append(editableTitle.renderElement);
+    _alternativeElement = DivElement()..className = "group-alternative"..hidden = true;
+    header
+      ..append(editableTitle.renderElement)
+      ..append(_alternativeElement);
 
     _standardMessagesContainer = DivElement();
     body.append(_standardMessagesContainer);
@@ -201,6 +232,29 @@ class StandardMessagesGroupView extends AccordionItem {
     });
 
     body.append(_addButton.renderElement);
+  }
+
+  void showAlternative(String groupName) {
+    _alternativeElement.children.clear();
+    var instructions = SpanElement()..className = "group-alternative__instruction"..innerText = "This group has been renamed in the storage to:";
+    var altText = SpanElement()..innerText = groupName;
+    var acceptButton = Button(ButtonType.confirm, onClick: (_) {
+      editableTitle.updateText(groupName);
+      _view.appController.command(MessagesConfigAction.updateStandardMessagesGroup, new StandardMessagesGroupData(_categoryId, _groupId, newGroupName: groupName));
+    });
+    var discardButton = Button(ButtonType.cancel, onClick: (_) => _alternativeElement..hidden = true);
+    var actions = SpanElement()..append(acceptButton.renderElement)..append(discardButton.renderElement);
+    _alternativeElement
+      ..hidden = false
+      ..append(instructions)
+      ..append(altText)
+      ..append(actions);
+  }
+
+  void hideAlternative() {
+    _alternativeElement
+      ..children.clear()
+      ..hidden = true;
   }
 
   void addMessage(String messageId, StandardMessageView standardMessageView) {
@@ -314,12 +368,12 @@ class MessageView {
   Function _onTextareaHeightChangeCallback;
   SpanElement _textLengthIndicator;
 
-  DivElement _alternateElement;
+  DivElement _alternativeElement;
 
   MessageView(String message, this.onMessageUpdateCallback, {String placeholder = ''}) {
     _messageElement = new DivElement()..classes.add('message');
     _messageWrapper = new DivElement()..classes.add('message-wrapper');
-    _alternateElement = new DivElement()..classes.add('message-alternative')..hidden = true;
+    _alternativeElement = new DivElement()..classes.add('message-alternative')..hidden = true;
 
     _textLengthIndicator = new SpanElement()
       ..classes.add('message__length-indicator')
@@ -342,7 +396,7 @@ class MessageView {
       });
     
     _messageWrapper..append(_messageText)..append(_textLengthIndicator);
-    _messageElement..append(_messageWrapper)..append(_alternateElement);
+    _messageElement..append(_messageWrapper)..append(_alternativeElement);
     finaliseRenderAsync();
   }
 
@@ -392,13 +446,13 @@ class MessageView {
   }
 
   void showAlternative(String text) {
-    _alternateElement.children.clear();
+    _alternativeElement.children.clear();
     var instructions = DivElement()..className = "message-alternative__instruction"..innerText = "This text has been updated in the storage to:";
     var altText = DivElement()..innerText = text;
     var acceptButton = Button(ButtonType.confirm, onClick: (_) => onMessageUpdateCallback(text));
-    var discardButton = Button(ButtonType.cancel, onClick: (_) => _alternateElement..hidden = true);
+    var discardButton = Button(ButtonType.cancel, onClick: (_) => _alternativeElement..hidden = true);
     var actions = DivElement()..append(acceptButton.renderElement)..append(discardButton.renderElement);
-    _alternateElement
+    _alternativeElement
       ..hidden = false
       ..append(instructions)
       ..append(altText)
@@ -406,7 +460,7 @@ class MessageView {
   }
 
   void hideAlternative() {
-    _alternateElement
+    _alternativeElement
       ..children.clear()
       ..hidden = true;
   }

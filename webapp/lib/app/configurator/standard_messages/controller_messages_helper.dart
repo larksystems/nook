@@ -201,9 +201,11 @@ class StandardMessagesManager {
       if (localMessage == null || storageMessage == null) {
         // todo: the message has been deleted from the UI or storage
       } else if (localMessage.categoryName != storageMessage.categoryName) {
-        // todo: the category has been updated
+        // the category has been updated
+        _view.categoriesById[standardMessage.categoryId].showAlternative(standardMessage.categoryName);
       } else if (localMessage.groupName != storageMessage.groupName) {
-        // todo: the group has been updated
+        // the group has been updated
+         _view.categoriesById[standardMessage.categoryId].groupsById[standardMessage.groupId].showAlternative(standardMessage.groupName);
       } else if (localMessage.text != storageMessage.text || localMessage.translation != storageMessage.translation) {
         // the message text has been updated
         if (localMessage.text != storageMessage.text) {

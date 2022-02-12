@@ -65,10 +65,16 @@ void _updateUnsavedIndicators(Map<String, MessageCategory> categories, Set<Strin
   for (var categoryId in categories.keys) {
     var categoryView = _view.categoriesById[categoryId];
     categoryView.markAsUnsaved(unsavedCategoryIds.contains(categoryId));
+    if (!unsavedCategoryIds.contains(categoryId)) {
+      categoryView.hideAlternative();
+    }
 
     for (var groupId in categories[categoryId].groups.keys) {
       var groupView = categoryView.groupsById[groupId];
       groupView.markAsUnsaved(unsavedGroupIds.contains(groupId));
+      if (!unsavedGroupIds.contains(groupId)) {
+        groupView.hideAlternative();
+      }
 
       for (var messageId in categories[categoryId].groups[groupId].messages.keys) {
         var messageView = groupView.messagesById[messageId];
