@@ -4,11 +4,9 @@ import 'dart:convert';
 import 'dart:html';
 import 'package:katikati_ui_lib/components/logger.dart';
 import 'package:nook/app/nook/controller.dart';
+import 'package:nook/app/developer/utils.dart';
 
 import 'view.dart';
-
-const localStorageDeveloperModeKey = "DEVELOPER_MODE";
-const localStorageDeveloperModeValue = "true";
 
 Logger log = new Logger('controller.dart');
 
@@ -46,7 +44,11 @@ class DeveloperController extends Controller {
        });
     } catch (e) { 
       _view.updateFirebaseConfig("Error loading & parsing /assets/firebase_constants.json");
-     }
+    }
+
+    window.onStorage.listen((_) {
+      showCurrentDeveloperModeStatus();
+    });
   }
 
   void showCurrentDeveloperModeStatus() {
