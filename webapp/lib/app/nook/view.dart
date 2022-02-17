@@ -605,8 +605,8 @@ class MessageView {
       ..append(_message);
 
     _messageBubble = new DivElement()
-      ..dataset['conversationId'] = conversationId
-      ..dataset['messageId'] = messageId
+      ..dataset['conversation-id'] = conversationId
+      ..dataset['message-id'] = messageId
       ..classes.add('message__bubble')
       ..onClick.listen((event) {
         event.preventDefault();
