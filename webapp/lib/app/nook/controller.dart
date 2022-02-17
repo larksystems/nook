@@ -887,9 +887,6 @@ class NookController extends Controller {
     }
 
     log.verbose('Executing UI command: $actionObjectState - $action - $data');
-    log.verbose('Active conversation: ${activeConversation?.docId}');
-    log.verbose('Selected conversations: ${selectedConversations?.map((c) => c.docId)?.toList()}');
-    log.verbose('Filtered conversations: ${filteredConversations?.map((c) => c.docId)?.toList()}');
 
     // For most actions, a conversation needs to be active.
     // Early exist if it's not one of the actions valid without an active conversation.
