@@ -46,6 +46,8 @@ class PageView {
     navHeaderView.authHeader = authHeaderView;
     navHeaderView.projectTitle = appController.projectConfiguration['projectTitle'];
 
+    document.title = "${document.title} | ${appController.projectConfiguration['projectTitle']} | KatiKati";
+
     snackbarView = new SnackbarView();
   }
 
