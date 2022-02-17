@@ -361,6 +361,7 @@ class NookController extends Controller {
   void setUpOnLogin() {
     conversations = emptyConversationsSet(conversationSortOrder);
     filteredConversations = emptyConversationsSet(conversationSortOrder);
+    shards = [];
     suggestedReplies = [];
     tags = [];
     tagIdsToTags = {};
