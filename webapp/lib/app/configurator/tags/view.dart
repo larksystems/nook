@@ -12,6 +12,7 @@ import 'package:nook/app/configurator/view.dart';
 export 'package:nook/app/configurator/view.dart';
 import 'package:nook/platform/platform.dart' as platform;
 import 'package:katikati_ui_lib/components/tag/tag.dart';
+import 'package:nook/app/developer/utils.dart';
 
 import 'controller.dart';
 import 'sample_data_helper.dart';
@@ -44,6 +45,8 @@ class TagsConfigurationPageView extends ConfigurationPageView {
 
     addGroupButton = new Button(ButtonType.add, hoverText: 'Add a new tag group', onClick: (_) => controller.command(TagsConfigAction.addTagGroup));
     configurationContent.append(addGroupButton.renderElement);
+
+    initDeveloperMode();
   }
 
   void addTagCategory(String id, TagGroupView tagGroupView) {
@@ -86,7 +89,9 @@ class TagGroupView extends AccordionItem {
         requestToDelete();
       };
 
-    _header.append(editableTitle.renderElement);
+    _header
+      ..dataset['group-id'] = id
+      ..append(editableTitle.renderElement);
 
     _tagsContainer = DivElement()..classes.add('tags-group__tags');
     _body.append(_tagsContainer);

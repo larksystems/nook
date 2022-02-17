@@ -23,6 +23,7 @@ import 'package:katikati_ui_lib/components/button/button.dart' as buttons;
 import 'package:katikati_ui_lib/components/model/model.dart' as model;
 import 'package:nook/view.dart';
 import 'package:nook/app/utils.dart';
+import 'package:nook/app/developer/utils.dart';
 
 import 'controller.dart';
 import 'dom_utils.dart';
@@ -76,6 +77,8 @@ class NookPageView extends PageView {
       if (ignoreShortcut(event)) return;
       appController.command(UIAction.keyUp, new KeyPressData(event.key, event.altKey || event.ctrlKey || event.metaKey || event.shiftKey));
     });
+
+    initDeveloperMode();
   }
 
   void initSignedInView(String displayName, String photoUrl) {
@@ -353,7 +356,15 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
     conversationPanel.append(_newMessageIndicator);
   }
 
-  set deidentifiedPhoneNumber(String deidentifiedPhoneNumber) => _conversationIdCopy.dataset['copy-value'] = deidentifiedPhoneNumber;
+  set deidentifiedPhoneNumber(String deidentifiedPhoneNumber) {
+    _conversationIdCopy.dataset['copy-value'] = deidentifiedPhoneNumber;
+
+    _conversationSummary.dataset['conversation-id'] = deidentifiedPhoneNumber;
+    _conversationId.dataset['conversation-id'] = deidentifiedPhoneNumber;
+    _info.dataset['conversation-id'] = deidentifiedPhoneNumber;
+    _tags.dataset['conversation-id'] = deidentifiedPhoneNumber;
+    _messages.dataset['conversation-id'] = deidentifiedPhoneNumber;
+  }
   set deidentifiedPhoneNumberShort(String deidentifiedPhoneNumberShort) => _conversationId.text = deidentifiedPhoneNumberShort;
   set demographicsInfo(String demographicsInfo) => _info.text = demographicsInfo;
 
@@ -594,6 +605,8 @@ class MessageView {
       ..append(_message);
 
     _messageBubble = new DivElement()
+      ..dataset['conversation-id'] = conversationId
+      ..dataset['message-id'] = messageId
       ..classes.add('message__bubble')
       ..onClick.listen((event) {
         event.preventDefault();
@@ -611,6 +624,8 @@ class MessageView {
     _messageBubble.append(_messageDateTime);
 
     _messageText = new DivElement()
+      ..dataset['conversation-id'] = conversationId
+      ..dataset['message-id'] = messageId
       ..classes.add('message__text')
       ..text = text;
     _messageBubble.append(_messageText);
@@ -918,6 +933,7 @@ class ConversationListPanelView {
   SpanElement _selectedCount;
   ImageElement _loadSpinner;
   DivElement _selectConversationListMessage;
+  DivElement _panelHeader;
 
   NewConversationModal _newConversationModal;
 
@@ -952,36 +968,36 @@ class ConversationListPanelView {
       });
     conversationListPanel.append(_shardChooser);
 
-    var panelHeader = new DivElement()
+    _panelHeader = new DivElement()
       ..classes.add('conversation-list-header');
-    conversationListPanel.append(panelHeader);
+    conversationListPanel.append(_panelHeader);
 
     _selectAllCheckbox = new CheckboxInputElement()
       ..classes.add('conversation-list-header__checkbox')
       ..title = 'Select all conversations'
       ..checked = false
       ..onClick.listen((_) => _selectAllCheckbox.checked ? _view.appController.command(UIAction.selectAllConversations, null) : _view.appController.command(UIAction.deselectAllConversations, null));
-    panelHeader.append(_selectAllCheckbox);
+    _panelHeader.append(_selectAllCheckbox);
 
     _selectedCount = new SpanElement()
       ..className = 'conversation-list-header__selected-count';
-    panelHeader.append(_selectedCount);
+    _panelHeader.append(_selectedCount);
 
     _conversationPanelTitle = new SpanElement()
       // ..classes.add('panel-title')
       ..classes.add('conversation-list-header__title')
       ..text = _conversationPanelTitleText;
-    panelHeader.append(SpanElement()..className = 'far fa-comments');
-    panelHeader.append(_conversationPanelTitle);
+    _panelHeader.append(SpanElement()..className = 'far fa-comments');
+    _panelHeader.append(_conversationPanelTitle);
 
     if (ENABLE_NEW_CONVERSTION) {
       _newConversationModal = NewConversationModal()
         ..onSubmit = (List<NewConversationFormData> conversations) => _view.appController.command(UIAction.addNewConversations, NewConversationsData(conversations));
-      panelHeader.append(_newConversationModal.renderElement);
+      _panelHeader.append(_newConversationModal.renderElement);
     }
 
     _changeSortOrder = ChangeSortOrderActionView();
-    panelHeader.append(new DivElement()
+    _panelHeader.append(new DivElement()
       ..classes.add('conversation-list-header__sort-order')
       ..append(_changeSortOrder.renderElement));
 
@@ -1035,6 +1051,7 @@ class ConversationListPanelView {
         ..value = null
         ..classes.toggle("danger", true);
     } else {
+      _panelHeader.dataset['shard-id'] = shard;
       _shardChooser
         ..value = shard
         ..classes.toggle("danger", false);
@@ -1388,7 +1405,7 @@ class ConversationSummary with LazyListViewItem, UserPresenceIndicator {
   }
 
   Element buildElement() {
-    _conversationItem = ConversationItemView(_shortDeidentifiedPhoneNumber, _text, _status, readStatus, checkEnabled: !_checkboxHidden, defaultSelected: _selected, dateTime: _dateTime)
+    _conversationItem = ConversationItemView(deidentifiedPhoneNumber, _shortDeidentifiedPhoneNumber, _text, _status, readStatus, checkEnabled: !_checkboxHidden, defaultSelected: _selected, dateTime: _dateTime)
       ..onCheck.listen((_) {
         _view.appController.command(UIAction.selectConversation, new ConversationData(deidentifiedPhoneNumber));
       })
@@ -1626,6 +1643,7 @@ class ReplyPanelView {
       return;
     }
     _replyCategories.selectedIndex = index;
+    _panelTitle.dataset['category-id'] = category;
   }
 
   set categories(List<String> categories) {
@@ -1692,7 +1710,9 @@ class TagGroupView extends AccordionItem {
   TagGroupView(String id, this._groupName, this._header, this._body) : super(id, _header, _body, false) {
     _groupName = _groupName ?? '';
 
-    var groupName = DivElement()..innerText = _groupName;
+    var groupName = DivElement()
+      ..innerText = _groupName
+      ..dataset['group-id'] = id;
     _header.append(groupName);
 
     _tagsContainer = DivElement()..classes.add('tags-group__tags');
@@ -1797,10 +1817,12 @@ class ReplyActionView implements ActionView {
 
     { // Add text
       var textWrapper = new DivElement()
+        ..dataset['reply-id'] = replyId
         ..classes.add('action__description');
       textTranslationWrapper.append(textWrapper);
 
       _textElement = new DivElement()
+        ..dataset['reply-id'] = replyId
         ..classes.add('action__text')
         ..text = _text;
       textWrapper.append(_textElement);
@@ -1824,10 +1846,12 @@ class ReplyActionView implements ActionView {
 
     { // Add translation
       var translationWrapper = new DivElement()
+        ..dataset['reply-id'] = replyId
         ..classes.add('action__description');
       textTranslationWrapper.append(translationWrapper);
 
       _translationElement = new DivElement()
+        ..dataset['reply-id'] = replyId
         ..classes.add('action__translation')
         ..text = _translation;
       translationWrapper.append(_translationElement);
@@ -1883,10 +1907,12 @@ class ReplyActionGroupView implements ActionView {
       ..dataset['id'] = groupId;
 
     var textWrapper = new DivElement()
+      ..dataset['group-id'] = groupId
       ..classes.add('action__group__description');
     action.append(textWrapper);
 
     var textElement = new DivElement()
+      ..dataset['group-id'] = groupId
       ..classes.add('action__group__text')
       ..text = groupDescription;
     textWrapper.append(textElement);
