@@ -624,8 +624,8 @@ class MessageView {
     _messageBubble.append(_messageDateTime);
 
     _messageText = new DivElement()
-      ..dataset['conversationId'] = conversationId
-      ..dataset['messageId'] = messageId
+      ..dataset['conversation-id'] = conversationId
+      ..dataset['message-id'] = messageId
       ..classes.add('message__text')
       ..text = text;
     _messageBubble.append(_messageText);
