@@ -392,12 +392,12 @@ class NookController extends Controller {
         // Update the filter tags by category map
         filterTagsByCategory = _groupTagsIntoCategories(tags);
 
-        [TagFilterType.include, TagFilterType.exclude, TagFilterType.lastInboundTurn].forEach((tagFilterType) {
+        for (var tagFilterType in [TagFilterType.include, TagFilterType.exclude, TagFilterType.lastInboundTurn]) {
           _removeTagsFromFilterMenu(_groupTagsIntoCategories(removed), tagFilterType);
           _removeTagsFromFilterMenu(_groupTagsIntoCategories(previousModified), tagFilterType);
           _addTagsToFilterMenu(_groupTagsIntoCategories(added), tagFilterType);
           _addTagsToFilterMenu(_groupTagsIntoCategories(modified), tagFilterType);  
-        });
+        }
 
         // Update the conversation tags by group map
         tagsByGroup = _groupTagsIntoCategories(tags);
