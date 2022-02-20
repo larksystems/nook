@@ -68,7 +68,7 @@
   margin-top: 15px;
 }
 
-.message {
+.message-wrapper {
   position: relative;
 }
 
@@ -104,4 +104,30 @@
   color: var(--light-red);
   outline-color: var(--light-red);
   font-weight: bold;
+}
+
+.message-alternative,
+.group-alternative,
+.category-alternative {
+  background-color: var(--default-background-color);
+  border: 1px solid var(--default-border-color);
+  padding: 6px;
+  font-size: 12px;
+}
+
+.message-alternative {
+  border-top: 0;
+}
+
+.message-alternative__instruction,
+.group-alternative__instruction,
+.category-alternative__instruction {
+  font-size: 10px;
+  text-decoration: underline;
+}
+
+.message-alternative .button,
+.group-alternative .button, 
+.category-alternative .button {
+  background-color: transparent;
 }

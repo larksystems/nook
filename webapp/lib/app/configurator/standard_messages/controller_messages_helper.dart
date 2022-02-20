@@ -6,12 +6,13 @@ part of controller;
 class MessagesDiffData {
   Set<String> unsavedCategoryIds;
   Set<String> unsavedGroupIds;
-  Set<String> unsavedMessageIds;
+  Set<String> unsavedMessageTextIds;
+  Set<String> unsavedMessageTranslationIds;
 
   List<model.SuggestedReply> editedMessages;
   List<model.SuggestedReply> deletedMessages;
 
-  MessagesDiffData(this.unsavedCategoryIds, this.unsavedGroupIds, this.unsavedMessageIds, this.editedMessages, this.deletedMessages);
+  MessagesDiffData(this.unsavedCategoryIds, this.unsavedGroupIds, this.unsavedMessageTextIds, this.unsavedMessageTranslationIds, this.editedMessages, this.deletedMessages);
 }
 
 class StandardMessagesManager {
@@ -43,7 +44,8 @@ class StandardMessagesManager {
   MessagesDiffData get diffData {
     Set<String> unsavedCategoryIds = {};
     Set<String> unsavedGroupIds = {};
-    Set<String> unsavedMessageIds = {};
+    Set<String> unsavedMessageTextIds = {};
+    Set<String> unsavedMessageTranslationIds = {};
 
     List<model.SuggestedReply> editedMessages = [];
     List<model.SuggestedReply> deletedMessages = [];
@@ -70,12 +72,14 @@ class StandardMessagesManager {
 
       if (localMessage == null) { // message deleted
         deletedMessages.add(storageMessage);
-        unsavedMessageIds.add(storageMessage.suggestedReplyId);
+        unsavedMessageTextIds.add(storageMessage.suggestedReplyId);
+        unsavedMessageTranslationIds.add(storageMessage.suggestedReplyId);
         unsavedGroupIds.add(storageMessage.groupId);
         unsavedCategoryIds.add(storageMessage.categoryId);
       } else if (storageMessage == null) { // message added
         editedMessages.add(localMessage);
-        unsavedMessageIds.add(localMessage.suggestedReplyId);
+        unsavedMessageTextIds.add(localMessage.suggestedReplyId);
+        unsavedMessageTranslationIds.add(localMessage.suggestedReplyId);
         unsavedGroupIds.add(localMessage.groupId);
         unsavedCategoryIds.add(localMessage.categoryId);
       } else { // message edited
@@ -89,8 +93,13 @@ class StandardMessagesManager {
           unsavedCategoryIds.add(localMessage.categoryId);
           isMessageEdited = true;
         }
-        if (localMessage.text != storageMessage.text || localMessage.translation != storageMessage.translation) { // message / translation changed. TODO: split the check
-          unsavedMessageIds.add(localMessage.suggestedReplyId);
+        if (localMessage.text != storageMessage.text || localMessage.translation != storageMessage.translation) { // message / translation changed.
+          if (localMessage.text != storageMessage.text) {
+            unsavedMessageTextIds.add(localMessage.suggestedReplyId);
+          }
+          if (localMessage.translation != storageMessage.translation) {
+            unsavedMessageTranslationIds.add(localMessage.suggestedReplyId);
+          }
           unsavedGroupIds.add(localMessage.groupId);
           unsavedCategoryIds.add(localMessage.categoryId);
           isMessageEdited = true;
@@ -105,7 +114,7 @@ class StandardMessagesManager {
       }
     }
 
-    return MessagesDiffData(unsavedCategoryIds, unsavedGroupIds, unsavedMessageIds, editedMessages, deletedMessages);
+    return MessagesDiffData(unsavedCategoryIds, unsavedGroupIds, unsavedMessageTextIds, unsavedMessageTranslationIds, editedMessages, deletedMessages);
   }
 
   /// Returns the list of messages being managed.
@@ -186,11 +195,31 @@ class StandardMessagesManager {
   List<model.SuggestedReply> onUpdateStandardMessagesFromStorage(List<model.SuggestedReply> standardMessagesToAdd) {
     List<model.SuggestedReply> added = [];
     for (var standardMessage in standardMessagesToAdd) {
-      _updateStandardMessageInStorage(standardMessage);
+      var localMessage = localCategories[standardMessage.categoryId]?.groups[standardMessage.groupId]?.messages[standardMessage.docId];
+      var storageMessage = storageCategories[standardMessage.categoryId]?.groups[standardMessage.groupId]?.messages[standardMessage.docId];
 
-      // todo: check if unedited
-      var result = _updateStandardMessageInLocal(standardMessage);
-      if (result != null) added.add(result);
+      if (localMessage == null || storageMessage == null) {
+        // todo: the message has been deleted from the UI or storage
+      } else if (localMessage.categoryName != storageMessage.categoryName) {
+        // the category has been updated
+        _view.categoriesById[standardMessage.categoryId].showAlternative(standardMessage.categoryName);
+      } else if (localMessage.groupName != storageMessage.groupName) {
+        // the group has been updated
+         _view.categoriesById[standardMessage.categoryId].groupsById[standardMessage.groupId].showAlternative(standardMessage.groupName);
+      } else if (localMessage.text != storageMessage.text || localMessage.translation != storageMessage.translation) {
+        // the message text has been updated
+        if (localMessage.text != storageMessage.text) {
+          _view.categoriesById[standardMessage.categoryId].groupsById[standardMessage.groupId].messagesById[standardMessage.docId].showAlternativeText(standardMessage.text);
+        }
+        // the message translation has been updated
+        if (localMessage.translation != storageMessage.translation) {
+          _view.categoriesById[standardMessage.categoryId].groupsById[standardMessage.groupId].messagesById[standardMessage.docId].showAlternativeTranslation(standardMessage.translation);
+        }
+      } else {
+        var result = _updateStandardMessageInLocal(standardMessage);
+        if (result != null) added.add(result);
+      }
+      _updateStandardMessageInStorage(standardMessage);
     }
     return added;
   }
