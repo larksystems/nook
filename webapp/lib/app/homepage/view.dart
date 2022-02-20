@@ -12,75 +12,25 @@ Logger log = new Logger('view.dart');
 class HomePageView extends PageView {
   DivElement homePageContents;
 
-  HomePageView(HomePageController controller, List<PageInfo> conversePages, List<PageInfo> configurePages, List<PageInfo> comprehendPages) : super(controller) {
+  HomePageView(HomePageController controller, Map<String, List<PageInfo>> pageStructure) : super(controller) {
     homePageContents = new DivElement()..classes.add('configuration-view');
-    {
+
+    for (var heading in pageStructure.keys) {
       var title = new DivElement()
         ..classes.add('configuration-view__title')
-        ..text = 'Converse';
-     homePageContents.append(title);
-
+        ..text = heading;
+      homePageContents.append(title);
 
       DivElement pageContent = new DivElement()
         ..classes.add('configuration-view__content')
         ..classes.add('config-page-options');
-     homePageContents.append(pageContent);
-      for (var page in conversePages) {
+      homePageContents.append(pageContent);
+
+      for (var page in pageStructure[heading]) {
         var button  = Button(ButtonType.contained, buttonText: page.goToButtonText, onClick: (_) {
-          controller.routeToPath(page.urlPath);
+          this.appController.routeToPath(page.urlPath);
         });
         button.renderElement.classes.add('config-page-option__action');
-        button.parent = pageContent;
-
-        var description = new SpanElement()
-          ..classes.add('config-page-option__description')
-          ..text = page.shortDescription;
-        pageContent..append(description);
-      }
-    }
-
-    {
-      var title = new DivElement()
-        ..classes.add('configuration-view__title')
-        ..text = 'Configure';
-     homePageContents.append(title);
-
-
-      DivElement pageContent = new DivElement()
-        ..classes.add('configuration-view__content')
-        ..classes.add('config-page-options');
-     homePageContents.append(pageContent);
-      for (var page in configurePages) {
-        var button  = Button(ButtonType.contained, buttonText: page.goToButtonText, onClick: (_) {
-          controller.routeToPath(page.urlPath);
-        });
-        button.renderElement.classes.add('config-page-option__action');
-        button.parent = pageContent;
-
-        var description = new SpanElement()
-          ..classes.add('config-page-option__description')
-          ..text = page.shortDescription;
-        pageContent..append(description);
-      }
-    }
-
-    {
-      var title = new DivElement()
-        ..classes.add('configuration-view__title')
-        ..text = 'Comprehend';
-     homePageContents.append(title);
-
-
-      DivElement pageContent = new DivElement()
-        ..classes.add('configuration-view__content')
-        ..classes.add('config-page-options');
-     homePageContents.append(pageContent);
-      for (var page in comprehendPages) {
-        var button  = Button(ButtonType.contained, buttonText: page.goToButtonText, onClick: (_) {
-          controller.routeToPath(page.urlPath);
-        });
-        button.renderElement
-          ..classes.add('config-page-option__action');
         button.parent = pageContent;
 
         var description = new SpanElement()

@@ -7,6 +7,7 @@ import 'package:katikati_ui_lib/components/auth/auth.dart';
 import 'package:katikati_ui_lib/components/logger.dart';
 
 import 'package:katikati_ui_lib/components/model/model.dart' as model;
+import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
 import 'package:nook/platform/platform.dart';
 import 'view.dart';
 
@@ -24,7 +25,8 @@ enum Page {
   configureMessages,
   configureTags,
   converse,
-  explore
+  explore,
+  coda,
 }
 
 final pages = {
@@ -33,6 +35,7 @@ final pages = {
   Page.configureMessages: PageInfo('What standard messages do you want to send?', 'Configure messages', 'configure/messages.html'),
   Page.converse: PageInfo('View conversations and send messages', 'Conversations', '/converse/index.html'),
   Page.explore: PageInfo('Explore trends and analyse themes', 'Explore', '/explore'),
+  Page.coda: PageInfo('Efficiently tag large sets of messages', 'Survey tagging', '/coda'),
 };
 
 
@@ -43,6 +46,9 @@ enum BaseAction {
 
   signInButtonClicked,
   signOutButtonClicked,
+
+  showSnackbar,
+  showBanner,
 }
 
 class Data {}
@@ -72,6 +78,24 @@ class SystemMessagesData extends Data {
   @override
   String toString() => 'SystemMessagesData: {messages: ${messages.map((m) => m.toData().toString())}}';
 }
+
+class SnackbarData extends Data {
+  String text;
+  SnackbarNotificationType type;
+  SnackbarData(this.text, this.type);
+
+  @override
+  String toString() => 'SnackbarData: {text: $text, type: $type}';
+}
+
+class BannerData extends Data {
+  String text;
+  BannerData(this.text);
+
+  @override
+  String toString() => 'BannerData: {text: $text}';
+}
+
 
 class Controller {
   model.User signedInUser;
@@ -133,6 +157,16 @@ class Controller {
         } else {
           view.bannerView.hideBanner();
         }
+        break;
+
+      case BaseAction.showSnackbar:
+        SnackbarData snackbarData = data;
+        view.snackbarView.showSnackbar(snackbarData.text, snackbarData.type);
+        break;
+
+      case BaseAction.showBanner:
+        BannerData bannerData = data;
+        view.bannerView.showBanner(bannerData.text);
         break;
       default:
     }
