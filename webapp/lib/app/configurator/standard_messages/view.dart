@@ -133,7 +133,7 @@ class StandardMessagesCategoryView extends AccordionItem {
 
   void showAlternative(String categoryName) {
     _alternativeElement.children.clear();
-    var instructions = SpanElement()..className = "category-alternative__instruction"..innerText = "This category has been renamed in the storage to:";
+    var instructions = SpanElement()..className = "category-alternative__instruction"..innerText = "Someone else has just renamed this category to:";
     var altText = SpanElement()..innerText = categoryName;
     var acceptButton = Button(ButtonType.confirm, onClick: (_) {
       editableTitle.updateText(categoryName);
