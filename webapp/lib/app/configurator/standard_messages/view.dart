@@ -236,7 +236,7 @@ class StandardMessagesGroupView extends AccordionItem {
 
   void showAlternative(String groupName) {
     _alternativeElement.children.clear();
-    var instructions = SpanElement()..className = "group-alternative__instruction"..innerText = "This group has been renamed in the storage to:";
+    var instructions = SpanElement()..className = "group-alternative__instruction"..innerText = "Someone else has just renamed this group to:";
     var altText = SpanElement()..innerText = groupName;
     var acceptButton = Button(ButtonType.confirm, onClick: (_) {
       editableTitle.updateText(groupName);
