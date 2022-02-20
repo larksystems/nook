@@ -447,7 +447,7 @@ class MessageView {
 
   void showAlternative(String text) {
     _alternativeElement.children.clear();
-    var instructions = DivElement()..className = "message-alternative__instruction"..innerText = "This text has been updated in the storage to:";
+    var instructions = DivElement()..className = "message-alternative__instruction"..innerText = "Someone else has just changed this text to:";
     var altText = DivElement()..innerText = text;
     var acceptButton = Button(ButtonType.confirm, onClick: (_) => onMessageUpdateCallback(text));
     var discardButton = Button(ButtonType.cancel, onClick: (_) => _alternativeElement..hidden = true);
