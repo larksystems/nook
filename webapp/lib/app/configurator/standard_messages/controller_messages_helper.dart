@@ -188,6 +188,7 @@ class StandardMessagesManager {
       var result = _addStandardMessageInLocal(standardMessage);
       _addStandardMessageInStorage(standardMessage);
       if (result != null) added.add(result);
+      diffData.editedMessages.remove(standardMessage.docId);
     }
     return added;
   }
@@ -200,24 +201,25 @@ class StandardMessagesManager {
 
       if (localMessage == null || storageMessage == null) {
         // todo: the message has been deleted from the UI or storage
-      } else if (localMessage.categoryName != storageMessage.categoryName) {
+      } else if (localMessage.categoryName != storageMessage.categoryName && localMessage.categoryName != standardMessage.categoryName) {
         // the category has been updated
         _view.categoriesById[standardMessage.categoryId].showAlternative(standardMessage.categoryName);
-      } else if (localMessage.groupName != storageMessage.groupName) {
+      } else if (localMessage.groupName != storageMessage.groupName && localMessage.groupName != standardMessage.groupName) {
         // the group has been updated
          _view.categoriesById[standardMessage.categoryId].groupsById[standardMessage.groupId].showAlternative(standardMessage.groupName);
-      } else if (localMessage.text != storageMessage.text || localMessage.translation != storageMessage.translation) {
+      } else if ((localMessage.text != storageMessage.text && localMessage.text != standardMessage.text) || (localMessage.translation != storageMessage.translation && localMessage.translation != standardMessage.translation)) {
         // the message text has been updated
-        if (localMessage.text != storageMessage.text) {
+        if (localMessage.text != storageMessage.text && localMessage.text != standardMessage.text) {
           _view.categoriesById[standardMessage.categoryId].groupsById[standardMessage.groupId].messagesById[standardMessage.docId].showAlternativeText(standardMessage.text);
         }
         // the message translation has been updated
-        if (localMessage.translation != storageMessage.translation) {
+        if (localMessage.translation != storageMessage.translation && localMessage.translation != standardMessage.translation) {
           _view.categoriesById[standardMessage.categoryId].groupsById[standardMessage.groupId].messagesById[standardMessage.docId].showAlternativeTranslation(standardMessage.translation);
         }
       } else {
         var result = _updateStandardMessageInLocal(standardMessage);
         if (result != null) added.add(result);
+        diffData.editedMessages.remove(standardMessage.docId);
       }
       _updateStandardMessageInStorage(standardMessage);
     }
