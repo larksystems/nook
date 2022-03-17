@@ -109,6 +109,11 @@ main {
     align-content: flex-start;
 }
 
+.conversation-filter .tags-container {
+    max-height: 72px;
+    overflow-y: scroll;
+}
+
 .tags-menu {
     position: absolute;
     width: 0;

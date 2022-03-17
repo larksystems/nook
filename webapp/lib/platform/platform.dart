@@ -27,6 +27,14 @@ PubSubClient _uptimePubSubInstance;
 class Platform {
   controller.Controller appController;
 
+  StreamSubscription _tagSubscription;
+  StreamSubscription _suggestedRepliesSubscription;
+  StreamSubscription _userPresenceSubscription;
+  StreamSubscription _userConfigSubscription;
+  StreamSubscription _systemMessagesSubscription;
+  StreamSubscription _shardsSubscription;
+  StreamSubscription _conversationsSubscriptions;
+
   Platform(this.appController) {
     platform.init("/assets/firebase_constants.json", (user) {
       String photoURL = platform.firebaseAuth.currentUser.photoURL;
@@ -175,7 +183,16 @@ class Platform {
 
   signIn({String domain}) => platform.signIn(domain: domain);
 
-  signOut() => platform.signOut();
+  signOut() {
+    _tagSubscription?.cancel();
+    _suggestedRepliesSubscription?.cancel();
+    _userPresenceSubscription?.cancel();
+    _userConfigSubscription?.cancel();
+    _systemMessagesSubscription?.cancel();
+    _shardsSubscription?.cancel();
+    _conversationsSubscriptions?.cancel();
+    platform.signOut();
+  }
 
   bool isUserSignedIn() => platform.isUserSignedIn();
 
@@ -213,28 +230,34 @@ class Platform {
   }
 
   void listenForUserConfigurations(UserConfigurationCollectionListener listener, [OnErrorListener onErrorListener]) {
-    UserConfiguration.listen(_docStorage, listener, onErrorListener: onErrorListener);
+    _userConfigSubscription = UserConfiguration.listen(_docStorage, listener, onErrorListener: onErrorListener);
   }
 
-  void listenForSystemMessages(SystemMessageCollectionListener listener, [OnErrorListener onErrorListener]) =>
-      SystemMessage.listen(_docStorage, listener, onErrorListener: onErrorListener);
+  void listenForSystemMessages(SystemMessageCollectionListener listener, [OnErrorListener onErrorListener]) {
+    _systemMessagesSubscription = SystemMessage.listen(_docStorage, listener, onErrorListener: onErrorListener);
+  }
+      
 
   void listenForConversationListShards(ConversationListShardCollectionListener listener, [OnErrorListener onErrorListener]) {
-    ConversationListShard.listen(_docStorage, listener, onErrorListener: onErrorListener);
+    _shardsSubscription =  ConversationListShard.listen(_docStorage, listener, onErrorListener: onErrorListener);
   }
 
   StreamSubscription listenForConversations(ConversationCollectionListener listener, String conversationListRoot, [OnErrorListener onErrorListener]) {
-    return Conversation.listen(_docStorage, listener, collectionRoot: conversationListRoot, onErrorListener: onErrorListener);
+    _conversationsSubscriptions = Conversation.listen(_docStorage, listener, collectionRoot: conversationListRoot, onErrorListener: onErrorListener);
+    return _conversationsSubscriptions;
   }
 
-  void listenForTags(TagCollectionListener listener, [OnErrorListener onErrorListener]) =>
-      Tag.listen(_docStorage, listener, collectionRoot: "/conversationTags", onError: onErrorListener);
+  void listenForTags(TagCollectionListener listener, [OnErrorListener onErrorListener]) {
+    _tagSubscription = Tag.listen(_docStorage, listener, collectionRoot: "/tags", onError: onErrorListener);
+  }
 
-  void listenForSuggestedReplies(SuggestedReplyCollectionListener listener, [OnErrorListener onErrorListener]) =>
-      SuggestedReply.listen(_docStorage, listener, onErrorListener: onErrorListener);
+  void listenForSuggestedReplies(SuggestedReplyCollectionListener listener, [OnErrorListener onErrorListener]) {
+    _suggestedRepliesSubscription = SuggestedReply.listen(_docStorage, listener, onErrorListener: onErrorListener);
+  }
 
-  void listenForUserPresence(UserPresenceCollectionListener listener, [OnErrorListener onErrorListener]) =>
-      UserPresence.listen(_docStorage, listener, onErrorListener: onErrorListener);
+  void listenForUserPresence(UserPresenceCollectionListener listener, [OnErrorListener onErrorListener]) {
+    _userPresenceSubscription = UserPresence.listen(_docStorage, listener, onErrorListener: onErrorListener);
+  }
 
   Future<void> addMessageTag(Conversation conversation, Message message, String tagId) {
     log.verbose("Adding tag $tagId to message in conversation ${conversation.docId}");

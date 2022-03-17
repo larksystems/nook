@@ -361,6 +361,7 @@ class NookController extends Controller {
   void setUpOnLogin() {
     conversations = emptyConversationsSet(conversationSortOrder);
     filteredConversations = emptyConversationsSet(conversationSortOrder);
+    shards = [];
     suggestedReplies = [];
     tags = [];
     tagIdsToTags = {};
@@ -391,15 +392,12 @@ class NookController extends Controller {
         // Update the filter tags by category map
         filterTagsByCategory = _groupTagsIntoCategories(tags);
 
-        _removeTagsFromFilterMenu(_groupTagsIntoCategories(removed), TagFilterType.include);
-        _removeTagsFromFilterMenu(_groupTagsIntoCategories(previousModified), TagFilterType.include);
-        _addTagsToFilterMenu(_groupTagsIntoCategories(added), TagFilterType.include);
-        _addTagsToFilterMenu(_groupTagsIntoCategories(modified), TagFilterType.include);
-
-        _removeTagsFromFilterMenu(_groupTagsIntoCategories(removed), TagFilterType.exclude);
-        _removeTagsFromFilterMenu(_groupTagsIntoCategories(previousModified), TagFilterType.exclude);
-        _addTagsToFilterMenu(_groupTagsIntoCategories(added), TagFilterType.exclude);
-        _addTagsToFilterMenu(_groupTagsIntoCategories(modified), TagFilterType.exclude);
+        for (var tagFilterType in [TagFilterType.include, TagFilterType.exclude, TagFilterType.lastInboundTurn]) {
+          _removeTagsFromFilterMenu(_groupTagsIntoCategories(removed), tagFilterType);
+          _removeTagsFromFilterMenu(_groupTagsIntoCategories(previousModified), tagFilterType);
+          _addTagsToFilterMenu(_groupTagsIntoCategories(added), tagFilterType);
+          _addTagsToFilterMenu(_groupTagsIntoCategories(modified), tagFilterType);  
+        }
 
         // Update the conversation tags by group map
         tagsByGroup = _groupTagsIntoCategories(tags);
@@ -884,9 +882,6 @@ class NookController extends Controller {
     }
 
     log.verbose('Executing UI command: $actionObjectState - $action - $data');
-    log.verbose('Active conversation: ${activeConversation?.docId}');
-    log.verbose('Selected conversations: ${selectedConversations?.map((c) => c.docId)?.toList()}');
-    log.verbose('Filtered conversations: ${filteredConversations?.map((c) => c.docId)?.toList()}');
 
     // For most actions, a conversation needs to be active.
     // Early exist if it's not one of the actions valid without an active conversation.
