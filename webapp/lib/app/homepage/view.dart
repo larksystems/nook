@@ -16,6 +16,7 @@ class HomePageView extends PageView {
   DivElement homePageContents;
   SelectElement projectSelector;
 
+
   HomePageView(HomePageController controller) : super(controller) {
     homePageContents = new DivElement()..classes.add('configuration-view');
   }
@@ -51,16 +52,10 @@ class HomePageView extends PageView {
     homePageContents.append(projectList);
   }
 
-  void showProjectPage() {
+  void showProjectPage(Map<String, List<PageInfo>> pageStructure) {
     navHeaderView.navContent = ButtonLinksView(navLinks, window.location.pathname).renderElement;
 
     DivElement pageContents = DivElement();
-
-    Map<String, List<PageInfo>> pageStructure = {
-      'Converse': [pages[Page.converse]],
-      'Configure': [pages[Page.configureMessages], pages[Page.configureTags]],
-      'Explore': [pages[Page.explore]],
-    };
 
     for (var heading in pageStructure.keys) {
       var title = new DivElement()
@@ -101,6 +96,7 @@ class HomePageView extends PageView {
       navHeaderView.projectTitle = title;
       return;
     }
+
 
     // String selectedProjectId = null;
     // if (projectSelector != null) {

@@ -208,7 +208,6 @@ class TagManager {
   /// Getters for unsaved tag Ids, group Ids derived from editedTags, deletedTags
   Set<String> get unsavedTagIds => Set.from(List.from(editedTags.keys)..addAll(deletedTags.keys));
   Set<String> get unsavedGroupIds {
-    window.console.error(movedFromGroupIds);
     var editedTagGroups = editedTags.values.map((tag) => tag.groups).expand((e) => e); //.toList();
     var deletedTagGroups = deletedTags.values.map((tag) => tag.groups).expand((e) => e); //.toList();
     Set<String> setString = Set.from(List.from(editedTagGroups)..addAll(deletedTagGroups))..addAll(movedFromGroupIds);

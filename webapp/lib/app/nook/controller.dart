@@ -349,8 +349,8 @@ class NookController extends Controller {
 
   @override
   void init() {
-    defaultUserConfig = baseUserConfiguration;
-    currentUserConfig = currentConfig = emptyUserConfiguration;
+    defaultUserConfig = model.UserConfigurationUtil.baseUserConfiguration;
+    currentUserConfig = currentConfig = model.UserConfigurationUtil.emptyUserConfiguration;
 
     view = new NookPageView(this);
     platform = new Platform(this);
@@ -361,6 +361,7 @@ class NookController extends Controller {
   void setUpOnLogin() {
     conversations = emptyConversationsSet(conversationSortOrder);
     filteredConversations = emptyConversationsSet(conversationSortOrder);
+    shards = [];
     suggestedReplies = [];
     tags = [];
     tagIdsToTags = {};
@@ -391,15 +392,12 @@ class NookController extends Controller {
         // Update the filter tags by category map
         filterTagsByCategory = _groupTagsIntoCategories(tags);
 
-        _removeTagsFromFilterMenu(_groupTagsIntoCategories(removed), TagFilterType.include);
-        _removeTagsFromFilterMenu(_groupTagsIntoCategories(previousModified), TagFilterType.include);
-        _addTagsToFilterMenu(_groupTagsIntoCategories(added), TagFilterType.include);
-        _addTagsToFilterMenu(_groupTagsIntoCategories(modified), TagFilterType.include);
-
-        _removeTagsFromFilterMenu(_groupTagsIntoCategories(removed), TagFilterType.exclude);
-        _removeTagsFromFilterMenu(_groupTagsIntoCategories(previousModified), TagFilterType.exclude);
-        _addTagsToFilterMenu(_groupTagsIntoCategories(added), TagFilterType.exclude);
-        _addTagsToFilterMenu(_groupTagsIntoCategories(modified), TagFilterType.exclude);
+        for (var tagFilterType in [TagFilterType.include, TagFilterType.exclude, TagFilterType.lastInboundTurn]) {
+          _removeTagsFromFilterMenu(_groupTagsIntoCategories(removed), tagFilterType);
+          _removeTagsFromFilterMenu(_groupTagsIntoCategories(previousModified), tagFilterType);
+          _addTagsToFilterMenu(_groupTagsIntoCategories(added), tagFilterType);
+          _addTagsToFilterMenu(_groupTagsIntoCategories(modified), tagFilterType);  
+        }
 
         // Update the conversation tags by group map
         tagsByGroup = _groupTagsIntoCategories(tags);
@@ -478,7 +476,7 @@ class NookController extends Controller {
           _view.snackbarView.showSnackbar("There may be an inconsistency in the number of conversation lists available. Please contact your project administrator and inform them of this error.", SnackbarNotificationType.error);
         }
         var shardsToConsider = shards.take(shardCountToConsider).toList();
-        
+
         // Read any conversation shards from the URL
         String urlConversationListRoot = _view.urlView.conversationList;
         String conversationListRoot = urlConversationListRoot;
@@ -521,9 +519,9 @@ class NookController extends Controller {
           ..addAll(added)
           ..addAll(modified);
         var defaultConfig = changedUserConfigurations.singleWhere((c) => c.docId == 'default', orElse: () => null);
-        defaultConfig = removed.where((c) => c.docId == 'default').length > 0 ? baseUserConfiguration : defaultConfig;
+        defaultConfig = removed.where((c) => c.docId == 'default').length > 0 ? model.UserConfigurationUtil.baseUserConfiguration : defaultConfig;
         var userConfig = changedUserConfigurations.singleWhere((c) => c.docId == signedInUser.userEmail, orElse: () => null);
-        userConfig = removed.where((c) => c.docId == signedInUser.userEmail).length > 0 ? emptyUserConfiguration : userConfig;
+        userConfig = removed.where((c) => c.docId == signedInUser.userEmail).length > 0 ? model.UserConfigurationUtil.emptyUserConfiguration : userConfig;
         if (defaultConfig == null && userConfig == null) {
           // Neither of the relevant configurations has been changed, nothing to do here
           return;
@@ -684,6 +682,21 @@ class NookController extends Controller {
       }
     }
 
+    if (oldConfig.consoleLoggingLevel != newConfig.consoleLoggingLevel) {
+      if (newConfig.consoleLoggingLevel.toLowerCase().contains('verbose')) {
+          logLevel = LogLevel.VERBOSE;
+      }
+      if (newConfig.consoleLoggingLevel.toLowerCase().contains('debug')) {
+          logLevel = LogLevel.DEBUG;
+      }
+      if (newConfig.consoleLoggingLevel.toLowerCase().contains('warning')) {
+          logLevel = LogLevel.WARNING;
+      }
+      if (newConfig.consoleLoggingLevel.toLowerCase().contains('error')) {
+          logLevel = LogLevel.ERROR;
+      }
+    }
+
     log.verbose('Updated user configuration: $currentConfig');
   }
 
@@ -802,23 +815,6 @@ class NookController extends Controller {
     }
   }
 
-  model.UserConfiguration get baseUserConfiguration => new model.UserConfiguration()
-      ..repliesKeyboardShortcutsEnabled = false
-      ..tagsKeyboardShortcutsEnabled = false
-      ..sendMessagesEnabled = false
-      ..sendCustomMessagesEnabled = false
-      ..sendMultiMessageEnabled = false
-      ..tagMessagesEnabled = false
-      ..tagConversationsEnabled = false
-      ..editTranslationsEnabled = false
-      ..editNotesEnabled = false
-      ..conversationalTurnsEnabled = false
-      ..tagsPanelVisibility = false
-      ..repliesPanelVisibility = false
-      ..suggestedRepliesGroupsEnabled = false;
-
-  model.UserConfiguration get emptyUserConfiguration => new model.UserConfiguration();
-
   /// Return the element after [current],
   /// or the first element if [current] is the last or not in the list.
   model.Conversation nextElement(Iterable<model.Conversation> conversations, model.Conversation current) {
@@ -886,9 +882,6 @@ class NookController extends Controller {
     }
 
     log.verbose('Executing UI command: $actionObjectState - $action - $data');
-    log.verbose('Active conversation: ${activeConversation?.docId}');
-    log.verbose('Selected conversations: ${selectedConversations?.map((c) => c.docId)?.toList()}');
-    log.verbose('Filtered conversations: ${filteredConversations?.map((c) => c.docId)?.toList()}');
 
     // For most actions, a conversation needs to be active.
     // Early exist if it's not one of the actions valid without an active conversation.

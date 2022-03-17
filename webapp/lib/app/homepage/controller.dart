@@ -45,7 +45,7 @@ class HomePageController extends Controller {
   @override
   void init() {
     urlView = UrlView();
-    view = HomePageView(this);
+    view = new HomePageView(this);
     platform = new Platform(this);
   }
 
@@ -130,6 +130,12 @@ class HomePageController extends Controller {
     }
     (view as HomePageView).showProjectTitleOrSelector(projects);
     (view as HomePageView).selectProject(projectId);
-    (view as HomePageView).showProjectPage();
+    (view as HomePageView).showProjectPage(
+      {
+        'Converse': [pages[Page.converse]],
+        'Configure': [pages[Page.configureMessages], pages[Page.configureTags]],
+        'Explore': [pages[Page.explore]],
+        // 'Tag': [pages[Page.coda]],
+      });
   }
 }

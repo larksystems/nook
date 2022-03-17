@@ -45,6 +45,8 @@ class PageView {
         () => appController.command(BaseAction.signOutButtonClicked));
     navHeaderView.authHeader = authHeaderView;
 
+    document.title = "${document.title} | ${appController.projectConfiguration['projectTitle']} | KatiKati";
+
     snackbarView = new SnackbarView();
   }
 
