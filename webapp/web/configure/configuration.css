@@ -68,8 +68,18 @@
   margin-top: 15px;
 }
 
+.message {
+  position: relative;
+}
+
 .message-wrapper {
   position: relative;
+}
+
+.message .button-wrapper {
+  top: 0;
+  right: 1px;
+  position: absolute;
 }
 
 .message__text {

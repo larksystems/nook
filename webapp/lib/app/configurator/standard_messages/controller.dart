@@ -18,13 +18,17 @@ Logger log = new Logger('controller.dart');
 enum MessagesConfigAction {
   addStandardMessage,
   updateStandardMessage,
+  resetStandardMessageText,
+  resetStandardMessageTranslation,
   removeStandardMessage,
   addStandardMessagesGroup,
   updateStandardMessagesGroup,
   removeStandardMessagesGroup,
+  resetStandardMessagesGroupName,
   addStandardMessagesCategory,
   updateStandardMessagesCategory,
   removeStandardMessagesCategory,
+  resetStandardMessagesCategoryName,
 }
 
 class StandardMessageData extends Data {
@@ -76,7 +80,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
 
   void _updateDiffUnsavedIndicators() {
     var diffData = standardMessagesManager.diffData;
-    _updateUnsavedIndicators(standardMessagesManager.localCategories, diffData.unsavedMessageTextIds, diffData.unsavedMessageTranslationIds, diffData.unsavedGroupIds, diffData.unsavedCategoryIds);
+    _updateUnsavedIndicators(standardMessagesManager.localCategories, diffData.unsavedMessageTextIds, diffData.unsavedMessageTranslationIds, diffData.renamedGroupIds, diffData.unsavedGroupIds, diffData.renamedCategoryIds, diffData.unsavedCategoryIds);
     _view.unsavedChanges = diffData.editedMessages.isNotEmpty || diffData.deletedMessages.isNotEmpty;
   }
 
@@ -127,6 +131,24 @@ class MessagesConfiguratorController extends ConfiguratorController {
         _removeMessagesFromView([standardMessage]);
         break;
 
+      case MessagesConfigAction.resetStandardMessageText:
+        StandardMessageData messageData = data;
+        var message = standardMessagesManager.standardMessagesInStorage.firstWhere((element) => element.docId == messageData.messageId);
+        var textToReset = standardMessagesManager.storageCategories[message.categoryId].groups[message.groupId].messages[message.docId].text;
+        var translation = standardMessagesManager.localCategories[message.categoryId].groups[message.groupId].messages[message.docId].translation;
+        var standardMessage = standardMessagesManager.modifyMessage(messageData.messageId, textToReset, translation);
+        _modifyMessagesInView([standardMessage]);
+        break;
+
+      case MessagesConfigAction.resetStandardMessageTranslation:
+        StandardMessageData messageData = data;
+        var message = standardMessagesManager.standardMessagesInStorage.firstWhere((element) => element.docId == messageData.messageId);
+        var textToReset = standardMessagesManager.localCategories[message.categoryId].groups[message.groupId].messages[message.docId].text;
+        var translation = standardMessagesManager.storageCategories[message.categoryId].groups[message.groupId].messages[message.docId].translation;
+        var standardMessage = standardMessagesManager.modifyMessage(messageData.messageId, textToReset, translation);
+        _modifyMessagesInView([standardMessage]);
+        break;
+
       case MessagesConfigAction.addStandardMessagesGroup:
         StandardMessagesGroupData groupData = data;
         var category = standardMessagesManager.localCategories[groupData.categoryId];
@@ -152,6 +174,13 @@ class MessagesConfiguratorController extends ConfiguratorController {
         _view.categoriesById[groupData.categoryId].removeGroup(groupData.groupId);
         break;
 
+      case MessagesConfigAction.resetStandardMessagesGroupName:
+        StandardMessagesGroupData groupData = data;
+        var resetGroupName = standardMessagesManager.storageCategories[groupData.categoryId].groups[groupData.groupId].groupName;
+        standardMessagesManager.renameStandardMessageGroup(groupData.categoryId, groupData.groupId, resetGroupName);
+        _view.categoriesById[groupData.categoryId].renameGroup(groupData.groupId, resetGroupName);
+        break;
+
       case MessagesConfigAction.addStandardMessagesCategory:
         var newCategory = standardMessagesManager.createStandardMessagesCategory();
         var messageCategoryMap = {
@@ -170,6 +199,13 @@ class MessagesConfiguratorController extends ConfiguratorController {
         StandardMessagesCategoryData categoryData = data;
         standardMessagesManager.deleteStandardMessagesCategory(categoryData.categoryId);
         _view.categories.removeItem(categoryData.categoryId);
+        break;
+      
+      case MessagesConfigAction.resetStandardMessagesCategoryName:
+        StandardMessagesCategoryData categoryData = data;
+        var resetCategoryName = standardMessagesManager.storageCategories[categoryData.categoryId].categoryName;
+        standardMessagesManager.renameStandardMessageCategory(categoryData.categoryId, resetCategoryName);
+        _view.renameCategory(categoryData.categoryId, resetCategoryName);
         break;
     }
 
