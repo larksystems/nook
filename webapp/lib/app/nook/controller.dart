@@ -81,7 +81,6 @@ enum UIAction {
   selectAllConversations,
   deselectAllConversations,
   updateSuggestedRepliesCategory,
-  showSnackbar,
   updateConversationIdFilter,
   goToUser,
   addNewConversations,
@@ -283,15 +282,6 @@ class UpdateFilterTagsCategoryData extends Data {
 
   @override
   String toString() => 'UpdateFilterTagsCategoryData: {category: $category}';
-}
-
-class SnackbarData extends Data {
-  String text;
-  SnackbarNotificationType type;
-  SnackbarData(this.text, this.type);
-
-  @override
-  String toString() => 'SnackbarData: {text: $text, type: $type}';
 }
 
 class OtherUserData extends Data {
@@ -907,13 +897,11 @@ class NookController extends Controller {
         action != UIAction.addFilterTag && action != UIAction.removeFilterTag &&
         action != UIAction.updateSuggestedRepliesCategory &&
         action != UIAction.selectAllConversations && action != UIAction.deselectAllConversations &&
-        action != UIAction.showSnackbar && action != UIAction.updateConversationIdFilter) {
+        action != UIAction.updateConversationIdFilter) {
       return;
     }
 
-    if (action != UIAction.showSnackbar) { // not a user action
-      lastUserActivity = new DateTime.now();
-    }
+    lastUserActivity = new DateTime.now();
 
     if (actionObjectState == UIActionObject.addTagInline) {
       subCommandForAddTagInline(action, data);
@@ -1348,7 +1336,7 @@ class NookController extends Controller {
             }
             String text = 'Cannot send multiple messages using keyboard shortcuts. '
                           'Please use the send button on the suggested reply you want to send instead.';
-            command(UIAction.showSnackbar, new SnackbarData(text, SnackbarNotificationType.warning));
+            command(BaseAction.showSnackbar, new SnackbarData(text, SnackbarNotificationType.warning));
             return;
           }
         }
@@ -1421,11 +1409,6 @@ class NookController extends Controller {
         _populateReplyPanelView(suggestedRepliesByCategory[selectedSuggestedRepliesCategory]);
         break;
 
-      case UIAction.showSnackbar:
-        SnackbarData snackbarData = data;
-        _view.snackbarView.showSnackbar(snackbarData.text, snackbarData.type);
-        break;
-
       case UIAction.goToUser:
         OtherUserData userData = data;
         String conversationId = otherUserPresenceByUserId[userData.userId].conversationId;
@@ -1437,8 +1420,7 @@ class NookController extends Controller {
         List<NewConversationFormData> conversations = newConversationsData.conversations;
         // todo: EB: publish via platform
         window.console.error(conversations);
-        command(UIAction.showSnackbar,
-            new SnackbarData('${conversations.length} conversation${conversations.length > 1 ? 's' : ''} added', SnackbarNotificationType.success));
+        command(BaseAction.showSnackbar, new SnackbarData('${conversations.length} conversation${conversations.length > 1 ? 's' : ''} added', SnackbarNotificationType.success));
         _view.conversationListPanelView.closeNewConversationModal();
         // todo: where to sort the new conversation?
         // todo: select the recently added conversation, scroll list view panel to selected message
@@ -1656,7 +1638,7 @@ class NookController extends Controller {
     platform.sendMultiMessage(conversationIds, reply.text, onError: (error) {
       log.error('Reply "${reply.text}" failed to be sent to conversations ${conversationIds}');
       log.error('Error: ${error}');
-      command(UIAction.showSnackbar, new SnackbarData('Send Multi Reply Failed', SnackbarNotificationType.error));
+      command(BaseAction.showSnackbar, new SnackbarData('Send Multi Reply Failed', SnackbarNotificationType.error));
       conversationIds.forEach((conversationId) {
         _view.conversationListPanelView.updateConversationStatus(conversationId, ConversationItemStatus.pending);
       });
@@ -1702,7 +1684,7 @@ class NookController extends Controller {
     platform.sendMultiMessages(conversationIds, textReplies, wasSuggested: wasSuggested, onError: (error) {
       log.error('${textReplies.length} replies "${repliesStr}" failed to be sent to conversations ${conversationIds}');
       log.error('Error: ${error}');
-      command(UIAction.showSnackbar, new SnackbarData('Send Multi Reply Failed', SnackbarNotificationType.error));
+      command(BaseAction.showSnackbar, new SnackbarData('Send Multi Reply Failed', SnackbarNotificationType.error));
       conversationIds.forEach((conversationId) {
         _view.conversationListPanelView.updateConversationStatus(conversationId, ConversationItemStatus.pending);
       });
@@ -1917,11 +1899,11 @@ void showAndLogError(error, trace) {
     errMsg = "A network problem occurred: ${error.message}";
   } else if (error is FirebaseError) {
     errMsg = "An firestore error occured: ${error.code} [${error.message}]";
-    _view.bannerView.showBanner("You don't have access to this dataset. Please contact your project administrator");
+    controller.command(BaseAction.showBanner, new BannerData("You don't have access to this dataset. Please contact your project administrator"));
   } else if (error is Exception) {
     errMsg = "An internal error occurred: ${error.runtimeType}";
   }  else {
     errMsg = "$error";
   }
-  controller.command(UIAction.showSnackbar, new SnackbarData(errMsg, SnackbarNotificationType.error));
+  controller.command(BaseAction.showSnackbar, new SnackbarData(errMsg, SnackbarNotificationType.error));
 }

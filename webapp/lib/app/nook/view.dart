@@ -22,7 +22,7 @@ import 'package:katikati_ui_lib/components/turnline/turnline.dart' as tl;
 import 'package:katikati_ui_lib/components/button/button.dart' as buttons;
 import 'package:katikati_ui_lib/components/model/model.dart' as model;
 import 'package:nook/view.dart';
-import 'package:nook/app/utils.dart';
+import 'package:nook/utils.dart';
 
 import 'controller.dart';
 import 'dom_utils.dart';
@@ -93,8 +93,6 @@ class NookPageView extends PageView {
     conversationListColumn.append(conversationListPanelView.conversationListPanel);
     messagesViewColumn.append(conversationPanelView.conversationPanel);
     tabsViewColumn.append(tabsView.renderElement);
-
-    bodyElement.append(snackbarView.snackbarElement);
 
     showNormalStatus('signed in');
 

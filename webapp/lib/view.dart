@@ -8,7 +8,7 @@ import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
 import 'package:katikati_ui_lib/components/banner/banner.dart';
 import 'package:katikati_ui_lib/components/logger.dart';
 import 'package:katikati_ui_lib/components/nav/nav_header.dart';
-import 'package:nook/app/utils.dart';
+import 'package:nook/utils.dart';
 
 import 'package:nook/controller.dart';
 
@@ -44,7 +44,6 @@ class PageView {
         () {}, // We don't show the navbar when the user is not logged in, so no need to show this
         () => appController.command(BaseAction.signOutButtonClicked));
     navHeaderView.authHeader = authHeaderView;
-    navHeaderView.projectTitle = appController.projectConfiguration['projectTitle'];
 
     snackbarView = new SnackbarView();
   }
