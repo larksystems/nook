@@ -61,10 +61,11 @@ void _modifyMessagesInView(List<model.SuggestedReply> messages) {
   }
 }
 
-void _updateUnsavedIndicators(Map<String, MessageCategory> categories, Set<String> unsavedMessageTextIds, Set<String> unsavedMessageTranslationIds, Set<String> unsavedGroupIds, Set<String> unsavedCategoryIds) {
+void _updateUnsavedIndicators(Map<String, MessageCategory> categories, Set<String> unsavedMessageTextIds, Set<String> unsavedMessageTranslationIds, Set<String> renamedGroupIds, Set<String> unsavedGroupIds, Set<String> renamedCategoryIds, Set<String> unsavedCategoryIds) {
   for (var categoryId in categories.keys) {
     var categoryView = _view.categoriesById[categoryId];
     categoryView.markAsUnsaved(unsavedCategoryIds.contains(categoryId));
+    categoryView.showReset(renamedCategoryIds.contains(categoryId));
     if (!unsavedCategoryIds.contains(categoryId)) {
       categoryView.hideAlternative();
     }
@@ -72,6 +73,7 @@ void _updateUnsavedIndicators(Map<String, MessageCategory> categories, Set<Strin
     for (var groupId in categories[categoryId].groups.keys) {
       var groupView = categoryView.groupsById[groupId];
       groupView.markAsUnsaved(unsavedGroupIds.contains(groupId));
+      groupView.showReset(renamedGroupIds.contains(groupId));
       if (!unsavedGroupIds.contains(groupId)) {
         groupView.hideAlternative();
       }
@@ -79,7 +81,9 @@ void _updateUnsavedIndicators(Map<String, MessageCategory> categories, Set<Strin
       for (var messageId in categories[categoryId].groups[groupId].messages.keys) {
         var messageView = groupView.messagesById[messageId];
         messageView.markTextAsUnsaved(unsavedMessageTextIds.contains(messageId));
+        messageView.showResetForText(unsavedMessageTextIds.contains(messageId));
         messageView.markTranslationAsUnsaved(unsavedMessageTranslationIds.contains(messageId));
+        messageView.showResetForTranslation(unsavedMessageTranslationIds.contains(messageId));
 
         if (!unsavedMessageTextIds.contains(messageId)) {
           messageView.hideAlternativeText();

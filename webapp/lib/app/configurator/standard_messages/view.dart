@@ -103,6 +103,9 @@ class StandardMessagesCategoryView extends AccordionItem {
       }
       ..onDelete = () {
         requestToDelete();
+      }
+      ..onReset = () {
+        _view.appController.command(MessagesConfigAction.resetStandardMessagesCategoryName, new StandardMessagesCategoryData(_categoryId));
       };
     _alternativeElement = DivElement()..className = "category-alternative"..hidden = true;
     header
@@ -122,7 +125,11 @@ class StandardMessagesCategoryView extends AccordionItem {
     body.append(_addButton.renderElement);
   }
 
-  void set name(String value) => _categoryName = value;
+  void set name(String value) {
+    _categoryName = value;
+    editableTitle.updateText(value);
+  }
+
   String get name => _categoryName;
 
   void updateName(String newCategoryName) {
@@ -166,7 +173,7 @@ class StandardMessagesCategoryView extends AccordionItem {
 
   void renameGroup(String groupId, String newGroupName) {
     var groupView = groupsById[groupId];
-    groupView._groupName = newGroupName;
+    groupView.name = newGroupName;
     groupsById[groupId] = groupView;
     groups.updateItem(groupId, groupView);
   }
@@ -191,6 +198,10 @@ class StandardMessagesCategoryView extends AccordionItem {
   void markAsUnsaved(bool unsaved) {
     editableTitle.renderElement.classes.toggle("unsaved", unsaved);
   }
+
+  void showReset(bool show) {
+    editableTitle.showReset(show);
+  }
 }
 
 class StandardMessagesGroupView extends AccordionItem {
@@ -203,6 +214,12 @@ class StandardMessagesGroupView extends AccordionItem {
   Element _alternativeElement;
 
   Map<String, StandardMessageView> messagesById = {};
+
+  void set name(String value) {
+    _groupName = value;
+    editableTitle.updateText(value);
+  }
+  String get name => _groupName;
 
   StandardMessagesGroupView(this._categoryId, this._groupId, this._groupName, DivElement header, DivElement body) : super(_groupId, header, body, false) {
     editableTitle = TextEdit(_groupName, removable: true)
@@ -217,6 +234,9 @@ class StandardMessagesGroupView extends AccordionItem {
       }
       ..onDelete = () {
         requestToDelete();
+      }
+      ..onReset = () {
+        _view.appController.command(MessagesConfigAction.resetStandardMessagesGroupName, new StandardMessagesGroupData(_categoryId, _groupId));
       };
     _alternativeElement = DivElement()..className = "group-alternative"..hidden = true;
     header
@@ -293,6 +313,10 @@ class StandardMessagesGroupView extends AccordionItem {
     editableTitle.renderElement.classes.toggle("unsaved", unsaved);
   }
 
+  void showReset(bool show) {
+    editableTitle.showReset(show);
+  }
+
   // todo: add a message to reflect group name change
 }
 
@@ -300,6 +324,8 @@ class StandardMessageView {
   Element _standardMessageElement;
   MessageView _textView;
   MessageView _translationView;
+  Button _resetTextButton;
+  Button _resetTranslationButton;
 
   StandardMessageView(String messageId, String text, String translation) {
     _standardMessageElement = new DivElement()
@@ -323,6 +349,16 @@ class StandardMessageView {
       removeWarningModal.parent = _standardMessageElement;
     });
     removeButton.parent = _standardMessageElement;
+
+    _resetTextButton = Button(ButtonType.reset, hoverText: text, onClick: (event) {
+      event.stopPropagation();
+      _view.appController.command(MessagesConfigAction.resetStandardMessageText, new StandardMessageData(messageId));
+    });
+
+    _resetTranslationButton =  Button(ButtonType.reset, hoverText: translation, onClick: (event) {
+      event.stopPropagation();
+      _view.appController.command(MessagesConfigAction.resetStandardMessageTranslation, new StandardMessageData(messageId));
+    });
   }
 
   Element get renderElement => _standardMessageElement;
@@ -331,8 +367,24 @@ class StandardMessageView {
     _textView.markAsUnsaved(unsaved);
   }
 
+  void showResetForText(bool show) {
+    if (show) {
+      _textView.renderElement.append(_resetTextButton.renderElement);
+    } else {
+      _resetTextButton.renderElement.remove();
+    }
+  }
+
   void markTranslationAsUnsaved(bool unsaved) {
     _translationView.markAsUnsaved(unsaved);
+  }
+
+  void showResetForTranslation(bool show) {
+    if (show) {
+      _translationView.renderElement.append(_resetTranslationButton.renderElement);
+    } else {
+      _resetTranslationButton.renderElement.remove();
+    }
   }
 
   void updateText(String text) {
@@ -367,6 +419,8 @@ class MessageView {
   Function onMessageUpdateCallback;
   Function _onTextareaHeightChangeCallback;
   SpanElement _textLengthIndicator;
+  Button _resetButton;
+  String _originalMessage;
 
   DivElement _alternativeElement;
 
@@ -374,6 +428,12 @@ class MessageView {
     _messageElement = new DivElement()..classes.add('message');
     _messageWrapper = new DivElement()..classes.add('message-wrapper');
     _alternativeElement = new DivElement()..classes.add('message-alternative')..hidden = true;
+    _originalMessage = message;
+
+    _resetButton = Button(ButtonType.reset, onClick: (event) {
+      event.preventDefault();
+      onMessageUpdateCallback(_originalMessage);
+    });
 
     _textLengthIndicator = new SpanElement()
       ..classes.add('message__length-indicator')
@@ -433,6 +493,14 @@ class MessageView {
 
   void markAsUnsaved(bool unsaved) {
     _messageWrapper.classes.toggle('unsaved', unsaved);
+  }
+
+  void showReset(bool show) {
+    if (show) {
+      _messageWrapper.parent..insertBefore(_resetButton.renderElement, _messageWrapper);
+    } else {
+      _resetButton.renderElement.remove();
+    }
   }
 
   void updateText(String text) {

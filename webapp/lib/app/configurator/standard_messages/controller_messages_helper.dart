@@ -4,6 +4,9 @@ part of controller;
 // todo: deleting messages doesnot remove empty categories
 
 class MessagesDiffData {
+  Set<String> renamedCategoryIds = {};
+  Set<String> renamedGroupIds = {};
+  
   Set<String> unsavedCategoryIds;
   Set<String> unsavedGroupIds;
   Set<String> unsavedMessageTextIds;
@@ -12,7 +15,7 @@ class MessagesDiffData {
   List<model.SuggestedReply> editedMessages;
   List<model.SuggestedReply> deletedMessages;
 
-  MessagesDiffData(this.unsavedCategoryIds, this.unsavedGroupIds, this.unsavedMessageTextIds, this.unsavedMessageTranslationIds, this.editedMessages, this.deletedMessages);
+  MessagesDiffData(this.renamedCategoryIds, this.unsavedCategoryIds, this.renamedGroupIds, this.unsavedGroupIds, this.unsavedMessageTextIds, this.unsavedMessageTranslationIds, this.editedMessages, this.deletedMessages);
 }
 
 class StandardMessagesManager {
@@ -42,6 +45,9 @@ class StandardMessagesManager {
   Map<String, MessageCategory> localCategories = {};
 
   MessagesDiffData get diffData {
+    Set<String> renamedCategoryIds = {};
+    Set<String> renamedGroupIds = {};
+
     Set<String> unsavedCategoryIds = {};
     Set<String> unsavedGroupIds = {};
     Set<String> unsavedMessageTextIds = {};
@@ -85,10 +91,12 @@ class StandardMessagesManager {
       } else { // message edited
         var isMessageEdited = false;
         if (localMessage.categoryName != storageMessage.categoryName) { // renamed category
+          renamedCategoryIds.add(localMessage.categoryId);
           unsavedCategoryIds.add(localMessage.categoryId);
           isMessageEdited = true;
         }
         if (localMessage.groupName != storageMessage.groupName) { // renamed group
+          renamedGroupIds.add(localMessage.groupId);
           unsavedGroupIds.add(localMessage.groupId);
           unsavedCategoryIds.add(localMessage.categoryId);
           isMessageEdited = true;
@@ -114,7 +122,7 @@ class StandardMessagesManager {
       }
     }
 
-    return MessagesDiffData(unsavedCategoryIds, unsavedGroupIds, unsavedMessageTextIds, unsavedMessageTranslationIds, editedMessages, deletedMessages);
+    return MessagesDiffData(renamedCategoryIds, unsavedCategoryIds, renamedGroupIds, unsavedGroupIds, unsavedMessageTextIds, unsavedMessageTranslationIds, editedMessages, deletedMessages);
   }
 
   /// Returns the list of messages being managed.
