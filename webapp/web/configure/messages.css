@@ -2,14 +2,7 @@
   margin-top: 0;
 }
 
-.text-edit.unsaved::before,
-.message-wrapper.unsaved::before {
-  font-family: "Font Awesome 5 Free";
-  content: "\f071";
-  display: inline-block;
-  padding-right: 3px;
-  vertical-align: middle;
-  color: var(--orange);
-  font-weight: 900;
-  margin-right: 3px;
+.text-edit.unsaved, .message-wrapper.unsaved {
+  font-style: italic;
+  font-weight: 500;
 }

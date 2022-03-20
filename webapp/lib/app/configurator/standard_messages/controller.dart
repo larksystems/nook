@@ -202,8 +202,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
       await Future.wait([platform.updateSuggestedReplies(diffData.editedMessages), platform.deleteSuggestedReplies(diffData.deletedMessages)]);
       _view
         ..unsavedChanges = false
-        ..showSaveStatus('Saved!', autoHide: true)
-        ..clearUnsavedIndicators();
+        ..showSaveStatus('Saved!', autoHide: true);
     } catch (err) {
       _view
         ..hideSaveStatus()
