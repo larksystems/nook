@@ -26,18 +26,27 @@ class StandardMessagesManager {
   factory StandardMessagesManager() => _singleton;
 
   int getNextCategoryIndex() {
-    var lastIndex = localCategories.values.fold(0, (maxIndex, category) => maxIndex > category.categoryIndex ? maxIndex : category.categoryIndex);
+    var lastIndex = localCategories.values.fold(0, (maxIndex, category) {
+      var currentIndex = category.categoryIndex ?? 0;
+      return maxIndex > currentIndex ? maxIndex : currentIndex;
+    });
     return lastIndex + 1;
   }
 
   int getNextGroupIndexInCategory(String categoryId) {
-    var lastIndex = localCategories[categoryId].groups.values.fold(0, (maxIndex, group) => maxIndex > group.groupIndexInCategory ? maxIndex : group.groupIndexInCategory);
+    var lastIndex = localCategories[categoryId].groups.values.fold(0, (maxIndex, group) {
+      var currentIndex = group.groupIndexInCategory ?? 0;
+      return maxIndex > currentIndex ? maxIndex : currentIndex;
+    });
     return lastIndex + 1;
   }
 
   int getNextMessageIndexInGroup(String categoryId, String groupId) {
     var standardMessagesInGroup = localCategories[categoryId].groups[groupId].messages.values;
-    var lastIndexInGroup = standardMessagesInGroup.fold(0, (maxIndex, r) => maxIndex > r.indexInGroup ? maxIndex : r.indexInGroup);
+    var lastIndexInGroup = standardMessagesInGroup.fold(0, (maxIndex, r) {
+      var currentIndex = r.indexInGroup ?? 0;
+      return maxIndex > currentIndex ? maxIndex : currentIndex;
+    });
     return lastIndexInGroup + 1;
   }
 
