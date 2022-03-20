@@ -215,7 +215,8 @@ class StandardMessagesManager {
       } else if (localMessage.groupName != storageMessage.groupName && localMessage.groupName != standardMessage.groupName) {
         // the group has been updated
          _view.categoriesById[standardMessage.categoryId].groupsById[standardMessage.groupId].showAlternative(standardMessage.groupName);
-      } else if ((localMessage.text != storageMessage.text && localMessage.text != standardMessage.text) || (localMessage.translation != storageMessage.translation && localMessage.translation != standardMessage.translation)) {
+      } else if ((localMessage.text != storageMessage.text && localMessage.text != standardMessage.text)
+             || (localMessage.translation != storageMessage.translation && localMessage.translation != standardMessage.translation)) {
         // the message text has been updated
         if (localMessage.text != storageMessage.text && localMessage.text != standardMessage.text) {
           _view.categoriesById[standardMessage.categoryId].groupsById[standardMessage.groupId].messagesById[standardMessage.docId].showAlternativeText(standardMessage.text);
