@@ -349,8 +349,8 @@ class NookController extends Controller {
 
   @override
   void init() {
-    defaultUserConfig = baseUserConfiguration;
-    currentUserConfig = currentConfig = emptyUserConfiguration;
+    defaultUserConfig = model.UserConfigurationUtil.baseUserConfiguration;
+    currentUserConfig = currentConfig = model.UserConfigurationUtil.emptyUserConfiguration;
 
     view = new NookPageView(this);
     platform = new Platform(this);
@@ -519,9 +519,9 @@ class NookController extends Controller {
           ..addAll(added)
           ..addAll(modified);
         var defaultConfig = changedUserConfigurations.singleWhere((c) => c.docId == 'default', orElse: () => null);
-        defaultConfig = removed.where((c) => c.docId == 'default').length > 0 ? baseUserConfiguration : defaultConfig;
+        defaultConfig = removed.where((c) => c.docId == 'default').length > 0 ? model.UserConfigurationUtil.baseUserConfiguration : defaultConfig;
         var userConfig = changedUserConfigurations.singleWhere((c) => c.docId == signedInUser.userEmail, orElse: () => null);
-        userConfig = removed.where((c) => c.docId == signedInUser.userEmail).length > 0 ? emptyUserConfiguration : userConfig;
+        userConfig = removed.where((c) => c.docId == signedInUser.userEmail).length > 0 ? model.UserConfigurationUtil.emptyUserConfiguration : userConfig;
         if (defaultConfig == null && userConfig == null) {
           // Neither of the relevant configurations has been changed, nothing to do here
           return;
@@ -682,6 +682,21 @@ class NookController extends Controller {
       }
     }
 
+    if (oldConfig.consoleLoggingLevel != newConfig.consoleLoggingLevel) {
+      if (newConfig.consoleLoggingLevel.toLowerCase().contains('verbose')) {
+          logLevel = LogLevel.VERBOSE;
+      }
+      if (newConfig.consoleLoggingLevel.toLowerCase().contains('debug')) {
+          logLevel = LogLevel.DEBUG;
+      }
+      if (newConfig.consoleLoggingLevel.toLowerCase().contains('warning')) {
+          logLevel = LogLevel.WARNING;
+      }
+      if (newConfig.consoleLoggingLevel.toLowerCase().contains('error')) {
+          logLevel = LogLevel.ERROR;
+      }
+    }
+
     log.verbose('Updated user configuration: $currentConfig');
   }
 
@@ -799,23 +814,6 @@ class NookController extends Controller {
         return SplayTreeSet(model.ConversationUtil.mostRecentInboundFirst);
     }
   }
-
-  model.UserConfiguration get baseUserConfiguration => new model.UserConfiguration()
-      ..repliesKeyboardShortcutsEnabled = false
-      ..tagsKeyboardShortcutsEnabled = false
-      ..sendMessagesEnabled = false
-      ..sendCustomMessagesEnabled = false
-      ..sendMultiMessageEnabled = false
-      ..tagMessagesEnabled = false
-      ..tagConversationsEnabled = false
-      ..editTranslationsEnabled = false
-      ..editNotesEnabled = false
-      ..conversationalTurnsEnabled = false
-      ..tagsPanelVisibility = false
-      ..repliesPanelVisibility = false
-      ..suggestedRepliesGroupsEnabled = false;
-
-  model.UserConfiguration get emptyUserConfiguration => new model.UserConfiguration();
 
   /// Return the element after [current],
   /// or the first element if [current] is the last or not in the list.

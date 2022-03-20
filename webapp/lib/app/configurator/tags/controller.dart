@@ -8,6 +8,7 @@ export 'package:nook/app/configurator/controller.dart';
 import 'package:katikati_ui_lib/components/model/model.dart' as model;
 import 'package:katikati_ui_lib/components/tag/tag.dart';
 import 'package:katikati_ui_lib/components/menu/menu.dart';
+import 'package:nook/app/nook/controller.dart';
 import 'package:nook/platform/platform.dart';
 import 'view.dart';
 
@@ -72,12 +73,21 @@ TagsConfigurationPageView get _view => _controller.view;
 class TagsConfiguratorController extends ConfiguratorController {
   TagManager tagManager = new TagManager();
 
+  model.UserConfiguration defaultUserConfig;
+  model.UserConfiguration currentUserConfig;
+  /// This represents the current configuration of the UI.
+  /// It's computed by merging the [defaultUserConfig] and [currentUserConfig] (if set).
+  model.UserConfiguration currentConfig;
+
   TagsConfiguratorController() : super() {
     _controller = this;
   }
 
   @override
   void init() {
+    defaultUserConfig = model.UserConfigurationUtil.baseUserConfiguration;
+    currentUserConfig = currentConfig = model.UserConfigurationUtil.emptyUserConfiguration;
+
     view = new TagsConfigurationPageView(this);
     platform = new Platform(this);
   }
@@ -91,26 +101,45 @@ class TagsConfiguratorController extends ConfiguratorController {
     switch (action) {
       case TagsConfigAction.addTag:
         TagData tagData = data;
+        if (!currentConfig.editTagsEnabled) {
+          command(BaseAction.showSnackbar, SnackbarData('Adding a new tag is disabled', SnackbarNotificationType.warning));
+          return;
+        }
+
         var tag = tagManager.createTag(tagData.groupId);
         _addTagsToView({
           tagData.groupId: [tag]
         }, startEditing: true);
         break;
-      
+
       case TagsConfigAction.requestRenameTag:
-        TagData requestRenameTagData = data;
-        var tagText = requestRenameTagData.text.toLowerCase().trim();
+        TagData tagData = data;
+        if (!currentConfig.editTagsEnabled) {
+          command(BaseAction.showSnackbar, SnackbarData('Renaming a tag is disabled', SnackbarNotificationType.warning));
+          // Reshow the tag as the view edits it anyway
+          _modifyTagsInView(Map.fromEntries(tagManager.getTagById(tagData.id).groups.map((g) => new MapEntry(g, [tagManager.getTagById(tagData.id)]))));
+          return;
+        }
+
+        var tagText = tagData.text.toLowerCase().trim();
         var presentTagTexts = tagManager._tags.map((tag) => tag.text.toLowerCase().trim()).toList();
-        
+
         if (presentTagTexts.contains(tagText)) {
-          _showDuplicateTagWarningModal(requestRenameTagData.groupId, requestRenameTagData.id, requestRenameTagData.text);
+          _showDuplicateTagWarningModal(tagData.groupId, tagData.id, tagData.text);
         } else {
-          command(TagsConfigAction.renameTag, TagData(requestRenameTagData.id, text: requestRenameTagData.text));
+          command(TagsConfigAction.renameTag, TagData(tagData.id, text: tagData.text));
         }
         break;
 
       case TagsConfigAction.renameTag:
         TagData tagData = data;
+        if (!currentConfig.editTagsEnabled) {
+          command(BaseAction.showSnackbar, SnackbarData('Renaming a tag is disabled', SnackbarNotificationType.warning));
+          // Reshow the tag as the view edits it anyway
+          _modifyTagsInView(Map.fromEntries(tagManager.getTagById(tagData.id).groups.map((g) => new MapEntry(g, [tagManager.getTagById(tagData.id)]))));
+          return;
+        }
+
         var tag = tagManager.modifyTag(tagData.id, text: tagData.text);
         _modifyTagsInView(Map.fromEntries(tag.groups.map((g) => new MapEntry(g, [tag]))));
         _updateUnsavedIndicators(tagManager.tagsByGroup, tagManager.unsavedTagIds, tagManager.unsavedGroupIds);
@@ -118,6 +147,13 @@ class TagsConfiguratorController extends ConfiguratorController {
 
       case TagsConfigAction.moveTag:
         TagData tagData = data;
+        if (!currentConfig.editTagsEnabled) {
+          command(BaseAction.showSnackbar, SnackbarData('Moving a tag is disabled', SnackbarNotificationType.warning));
+          // Reshow the tag as the view edits it anyway
+          _modifyTagsInView(Map.fromEntries(tagManager.getTagById(tagData.id).groups.map((g) => new MapEntry(g, [tagManager.getTagById(tagData.id)]))));
+          return;
+        }
+
         model.Tag tag = tagManager.modifyTag(tagData.id, group: tagData.newGroupId);
         // update the view by removing the tag and then adding it
         _removeTagsFromView({
@@ -132,6 +168,11 @@ class TagsConfiguratorController extends ConfiguratorController {
 
       case TagsConfigAction.removeTag:
         TagData tagData = data;
+        if (!currentConfig.editTagsEnabled) {
+          command(BaseAction.showSnackbar, SnackbarData('Deleting a tag is disabled', SnackbarNotificationType.warning));
+          return;
+        }
+
         model.Tag tag = tagManager.deleteTag(tagData.id);
         _removeTagsFromView({
           tagData.groupId: [tag]
@@ -140,6 +181,11 @@ class TagsConfiguratorController extends ConfiguratorController {
         break;
 
       case TagsConfigAction.addTagGroup:
+        if (!currentConfig.editTagsEnabled) {
+          command(BaseAction.showSnackbar, SnackbarData('Adding a new tag group is disabled', SnackbarNotificationType.warning));
+          return;
+        }
+
         var newGroupName = tagManager.createTagGroup();
         _addTagsToView({newGroupName: []}, startEditingName: true);
         _updateUnsavedIndicators(tagManager.tagsByGroup, tagManager.unsavedTagIds, tagManager.unsavedGroupIds);
@@ -147,6 +193,12 @@ class TagsConfiguratorController extends ConfiguratorController {
 
       case TagsConfigAction.updateTagGroup:
         TagGroupData groupData = data;
+        if (!currentConfig.editTagsEnabled) {
+          command(BaseAction.showSnackbar, SnackbarData('Renaming a tag group is disabled', SnackbarNotificationType.warning));
+          // TODO: the tag group name still remains edited in the UI, work out how to change it
+          return;
+        }
+
         tagManager.renameTagGroup(groupData.groupName, groupData.newGroupName);
         var groupView = _view.groups.queryItem(groupData.groupName);
         groupView.id = groupData.newGroupName;
@@ -155,12 +207,22 @@ class TagsConfiguratorController extends ConfiguratorController {
         break;
 
       case TagsConfigAction.removeTagGroup:
+        if (!currentConfig.editTagsEnabled) {
+          command(BaseAction.showSnackbar, SnackbarData('Deleting a tag group is disabled', SnackbarNotificationType.warning));
+          return;
+        }
+
         TagGroupData groupData = data;
         tagManager.deleteTagGroup(groupData.groupName);
         _view.removeTagGroup(groupData.groupName);
         break;
 
       case TagsConfigAction.updateTagType:
+        if (!currentConfig.editTagsEnabled) {
+          command(BaseAction.showSnackbar, SnackbarData('Changing the tag type is disabled', SnackbarNotificationType.warning));
+          return;
+        }
+
         TagData tagData = data;
         var tag = tagManager.modifyTag(tagData.id, type: tagData.newType);
         _modifyTagsInView(Map.fromEntries(tag.groups.map((g) => new MapEntry(g, [tag]))));
@@ -184,6 +246,48 @@ class TagsConfiguratorController extends ConfiguratorController {
       _modifyTagsInView(_groupTagsIntoCategories(tagsModified));
       _removeTagsFromView(_groupTagsIntoCategories(tagsRemoved));
     });
+
+    platform.listenForUserConfigurations((added, modified, removed) {
+      List<model.UserConfiguration> changedUserConfigurations = new List()
+        ..addAll(added)
+        ..addAll(modified);
+
+      var defaultConfig = changedUserConfigurations.singleWhere((c) => c.docId == 'default', orElse: () => null);
+      defaultConfig = removed.where((c) => c.docId == 'default').length > 0 ? model.UserConfigurationUtil.baseUserConfiguration : defaultConfig;
+      var userConfig = changedUserConfigurations.singleWhere((c) => c.docId == signedInUser.userEmail, orElse: () => null);
+      userConfig = removed.where((c) => c.docId == signedInUser.userEmail).length > 0 ? model.UserConfigurationUtil.emptyUserConfiguration : userConfig;
+      if (defaultConfig == null && userConfig == null) {
+        // Neither of the relevant configurations has been changed, nothing to do here
+        return;
+      }
+      defaultUserConfig = defaultConfig ?? defaultUserConfig;
+      currentUserConfig = userConfig ?? currentUserConfig;
+      currentConfig = currentUserConfig.applyDefaults(defaultUserConfig);
+
+      // Apply new config
+      if (!currentConfig.editTagsEnabled) {
+        tagManager.editedTags.clear();
+        tagManager.movedFromGroupIds.clear();
+        tagManager.deletedTags.clear();
+        _view.showSaveStatus('Modifying tags has been disabled, dropping all changes');
+        _view.unsavedChanges = false;
+        _updateUnsavedIndicators(tagManager.tagsByGroup, tagManager.unsavedTagIds, tagManager.unsavedGroupIds);
+      }
+
+      if (currentConfig.consoleLoggingLevel.toLowerCase().contains('verbose')) {
+          logLevel = LogLevel.VERBOSE;
+      }
+      if (currentConfig.consoleLoggingLevel.toLowerCase().contains('debug')) {
+          logLevel = LogLevel.DEBUG;
+      }
+      if (currentConfig.consoleLoggingLevel.toLowerCase().contains('warning')) {
+          logLevel = LogLevel.WARNING;
+      }
+      if (currentConfig.consoleLoggingLevel.toLowerCase().contains('error')) {
+          logLevel = LogLevel.ERROR;
+      }
+    });
+
   }
 
   @override

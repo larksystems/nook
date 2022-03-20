@@ -248,7 +248,7 @@ class Platform {
   }
 
   void listenForTags(TagCollectionListener listener, [OnErrorListener onErrorListener]) {
-    _tagSubscription = Tag.listen(_docStorage, listener, collectionRoot: "/conversationTags", onError: onErrorListener);
+    _tagSubscription = Tag.listen(_docStorage, listener, collectionRoot: "/tags", onError: onErrorListener);
   }
 
   void listenForSuggestedReplies(SuggestedReplyCollectionListener listener, [OnErrorListener onErrorListener]) {
