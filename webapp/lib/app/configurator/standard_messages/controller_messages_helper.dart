@@ -164,7 +164,7 @@ class StandardMessagesManager {
   model.SuggestedReply _removeStandardMessageInLocal(model.SuggestedReply standardMessage) {
     // todo: this might not be relevant
     if (!standardMessagesInLocal.any((element) => element.suggestedReplyId == standardMessage.suggestedReplyId)) {
-      log.warning("Standard messages consistency error: Removing message that doesn't exist: ${standardMessage.suggestedReplyId}");
+      log.warning("Local / Standard messages consistency error: Removing message that doesn't exist: ${standardMessage.suggestedReplyId}");
       return null;
     }
     var oldStandardMessage = standardMessagesInLocal.singleWhere((element) => element.suggestedReplyId == standardMessage.suggestedReplyId);
@@ -189,8 +189,8 @@ class StandardMessagesManager {
   }
 
   model.SuggestedReply _removeStandardMessageInStorage(model.SuggestedReply standardMessage) {
-    if (!standardMessagesInLocal.any((element) => element.suggestedReplyId == standardMessage.suggestedReplyId)) {
-      log.warning("Standard messages consistency error: Removing message that doesn't exist: ${standardMessage.suggestedReplyId}");
+    if (!standardMessagesInStorage.any((element) => element.suggestedReplyId == standardMessage.suggestedReplyId)) {
+      log.warning("Storage / Standard messages consistency error: Removing message that doesn't exist: ${standardMessage.suggestedReplyId}");
       return null;
     }
     var oldStandardMessage = standardMessagesInStorage.singleWhere((element) => element.suggestedReplyId == standardMessage.suggestedReplyId);
