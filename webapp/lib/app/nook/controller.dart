@@ -1562,7 +1562,7 @@ class NookController extends Controller {
     if (matches.length > 1) {
       log.warning('Two conversations seem to have the same deidentified phone number: ${activeConversation.docId}');
     }
-    _selectConversationInView(activeConversation);
+    _selectConversationInView(activeConversation, skipReplyPanelRefresh: true);
     _view.conversationPanelView.clearWarning();
     return activeConversation;
   }
@@ -1587,7 +1587,7 @@ class NookController extends Controller {
       }
     }
 
-    _selectConversationInView(conversation);
+    _selectConversationInView(conversation, skipReplyPanelRefresh: true);
     if (!filteredConversations.contains(conversation)) {
       // If it doesn't meet the filter, show warning
       _view.conversationPanelView.showWarning('Conversation no longer meets filtering constraints');
@@ -1597,12 +1597,14 @@ class NookController extends Controller {
     }
   }
 
-  void _selectConversationInView(model.Conversation conversation) {
+  void _selectConversationInView(model.Conversation conversation, {bool skipReplyPanelRefresh = false}) {
     _view.urlView.conversationId = conversation.docId;
     if (conversationsInView.contains(conversation)) {
       // Select the conversation in the list of conversations
       _view.conversationListPanelView.selectConversation(conversation.docId);
-      _populateReplyPanelView(suggestedRepliesByCategory[selectedSuggestedRepliesCategory]);
+      if (!skipReplyPanelRefresh) {
+        _populateReplyPanelView(suggestedRepliesByCategory[selectedSuggestedRepliesCategory]);
+      }
     }
   }
 
