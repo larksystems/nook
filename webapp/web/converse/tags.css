@@ -31,9 +31,9 @@
 
 /* hover-only buttons */
 
-.hover-parent > .button {
+.hover-parent .button--hover-only {
   opacity: 0;
 }
-.hover-parent:hover > .button.button--hover-only {
+.hover-parent:hover .button--hover-only {
   opacity: 1;
 }
