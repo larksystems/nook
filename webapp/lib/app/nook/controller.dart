@@ -865,8 +865,12 @@ class NookController extends Controller {
       if (conversationSortOrder == UIConversationSort.alphabeticalById) {
         return a.shortDeidentifiedPhoneNumber.compareTo(b.shortDeidentifiedPhoneNumber);
       } else if (conversationSortOrder == UIConversationSort.mostRecentInMessageFirst) {
-        return b.mostRecentMessageInbound.datetime.compareTo(a.mostRecentMessageInbound.datetime);
+        if (a.mostRecentMessageInbound == null) { return -1; }
+        if (b.mostRecentMessageInbound == null) { return 1; }
+        return (b.mostRecentMessageInbound.datetime).compareTo(a.mostRecentMessageInbound.datetime);
       } else if (conversationSortOrder == UIConversationSort.mostRecentMessageFirst) {
+        if (a.messages.isEmpty) { return -1; }
+        if (b.messages.isEmpty) { return 1; }
         return b.messages.last.datetime.compareTo(a.messages.last.datetime);
       }
       return 1;
