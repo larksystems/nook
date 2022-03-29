@@ -22,7 +22,6 @@ import 'package:katikati_ui_lib/components/turnline/turnline.dart' as tl;
 import 'package:katikati_ui_lib/components/button/button.dart' as buttons;
 import 'package:katikati_ui_lib/components/model/model.dart' as model;
 import 'package:nook/view.dart';
-import 'package:nook/utils.dart';
 import 'package:nook/app/developer/utils.dart';
 
 import 'controller.dart';
@@ -45,7 +44,6 @@ class NookPageView extends PageView {
   TagPanelView tagPanelView;
   TurnlinePanelView turnlinePanelView;
   NotesPanelView notesPanelView;
-  UrlView urlView;
   TabsView tabsView;
 
   NookPageView(NookController controller) : super(controller) {
@@ -58,7 +56,6 @@ class NookPageView extends PageView {
     tagPanelView = new TagPanelView();
     turnlinePanelView = new TurnlinePanelView();
     notesPanelView = new NotesPanelView();
-    urlView = new UrlView();
 
     tabsView = new TabsView([]);
 

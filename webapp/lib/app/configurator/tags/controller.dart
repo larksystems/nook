@@ -73,12 +73,6 @@ TagsConfigurationPageView get _view => _controller.view;
 class TagsConfiguratorController extends ConfiguratorController {
   TagManager tagManager = new TagManager();
 
-  model.UserConfiguration defaultUserConfig;
-  model.UserConfiguration currentUserConfig;
-  /// This represents the current configuration of the UI.
-  /// It's computed by merging the [defaultUserConfig] and [currentUserConfig] (if set).
-  model.UserConfiguration currentConfig;
-
   TagsConfiguratorController() : super() {
     _controller = this;
   }

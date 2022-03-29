@@ -1,4 +1,4 @@
-import 'package:katikati_ui_lib/components/nav/button_links.dart';
+part of controller;
 
 var navLinks = [
   Link("Dashboard", "/"),

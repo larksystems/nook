@@ -4,7 +4,6 @@ import 'package:katikati_ui_lib/components/logger.dart';
 import 'package:katikati_ui_lib/components/button/button.dart';
 import 'package:katikati_ui_lib/components/model/model.dart';
 import 'package:katikati_ui_lib/components/nav/button_links.dart';
-import 'package:nook/utils.dart';
 
 import 'package:nook/view.dart';
 
@@ -52,7 +51,7 @@ class HomePageView extends PageView {
     homePageContents.append(projectList);
   }
 
-  void showProjectPage(Map<String, List<PageInfo>> pageStructure) {
+  void showProjectPage(String projectId, Map<String, List<PageInfo>> pageStructure) {
     navHeaderView.navContent = ButtonLinksView(navLinks, window.location.pathname).renderElement;
 
     DivElement pageContents = DivElement();
@@ -70,7 +69,7 @@ class HomePageView extends PageView {
 
       for (var page in pageStructure[heading]) {
         var button  = Button(ButtonType.contained, buttonText: page.goToButtonText, onClick: (_) {
-          this.appController.routeToPath(page.urlPath);
+          this.appController.routeToPath('${page.urlPath}?project=${projectId}');
         });
         button.renderElement.classes.add('config-page-option__action');
         button.parent = pageContent;
