@@ -30,7 +30,8 @@ class StandardMessagesManager {
       var currentIndex = category.categoryIndex ?? 0;
       return maxIndex > currentIndex ? maxIndex : currentIndex;
     });
-    return lastIndex + 1;
+    var length = localCategories.values.length;
+    return lastIndex >= length ? length : lastIndex + 1;
   }
 
   int getNextGroupIndexInCategory(String categoryId) {
@@ -38,7 +39,8 @@ class StandardMessagesManager {
       var currentIndex = group.groupIndexInCategory ?? 0;
       return maxIndex > currentIndex ? maxIndex : currentIndex;
     });
-    return lastIndex + 1;
+    var length = localCategories[categoryId].groups.length;
+    return lastIndex >= length ? length : lastIndex + 1;
   }
 
   int getNextMessageIndexInGroup(String categoryId, String groupId) {
@@ -47,7 +49,8 @@ class StandardMessagesManager {
       var currentIndex = r.indexInGroup ?? 0;
       return maxIndex > currentIndex ? maxIndex : currentIndex;
     });
-    return lastIndexInGroup + 1;
+    var length = localCategories[categoryId].groups[groupId].messages.length;
+    return lastIndexInGroup >= length ? length : lastIndexInGroup + 1;
   }
 
   Map<String, MessageCategory> storageCategories = {};
@@ -92,11 +95,17 @@ class StandardMessagesManager {
         unsavedGroupIds.add(storageMessage.groupId);
         unsavedCategoryIds.add(storageMessage.categoryId);
       } else if (storageMessage == null) { // message added
-        editedMessages.add(localMessage);
-        unsavedMessageTextIds.add(localMessage.suggestedReplyId);
-        unsavedMessageTranslationIds.add(localMessage.suggestedReplyId);
-        unsavedGroupIds.add(localMessage.groupId);
-        unsavedCategoryIds.add(localMessage.categoryId);
+        if (localMessage.text != "" || localMessage.translation != "") {
+          editedMessages.add(localMessage);
+          unsavedGroupIds.add(localMessage.groupId);
+          unsavedCategoryIds.add(localMessage.categoryId);
+        }
+        if (localMessage.text != "") {
+          unsavedMessageTextIds.add(localMessage.suggestedReplyId);
+        }
+        if (localMessage.translation != "") {
+          unsavedMessageTranslationIds.add(localMessage.suggestedReplyId);
+        }
       } else { // message edited
         var isMessageEdited = false;
         if (localMessage.categoryName != storageMessage.categoryName) { // renamed category
