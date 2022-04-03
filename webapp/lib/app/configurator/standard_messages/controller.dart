@@ -133,9 +133,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
 
       case MessagesConfigAction.resetStandardMessageText:
         StandardMessageData messageData = data;
-        var message = standardMessagesManager.standardMessagesInStorage.firstWhere((element) => element.docId == messageData.messageId, orElse: () {
-          return null;
-        },);
+        var message = standardMessagesManager.standardMessagesInStorage.firstWhere((element) => element.docId == messageData.messageId, orElse: () => null);
         if (message == null) {
           var localMessage = standardMessagesManager.standardMessagesInLocal.firstWhere((element) => element.docId == messageData.messageId);
           var translation = localMessage.translation;
@@ -151,9 +149,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
 
       case MessagesConfigAction.resetStandardMessageTranslation:
         StandardMessageData messageData = data;
-        var message = standardMessagesManager.standardMessagesInStorage.firstWhere((element) => element.docId == messageData.messageId, orElse: () {
-          return null;
-        });
+        var message = standardMessagesManager.standardMessagesInStorage.firstWhere((element) => element.docId == messageData.messageId, orElse: () => null);
         if (message == null) {
           var localMessage = standardMessagesManager.standardMessagesInLocal.firstWhere((element) => element.docId == messageData.messageId);
           var textToReset = localMessage.text;
