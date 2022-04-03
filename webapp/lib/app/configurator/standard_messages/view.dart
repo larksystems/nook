@@ -93,9 +93,9 @@ class StandardMessagesCategoryView extends AccordionItem {
     editableTitle = TextEdit(_categoryName, removable: true)
       ..testInput = (String value) {
         var messageManager = (_view.appController as MessagesConfiguratorController).standardMessagesManager;
-        var categories = messageManager.standardMessagesInLocal.map((e) => e.category).toSet();
-        categories.remove(id);
-        return !categories.contains(value);
+        var categories = messageManager.standardMessagesInLocal.map((e) => e.category.toLowerCase().trim()).toSet();
+        categories.remove(_categoryName.toLowerCase().trim());
+        return !categories.contains(value.toLowerCase().trim());
       }
       ..onEdit = (value) {
         _view.appController.command(MessagesConfigAction.updateStandardMessagesCategory, new StandardMessagesCategoryData(_categoryId, newCategoryName: value));
@@ -225,9 +225,9 @@ class StandardMessagesGroupView extends AccordionItem {
     editableTitle = TextEdit(_groupName, removable: true)
       ..testInput = (String value) {
         var messageManager = (_view.appController as MessagesConfiguratorController).standardMessagesManager;
-        var groups = messageManager.standardMessagesInLocal.map((e) => e.group_description).toSet();
-        groups.remove(id);
-        return !groups.contains(value);
+        var groups = messageManager.localCategories[_categoryId].groups.values.map((group) => group.groupName.toLowerCase().trim()).toSet();
+        groups.remove(_groupName.toLowerCase().trim());
+        return !groups.contains(value.toLowerCase().trim());
       }
       ..onEdit = (value) {
         _view.appController.command(MessagesConfigAction.updateStandardMessagesGroup, new StandardMessagesGroupData(_categoryId, _groupId, newGroupName: value));
