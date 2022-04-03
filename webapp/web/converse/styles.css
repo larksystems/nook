@@ -114,6 +114,10 @@ main {
     overflow-y: scroll;
 }
 
+.conversation-filter .tags-container::-webkit-scrollbar-track {
+    border-left: 0;
+}
+
 .tags-menu {
     position: absolute;
     width: 0;
