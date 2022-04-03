@@ -95,15 +95,15 @@ class StandardMessagesManager {
         unsavedGroupIds.add(storageMessage.groupId);
         unsavedCategoryIds.add(storageMessage.categoryId);
       } else if (storageMessage == null) { // message added
-        if (localMessage.text.isEmpty || localMessage.translation.isEmpty) {
+        if (localMessage.text != "" || localMessage.translation != "") {
           editedMessages.add(localMessage);
           unsavedGroupIds.add(localMessage.groupId);
           unsavedCategoryIds.add(localMessage.categoryId);
         }
-        if (localMessage.text.isEmpty) {
+        if (localMessage.text != "") {
           unsavedMessageTextIds.add(localMessage.suggestedReplyId);
         }
-        if (localMessage.translation.isEmpty) {
+        if (localMessage.translation != "") {
           unsavedMessageTranslationIds.add(localMessage.suggestedReplyId);
         }
       } else { // message edited
