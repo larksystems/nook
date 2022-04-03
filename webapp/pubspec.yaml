@@ -13,7 +13,7 @@ dependencies:
     git:
       url: git@github.com:larksystems/katikati_common_lib.git
       path: ui
-      ref: 52bf4cd064c1645a3c532e6242a98d34799fd206
+      ref: a1f6166e272606712b326eb52f17f3b5650e280e
 
 dev_dependencies:
   build_runner: ^1.7.0

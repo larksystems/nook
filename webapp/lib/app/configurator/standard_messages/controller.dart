@@ -133,7 +133,14 @@ class MessagesConfiguratorController extends ConfiguratorController {
 
       case MessagesConfigAction.resetStandardMessageText:
         StandardMessageData messageData = data;
-        var message = standardMessagesManager.standardMessagesInStorage.firstWhere((element) => element.docId == messageData.messageId);
+        var message = standardMessagesManager.standardMessagesInStorage.firstWhere((element) => element.docId == messageData.messageId, orElse: () => null);
+        if (message == null) {
+          var localMessage = standardMessagesManager.standardMessagesInLocal.firstWhere((element) => element.docId == messageData.messageId);
+          var translation = localMessage.translation;
+          var standardMessage = standardMessagesManager.modifyMessage(messageData.messageId, "", translation);
+          _modifyMessagesInView([standardMessage]);
+          break;
+        }
         var textToReset = standardMessagesManager.storageCategories[message.categoryId].groups[message.groupId].messages[message.docId].text;
         var translation = standardMessagesManager.localCategories[message.categoryId].groups[message.groupId].messages[message.docId].translation;
         var standardMessage = standardMessagesManager.modifyMessage(messageData.messageId, textToReset, translation);
@@ -142,7 +149,14 @@ class MessagesConfiguratorController extends ConfiguratorController {
 
       case MessagesConfigAction.resetStandardMessageTranslation:
         StandardMessageData messageData = data;
-        var message = standardMessagesManager.standardMessagesInStorage.firstWhere((element) => element.docId == messageData.messageId);
+        var message = standardMessagesManager.standardMessagesInStorage.firstWhere((element) => element.docId == messageData.messageId, orElse: () => null);
+        if (message == null) {
+          var localMessage = standardMessagesManager.standardMessagesInLocal.firstWhere((element) => element.docId == messageData.messageId);
+          var textToReset = localMessage.text;
+          var standardMessage = standardMessagesManager.modifyMessage(messageData.messageId, textToReset, "");
+          _modifyMessagesInView([standardMessage]);
+          break;
+        }
         var textToReset = standardMessagesManager.localCategories[message.categoryId].groups[message.groupId].messages[message.docId].text;
         var translation = standardMessagesManager.storageCategories[message.categoryId].groups[message.groupId].messages[message.docId].translation;
         var standardMessage = standardMessagesManager.modifyMessage(messageData.messageId, textToReset, translation);
