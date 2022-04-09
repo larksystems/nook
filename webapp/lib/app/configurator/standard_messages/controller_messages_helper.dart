@@ -6,7 +6,7 @@ part of controller;
 class MessagesDiffData {
   Set<String> renamedCategoryIds = {};
   Set<String> renamedGroupIds = {};
-  
+
   Set<String> unsavedCategoryIds;
   Set<String> unsavedGroupIds;
   Set<String> unsavedMessageTextIds;
@@ -30,8 +30,7 @@ class StandardMessagesManager {
       var currentIndex = category.categoryIndex ?? 0;
       return maxIndex > currentIndex ? maxIndex : currentIndex;
     });
-    var length = localCategories.values.length;
-    return lastIndex >= length ? length : lastIndex + 1;
+    return lastIndex + 1;
   }
 
   int getNextGroupIndexInCategory(String categoryId) {
@@ -39,8 +38,7 @@ class StandardMessagesManager {
       var currentIndex = group.groupIndexInCategory ?? 0;
       return maxIndex > currentIndex ? maxIndex : currentIndex;
     });
-    var length = localCategories[categoryId].groups.length;
-    return lastIndex >= length ? length : lastIndex + 1;
+    return lastIndex + 1;
   }
 
   int getNextMessageIndexInGroup(String categoryId, String groupId) {
@@ -49,8 +47,7 @@ class StandardMessagesManager {
       var currentIndex = r.indexInGroup ?? 0;
       return maxIndex > currentIndex ? maxIndex : currentIndex;
     });
-    var length = localCategories[categoryId].groups[groupId].messages.length;
-    return lastIndexInGroup >= length ? length : lastIndexInGroup + 1;
+    return lastIndexInGroup + 1;
   }
 
   Map<String, MessageCategory> storageCategories = {};
@@ -366,7 +363,7 @@ class MessageCategory {
   List<model.SuggestedReply> get messages => groups.values.fold([], (result, group) => result..addAll(group.messages.values));
 
   String toString() {
-    return 'MessageGroup($categoryId, $categoryName, $groups)';
+    return 'MessageGroup($categoryId, $categoryName, $categoryIndex, $groups)';
   }
 }
 
@@ -380,6 +377,6 @@ class MessageGroup {
 
   @override
   String toString() {
-    return 'MessageGroup($groupId, $groupName, ${messages.length})';
+    return 'MessageGroup($groupId, $groupName, $groupIndexInCategory, $messages)';
   }
 }
