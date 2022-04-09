@@ -30,7 +30,7 @@ void _addMessagesToView(Map<String, MessageCategory> messagesByGroupByCategory, 
         }
       }
       var groupView = categoryView.groupsById[groupId];
-      
+
       var messages = messagesByGroupByCategory[categoryId].groups[groupId].messages.values.toList();
       messages.sort((m1, m2) => m1.indexInGroup.compareTo(m2.indexInGroup));
       for (var message in messages) {
@@ -55,7 +55,7 @@ void _modifyMessagesInView(List<model.SuggestedReply> messages) {
     messageView.updateText(message.text);
     messageView.updateTranslation(message.translation);
     groupView.modifyMessage(message.suggestedReplyId, messageView);
-    
+
     categoryView.updateName(message.categoryName);
     groupView.updateName(message.groupName);
   }
@@ -100,13 +100,8 @@ Map<String, MessageCategory> _groupMessagesIntoCategoriesAndGroups(List<model.Su
   Map<String, MessageCategory> result = {};
   for (model.SuggestedReply message in messages) {
     result.putIfAbsent(message.categoryId, () => MessageCategory(message.categoryId, message.category, message.categoryIndex));
-    result[message.categoryId].groups.putIfAbsent(message.groupId, () => MessageGroup(message.groupId, message.groupName, message.categoryIndex));
+    result[message.categoryId].groups.putIfAbsent(message.groupId, () => MessageGroup(message.groupId, message.groupName, message.groupIndexInCategory));
     result[message.categoryId].groups[message.groupId].messages.putIfAbsent(message.docId, () => message);
-  }
-  for (String category in result.keys) {
-    for (String group in result[category].groups.keys) {
-      result[category].groups[group].messages.values.toList().sort((message1, message2) => (message1.indexInGroup).compareTo(message2.indexInGroup));
-    }
   }
   return result;
 }
