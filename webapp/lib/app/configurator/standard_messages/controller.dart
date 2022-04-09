@@ -22,10 +22,12 @@ enum MessagesConfigAction {
   resetStandardMessageTranslation,
   removeStandardMessage,
   addStandardMessagesGroup,
+  reorderStandardMessagesGroup,
   updateStandardMessagesGroup,
   removeStandardMessagesGroup,
   resetStandardMessagesGroupName,
   addStandardMessagesCategory,
+  reorderStandardMessagesCategory,
   updateStandardMessagesCategory,
   removeStandardMessagesCategory,
   resetStandardMessagesCategoryName,
@@ -68,6 +70,27 @@ class StandardMessagesCategoryData extends Data {
   }
 }
 
+class StandardMessagesCategoriesReorderData extends Data {
+  List<String> categoryIds;
+  StandardMessagesCategoriesReorderData(this.categoryIds);
+
+  @override
+  String toString() {
+    return "StandardMessagesCategoriesReorderData(categoryIds: ${categoryIds.join(', ')})";
+  }
+}
+
+class StandardMessagesGroupsReorderData extends Data {
+  String categoryId;
+  List<String> groupIds;
+  StandardMessagesGroupsReorderData(this.categoryId, this.groupIds);
+
+  @override
+  String toString() {
+    return "StandardMessagesGroupsReorderData(categoryId: $categoryId, groupIds: ${groupIds.join(', ')})";
+  }
+}
+
 MessagesConfiguratorController _controller;
 MessagesConfigurationPageView get _view => _controller.view;
 
@@ -81,7 +104,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
   void _updateDiffUnsavedIndicators() {
     var diffData = standardMessagesManager.diffData;
     _updateUnsavedIndicators(standardMessagesManager.localCategories, diffData.unsavedMessageTextIds, diffData.unsavedMessageTranslationIds, diffData.renamedGroupIds, diffData.unsavedGroupIds, diffData.renamedCategoryIds, diffData.unsavedCategoryIds);
-    _view.unsavedChanges = diffData.editedMessages.isNotEmpty || diffData.deletedMessages.isNotEmpty;
+    _view.unsavedChanges = diffData.reorderedMessages.isNotEmpty || diffData.editedMessages.isNotEmpty || diffData.deletedMessages.isNotEmpty;
   }
 
   @override
@@ -195,6 +218,12 @@ class MessagesConfiguratorController extends ConfiguratorController {
         _view.categoriesById[groupData.categoryId].renameGroup(groupData.groupId, resetGroupName);
         break;
 
+      case MessagesConfigAction.reorderStandardMessagesGroup:
+        // please note: assumes this command comes via the UI that is already reordered!
+        StandardMessagesGroupsReorderData groupsData = data;
+        standardMessagesManager.reorderMessagesGroup(groupsData.categoryId, groupsData.groupIds);
+        break;
+
       case MessagesConfigAction.addStandardMessagesCategory:
         var newCategory = standardMessagesManager.createStandardMessagesCategory();
         var messageCategoryMap = {
@@ -220,6 +249,12 @@ class MessagesConfiguratorController extends ConfiguratorController {
         var resetCategoryName = standardMessagesManager.storageCategories[categoryData.categoryId].categoryName;
         standardMessagesManager.renameStandardMessageCategory(categoryData.categoryId, resetCategoryName);
         _view.renameCategory(categoryData.categoryId, resetCategoryName);
+        break;
+
+      case MessagesConfigAction.reorderStandardMessagesCategory:
+        // please note: assumes this command comes via the UI that is already reordered!
+        StandardMessagesCategoriesReorderData categoriesData = data;
+        standardMessagesManager.reorderMessagesCategory(categoriesData.categoryIds);
         break;
     }
 
@@ -247,9 +282,10 @@ class MessagesConfiguratorController extends ConfiguratorController {
     _view.showSaveStatus('Saving...');
     _view.disableSaveButton();
     var diffData = standardMessagesManager.diffData;
+    List<model.SuggestedReply> updatedMessages = List.from(diffData.editedMessages)..addAll(diffData.reorderedMessages);
 
     try {
-      await Future.wait([platform.updateSuggestedReplies(diffData.editedMessages), platform.deleteSuggestedReplies(diffData.deletedMessages)]);
+      await Future.wait([platform.updateSuggestedReplies(updatedMessages), platform.deleteSuggestedReplies(diffData.deletedMessages)]);
       _view
         ..unsavedChanges = false
         ..showSaveStatus('Saved!', autoHide: true);
