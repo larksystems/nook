@@ -67,7 +67,8 @@ class MessagesConfigurationPageView extends ConfigurationPageView {
       categoriesById[categoryId].groupsById.keys.forEach((groupId) {
         categoriesById[categoryId].groupsById[groupId].markAsUnsaved(false);
         categoriesById[categoryId].groupsById[groupId].messagesById.keys.forEach((messageId) {
-          categoriesById[categoryId].groupsById[groupId].messagesById[messageId].markAsUnsaved(false);
+          categoriesById[categoryId].groupsById[groupId].messagesById[messageId].markTextAsUnsaved(false);
+          categoriesById[categoryId].groupsById[groupId].messagesById[messageId].markTranslationAsUnsaved(false);
         });
       });
     });
@@ -80,6 +81,7 @@ class StandardMessagesCategoryView extends AccordionItem {
   DivElement _standardMessagesGroupContainer;
   Button _addButton;
   TextEdit editableTitle;
+  Element _alternativeElement;
 
   Accordion groups;
 
@@ -91,18 +93,24 @@ class StandardMessagesCategoryView extends AccordionItem {
     editableTitle = TextEdit(_categoryName, removable: true)
       ..testInput = (String value) {
         var messageManager = (_view.appController as MessagesConfiguratorController).standardMessagesManager;
-        var categories = messageManager.standardMessages.map((e) => e.category).toSet();
-        categories.remove(id);
-        return !categories.contains(value);
+        var categories = messageManager.standardMessagesInLocal.map((e) => e.category.toLowerCase().trim()).toSet();
+        categories.remove(_categoryName.toLowerCase().trim());
+        return !categories.contains(value.toLowerCase().trim());
       }
       ..onEdit = (value) {
-        _view.appController.command(MessagesConfigAction.updateStandardMessagesCategory, new StandardMessagesCategoryData(_categoryId, _categoryName, newCategoryName: value));
+        _view.appController.command(MessagesConfigAction.updateStandardMessagesCategory, new StandardMessagesCategoryData(_categoryId, newCategoryName: value));
         _categoryName = value;
       }
       ..onDelete = () {
         requestToDelete();
+      }
+      ..onReset = () {
+        _view.appController.command(MessagesConfigAction.resetStandardMessagesCategoryName, new StandardMessagesCategoryData(_categoryId));
       };
-    header.append(editableTitle.renderElement);
+    _alternativeElement = DivElement()..className = "category-alternative"..hidden = true;
+    header
+      ..append(editableTitle.renderElement)
+      ..append(_alternativeElement);
 
     _standardMessagesGroupContainer = new DivElement()..classes.add('standard-messages__group');
     body.append(_standardMessagesGroupContainer);
@@ -110,16 +118,52 @@ class StandardMessagesCategoryView extends AccordionItem {
     groups = new Accordion([]);
     _standardMessagesGroupContainer.append(groups.renderElement);
 
-    _addButton = Button(ButtonType.add, hoverText: 'Add a new group of standard messages', onClick: (event) => _view.appController.command(MessagesConfigAction.addStandardMessagesGroup, new StandardMessagesGroupData(_categoryId, _categoryName, null, 'New group')));
+    _addButton = Button(ButtonType.add, 
+      hoverText: 'Add a new group of standard messages', 
+      onClick: (event) => _view.appController.command(MessagesConfigAction.addStandardMessagesGroup, new StandardMessagesGroupData(_categoryId, null)));
 
     body.append(_addButton.renderElement);
   }
 
-  void set name(String value) => _categoryName = value;
+  void set name(String value) {
+    _categoryName = value;
+    editableTitle.updateText(value);
+  }
+
   String get name => _categoryName;
 
+  void updateName(String newCategoryName) {
+    if (_categoryName.compareTo(newCategoryName) != 0) {
+      editableTitle.updateText(newCategoryName);
+    }
+  }
+
+  void showAlternative(String categoryName) {
+    _alternativeElement.children.clear();
+    var instructions = SpanElement()..className = "category-alternative__instruction"..innerText = "Someone else has just renamed this category to:";
+    var altText = SpanElement()..innerText = categoryName;
+    var acceptButton = Button(ButtonType.confirm, onClick: (_) {
+      editableTitle.updateText(categoryName);
+      _view.appController.command(MessagesConfigAction.updateStandardMessagesCategory, new StandardMessagesCategoryData(_categoryId, newCategoryName: categoryName));
+    });
+    var discardButton = Button(ButtonType.cancel, onClick: (_) => _alternativeElement..hidden = true);
+    var actions = SpanElement()..append(acceptButton.renderElement)..append(discardButton.renderElement);
+    _alternativeElement
+      ..hidden = false
+      ..append(instructions)
+      ..append(altText)
+      ..append(actions);
+  }
+
+  void hideAlternative() {
+    _alternativeElement
+      ..children.clear()
+      ..hidden = true;
+  }
+
   void addGroup(String groupId, StandardMessagesGroupView standardMessagesGroupView, [int index]) {
-    if (index == null || groups.items.length == index) {
+    // todo: test for multiple groups added from firebase at the same time after adding a group by
+    if (index == null || groups.items.length <= index) {
       groups.appendItem(standardMessagesGroupView);
     } else {
       groups.insertItem(standardMessagesGroupView, index);
@@ -129,7 +173,7 @@ class StandardMessagesCategoryView extends AccordionItem {
 
   void renameGroup(String groupId, String newGroupName) {
     var groupView = groupsById[groupId];
-    groupView._groupName = newGroupName;
+    groupView.name = newGroupName;
     groupsById[groupId] = groupView;
     groups.updateItem(groupId, groupView);
   }
@@ -141,7 +185,7 @@ class StandardMessagesCategoryView extends AccordionItem {
 
   void requestToDelete() {
     expand();
-    var standardMessagesCategoryData = new StandardMessagesCategoryData(_categoryId, _categoryName);
+    var standardMessagesCategoryData = new StandardMessagesCategoryData(_categoryId);
     var removeWarningModal;
     removeWarningModal = new InlineOverlayModal('Are you sure you want to remove this category?', [
         new Button(ButtonType.text,
@@ -154,34 +198,50 @@ class StandardMessagesCategoryView extends AccordionItem {
   void markAsUnsaved(bool unsaved) {
     editableTitle.renderElement.classes.toggle("unsaved", unsaved);
   }
+
+  void showReset(bool show) {
+    editableTitle.showReset(show);
+  }
 }
 
 class StandardMessagesGroupView extends AccordionItem {
   String _categoryId;
-  String _categoryName;
   String _groupId;
   String _groupName;
   DivElement _standardMessagesContainer;
   Button _addButton;
   TextEdit editableTitle;
+  Element _alternativeElement;
 
   Map<String, StandardMessageView> messagesById = {};
 
-  StandardMessagesGroupView(this._categoryId, this._categoryName, this._groupId, this._groupName, DivElement header, DivElement body) : super(_groupId, header, body, false) {
+  void set name(String value) {
+    _groupName = value;
+    editableTitle.updateText(value);
+  }
+  String get name => _groupName;
+
+  StandardMessagesGroupView(this._categoryId, this._groupId, this._groupName, DivElement header, DivElement body) : super(_groupId, header, body, false) {
     editableTitle = TextEdit(_groupName, removable: true)
       ..testInput = (String value) {
         var messageManager = (_view.appController as MessagesConfiguratorController).standardMessagesManager;
-        var groups = messageManager.standardMessages.map((e) => e.group_description).toSet();
-        groups.remove(id);
-        return !groups.contains(value);
+        var groups = messageManager.localCategories[_categoryId].groups.values.map((group) => group.groupName.toLowerCase().trim()).toSet();
+        groups.remove(_groupName.toLowerCase().trim());
+        return !groups.contains(value.toLowerCase().trim());
       }
       ..onEdit = (value) {
-        _view.appController.command(MessagesConfigAction.updateStandardMessagesGroup, new StandardMessagesGroupData(_categoryId, _categoryName, _groupId, _groupName, newGroupName: value));
+        _view.appController.command(MessagesConfigAction.updateStandardMessagesGroup, new StandardMessagesGroupData(_categoryId, _groupId, newGroupName: value));
       }
       ..onDelete = () {
         requestToDelete();
+      }
+      ..onReset = () {
+        _view.appController.command(MessagesConfigAction.resetStandardMessagesGroupName, new StandardMessagesGroupData(_categoryId, _groupId));
       };
-    header.append(editableTitle.renderElement);
+    _alternativeElement = DivElement()..className = "group-alternative"..hidden = true;
+    header
+      ..append(editableTitle.renderElement)
+      ..append(_alternativeElement);
 
     _standardMessagesContainer = DivElement();
     body.append(_standardMessagesContainer);
@@ -194,15 +254,42 @@ class StandardMessagesGroupView extends AccordionItem {
     body.append(_addButton.renderElement);
   }
 
+  void showAlternative(String groupName) {
+    _alternativeElement.children.clear();
+    var instructions = SpanElement()..className = "group-alternative__instruction"..innerText = "Someone else has just renamed this group to:";
+    var altText = SpanElement()..innerText = groupName;
+    var acceptButton = Button(ButtonType.confirm, onClick: (_) {
+      editableTitle.updateText(groupName);
+      _view.appController.command(MessagesConfigAction.updateStandardMessagesGroup, new StandardMessagesGroupData(_categoryId, _groupId, newGroupName: groupName));
+    });
+    var discardButton = Button(ButtonType.cancel, onClick: (_) => _alternativeElement..hidden = true);
+    var actions = SpanElement()..append(acceptButton.renderElement)..append(discardButton.renderElement);
+    _alternativeElement
+      ..hidden = false
+      ..append(instructions)
+      ..append(altText)
+      ..append(actions);
+  }
+
+  void hideAlternative() {
+    _alternativeElement
+      ..children.clear()
+      ..hidden = true;
+  }
+
   void addMessage(String messageId, StandardMessageView standardMessageView) {
     _standardMessagesContainer.append(standardMessageView.renderElement);
     messagesById[messageId] = standardMessageView;
   }
 
   void modifyMessage(String messageId, StandardMessageView standardMessageView) {
-    _standardMessagesContainer.insertBefore(standardMessageView.renderElement, messagesById[messageId].renderElement);
-    messagesById[messageId].renderElement.remove();
     messagesById[messageId] = standardMessageView;
+  }
+
+  void updateName(String newGroupName) {
+    if (_groupName.compareTo(newGroupName) != 0) {
+      editableTitle.updateText(newGroupName);
+    }
   }
 
   void removeMessage(String messageId) {
@@ -212,7 +299,7 @@ class StandardMessagesGroupView extends AccordionItem {
 
   void requestToDelete() {
     expand();
-    var standardMessagesGroupData = new StandardMessagesGroupData(_categoryId, _categoryName, _groupId, _groupName);
+    var standardMessagesGroupData = new StandardMessagesGroupData(_categoryId, _groupId);
     var removeWarningModal;
     removeWarningModal = new InlineOverlayModal('Are you sure you want to remove this group?', [
         new Button(ButtonType.text,
@@ -226,23 +313,31 @@ class StandardMessagesGroupView extends AccordionItem {
     editableTitle.renderElement.classes.toggle("unsaved", unsaved);
   }
 
+  void showReset(bool show) {
+    editableTitle.showReset(show);
+  }
+
   // todo: add a message to reflect group name change
 }
 
 class StandardMessageView {
   Element _standardMessageElement;
+  MessageView _textView;
+  MessageView _translationView;
+  Button _resetTextButton;
+  Button _resetTranslationButton;
 
   StandardMessageView(String messageId, String text, String translation) {
     _standardMessageElement = new DivElement()
       ..classes.add('standard-message')
       ..dataset['id'] = '$messageId';
 
-    var textView = new MessageView(text, (text) => _view.appController.command(MessagesConfigAction.updateStandardMessage, new StandardMessageData(messageId, text: text)));
-    var translationView = new MessageView(translation, (translation) => _view.appController.command(MessagesConfigAction.updateStandardMessage, new StandardMessageData(messageId, translation: translation)), placeholder: '(optional) Translate the message in a secondary language here');
+    _textView = new MessageView(text, (text) => _view.appController.command(MessagesConfigAction.updateStandardMessage, new StandardMessageData(messageId, text: text)));
+    _translationView = new MessageView(translation, (translation) => _view.appController.command(MessagesConfigAction.updateStandardMessage, new StandardMessageData(messageId, translation: translation)), placeholder: '(optional) Translate the message in a secondary language here');
     _standardMessageElement
-      ..append(textView.renderElement)
-      ..append(translationView.renderElement);
-    _makeStandardMessageViewTextareasSynchronisable([textView, translationView]);
+      ..append(_textView.renderElement)
+      ..append(_translationView.renderElement);
+    _makeStandardMessageViewTextareasSynchronisable([_textView, _translationView]);
 
     var removeButton = new Button(ButtonType.remove, hoverText: 'Remove standard message', onClick: (_) {
       var removeWarningModal;
@@ -254,25 +349,93 @@ class StandardMessageView {
       removeWarningModal.parent = _standardMessageElement;
     });
     removeButton.parent = _standardMessageElement;
+
+    _resetTextButton = Button(ButtonType.reset, hoverText: text, onClick: (event) {
+      event.stopPropagation();
+      _view.appController.command(MessagesConfigAction.resetStandardMessageText, new StandardMessageData(messageId));
+    });
+
+    _resetTranslationButton =  Button(ButtonType.reset, hoverText: translation, onClick: (event) {
+      event.stopPropagation();
+      _view.appController.command(MessagesConfigAction.resetStandardMessageTranslation, new StandardMessageData(messageId));
+    });
   }
 
   Element get renderElement => _standardMessageElement;
 
-  void markAsUnsaved(bool unsaved) {
-    _standardMessageElement.classes.toggle("unsaved", unsaved);
+  void markTextAsUnsaved(bool unsaved) {
+    _textView.markAsUnsaved(unsaved);
+  }
+
+  void showResetForText(bool show) {
+    if (show) {
+      _textView.renderElement.append(_resetTextButton.renderElement);
+    } else {
+      _resetTextButton.renderElement.remove();
+    }
+  }
+
+  void markTranslationAsUnsaved(bool unsaved) {
+    _translationView.markAsUnsaved(unsaved);
+  }
+
+  void showResetForTranslation(bool show) {
+    if (show) {
+      _translationView.renderElement.append(_resetTranslationButton.renderElement);
+    } else {
+      _resetTranslationButton.renderElement.remove();
+    }
+  }
+
+  void updateText(String text) {
+    _textView.updateText(text);
+  }
+
+  void updateTranslation(String text) {
+    _translationView.updateText(text);
+  }
+
+  void showAlternativeText(String text) {
+    _textView.showAlternative(text);
+  }
+
+  void showAlternativeTranslation(String translation) {
+    _translationView.showAlternative(translation);
+  }
+
+  void hideAlternativeText() {
+    _textView.hideAlternative();
+  }
+
+  void hideAlternativeTranslation() {
+    _translationView.hideAlternative();
   }
 }
 
 class MessageView {
   Element _messageElement;
+  Element _messageWrapper;
   TextAreaElement _messageText;
   Function onMessageUpdateCallback;
   Function _onTextareaHeightChangeCallback;
+  SpanElement _textLengthIndicator;
+  Button _resetButton;
+  String _originalMessage;
+
+  DivElement _alternativeElement;
 
   MessageView(String message, this.onMessageUpdateCallback, {String placeholder = ''}) {
     _messageElement = new DivElement()..classes.add('message');
+    _messageWrapper = new DivElement()..classes.add('message-wrapper');
+    _alternativeElement = new DivElement()..classes.add('message-alternative')..hidden = true;
+    _originalMessage = message;
 
-    var textLengthIndicator = new SpanElement()
+    _resetButton = Button(ButtonType.reset, onClick: (event) {
+      event.preventDefault();
+      onMessageUpdateCallback(_originalMessage);
+    });
+
+    _textLengthIndicator = new SpanElement()
       ..classes.add('message__length-indicator')
       ..classes.toggle('message__length-indicator--alert', message.length > _view.appController.MESSAGE_MAX_LENGTH)
       ..text = '${message.length}/${_view.appController.MESSAGE_MAX_LENGTH}';
@@ -286,13 +449,14 @@ class MessageView {
       ..onBlur.listen((event) => onMessageUpdateCallback((event.target as TextAreaElement).value))
       ..onInput.listen((event) {
         int count = _messageText.value.split('').length;
-        textLengthIndicator.text = '${count}/${_view.appController.MESSAGE_MAX_LENGTH}';
+        _textLengthIndicator.text = '${count}/${_view.appController.MESSAGE_MAX_LENGTH}';
         _messageText.classes.toggle('message__text--alert', count > _view.appController.MESSAGE_MAX_LENGTH);
-        textLengthIndicator.classes.toggle('message__length-indicator--alert', count > _view.appController.MESSAGE_MAX_LENGTH);
+        _textLengthIndicator.classes.toggle('message__length-indicator--alert', count > _view.appController.MESSAGE_MAX_LENGTH);
         _handleTextareaHeightChange();
       });
-
-    _messageElement..append(_messageText)..append(textLengthIndicator);
+    
+    _messageWrapper..append(_messageText)..append(_textLengthIndicator);
+    _messageElement..append(_messageWrapper)..append(_alternativeElement);
     finaliseRenderAsync();
   }
 
@@ -325,6 +489,48 @@ class MessageView {
       _handleTextareaHeightChange();
       timer.cancel();
     });
+  }
+
+  void markAsUnsaved(bool unsaved) {
+    _messageWrapper.classes.toggle('unsaved', unsaved);
+  }
+
+  void showReset(bool show) {
+    if (show) {
+      _messageWrapper.parent..insertBefore(_resetButton.renderElement, _messageWrapper);
+    } else {
+      _resetButton.renderElement.remove();
+    }
+  }
+
+  void updateText(String text) {
+    _messageText.value = text;
+
+    int count = _messageText.value.split('').length;
+    _textLengthIndicator.text = '${count}/${_view.appController.MESSAGE_MAX_LENGTH}';
+    _messageText.classes.toggle('message__text--alert', count > _view.appController.MESSAGE_MAX_LENGTH);
+    _textLengthIndicator.classes.toggle('message__length-indicator--alert', count > _view.appController.MESSAGE_MAX_LENGTH);
+    _handleTextareaHeightChange();
+  }
+
+  void showAlternative(String text) {
+    _alternativeElement.children.clear();
+    var instructions = DivElement()..className = "message-alternative__instruction"..innerText = "Someone else has just changed this text to:";
+    var altText = DivElement()..innerText = text;
+    var acceptButton = Button(ButtonType.confirm, onClick: (_) => onMessageUpdateCallback(text));
+    var discardButton = Button(ButtonType.cancel, onClick: (_) => _alternativeElement..hidden = true);
+    var actions = DivElement()..append(acceptButton.renderElement)..append(discardButton.renderElement);
+    _alternativeElement
+      ..hidden = false
+      ..append(instructions)
+      ..append(altText)
+      ..append(actions);
+  }
+
+  void hideAlternative() {
+    _alternativeElement
+      ..children.clear()
+      ..hidden = true;
   }
 }
 

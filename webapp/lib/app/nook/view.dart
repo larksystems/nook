@@ -594,6 +594,7 @@ class MessageView {
     _message = new DivElement()
       ..classes.add('message')
       ..classes.add(incoming ? 'message--incoming' : 'message--outgoing')
+      ..classes.add('hover-parent')
       ..dataset['conversationId'] = conversationId
       ..dataset['messageId'] = messageId;
 
@@ -634,8 +635,7 @@ class MessageView {
 
     _messageTags = new DivElement()
       ..classes.add('message__tags')
-      ..classes.toggle('message__tags--outgoing', !incoming)
-      ..classes.add('hover-parent');
+      ..classes.toggle('message__tags--outgoing', !incoming);
     tags.forEach((tag) => _messageTags.append(tag.renderElement));
 
     if (incoming) {

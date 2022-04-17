@@ -18,54 +18,53 @@ Logger log = new Logger('controller.dart');
 enum MessagesConfigAction {
   addStandardMessage,
   updateStandardMessage,
+  resetStandardMessageText,
+  resetStandardMessageTranslation,
   removeStandardMessage,
   addStandardMessagesGroup,
   updateStandardMessagesGroup,
   removeStandardMessagesGroup,
+  resetStandardMessagesGroupName,
   addStandardMessagesCategory,
   updateStandardMessagesCategory,
   removeStandardMessagesCategory,
+  resetStandardMessagesCategoryName,
 }
 
 class StandardMessageData extends Data {
+  String categoryId;
+  String groupId;
   String messageId;
   String text;
   String translation;
-  String groupId;
-  String group;
-  String categoryId;
-  String category;
-  StandardMessageData(this.messageId, {this.text, this.translation, this.groupId, this.group, this.categoryId, this.category});
+  StandardMessageData(this.messageId, {this.text, this.translation, this.groupId, this.categoryId});
 
   @override
   String toString() {
-    return "StandardMessageData($messageId, '$text', '$translation', $groupId, $group, $categoryId, $category)";
+    return "StandardMessageData(messageId: $messageId, groupId: $groupId, categoryId: $categoryId, '$text', '$translation'";
   }
 }
 
 class StandardMessagesGroupData extends Data {
-  String groupId;
-  String groupName;
-  String newGroupName;
   String categoryId;
-  String categoryName;
-  StandardMessagesGroupData(this.categoryId, this.categoryName, this.groupId, this.groupName, {this.newGroupName});
+  String groupId;
+  String newGroupName;
+  StandardMessagesGroupData(this.categoryId, this.groupId, {this.newGroupName});
 
   @override
   String toString() {
-    return "StandardMessagesGroupData($categoryId, $categoryName, $groupId, $groupName, '$newGroupName')";
+    return "StandardMessagesGroupData(groupId: $groupId, categoryId: $categoryId, '$newGroupName')";
   }
 }
 
 class StandardMessagesCategoryData extends Data {
   String categoryId;
-  String categoryName;
   String newCategoryName;
-  StandardMessagesCategoryData(this.categoryId, category, {this.newCategoryName});
+  StandardMessagesCategoryData(this.categoryId, {this.newCategoryName});
 
   @override
   String toString() {
-    return "StandardMessagesCategoryData($categoryId, $categoryName, '$newCategoryName')";
+    return "StandardMessagesCategoryData($categoryId, '$newCategoryName')";
   }
 }
 
@@ -77,6 +76,12 @@ class MessagesConfiguratorController extends ConfiguratorController {
 
   MessagesConfiguratorController() : super() {
     _controller = this;
+  }
+
+  void _updateDiffUnsavedIndicators() {
+    var diffData = standardMessagesManager.diffData;
+    _updateUnsavedIndicators(standardMessagesManager.localCategories, diffData.unsavedMessageTextIds, diffData.unsavedMessageTranslationIds, diffData.renamedGroupIds, diffData.unsavedGroupIds, diffData.renamedCategoryIds, diffData.unsavedCategoryIds);
+    _view.unsavedChanges = diffData.editedMessages.isNotEmpty || diffData.deletedMessages.isNotEmpty;
   }
 
   @override
@@ -91,162 +96,167 @@ class MessagesConfiguratorController extends ConfiguratorController {
       return;
     }
     log.verbose('command => $action : $data');
-    log.verbose('Before -- ${standardMessagesManager.categories}');
+    log.verbose('Before -- ${standardMessagesManager.localCategories}');
     switch (action) {
       case MessagesConfigAction.addStandardMessage:
         StandardMessageData messageData = data;
-        var categoryName = standardMessagesManager.categories[messageData.categoryId].categoryName;
-        var groupName = standardMessagesManager.categories[messageData.categoryId].groups[messageData.groupId].groupName;
+        var categoryId = messageData.categoryId;
+        var groupId = messageData.groupId;
 
-        var message = standardMessagesManager.createMessage(messageData.categoryId, categoryName, messageData.groupId, groupName);
+        var category = standardMessagesManager.localCategories[categoryId];
+        var group = standardMessagesManager.localCategories[categoryId].groups[groupId];
+        var standardMessage = standardMessagesManager.createMessage(category.categoryId, category.categoryName, category.categoryIndex, group.groupId, group.groupName, group.groupIndexInCategory);
+
         var messageCategoryMap = {
-          message.categoryId: MessageCategory(messageData.categoryId, categoryName)
+          category.categoryId: MessageCategory(category.categoryId, category.categoryName, category.categoryIndex)
             ..groups = {
-              message.groupId: MessageGroup(messageData.groupId, groupName)
+              group.groupId: MessageGroup(group.groupId, group.groupName, group.groupIndexInCategory)
                 ..messages = {
-                  message.docId: message
+                  standardMessage.docId: standardMessage
                 }
             }
         };
         _addMessagesToView(messageCategoryMap);
-        _updateUnsavedIndicators(standardMessagesManager.categories, standardMessagesManager.unsavedMessageIds, standardMessagesManager.unsavedGroupIds, standardMessagesManager.unsavedCategoryIds);
         break;
 
       case MessagesConfigAction.updateStandardMessage:
         StandardMessageData messageData = data;
         var standardMessage = standardMessagesManager.modifyMessage(messageData.messageId, messageData.text, messageData.translation);
-        var categoryName = standardMessagesManager.categories[standardMessage.categoryId].categoryName;
-        var groupName = standardMessagesManager.categories[standardMessage.categoryId].groups[standardMessage.groupId].groupName;
-
-        // todo: unwanted map since we use only the category Id, group Id
-        var messageCategoryMap = {
-          standardMessage.categoryId: MessageCategory(standardMessage.categoryId, categoryName)
-            ..groups = {
-              standardMessage.groupId: MessageGroup(messageData.groupId, groupName)
-                ..messages = {
-                  standardMessage.docId: standardMessage
-                }
-            }
-        };
-        _modifyMessagesInView(messageCategoryMap);
-        _updateUnsavedIndicators(standardMessagesManager.categories, standardMessagesManager.unsavedMessageIds, standardMessagesManager.unsavedGroupIds, standardMessagesManager.unsavedCategoryIds);
+        _modifyMessagesInView([standardMessage]);
         break;
 
       case MessagesConfigAction.removeStandardMessage:
         StandardMessageData messageData = data;
         var standardMessage = standardMessagesManager.deleteMessage(messageData.messageId);
-        var messageCategoryMap = {
-          standardMessage.categoryId: MessageCategory(standardMessage.categoryId, standardMessage.category)
-            ..groups = {
-              standardMessage.groupId: MessageGroup(messageData.groupId, messageData.group)
-                ..messages = {
-                  standardMessage.docId: standardMessage
-                }
-            }
-        };
-        // todo: unwanted map since we use only the category Id, group Id
-        _removeMessagesFromView(messageCategoryMap);
-        _updateUnsavedIndicators(standardMessagesManager.categories, standardMessagesManager.unsavedMessageIds, standardMessagesManager.unsavedGroupIds, standardMessagesManager.unsavedCategoryIds);
+        _removeMessagesFromView([standardMessage]);
+        break;
+
+      case MessagesConfigAction.resetStandardMessageText:
+        StandardMessageData messageData = data;
+        var message = standardMessagesManager.standardMessagesInStorage.firstWhere((element) => element.docId == messageData.messageId, orElse: () => null);
+        if (message == null) {
+          var localMessage = standardMessagesManager.standardMessagesInLocal.firstWhere((element) => element.docId == messageData.messageId);
+          var translation = localMessage.translation;
+          var standardMessage = standardMessagesManager.modifyMessage(messageData.messageId, "", translation);
+          _modifyMessagesInView([standardMessage]);
+          break;
+        }
+        var textToReset = standardMessagesManager.storageCategories[message.categoryId].groups[message.groupId].messages[message.docId].text;
+        var translation = standardMessagesManager.localCategories[message.categoryId].groups[message.groupId].messages[message.docId].translation;
+        var standardMessage = standardMessagesManager.modifyMessage(messageData.messageId, textToReset, translation);
+        _modifyMessagesInView([standardMessage]);
+        break;
+
+      case MessagesConfigAction.resetStandardMessageTranslation:
+        StandardMessageData messageData = data;
+        var message = standardMessagesManager.standardMessagesInStorage.firstWhere((element) => element.docId == messageData.messageId, orElse: () => null);
+        if (message == null) {
+          var localMessage = standardMessagesManager.standardMessagesInLocal.firstWhere((element) => element.docId == messageData.messageId);
+          var textToReset = localMessage.text;
+          var standardMessage = standardMessagesManager.modifyMessage(messageData.messageId, textToReset, "");
+          _modifyMessagesInView([standardMessage]);
+          break;
+        }
+        var textToReset = standardMessagesManager.localCategories[message.categoryId].groups[message.groupId].messages[message.docId].text;
+        var translation = standardMessagesManager.storageCategories[message.categoryId].groups[message.groupId].messages[message.docId].translation;
+        var standardMessage = standardMessagesManager.modifyMessage(messageData.messageId, textToReset, translation);
+        _modifyMessagesInView([standardMessage]);
         break;
 
       case MessagesConfigAction.addStandardMessagesGroup:
         StandardMessagesGroupData groupData = data;
-        var newGroup = standardMessagesManager.createStandardMessagesGroup(groupData.categoryId, groupData.categoryName);
+        var category = standardMessagesManager.localCategories[groupData.categoryId];
+        var newGroup = standardMessagesManager.createStandardMessagesGroup(category.categoryId, category.categoryName);
         var messageCategoryMap = {
-          groupData.categoryId: MessageCategory(groupData.categoryId, groupData.categoryName)
+          category.categoryId: MessageCategory(category.categoryId, category.categoryName, category.categoryIndex)
             ..groups = {
-              newGroup.groupId: MessageGroup(newGroup.groupId, newGroup.groupName)
+              newGroup.groupId: MessageGroup(newGroup.groupId, newGroup.groupName, newGroup.groupIndexInCategory)
             }
         };
         _addMessagesToView(messageCategoryMap, startEditingName: true);
-        _updateUnsavedIndicators(standardMessagesManager.categories, standardMessagesManager.unsavedMessageIds, standardMessagesManager.unsavedGroupIds, standardMessagesManager.unsavedCategoryIds);
         break;
 
       case MessagesConfigAction.updateStandardMessagesGroup:
         StandardMessagesGroupData groupData = data;
         standardMessagesManager.renameStandardMessageGroup(groupData.categoryId, groupData.groupId, groupData.newGroupName);
         _view.categoriesById[groupData.categoryId].renameGroup(groupData.groupId, groupData.newGroupName);
-        _updateUnsavedIndicators(standardMessagesManager.categories, standardMessagesManager.unsavedMessageIds, standardMessagesManager.unsavedGroupIds, standardMessagesManager.unsavedCategoryIds);
         break;
 
       case MessagesConfigAction.removeStandardMessagesGroup:
         StandardMessagesGroupData groupData = data;
         standardMessagesManager.deleteStandardMessagesGroup(groupData.categoryId, groupData.groupId);
         _view.categoriesById[groupData.categoryId].removeGroup(groupData.groupId);
-        _updateUnsavedIndicators(standardMessagesManager.categories, standardMessagesManager.unsavedMessageIds, standardMessagesManager.unsavedGroupIds, standardMessagesManager.unsavedCategoryIds);
+        break;
+
+      case MessagesConfigAction.resetStandardMessagesGroupName:
+        StandardMessagesGroupData groupData = data;
+        var resetGroupName = standardMessagesManager.storageCategories[groupData.categoryId].groups[groupData.groupId].groupName;
+        standardMessagesManager.renameStandardMessageGroup(groupData.categoryId, groupData.groupId, resetGroupName);
+        _view.categoriesById[groupData.categoryId].renameGroup(groupData.groupId, resetGroupName);
         break;
 
       case MessagesConfigAction.addStandardMessagesCategory:
         var newCategory = standardMessagesManager.createStandardMessagesCategory();
         var messageCategoryMap = {
-          newCategory.categoryId: MessageCategory(newCategory.categoryId, newCategory.categoryName)
+          newCategory.categoryId: MessageCategory(newCategory.categoryId, newCategory.categoryName, newCategory.categoryIndex)
         };
         _addMessagesToView(messageCategoryMap, startEditingName: true);
-        _updateUnsavedIndicators(standardMessagesManager.categories, standardMessagesManager.unsavedMessageIds, standardMessagesManager.unsavedGroupIds, standardMessagesManager.unsavedCategoryIds);
         break;
 
       case MessagesConfigAction.updateStandardMessagesCategory:
         StandardMessagesCategoryData categoryData = data;
         standardMessagesManager.renameStandardMessageCategory(categoryData.categoryId, categoryData.newCategoryName);
         _view.renameCategory(categoryData.categoryId, categoryData.newCategoryName);
-        _updateUnsavedIndicators(standardMessagesManager.categories, standardMessagesManager.unsavedMessageIds, standardMessagesManager.unsavedGroupIds, standardMessagesManager.unsavedCategoryIds);
         break;
 
       case MessagesConfigAction.removeStandardMessagesCategory:
         StandardMessagesCategoryData categoryData = data;
         standardMessagesManager.deleteStandardMessagesCategory(categoryData.categoryId);
         _view.categories.removeItem(categoryData.categoryId);
-        _updateUnsavedIndicators(standardMessagesManager.categories, standardMessagesManager.unsavedMessageIds, standardMessagesManager.unsavedGroupIds, standardMessagesManager.unsavedCategoryIds);
+        break;
+      
+      case MessagesConfigAction.resetStandardMessagesCategoryName:
+        StandardMessagesCategoryData categoryData = data;
+        var resetCategoryName = standardMessagesManager.storageCategories[categoryData.categoryId].categoryName;
+        standardMessagesManager.renameStandardMessageCategory(categoryData.categoryId, resetCategoryName);
+        _view.renameCategory(categoryData.categoryId, resetCategoryName);
         break;
     }
 
-    log.verbose('After -- ${standardMessagesManager.categories}');
-
-    _view.unsavedChanges = standardMessagesManager.hasUnsavedMessages;
+    log.verbose('After -- ${standardMessagesManager.localCategories}');
+    _updateDiffUnsavedIndicators();
   }
 
   @override
   void setUpOnLogin() {
     platform.listenForSuggestedReplies((added, modified, removed) {
-      var messagesAdded = standardMessagesManager.addStandardMessages(added);
-      var messagesModified = standardMessagesManager.updateStandardMessages(modified);
-      var messagesRemoved = standardMessagesManager.removeStandardMessages(removed);
+      var messagesAdded = standardMessagesManager.onAddStandardMessagesFromStorage(added);
+      var messagesModified = standardMessagesManager.onUpdateStandardMessagesFromStorage(modified);
+      var messagesRemoved = standardMessagesManager.onRemoveStandardMessagesFromStorage(removed);
 
       _addMessagesToView(_groupMessagesIntoCategoriesAndGroups(messagesAdded));
-      _modifyMessagesInView(_groupMessagesIntoCategoriesAndGroups(messagesModified));
-      _removeMessagesFromView(_groupMessagesIntoCategoriesAndGroups(messagesRemoved));
+      _modifyMessagesInView(messagesModified);
+      _removeMessagesFromView(messagesRemoved);
+
+      _updateDiffUnsavedIndicators();
     });
   }
 
   @override
-  void saveConfiguration() {
+  void saveConfiguration() async {
     _view.showSaveStatus('Saving...');
-    bool otherPartSaved = false;
+    _view.disableSaveButton();
+    var diffData = standardMessagesManager.diffData;
 
-    platform.updateSuggestedReplies(standardMessagesManager.editedMessages.values.toList()).then((value) {
-      standardMessagesManager.editedMessages.clear();
-      if (otherPartSaved) {
-        _view.showSaveStatus('Saved!');
-        _view.unsavedChanges = false;
-        _view.clearUnsavedIndicators();
-        return;
-      }
-      otherPartSaved = true;
-    }, onError: (error, stacktrace) {
-      _view.showSaveStatus('Unable to save. Please check your connection and try again. If the issue persists, please contact your project administrator');
-    });
-
-    platform.deleteSuggestedReplies(standardMessagesManager.deletedMessages.values.toList()).then((value) {
-      standardMessagesManager.deletedMessages.clear();
-      if (otherPartSaved) {
-        _view.showSaveStatus('Saved!');
-        _view.unsavedChanges = false;
-        _view.clearUnsavedIndicators();
-        return;
-      }
-      otherPartSaved = true;
-    }, onError: (error, stacktrace) {
-      _view.showSaveStatus('Unable to save. Please check your connection and try again. If the issue persists, please contact your project administrator');
-    });
+    try {
+      await Future.wait([platform.updateSuggestedReplies(diffData.editedMessages), platform.deleteSuggestedReplies(diffData.deletedMessages)]);
+      _view
+        ..unsavedChanges = false
+        ..showSaveStatus('Saved!', autoHide: true);
+    } catch (err) {
+      _view
+        ..hideSaveStatus()
+        ..showSaveStatus('Unable to save. Please check your connection and try again. If the issue persists, please contact your project administrator');
+    }
   }
 }

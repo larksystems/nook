@@ -837,8 +837,12 @@ class NookController extends Controller {
       if (conversationSortOrder == UIConversationSort.alphabeticalById) {
         return a.shortDeidentifiedPhoneNumber.compareTo(b.shortDeidentifiedPhoneNumber);
       } else if (conversationSortOrder == UIConversationSort.mostRecentInMessageFirst) {
-        return b.mostRecentMessageInbound.datetime.compareTo(a.mostRecentMessageInbound.datetime);
+        if (a.mostRecentMessageInbound == null) { return -1; }
+        if (b.mostRecentMessageInbound == null) { return 1; }
+        return (b.mostRecentMessageInbound.datetime).compareTo(a.mostRecentMessageInbound.datetime);
       } else if (conversationSortOrder == UIConversationSort.mostRecentMessageFirst) {
+        if (a.messages.isEmpty) { return -1; }
+        if (b.messages.isEmpty) { return 1; }
         return b.messages.last.datetime.compareTo(a.messages.last.datetime);
       }
       return 1;
@@ -1534,7 +1538,7 @@ class NookController extends Controller {
     if (matches.length > 1) {
       log.warning('Two conversations seem to have the same deidentified phone number: ${activeConversation.docId}');
     }
-    _selectConversationInView(activeConversation);
+    _selectConversationInView(activeConversation, skipReplyPanelRefresh: true);
     _view.conversationPanelView.clearWarning();
     return activeConversation;
   }
@@ -1559,7 +1563,7 @@ class NookController extends Controller {
       }
     }
 
-    _selectConversationInView(conversation);
+    _selectConversationInView(conversation, skipReplyPanelRefresh: true);
     if (!filteredConversations.contains(conversation)) {
       // If it doesn't meet the filter, show warning
       _view.conversationPanelView.showWarning('Conversation no longer meets filtering constraints');
@@ -1569,12 +1573,14 @@ class NookController extends Controller {
     }
   }
 
-  void _selectConversationInView(model.Conversation conversation) {
+  void _selectConversationInView(model.Conversation conversation, {bool skipReplyPanelRefresh = false}) {
     urlManager.conversationId = conversation.docId;
     if (conversationsInView.contains(conversation)) {
       // Select the conversation in the list of conversations
       _view.conversationListPanelView.selectConversation(conversation.docId);
-      _populateReplyPanelView(suggestedRepliesByCategory[selectedSuggestedRepliesCategory]);
+      if (!skipReplyPanelRefresh) {
+        _populateReplyPanelView(suggestedRepliesByCategory[selectedSuggestedRepliesCategory]);
+      }
     }
   }
 
