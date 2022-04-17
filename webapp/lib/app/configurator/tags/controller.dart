@@ -231,6 +231,7 @@ class TagsConfiguratorController extends ConfiguratorController {
 
   @override
   void setUpOnLogin() {
+    super.setUpOnLogin();
     platform.listenForTags((added, modified, removed) {
       var tagsAdded = tagManager.addTags(added);
       var tagsModified = tagManager.updateTags(modified);
@@ -240,48 +241,20 @@ class TagsConfiguratorController extends ConfiguratorController {
       _modifyTagsInView(_groupTagsIntoCategories(tagsModified));
       _removeTagsFromView(_groupTagsIntoCategories(tagsRemoved));
     });
+  }
 
-    platform.listenForUserConfigurations((added, modified, removed) {
-      List<model.UserConfiguration> changedUserConfigurations = new List()
-        ..addAll(added)
-        ..addAll(modified);
+  @override
+  void applyConfiguration(model.UserConfiguration newConfig) {
+    super.applyConfiguration(newConfig);
 
-      var defaultConfig = changedUserConfigurations.singleWhere((c) => c.docId == 'default', orElse: () => null);
-      defaultConfig = removed.where((c) => c.docId == 'default').length > 0 ? model.UserConfigurationUtil.baseUserConfiguration : defaultConfig;
-      var userConfig = changedUserConfigurations.singleWhere((c) => c.docId == signedInUser.userEmail, orElse: () => null);
-      userConfig = removed.where((c) => c.docId == signedInUser.userEmail).length > 0 ? model.UserConfigurationUtil.emptyUserConfiguration : userConfig;
-      if (defaultConfig == null && userConfig == null) {
-        // Neither of the relevant configurations has been changed, nothing to do here
-        return;
-      }
-      defaultUserConfig = defaultConfig ?? defaultUserConfig;
-      currentUserConfig = userConfig ?? currentUserConfig;
-      currentConfig = currentUserConfig.applyDefaults(defaultUserConfig);
-
-      // Apply new config
-      if (!currentConfig.editTagsEnabled) {
-        tagManager.editedTags.clear();
-        tagManager.movedFromGroupIds.clear();
-        tagManager.deletedTags.clear();
-        _view.showSaveStatus('Modifying tags has been disabled, dropping all changes');
-        _view.unsavedChanges = false;
-        _updateUnsavedIndicators(tagManager.tagsByGroup, tagManager.unsavedTagIds, tagManager.unsavedGroupIds);
-      }
-
-      if (currentConfig.consoleLoggingLevel.toLowerCase().contains('verbose')) {
-          logLevel = LogLevel.VERBOSE;
-      }
-      if (currentConfig.consoleLoggingLevel.toLowerCase().contains('debug')) {
-          logLevel = LogLevel.DEBUG;
-      }
-      if (currentConfig.consoleLoggingLevel.toLowerCase().contains('warning')) {
-          logLevel = LogLevel.WARNING;
-      }
-      if (currentConfig.consoleLoggingLevel.toLowerCase().contains('error')) {
-          logLevel = LogLevel.ERROR;
-      }
-    });
-
+    if (!currentConfig.editTagsEnabled) {
+      tagManager.editedTags.clear();
+      tagManager.movedFromGroupIds.clear();
+      tagManager.deletedTags.clear();
+      _view.showSaveStatus('Modifying tags has been disabled, dropping all changes');
+      _view.unsavedChanges = false;
+      _updateUnsavedIndicators(tagManager.tagsByGroup, tagManager.unsavedTagIds, tagManager.unsavedGroupIds);
+    }
   }
 
   @override

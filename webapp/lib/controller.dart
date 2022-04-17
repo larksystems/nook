@@ -219,10 +219,9 @@ class Controller {
   /// Sets user customization flags from the data map
   /// If a flag is not set in the data map, it defaults to the existing values
   void applyConfiguration(model.UserConfiguration newConfig) {
-    var oldConfig = currentConfig;
-    currentConfig = newConfig;
-
-    if (oldConfig.consoleLoggingLevel != newConfig.consoleLoggingLevel) {
+    if (currentConfig?.consoleLoggingLevel != newConfig.consoleLoggingLevel) {
+      currentConfig ??= model.UserConfigurationUtil.emptyUserConfiguration;
+      currentConfig.consoleLoggingLevel = newConfig.consoleLoggingLevel;
       if (newConfig.consoleLoggingLevel.toLowerCase().contains('verbose')) {
           logLevel = LogLevel.VERBOSE;
       }

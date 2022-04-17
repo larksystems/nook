@@ -352,6 +352,7 @@ class NookController extends Controller {
 
   @override
   void setUpOnLogin() {
+    super.setUpOnLogin();
     conversations = emptyConversationsSet(conversationSortOrder);
     filteredConversations = emptyConversationsSet(conversationSortOrder);
     shards = [];
@@ -573,7 +574,9 @@ class NookController extends Controller {
 
   /// Sets user customization flags from the data map
   /// If a flag is not set in the data map, it defaults to the existing values
+  @override
   void applyConfiguration(model.UserConfiguration newConfig) {
+    super.applyConfiguration(newConfig);
     var oldConfig = currentConfig;
     currentConfig = newConfig;
     if (oldConfig.repliesKeyboardShortcutsEnabled != newConfig.repliesKeyboardShortcutsEnabled) {
@@ -651,21 +654,6 @@ class NookController extends Controller {
     if (oldConfig.suggestedRepliesGroupsEnabled != newConfig.suggestedRepliesGroupsEnabled) {
       if (suggestedRepliesByCategory != null) {
         _populateReplyPanelView(suggestedRepliesByCategory[selectedSuggestedRepliesCategory]);
-      }
-    }
-
-    if (oldConfig.consoleLoggingLevel != newConfig.consoleLoggingLevel) {
-      if (newConfig.consoleLoggingLevel.toLowerCase().contains('verbose')) {
-          logLevel = LogLevel.VERBOSE;
-      }
-      if (newConfig.consoleLoggingLevel.toLowerCase().contains('debug')) {
-          logLevel = LogLevel.DEBUG;
-      }
-      if (newConfig.consoleLoggingLevel.toLowerCase().contains('warning')) {
-          logLevel = LogLevel.WARNING;
-      }
-      if (newConfig.consoleLoggingLevel.toLowerCase().contains('error')) {
-          logLevel = LogLevel.ERROR;
       }
     }
 

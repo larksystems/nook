@@ -50,6 +50,7 @@ class HomePageController extends Controller {
 
   @override
   void setUpOnLogin() {
+    super.setUpOnLogin();
     state = urlManager.project != null ? UIState.project : UIState.landing;
 
     platform.listenForProjects((added, modified, removed) {

@@ -19,7 +19,7 @@ DeveloperPageView get _view => _controller.view;
 
 class DeveloperController extends Controller {
 
-  DeveloperController() {
+  DeveloperController() : super() {
     _controller = this;
     view = new DeveloperPageView(_controller);
   }
