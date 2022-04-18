@@ -101,7 +101,7 @@ class NookPageView extends PageView {
       showNormalStatus('signed in: ${latestCommitHash.substring(0, 8)}...');
     }, onError: (_) { /* Do nothing */ });
 
-    var links = ButtonLinksView(navLinks, window.location.pathname);
+    var links = ButtonLinksView(generateProjectLinks(appController.urlManager.project), window.location.pathname);
 
     navHeaderView.navContent = new DivElement()
       ..style.display = 'flex'

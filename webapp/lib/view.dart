@@ -63,7 +63,7 @@ class PageView {
 
   void initSignedInView(String displayName, String photoUrl) {
     authHeaderView.signIn(displayName, photoUrl);
-    navHeaderView.navContent = ButtonLinksView(navLinks, window.location.pathname).renderElement;
+    navHeaderView.navContent = ButtonLinksView(generateProjectLinks(appController.urlManager.project), window.location.pathname).renderElement;
     headerElement.append(navHeaderView.navViewElement);
     headerElement.insertBefore(bannerView.bannerElement, navHeaderView.navViewElement);
 

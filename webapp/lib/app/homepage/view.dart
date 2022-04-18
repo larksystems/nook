@@ -52,7 +52,7 @@ class HomePageView extends PageView {
   }
 
   void showProjectPage(String projectId, Map<String, List<PageInfo>> pageStructure) {
-    navHeaderView.navContent = ButtonLinksView(navLinks, window.location.pathname).renderElement;
+    navHeaderView.navContent = ButtonLinksView(generateProjectLinks(appController.urlManager.project), window.location.pathname).renderElement;
 
     DivElement pageContents = DivElement();
 

@@ -7,3 +7,5 @@ var navLinks = [
   Link("Tags", "/configure/tags.html"),
   Link("Explore", "/explore"),
 ];
+
+List<Link> generateProjectLinks(String project) => navLinks.map((e) => Link(e.label, "${e.url}?project=${project}")).toList();
