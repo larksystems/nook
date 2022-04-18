@@ -246,6 +246,7 @@ class TagsConfiguratorController extends ConfiguratorController {
   @override
   void applyConfiguration(model.UserConfiguration newConfig) {
     super.applyConfiguration(newConfig);
+    currentConfig = newConfig;
 
     if (!currentConfig.editTagsEnabled) {
       tagManager.editedTags.clear();

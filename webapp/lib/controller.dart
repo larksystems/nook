@@ -124,6 +124,10 @@ class Controller {
   Controller() {
     systemMessages = [];
     projectConfiguration = {};
+    urlManager = UrlManager();
+
+    defaultUserConfig = model.UserConfigurationUtil.baseUserConfiguration;
+    currentUserConfig = currentConfig = model.UserConfigurationUtil.emptyUserConfiguration;
 
     try {
       HttpRequest.getString('/assets/project_configuration.json').then((projectConfigurationJson) {
@@ -134,12 +138,7 @@ class Controller {
   }
 
   /// Method to be implemented by extending classes to initialise the view after the project configuration has been loaded
-  void init() {
-    urlManager = UrlManager();
-
-    defaultUserConfig = model.UserConfigurationUtil.baseUserConfiguration;
-    currentUserConfig = currentConfig = model.UserConfigurationUtil.emptyUserConfiguration;
-  }
+  void init() {}
 
   /// Method to be implemented by extending classes to respond to their own UI command datatype.
   /// Any commands they don't recognise, they should pass them to super.command().

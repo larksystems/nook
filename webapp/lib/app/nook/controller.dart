@@ -352,7 +352,6 @@ class NookController extends Controller {
 
   @override
   void setUpOnLogin() {
-    super.setUpOnLogin();
     conversations = emptyConversationsSet(conversationSortOrder);
     filteredConversations = emptyConversationsSet(conversationSortOrder);
     shards = [];
@@ -367,6 +366,8 @@ class NookController extends Controller {
     conversationFilter = new ConversationFilter.fromUrl(currentConfig);
     _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.include), TagFilterType.include);
     _view.conversationIdFilter.filter = conversationFilter.conversationIdFilter;
+
+    super.setUpOnLogin();
 
     platform.listenForTags(
       (added, modified, removed) {
