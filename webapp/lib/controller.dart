@@ -8,7 +8,7 @@ import 'package:katikati_ui_lib/components/logger.dart';
 
 import 'package:katikati_ui_lib/components/model/model.dart' as model;
 import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
-import 'package:katikati_ui_lib/components/url_view/url_view.dart';
+import 'package:katikati_ui_lib/components/url_manager/url_manager.dart';
 import 'package:katikati_ui_lib/components/nav/button_links.dart';
 import 'package:katikati_ui_lib/components/platform/pubsub.dart';
 import 'package:firebase/firebase.dart' show FirebaseError;

@@ -6,7 +6,7 @@ import 'dart:svg' as svg;
 import 'package:intl/intl.dart';
 import 'package:katikati_ui_lib/components/accordion/accordion.dart';
 import 'package:katikati_ui_lib/components/tabs/tabs.dart';
-import 'package:katikati_ui_lib/components/url_view/url_view.dart';
+import 'package:katikati_ui_lib/components/url_manager/url_manager.dart';
 import 'package:katikati_ui_lib/utils/datetime.dart';
 import 'package:katikati_ui_lib/components/tooltip/tooltip.dart';
 import 'package:katikati_ui_lib/components/nav/button_links.dart';

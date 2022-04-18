@@ -4,7 +4,6 @@ import 'dart:html';
 
 import 'package:katikati_ui_lib/components/logger.dart';
 import 'package:katikati_ui_lib/components/model/model.dart';
-import 'package:katikati_ui_lib/components/url_view/url_view.dart';
 import 'package:nook/controller.dart';
 export 'package:nook/controller.dart';
 

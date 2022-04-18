@@ -7,7 +7,7 @@ import 'package:firebase/firebase.dart' show FirebaseError;
 import 'package:katikati_ui_lib/components/conversation/conversation_item.dart';
 import 'package:katikati_ui_lib/components/conversation/new_conversation_modal.dart';
 
-import 'package:katikati_ui_lib/components/url_view/url_view.dart';
+import 'package:katikati_ui_lib/components/url_manager/url_manager.dart';
 import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
 import 'package:katikati_ui_lib/components/tag/tag.dart';
 import 'package:katikati_ui_lib/components/turnline/turnline.dart';
