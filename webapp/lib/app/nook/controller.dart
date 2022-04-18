@@ -7,7 +7,7 @@ import 'package:firebase/firebase.dart' show FirebaseError;
 import 'package:katikati_ui_lib/components/conversation/conversation_item.dart';
 import 'package:katikati_ui_lib/components/conversation/new_conversation_modal.dart';
 
-import 'package:katikati_ui_lib/components/url_view/url_view.dart';
+import 'package:katikati_ui_lib/components/url_manager/url_manager.dart';
 import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
 import 'package:katikati_ui_lib/components/tag/tag.dart';
 import 'package:katikati_ui_lib/components/turnline/turnline.dart';
@@ -396,7 +396,7 @@ class NookController extends Controller {
           _removeTagsFromFilterMenu(_groupTagsIntoCategories(removed), tagFilterType);
           _removeTagsFromFilterMenu(_groupTagsIntoCategories(previousModified), tagFilterType);
           _addTagsToFilterMenu(_groupTagsIntoCategories(added), tagFilterType);
-          _addTagsToFilterMenu(_groupTagsIntoCategories(modified), tagFilterType);  
+          _addTagsToFilterMenu(_groupTagsIntoCategories(modified), tagFilterType);
         }
 
         // Update the conversation tags by group map
@@ -478,7 +478,7 @@ class NookController extends Controller {
         var shardsToConsider = shards.take(shardCountToConsider).toList();
 
         // Read any conversation shards from the URL
-        String urlConversationListRoot = _view.urlView.conversationList;
+        String urlConversationListRoot = _view.urlManager.conversationList;
         String conversationListRoot = urlConversationListRoot;
         if (urlConversationListRoot == null) {
           conversationListRoot = ConversationListData.NONE;
@@ -492,7 +492,7 @@ class NookController extends Controller {
         _view.conversationListPanelView.updateShardsList(shardsToConsider);
         // If we try to access a list that hasn't loaded yet, keep it in the URL
         // so it can be picked up on the next data snapshot from firebase.
-        _view.urlView.conversationList = urlConversationListRoot;
+        _view.urlManager.conversationList = urlConversationListRoot;
         _view.conversationListPanelView.selectShard(conversationListRoot);
         command(UIAction.selectConversationList, ConversationListData(conversationListRoot));
       }, (error, stacktrace) {
@@ -653,7 +653,7 @@ class NookController extends Controller {
         // only clear things up after we've received the config from the server
         conversationFilter.clearFilters(TagFilterType.lastInboundTurn);
 
-        _view.urlView.tagsFilter[TagFilterType.lastInboundTurn] = conversationFilter.filterTagIdsManuallySet[TagFilterType.lastInboundTurn];
+        _view.urlManager.tagsFilter[TagFilterType.lastInboundTurn] = conversationFilter.filterTagIdsManuallySet[TagFilterType.lastInboundTurn];
       } else {
         _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.lastInboundTurn), TagFilterType.lastInboundTurn);
       }
@@ -664,7 +664,7 @@ class NookController extends Controller {
         // only clear things up after we've received the config from the server
         conversationFilter.clearFilters(TagFilterType.exclude);
 
-        _view.urlView.tagsFilter[TagFilterType.exclude] = conversationFilter.filterTagIdsManuallySet[TagFilterType.exclude];
+        _view.urlManager.tagsFilter[TagFilterType.exclude] = conversationFilter.filterTagIdsManuallySet[TagFilterType.exclude];
       } else {
         _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.exclude), TagFilterType.exclude);
       }
@@ -705,15 +705,15 @@ class NookController extends Controller {
     conversationListSubscription?.cancel();
     if (conversationListSubscription != null) {
       // Only clear up the conversation id after the initial page loading
-      _view.urlView.conversationId = null;
+      _view.urlManager.conversationId = null;
     }
     conversationListSubscription = null;
     if (conversationListRoot == ConversationListData.NONE) {
-      _view.urlView.conversationList = null;
+      _view.urlManager.conversationList = null;
       _view.conversationListPanelView.totalConversations = 0;
       return;
     }
-    _view.urlView.conversationList = conversationListRoot;
+    _view.urlManager.conversationList = conversationListRoot;
     conversationListSubscription = platform.listenForConversations(
       (added, modified, removed) {
         if (added.length > 0) {
@@ -758,7 +758,7 @@ class NookController extends Controller {
         // TODO even though they are unlikely to happen, we should also handle the removals in the UI for consistency
 
         // Determine if we need to display the conversation from the url
-        String urlConversationId = _view.urlView.conversationId;
+        String urlConversationId = _view.urlManager.conversationId;
         if (activeConversation == null && urlConversationId != null) {
           var matches = conversations.where((c) => c.docId == urlConversationId).toList();
           if (matches.length == 0) {
@@ -1022,7 +1022,7 @@ class NookController extends Controller {
         model.Tag unifierTag = unifierTagForTag(tag, tagIdsToTags);
         var added = conversationFilter.addFilter(tagData.filterType, unifierTag);
         if (!added) return; // No change, nothing further to do
-        _view.urlView.tagsFilter[tagData.filterType] = conversationFilter.filterTagIdsManuallySet[tagData.filterType];
+        _view.urlManager.tagsFilter[tagData.filterType] = conversationFilter.filterTagIdsManuallySet[tagData.filterType];
         _view.conversationFilter[tagData.filterType].addFilterTag(new FilterTagView(unifierTag.text, unifierTag.tagId, tagTypeToKKStyle(unifierTag.type), tagData.filterType));
         if (actionObjectState == UIActionObject.loadingConversations) return;
         updateFilteredAndSelectedConversationLists();
@@ -1116,7 +1116,7 @@ class NookController extends Controller {
         model.Tag tag = tagIdToTag(tagData.tagId, tagIdsToTags);
         var changed = conversationFilter.removeFilter(tagData.filterType, tag);
         if (!changed) return; // No change, nothing further to do
-        _view.urlView.tagsFilter[tagData.filterType] = conversationFilter.filterTagIdsManuallySet[tagData.filterType];
+        _view.urlManager.tagsFilter[tagData.filterType] = conversationFilter.filterTagIdsManuallySet[tagData.filterType];
         _view.conversationFilter[tagData.filterType].removeFilterTag(tag.tagId);
         if (actionObjectState == UIActionObject.loadingConversations) return;
         updateFilteredAndSelectedConversationLists();
@@ -1125,7 +1125,7 @@ class NookController extends Controller {
       case UIAction.updateConversationIdFilter:
         ConversationIdFilterData filterData = data;
         conversationFilter.conversationIdFilter = filterData.idFilter;
-        _view.urlView.conversationIdFilter = filterData.idFilter.isEmpty ? null : filterData.idFilter;
+        _view.urlManager.conversationIdFilter = filterData.idFilter.isEmpty ? null : filterData.idFilter;
         if (actionObjectState == UIActionObject.loadingConversations) return;
         updateFilteredAndSelectedConversationLists();
         break;
@@ -1602,7 +1602,7 @@ class NookController extends Controller {
   }
 
   void _selectConversationInView(model.Conversation conversation, {bool skipReplyPanelRefresh = false}) {
-    _view.urlView.conversationId = conversation.docId;
+    _view.urlManager.conversationId = conversation.docId;
     if (conversationsInView.contains(conversation)) {
       // Select the conversation in the list of conversations
       _view.conversationListPanelView.selectConversation(conversation.docId);
