@@ -72,6 +72,16 @@
   position: relative;
 }
 
+.message-wrapper {
+  position: relative;
+}
+
+.message .button-wrapper {
+  top: 0;
+  right: 1px;
+  position: absolute;
+}
+
 .message__text {
   overflow-y: auto;
   border: 1px solid var(--default-border-color);
@@ -104,4 +114,30 @@
   color: var(--light-red);
   outline-color: var(--light-red);
   font-weight: bold;
+}
+
+.message-alternative,
+.group-alternative,
+.category-alternative {
+  background-color: var(--default-background-color);
+  border: 1px solid var(--default-border-color);
+  padding: 6px;
+  font-size: 12px;
+}
+
+.message-alternative {
+  border-top: 0;
+}
+
+.message-alternative__instruction,
+.group-alternative__instruction,
+.category-alternative__instruction {
+  font-size: 10px;
+  text-decoration: underline;
+}
+
+.message-alternative .button,
+.group-alternative .button, 
+.category-alternative .button {
+  background-color: transparent;
 }

@@ -44,6 +44,7 @@ class PageView {
         () {}, // We don't show the navbar when the user is not logged in, so no need to show this
         () => appController.command(BaseAction.signOutButtonClicked));
     navHeaderView.authHeader = authHeaderView;
+    navHeaderView.projectTitle = SpanElement()..innerText = appController.projectConfiguration['projectTitle'];
 
     document.title = "${document.title} | ${appController.projectConfiguration['projectTitle']} | KatiKati";
 

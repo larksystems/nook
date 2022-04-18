@@ -6,7 +6,7 @@ import 'dart:svg' as svg;
 import 'package:intl/intl.dart';
 import 'package:katikati_ui_lib/components/accordion/accordion.dart';
 import 'package:katikati_ui_lib/components/tabs/tabs.dart';
-import 'package:katikati_ui_lib/components/url_view/url_view.dart';
+import 'package:katikati_ui_lib/components/url_manager/url_manager.dart';
 import 'package:katikati_ui_lib/utils/datetime.dart';
 import 'package:katikati_ui_lib/components/tooltip/tooltip.dart';
 import 'package:katikati_ui_lib/components/nav/button_links.dart';
@@ -45,7 +45,7 @@ class NookPageView extends PageView {
   TagPanelView tagPanelView;
   TurnlinePanelView turnlinePanelView;
   NotesPanelView notesPanelView;
-  UrlView urlView;
+  UrlManager urlManager;
   TabsView tabsView;
 
   NookPageView(NookController controller) : super(controller) {
@@ -58,7 +58,7 @@ class NookPageView extends PageView {
     tagPanelView = new TagPanelView();
     turnlinePanelView = new TurnlinePanelView();
     notesPanelView = new NotesPanelView();
-    urlView = new UrlView();
+    urlManager = new UrlManager();
 
     tabsView = new TabsView([]);
 
@@ -597,6 +597,7 @@ class MessageView {
     _message = new DivElement()
       ..classes.add('message')
       ..classes.add(incoming ? 'message--incoming' : 'message--outgoing')
+      ..classes.add('hover-parent')
       ..dataset['conversationId'] = conversationId
       ..dataset['messageId'] = messageId;
 
@@ -637,8 +638,7 @@ class MessageView {
 
     _messageTags = new DivElement()
       ..classes.add('message__tags')
-      ..classes.toggle('message__tags--outgoing', !incoming)
-      ..classes.add('hover-parent');
+      ..classes.toggle('message__tags--outgoing', !incoming);
     tags.forEach((tag) => _messageTags.append(tag.renderElement));
 
     if (incoming) {

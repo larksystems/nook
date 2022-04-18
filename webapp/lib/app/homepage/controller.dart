@@ -4,7 +4,7 @@ import 'dart:html';
 
 import 'package:katikati_ui_lib/components/logger.dart';
 import 'package:katikati_ui_lib/components/model/model.dart';
-import 'package:katikati_ui_lib/components/url_view/url_view.dart';
+import 'package:katikati_ui_lib/components/url_manager/url_manager.dart';
 import 'package:nook/controller.dart';
 export 'package:nook/controller.dart';
 
@@ -32,7 +32,7 @@ class ProjectData extends Data {
 }
 
 class HomePageController extends Controller {
-  UrlView urlView;
+  UrlManager urlManager;
   UIState state;
   List<Project> projects;
   Project selectedProject;
@@ -44,14 +44,14 @@ class HomePageController extends Controller {
 
   @override
   void init() {
-    urlView = UrlView();
+    urlManager = UrlManager();
     view = new HomePageView(this);
     platform = new Platform(this);
   }
 
   @override
   void setUpOnLogin() {
-    state = urlView.project != null ? UIState.project : UIState.landing;
+    state = urlManager.project != null ? UIState.project : UIState.landing;
 
     platform.listenForProjects((added, modified, removed) {
       for (var project in added) {
@@ -88,7 +88,7 @@ class HomePageController extends Controller {
             break;
 
           case UIState.project:
-            setUpProjectPage(urlView.project);
+            setUpProjectPage(urlManager.project);
             break;
 
           default:
@@ -98,12 +98,12 @@ class HomePageController extends Controller {
       case UIAction.projectSelected:
         ProjectData projectData = data;
         if (projectData.projectId == null || projectData.projectId == '') {
-          urlView.project = null;
+          urlManager.project = null;
           window.location.reload();
           break;
         }
         if (projectData.projectId != selectedProject.projectId) {
-          urlView.project = projectData.projectId;
+          urlManager.project = projectData.projectId;
           window.location.reload();
           break;
         }
