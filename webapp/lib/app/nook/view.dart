@@ -41,7 +41,7 @@ class NookPageView extends PageView {
   ConversationIdFilter conversationIdFilter;
   Map<TagFilterType, ConversationFilter> conversationFilter;
   ConversationPanelView conversationPanelView;
-  ReplyPanelView replyPanelView;
+  StandardMessagesPanelView standardMessagesPanelView;
   TagPanelView tagPanelView;
   TurnlinePanelView turnlinePanelView;
   NotesPanelView notesPanelView;
@@ -54,7 +54,7 @@ class NookPageView extends PageView {
     otherLoggedInUsers = new OtherLoggedInUsers();
     conversationListPanelView = new ConversationListPanelView();
     conversationPanelView = new ConversationPanelView();
-    replyPanelView = new ReplyPanelView();
+    standardMessagesPanelView = new StandardMessagesPanelView();
     tagPanelView = new TagPanelView();
     turnlinePanelView = new TurnlinePanelView();
     notesPanelView = new NotesPanelView();
@@ -121,7 +121,7 @@ class NookPageView extends PageView {
     List<TabView> tabsToSet = [];
 
     if (showReplyPanel) {
-      var standardMessagesTab = TabView('standard_messages', "Standard messages", replyPanelView.replyPanel);
+      var standardMessagesTab = TabView('standard_messages', "Standard messages", standardMessagesPanelView.renderElement);
       tabsToSet.add(standardMessagesTab);
     }
 
@@ -1591,113 +1591,29 @@ class TurnlinePanelView {
   }
 }
 
-class ReplyPanelView {
-  DivElement replyPanel;
-  DivElement _panelTitle;
-  SelectElement _replyCategories;
-  DivElement _replies;
-  DivElement _replyList;
-  AddActionView _addReply;
-  List<ActionView> _replyViews;
-  ScrollOverflowIndicator _repliesScrollContainer;
+class StandardMessagesPanelView {
+  DivElement renderElement;
+  Accordion _categories;
 
-  ReplyPanelView() {
-    replyPanel = new DivElement()
-      ..classes.add('reply-panel');
+  // todo: make sure the categories don't reset on change
 
-    _panelTitle = new DivElement()
-      ..classes.add('panel-title')
-      ..classes.add('panel-title--multiple-cols');
-    replyPanel.append(_panelTitle);
+  StandardMessagesPanelView() {
+    renderElement = DivElement()
+      ..classes.add('standard-messages-panel');
 
-    _replyCategories = new SelectElement();
-    _replyCategories.onChange.listen((_) => _view.appController.command(UIAction.updateSuggestedRepliesCategory, new UpdateSuggestedRepliesCategoryData(_replyCategories.value)));
-
-    _panelTitle
-      ..append(new DivElement()..text = REPLY_PANEL_TITLE)
-      ..append(_replyCategories);
-
-    _replies = new DivElement()
-      ..classes.add('replies')
-      ..classes.add('action-list');
-    _repliesScrollContainer = ScrollOverflowIndicator();
-    _repliesScrollContainer.setContent(_replies);
-    replyPanel.append(_repliesScrollContainer.container);
-
-    _replyList = new DivElement();
-    _replies.append(_replyList);
-
-    // TODO(mariana): support adding replies
-    // _addReply = new AddReplyActionView(ADD_REPLY_INFO);
-    // _replies.append(_addReply.addAction);
-
-    _replyViews = [];
-  }
-
-  set selectedCategory(String category) {
-    int index = _replyCategories.children.indexWhere((Element option) => (option as OptionElement).value == category);
-    if (index == -1) {
-      _view.showWarningStatus("Couldn't find $category in list of suggested replies category, using first");
-      _replyCategories.selectedIndex = 0;
-      _view.appController.command(UIAction.updateSuggestedRepliesCategory, new UpdateSuggestedRepliesCategoryData(_replyCategories.value));
-      return;
-    }
-    _replyCategories.selectedIndex = index;
-    _panelTitle.dataset['category-id'] = category;
-  }
-
-  set categories(List<String> categories) {
-    _replyCategories.children.clear();
-    for (var category in categories) {
-      _replyCategories.append(
-        new OptionElement()
-          ..value = category
-          ..text = category);
-    }
-  }
-
-  void addReply(ActionView action) {
-    _replyViews.add(action);
-    _replyList.append(action.action);
-    _repliesScrollContainer.updateShadows();
+    _categories = Accordion([]);    
+    renderElement.append(_categories.renderElement);
   }
 
   void clear() {
-    int repliesNo = _replyList.children.length;
-    for (int i = 0; i < repliesNo; i++) {
-      _replyList.firstChild.remove();
-    }
-    _replyViews.clear();
-    assert(_replyList.children.length == 0);
+    _categories.clear();
   }
 
-  void showShortcuts(bool show) {
-    for (var view in _replyViews) {
-      view.showShortcut(show);
+  void addAll(List<AccordionItem> items) {
+    for (var item in items) {
+      _categories.appendItem(item);
     }
   }
-
-  void showButtons(bool show) {
-    for (var view in _replyViews) {
-      view.showButtons(show);
-    }
-  }
-
-  void disableReplies() {
-    _replies.remove();
-    _panelTitle
-      ..children.clear()
-      ..append(new DivElement()..text = NOTES_PANEL_TITLE);
-  }
-
-  void enableReplies() {
-    _panelTitle
-      ..children.clear()
-      ..append(new DivElement()..text = REPLY_PANEL_TITLE)
-      ..append(_replyCategories);
-    replyPanel.append(_replies);
-  }
-
 }
 
 class TagGroupView extends AccordionItem {

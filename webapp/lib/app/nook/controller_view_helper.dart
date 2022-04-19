@@ -122,28 +122,43 @@ MessageView _generateMessageView(model.Message message, model.Conversation conve
   return messageView;
 }
 
-void _populateReplyPanelView(List<model.SuggestedReply> replies) {
-  Map<String, List<model.SuggestedReply>> repliesByGroups = _groupRepliesIntoGroups(replies);
-  _view.replyPanelView.clear();
-  String buttonText = SEND_REPLY_BUTTON_TEXT;
-  var groupIdsSortedByDescription = repliesByGroups.keys.toList();
-  groupIdsSortedByDescription.sort((group1, group2) => repliesByGroups[group1].first.groupName.compareTo(repliesByGroups[group2].first.groupName));
-  for (var groupId in groupIdsSortedByDescription) {
-    var repliesInGroup = repliesByGroups[groupId];
-    List<ReplyActionView> views = [];
-    var groupDescription = "";
-    for (var reply in repliesInGroup) {
-      groupDescription = reply.groupName;
-      var replyView = new ReplyActionView(reply.text, reply.translation, reply.shortcut, reply.suggestedReplyId, buttonText);
-      replyView.fadeText(controller.activeConversation?.messages?.where((element) => element.text == reply.text)?.isNotEmpty ?? false);
-      replyView.showShortcut(controller.currentConfig.repliesKeyboardShortcutsEnabled);
-      replyView.showButtons(controller.currentConfig.sendMessagesEnabled);
-      views.add(replyView);
-    }
-    var replyGroupView = new ReplyActionGroupView(groupId, groupDescription, buttonText + " all", views);
-    replyGroupView.showButtons(SENDABLE_STANDARD_MESSAGE_GROUPS);
-    _view.replyPanelView.addReply(replyGroupView);
+void _populateReplyPanelView(List<model.SuggestedReply> suggestedReplies) {
+  _view.standardMessagesPanelView.clear();
+
+  Map<String, MessageCategory> groupedMessages = {};
+  for(var reply in suggestedReplies) {
+    groupedMessages[reply.categoryId] = groupedMessages[reply.categoryId] 
+      ?? MessageCategory(reply.categoryId, reply.categoryName, reply.categoryIndex, {});
+    groupedMessages[reply.categoryId].groups[reply.groupId] = groupedMessages[reply.categoryId].groups[reply.groupId]
+      ?? MessageGroup(reply.categoryId, reply.groupId, reply.groupName,reply.groupIndexInCategory, []);
+    groupedMessages[reply.categoryId].groups[reply.groupId].standardMessages.add(reply);
   }
+
+  List<AccordionItem> categoryViews = [];
+  groupedMessages.values.toList()
+    ..sort((c1, c2) => c1.categoryIndex.compareTo(c2.categoryIndex))
+    ..forEach((category) {
+      var groupsContainer = DivElement();
+      var item = AccordionItem(category.categoryId, DivElement()..innerText = category.categoryName, groupsContainer, false);
+      categoryViews.add(item);
+
+      var groups = category.groups.values.toList()..sort((g1, g2) => g1.groupIndexInCategory.compareTo(g2.groupIndexInCategory));
+      for (var group in groups) {
+        List<ReplyActionView> messageViews = [];
+        for (var standardMessage in group.standardMessages) {
+          var messageView = ReplyActionView(standardMessage.text, standardMessage.translation, standardMessage.shortcut, standardMessage.docId, SEND_REPLY_BUTTON_TEXT);
+          messageView.showShortcut(controller.currentConfig.repliesKeyboardShortcutsEnabled);
+          messageView.showButtons(controller.currentConfig.sendMessagesEnabled);
+          messageViews.add(messageView);
+        }
+        var groupView = ReplyActionGroupView(group.groupId, group.groupName, SEND_REPLY_BUTTON_TEXT, messageViews); 
+        groupView.showButtons(controller.currentConfig.sendMessagesEnabled);
+
+        groupsContainer.append(groupView.action);
+      }
+    });
+
+  _view.standardMessagesPanelView.addAll(categoryViews);
 }
 
 void _populateTagPanelView(Map<String, List<model.Tag>> tagsByGroup, bool showShortcut, Set<String> mandatoryExcludeTagIds) {
@@ -314,4 +329,23 @@ Map<String, List<model.Tag>> _groupTagsIntoCategories(List<model.Tag> tags) {
     tags.sort((t1, t2) => t1.text.toLowerCase().compareTo(t2.text.toLowerCase()));
   }
   return result;
+}
+
+class MessageGroup {
+  String categoryId;
+  String groupId;
+  String groupName;
+  int groupIndexInCategory;
+  List<model.SuggestedReply> standardMessages;
+
+  MessageGroup(this.categoryId, this.groupId, this.groupName, this.groupIndexInCategory, this.standardMessages);
+}
+
+class MessageCategory {
+  String categoryId;
+  String categoryName;
+  int categoryIndex;
+  Map<String, MessageGroup> groups;
+
+  MessageCategory(this.categoryId, this.categoryName, this.categoryIndex, this.groups);
 }
