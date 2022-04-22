@@ -165,7 +165,6 @@ void _populateReplyPanelView(List<model.SuggestedReply> suggestedReplies, List<M
     } else { // updated category, update model, view
       var panelCategory = panelCategoryItems[panelViewIndex];
       if (!panelCategory.equals(newCategory)) {
-        window.console.error("different ${newCategory.categoryId}");
         panelCategoryItems[panelViewIndex] = newCategory;
         var viewItem = _transformCategoryToAccordionItem(newCategory);
         _view.standardMessagesPanelView.update(viewItem);
