@@ -314,6 +314,7 @@ class NookController extends Controller {
   List<model.Conversation> selectedConversations;
   model.Message selectedMessage;
   model.Conversation selectedConversationSummary;
+  List<MessageCategory> replyPanelCategories = [];
 
   List<model.ConversationListShard> shards = [];
 
@@ -418,7 +419,7 @@ class NookController extends Controller {
           ..addAll(added)
           ..addAll(modified);
 
-        _populateReplyPanelView(suggestedReplies);
+        _populateReplyPanelView(suggestedReplies, replyPanelCategories);
       }, showAndLogError);
 
     platform.listenForConversationListShards(
@@ -569,7 +570,7 @@ class NookController extends Controller {
     var oldConfig = currentConfig;
     currentConfig = newConfig;
     if (oldConfig.repliesKeyboardShortcutsEnabled != newConfig.repliesKeyboardShortcutsEnabled) {
-      _populateReplyPanelView(suggestedReplies);
+      _populateReplyPanelView(suggestedReplies, replyPanelCategories);
     }
 
     if (oldConfig.tagsKeyboardShortcutsEnabled != newConfig.tagsKeyboardShortcutsEnabled) {
@@ -577,7 +578,7 @@ class NookController extends Controller {
     }
 
     if (oldConfig.sendMessagesEnabled != newConfig.sendMessagesEnabled) {
-      _populateReplyPanelView(suggestedReplies);
+      _populateReplyPanelView(suggestedReplies, replyPanelCategories);
     }
 
     if (oldConfig.sendCustomMessagesEnabled != newConfig.sendCustomMessagesEnabled) {
@@ -641,7 +642,7 @@ class NookController extends Controller {
     }
 
     if (oldConfig.suggestedRepliesGroupsEnabled != newConfig.suggestedRepliesGroupsEnabled) {
-      _populateReplyPanelView(suggestedReplies);
+      _populateReplyPanelView(suggestedReplies, replyPanelCategories);
     }
 
     if (oldConfig.consoleLoggingLevel != newConfig.consoleLoggingLevel) {
@@ -1562,7 +1563,7 @@ class NookController extends Controller {
       // Select the conversation in the list of conversations
       _view.conversationListPanelView.selectConversation(conversation.docId);
       if (!skipReplyPanelRefresh) {
-        _populateReplyPanelView(suggestedReplies);
+        _populateReplyPanelView(suggestedReplies, replyPanelCategories);
       }
     }
   }

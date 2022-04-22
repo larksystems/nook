@@ -1609,10 +1609,16 @@ class StandardMessagesPanelView {
     _categories.clear();
   }
 
-  void addAll(List<AccordionItem> items) {
-    for (var item in items) {
-      _categories.appendItem(item);
-    }
+  void add(AccordionItem item) {
+    _categories.appendItem(item);
+  }
+
+  void remove(String itemId) {
+    _categories.removeItem(itemId);
+  }
+
+  void update(AccordionItem item) {
+    _categories.updateItem(item.id, item);
   }
 }
 

@@ -122,11 +122,29 @@ MessageView _generateMessageView(model.Message message, model.Conversation conve
   return messageView;
 }
 
-void _populateReplyPanelView(List<model.SuggestedReply> suggestedReplies) {
-  _view.standardMessagesPanelView.clear();
+AccordionItem _transformCategoryToAccordionItem(MessageCategory category) {
+  var groupsContainer = DivElement();
+  var viewItem = AccordionItem(category.categoryId, DivElement()..innerText = category.categoryName, groupsContainer, false);
+  var groups = category.groups.values.toList()..sort((g1, g2) => g1.groupIndexInCategory.compareTo(g2.groupIndexInCategory));
+  for (var group in groups) {
+    List<ReplyActionView> messageViews = [];
+    var groupMessages = group.standardMessages.toList()..sort((m1, m2) => m1.indexInGroup.compareTo(m2.indexInGroup));
+    for (var standardMessage in groupMessages) {
+      var messageView = ReplyActionView(standardMessage.text, standardMessage.translation, standardMessage.shortcut, standardMessage.docId, SEND_REPLY_BUTTON_TEXT);
+      messageView.showShortcut(controller.currentConfig.repliesKeyboardShortcutsEnabled);
+      messageView.showButtons(controller.currentConfig.sendMessagesEnabled);
+      messageViews.add(messageView);
+    }
+    var groupView = ReplyActionGroupView(group.groupId, group.groupName, SEND_REPLY_BUTTON_TEXT, messageViews); 
+    groupView.showButtons(controller.currentConfig.sendMessagesEnabled);
+    groupsContainer.append(groupView.action);
+  }
+  return viewItem;
+}
 
+void _populateReplyPanelView(List<model.SuggestedReply> suggestedReplies, List<MessageCategory> panelCategoryItems) {
   Map<String, MessageCategory> groupedMessages = {};
-  for(var reply in suggestedReplies) {
+  for (var reply in suggestedReplies) {
     groupedMessages[reply.categoryId] = groupedMessages[reply.categoryId] 
       ?? MessageCategory(reply.categoryId, reply.categoryName, reply.categoryIndex, {});
     groupedMessages[reply.categoryId].groups[reply.groupId] = groupedMessages[reply.categoryId].groups[reply.groupId]
@@ -134,31 +152,34 @@ void _populateReplyPanelView(List<model.SuggestedReply> suggestedReplies) {
     groupedMessages[reply.categoryId].groups[reply.groupId].standardMessages.add(reply);
   }
 
-  List<AccordionItem> categoryViews = [];
-  groupedMessages.values.toList()
-    ..sort((c1, c2) => c1.categoryIndex.compareTo(c2.categoryIndex))
-    ..forEach((category) {
-      var groupsContainer = DivElement();
-      var item = AccordionItem(category.categoryId, DivElement()..innerText = category.categoryName, groupsContainer, false);
-      categoryViews.add(item);
+  List<MessageCategory> newCategoryItems = groupedMessages.values.toList()
+    ..sort((c1, c2) => c1.categoryIndex.compareTo(c2.categoryIndex));
 
-      var groups = category.groups.values.toList()..sort((g1, g2) => g1.groupIndexInCategory.compareTo(g2.groupIndexInCategory));
-      for (var group in groups) {
-        List<ReplyActionView> messageViews = [];
-        for (var standardMessage in group.standardMessages) {
-          var messageView = ReplyActionView(standardMessage.text, standardMessage.translation, standardMessage.shortcut, standardMessage.docId, SEND_REPLY_BUTTON_TEXT);
-          messageView.showShortcut(controller.currentConfig.repliesKeyboardShortcutsEnabled);
-          messageView.showButtons(controller.currentConfig.sendMessagesEnabled);
-          messageViews.add(messageView);
-        }
-        var groupView = ReplyActionGroupView(group.groupId, group.groupName, SEND_REPLY_BUTTON_TEXT, messageViews); 
-        groupView.showButtons(controller.currentConfig.sendMessagesEnabled);
-
-        groupsContainer.append(groupView.action);
+  for (var newCategory in newCategoryItems) {
+    var panelViewIndex = panelCategoryItems.indexWhere((element) => element.categoryId == newCategory.categoryId);
+    // todo: categoryIndex might have changed, think about it when we merge the sorting feature
+    if (panelViewIndex < 0) { // newly added category, add to model, view
+      panelCategoryItems.add(newCategory);
+      var viewItem = _transformCategoryToAccordionItem(newCategory);
+      _view.standardMessagesPanelView.add(viewItem);
+    } else { // updated category, update model, view
+      var panelCategory = panelCategoryItems[panelViewIndex];
+      if (!panelCategory.equals(newCategory)) {
+        window.console.error("different ${newCategory.categoryId}");
+        panelCategoryItems[panelViewIndex] = newCategory;
+        var viewItem = _transformCategoryToAccordionItem(newCategory);
+        _view.standardMessagesPanelView.update(viewItem);
       }
-    });
+    }
+  }
 
-  _view.standardMessagesPanelView.addAll(categoryViews);
+  for (var panelCategoryItem in panelCategoryItems) { // deleted category, remove from model, view
+    var newCategoryIndex = newCategoryItems.indexWhere((element) => element.categoryId == panelCategoryItem.categoryId);
+    if (newCategoryIndex < 0) {
+      panelCategoryItems.remove(panelCategoryItem); // question: is this recommended?
+      _view.standardMessagesPanelView.remove(panelCategoryItem.categoryId);
+    }
+  }
 }
 
 void _populateTagPanelView(Map<String, List<model.Tag>> tagsByGroup, bool showShortcut, Set<String> mandatoryExcludeTagIds) {
@@ -339,6 +360,27 @@ class MessageGroup {
   List<model.SuggestedReply> standardMessages;
 
   MessageGroup(this.categoryId, this.groupId, this.groupName, this.groupIndexInCategory, this.standardMessages);
+
+  bool equals(MessageGroup other) {
+    if (categoryId != other.categoryId || groupId != other.groupId || groupName != other.groupName || groupIndexInCategory != other.groupIndexInCategory) {
+      return false;
+    }
+
+    if (standardMessages.length != other.standardMessages.length) {
+      return false;
+    }
+
+    var currentMessagesList = standardMessages..sort((m1, m2) => m1.indexInGroup.compareTo(m2.indexInGroup));
+    var otherMessagesList = other.standardMessages..sort((m1, m2) => m1.indexInGroup.compareTo(m2.indexInGroup));
+
+    for (var i = 0; i < currentMessagesList.length; ++i) {
+      if (!currentMessagesList[i].equals(otherMessagesList[i])) {
+        return false;
+      }
+    }
+
+    return true;
+  }
 }
 
 class MessageCategory {
@@ -348,4 +390,25 @@ class MessageCategory {
   Map<String, MessageGroup> groups;
 
   MessageCategory(this.categoryId, this.categoryName, this.categoryIndex, this.groups);
+
+  bool equals(MessageCategory other) {
+    if (categoryId != other.categoryId || categoryName != other.categoryName || categoryIndex != other.categoryIndex) {
+      return false;
+    }
+
+    if (groups.length != other.groups.length) {
+      return false;
+    }
+
+    var currentGroupsList = groups.values.toList()..sort((g1, g2) => g1.groupIndexInCategory.compareTo(g2.groupIndexInCategory));
+    var otherGroupsList = other.groups.values.toList()..sort((g1, g2) => g1.groupIndexInCategory.compareTo(g2.groupIndexInCategory));
+
+    for (var i = 0; i < currentGroupsList.length; ++i) {
+      if (!currentGroupsList[i].equals(otherGroupsList[i])) {
+        return false;
+      }
+    }
+
+    return true;
+  }
 }
