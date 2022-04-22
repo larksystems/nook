@@ -172,9 +172,9 @@ void _populateReplyPanelView(List<model.SuggestedReply> suggestedReplies, List<M
     }
   }
 
-  for (var panelCategoryItem in panelCategoryItems) { // deleted category, remove from model, view
+  for (var panelCategoryItem in panelCategoryItems) { 
     var newCategoryIndex = newCategoryItems.indexWhere((element) => element.categoryId == panelCategoryItem.categoryId);
-    if (newCategoryIndex < 0) {
+    if (newCategoryIndex < 0) { // deleted category, remove from model, view
       panelCategoryItems.remove(panelCategoryItem); // question: is this recommended?
       _view.standardMessagesPanelView.remove(panelCategoryItem.categoryId);
     }
