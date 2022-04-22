@@ -1,6 +1,7 @@
 library controller;
 
 import 'dart:html';
+import 'package:katikati_ui_lib/components/accordion/accordion.dart';
 import 'package:katikati_ui_lib/components/logger.dart';
 import 'package:nook/app/configurator/controller.dart';
 export 'package:nook/app/configurator/controller.dart';
@@ -71,23 +72,25 @@ class StandardMessagesCategoryData extends Data {
 }
 
 class StandardMessagesCategoriesReorderData extends Data {
-  List<String> categoryIds;
-  StandardMessagesCategoriesReorderData(this.categoryIds);
+  String categoryId;
+  int newIndex;
+  StandardMessagesCategoriesReorderData(this.categoryId, this.newIndex);
 
   @override
   String toString() {
-    return "StandardMessagesCategoriesReorderData(categoryIds: ${categoryIds.join(', ')})";
+    return "StandardMessagesCategoriesReorderData(categoryId: ${categoryId}, newIndex: ${newIndex})";
   }
 }
 
 class StandardMessagesGroupsReorderData extends Data {
   String categoryId;
-  List<String> groupIds;
-  StandardMessagesGroupsReorderData(this.categoryId, this.groupIds);
+  String groupId;
+  int newIndex;
+  StandardMessagesGroupsReorderData(this.categoryId, this.groupId, this.newIndex);
 
   @override
   String toString() {
-    return "StandardMessagesGroupsReorderData(categoryId: $categoryId, groupIds: ${groupIds.join(', ')})";
+    return "StandardMessagesGroupsReorderData(categoryId: $categoryId, groupIds ${groupId}, newIndex: ${newIndex})";
   }
 }
 
@@ -219,9 +222,22 @@ class MessagesConfiguratorController extends ConfiguratorController {
         break;
 
       case MessagesConfigAction.reorderStandardMessagesGroup:
-        // please note: assumes this command comes via the UI that is already reordered!
-        StandardMessagesGroupsReorderData groupsData = data;
-        standardMessagesManager.reorderMessagesGroup(groupsData.categoryId, groupsData.groupIds);
+        StandardMessagesGroupsReorderData groupData = data;
+        var currentGroups = standardMessagesManager.localCategories[groupData.categoryId].groups.values.toList()
+          ..sort((g1, g2) => g1.groupIndexInCategory.compareTo(g2.groupIndexInCategory));
+        var currentGroupIds = currentGroups.map((e) => e.groupId).toList();
+        var currentGroupIndex = currentGroupIds.indexOf(groupData.groupId);
+
+        if (currentGroupIndex < groupData.newIndex) {
+          --groupData.newIndex;
+        }
+
+        currentGroupIds.remove(groupData.groupId);
+        currentGroupIds.insert(groupData.newIndex, groupData.groupId);
+        standardMessagesManager.reorderMessagesGroup(groupData.categoryId, currentGroupIds);
+
+        var accordionViewToMove = _view.categoriesById[groupData.categoryId].groups.items[currentGroupIndex];
+        _view.categoriesById[groupData.categoryId].groups.reorderItem(accordionViewToMove, groupData.newIndex);
         break;
 
       case MessagesConfigAction.addStandardMessagesCategory:
@@ -252,9 +268,22 @@ class MessagesConfiguratorController extends ConfiguratorController {
         break;
 
       case MessagesConfigAction.reorderStandardMessagesCategory:
-        // please note: assumes this command comes via the UI that is already reordered!
-        StandardMessagesCategoriesReorderData categoriesData = data;
-        standardMessagesManager.reorderMessagesCategory(categoriesData.categoryIds);
+        StandardMessagesCategoriesReorderData categoryData = data;
+        var currentCategories = standardMessagesManager.localCategories.values.toList()
+          ..sort((c1, c2) => c1.categoryIndex.compareTo(c2.categoryIndex));
+        var currentCategoryIds = currentCategories.map((e) => e.categoryId).toList();
+        var currentCategoryIndex = currentCategoryIds.indexOf(categoryData.categoryId);
+
+        if (currentCategoryIndex < categoryData.newIndex) {
+          --categoryData.newIndex;
+        }
+
+        currentCategoryIds.remove(categoryData.categoryId);
+        currentCategoryIds.insert(categoryData.newIndex, categoryData.categoryId);
+        standardMessagesManager.reorderMessagesCategory(currentCategoryIds);
+
+        var accordionViewToMove = _view.categories.items[currentCategoryIndex];
+        _view.categories.reorderItem(accordionViewToMove, categoryData.newIndex);
         break;
     }
 

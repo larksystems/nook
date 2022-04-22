@@ -2,7 +2,6 @@ library view;
 
 import 'dart:async';
 import 'dart:html';
-import 'package:dnd/dnd.dart';
 import 'package:katikati_ui_lib/components/accordion/accordion.dart';
 import 'package:katikati_ui_lib/components/editable/editable_text.dart';
 import 'package:katikati_ui_lib/components/button/button.dart';
@@ -33,8 +32,8 @@ class MessagesConfigurationPageView extends ConfigurationPageView {
     configurationContent.append(_messagesContainer);
 
     categories = new Accordion([], sortableId: "categories");
-    categories.onSort = (categoryIds) {
-      _view.appController.command(MessagesConfigAction.reorderStandardMessagesCategory, new StandardMessagesCategoriesReorderData(categoryIds));
+    categories.onSort = (categoryId, newIndex) {
+      _view.appController.command(MessagesConfigAction.reorderStandardMessagesCategory, new StandardMessagesCategoriesReorderData(categoryId, newIndex));
     };
     configurationContent.append(categories.renderElement);
 
@@ -120,8 +119,8 @@ class StandardMessagesCategoryView extends AccordionItem {
     body.append(_standardMessagesGroupContainer);
 
     groups = new Accordion([], sortableId: _categoryId);
-    groups.onSort = (groupIds) {
-      _view.appController.command(MessagesConfigAction.reorderStandardMessagesGroup, new StandardMessagesGroupsReorderData(_categoryId, groupIds));
+    groups.onSort = (groupId, newIndex) {
+      _view.appController.command(MessagesConfigAction.reorderStandardMessagesGroup, new StandardMessagesGroupsReorderData(_categoryId, groupId, newIndex));
     };
     _standardMessagesGroupContainer.append(groups.renderElement);
 
