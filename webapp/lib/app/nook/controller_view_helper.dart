@@ -142,7 +142,7 @@ AccordionItem _transformCategoryToAccordionItem(MessageCategory category) {
   return viewItem;
 }
 
-void _populateReplyPanelView(List<model.SuggestedReply> suggestedReplies, List<MessageCategory> panelCategoryItems) {
+void _populateReplyPanelView(List<model.SuggestedReply> suggestedReplies, List<MessageCategory> panelCategoryItems, bool configUpdated) {
   Map<String, MessageCategory> groupedMessages = {};
   for (var reply in suggestedReplies) {
     groupedMessages[reply.categoryId] = groupedMessages[reply.categoryId] 
@@ -164,7 +164,7 @@ void _populateReplyPanelView(List<model.SuggestedReply> suggestedReplies, List<M
       _view.standardMessagesPanelView.add(viewItem);
     } else { // updated category, update model, view
       var panelCategory = panelCategoryItems[panelViewIndex];
-      if (!panelCategory.equals(newCategory)) {
+      if (!panelCategory.equals(newCategory) || configUpdated) {
         panelCategoryItems[panelViewIndex] = newCategory;
         var viewItem = _transformCategoryToAccordionItem(newCategory);
         _view.standardMessagesPanelView.update(viewItem);

@@ -419,7 +419,7 @@ class NookController extends Controller {
           ..addAll(added)
           ..addAll(modified);
 
-        _populateReplyPanelView(suggestedReplies, replyPanelCategories);
+        _populateReplyPanelView(suggestedReplies, replyPanelCategories, false);
       }, showAndLogError);
 
     platform.listenForConversationListShards(
@@ -570,7 +570,7 @@ class NookController extends Controller {
     var oldConfig = currentConfig;
     currentConfig = newConfig;
     if (oldConfig.repliesKeyboardShortcutsEnabled != newConfig.repliesKeyboardShortcutsEnabled) {
-      _populateReplyPanelView(suggestedReplies, replyPanelCategories);
+      _populateReplyPanelView(suggestedReplies, replyPanelCategories, true);
     }
 
     if (oldConfig.tagsKeyboardShortcutsEnabled != newConfig.tagsKeyboardShortcutsEnabled) {
@@ -578,7 +578,7 @@ class NookController extends Controller {
     }
 
     if (oldConfig.sendMessagesEnabled != newConfig.sendMessagesEnabled) {
-      _populateReplyPanelView(suggestedReplies, replyPanelCategories);
+      _populateReplyPanelView(suggestedReplies, replyPanelCategories, true);
     }
 
     if (oldConfig.sendCustomMessagesEnabled != newConfig.sendCustomMessagesEnabled) {
@@ -642,7 +642,7 @@ class NookController extends Controller {
     }
 
     if (oldConfig.suggestedRepliesGroupsEnabled != newConfig.suggestedRepliesGroupsEnabled) {
-      _populateReplyPanelView(suggestedReplies, replyPanelCategories);
+      _populateReplyPanelView(suggestedReplies, replyPanelCategories, true);
     }
 
     if (oldConfig.consoleLoggingLevel != newConfig.consoleLoggingLevel) {
@@ -1563,7 +1563,7 @@ class NookController extends Controller {
       // Select the conversation in the list of conversations
       _view.conversationListPanelView.selectConversation(conversation.docId);
       if (!skipReplyPanelRefresh) {
-        _populateReplyPanelView(suggestedReplies, replyPanelCategories);
+        _populateReplyPanelView(suggestedReplies, replyPanelCategories, false);
       }
     }
   }

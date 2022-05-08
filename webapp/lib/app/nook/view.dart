@@ -1595,8 +1595,6 @@ class StandardMessagesPanelView {
   DivElement renderElement;
   Accordion _categories;
 
-  // todo: make sure the categories don't reset on change
-
   StandardMessagesPanelView() {
     renderElement = DivElement()
       ..classes.add('standard-messages-panel');
