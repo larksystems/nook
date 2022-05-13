@@ -22,7 +22,7 @@
   line-height: 1.2;
 }
 
-.tooltip {
+.sample-msg-tooltip {
   position: absolute;
   top: 100%;
   width: 300px;
@@ -37,24 +37,24 @@
   font-style: normal;
 }
 
-.tooltip__title {
+.sample-msg-tooltip__title {
   font-weight: bold;
   color: var(--primary-text-color);
   cursor: pointer;
 }
 
-.tooltip__messages {
+.sample-msg-tooltip__messages {
   display: flex;
   flex-wrap: wrap;
 }
 
-.tooltip__placeholder {
+.sample-msg-tooltip__placeholder {
   color: var(--dark-gray);
   font-style: italic;
   padding: 2px 4px;
 }
 
-.tooltip__message {
+.sample-msg-tooltip__message {
   flex: 1 1 auto;
   margin: 3px;
   padding: 2px 4px;
@@ -65,7 +65,7 @@
   text-decoration: none;
 }
 
-.tooltip__message:hover {
+.sample-msg-tooltip__message:hover {
   background: var(--lighter-background-color);
 }
 
