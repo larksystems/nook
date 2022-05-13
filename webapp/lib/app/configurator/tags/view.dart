@@ -262,7 +262,7 @@ class SampleMessagesTooltip {
 
   SampleMessagesTooltip(String title, this._tagId) {
     tooltip = new DivElement()
-      ..classes.add('tooltip')
+      ..classes.add('sample-msg-tooltip')
       ..onMouseEnter.listen((e) {
         if (onMouseEnter == null) return;
         onMouseEnter();
@@ -272,7 +272,7 @@ class SampleMessagesTooltip {
         onMouseLeave();
       });
 
-    var titleElement = new AnchorElement(href: _linkToFilteredConversationView(tagId: _tagId))..classes.add('tooltip__title');
+    var titleElement = new AnchorElement(href: _linkToFilteredConversationView(tagId: _tagId))..classes.add('sample-msg-tooltip__title');
     titleElement.append(SpanElement()..className = 'fas fa-external-link-square-alt');
     titleElement.append(SpanElement()..innerText = " ${title}");
     tooltip.append(titleElement);
@@ -284,9 +284,9 @@ class SampleMessagesTooltip {
       ..right = '10px';
     removeButton.parent = tooltip;
 
-    _messages = new DivElement()..classes.add('tooltip__messages');
+    _messages = new DivElement()..classes.add('sample-msg-tooltip__messages');
     var loadingText = DivElement()
-      ..classes.add('tooltip__placeholder')
+      ..classes.add('sample-msg-tooltip__placeholder')
       ..innerText = "Loading...";
     _messages..append(loadingText);
 
@@ -298,14 +298,14 @@ class SampleMessagesTooltip {
 
     if (messages.isEmpty) {
       var noMessageText = SpanElement()
-        ..classes.add("tooltip__placeholder")
+        ..classes.add("sample-msg-tooltip__placeholder")
         ..innerText = "No messages with this tag.";
       _messages.append(noMessageText);
       return;
     }
 
     for (var message in messages) {
-      var messageLink = AnchorElement(href: _linkToFilteredConversationView(messageId: message.id, tagId: _tagId))..classes.add('tooltip__message');
+      var messageLink = AnchorElement(href: _linkToFilteredConversationView(messageId: message.id, tagId: _tagId))..classes.add('sample-msg-tooltip__message');
       var linkIcon = SpanElement()..className = 'fas fa-external-link-alt';
       var messageText = SpanElement()..innerText = "  ${message.text}";
       messageLink..append(linkIcon)..append(messageText);
