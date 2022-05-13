@@ -295,6 +295,8 @@ class TagsConfiguratorController extends ConfiguratorController {
     _view.showSaveStatus('Saving...');
     bool otherPartSaved = false;
 
+    // ignore: placeholder for tool/adhoc/tag-data-index-id-script.txt
+
     platform.updateTags(tagManager.editedTags.values.toList()).then((value) {
       tagManager.editedTags.clear();
       tagManager.movedFromGroupIds.clear();
