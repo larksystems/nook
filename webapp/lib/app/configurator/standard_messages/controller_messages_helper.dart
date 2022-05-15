@@ -14,8 +14,9 @@ class MessagesDiffData {
 
   List<model.SuggestedReply> editedMessages;
   List<model.SuggestedReply> deletedMessages;
+  List<model.SuggestedReply> reorderedMessages;
 
-  MessagesDiffData(this.renamedCategoryIds, this.unsavedCategoryIds, this.renamedGroupIds, this.unsavedGroupIds, this.unsavedMessageTextIds, this.unsavedMessageTranslationIds, this.editedMessages, this.deletedMessages);
+  MessagesDiffData(this.renamedCategoryIds, this.unsavedCategoryIds, this.renamedGroupIds, this.unsavedGroupIds, this.unsavedMessageTextIds, this.unsavedMessageTranslationIds, this.editedMessages, this.deletedMessages, this.reorderedMessages);
 }
 
 class StandardMessagesManager {
@@ -64,6 +65,7 @@ class StandardMessagesManager {
 
     List<model.SuggestedReply> editedMessages = [];
     List<model.SuggestedReply> deletedMessages = [];
+    List<model.SuggestedReply> reorderedMessages = [];
 
     Map<String, model.SuggestedReply> storageMessages = {};
     Map<String, model.SuggestedReply> localMessages = {};
@@ -105,6 +107,12 @@ class StandardMessagesManager {
         }
       } else { // message edited
         var isMessageEdited = false;
+        if (localMessage.categoryIndex != storageMessage.categoryIndex) { // reordered category
+          reorderedMessages.add(localMessage);
+        }
+        if (localMessage.groupIndexInCategory != storageMessage.groupIndexInCategory) { // reordered group
+          reorderedMessages.add(localMessage);
+        }
         if (localMessage.categoryName != storageMessage.categoryName) { // renamed category
           renamedCategoryIds.add(localMessage.categoryId);
           unsavedCategoryIds.add(localMessage.categoryId);
@@ -137,7 +145,7 @@ class StandardMessagesManager {
       }
     }
 
-    return MessagesDiffData(renamedCategoryIds, unsavedCategoryIds, renamedGroupIds, unsavedGroupIds, unsavedMessageTextIds, unsavedMessageTranslationIds, editedMessages, deletedMessages);
+    return MessagesDiffData(renamedCategoryIds, unsavedCategoryIds, renamedGroupIds, unsavedGroupIds, unsavedMessageTextIds, unsavedMessageTranslationIds, editedMessages, deletedMessages, reorderedMessages);
   }
 
   /// Returns the list of messages being managed.
@@ -348,6 +356,38 @@ class StandardMessagesManager {
   /// Also adds these messages to the list of messages to be deleted and need to be saved.
   void deleteStandardMessagesCategory(String categoryId) {
     localCategories.remove(categoryId);
+  }
+
+  void reorderMessagesGroup(String categoryId, List<String> groupIds) {
+    Map<String, num> groupOrderMap = {};
+    var index = 0;
+    for (var groupId in groupIds) {
+      groupOrderMap[groupId] = index;
+      ++index;
+    }
+
+    localCategories[categoryId].groups.values.forEach((messageGroup) {
+      messageGroup.groupIndexInCategory = groupOrderMap[messageGroup.groupId];
+      messageGroup.messages.values.forEach((message) {
+        message.groupIndexInCategory = groupOrderMap[message.groupId];
+      });
+    });
+  }
+
+  void reorderMessagesCategory(List<String> categoryIds) {
+    Map<String, num> categoryOrderMap = {};
+    var index = 0;
+    for (var categoryId in categoryIds) {
+      categoryOrderMap[categoryId] = index;
+      ++index;
+    }
+
+    localCategories.values.forEach((messageCategory) {
+      messageCategory.categoryIndex = categoryOrderMap[messageCategory.categoryId];
+      messageCategory.messages.forEach((message) {
+        message.categoryIndex = categoryOrderMap[message.categoryId];
+      });
+    });
   }
 }
 

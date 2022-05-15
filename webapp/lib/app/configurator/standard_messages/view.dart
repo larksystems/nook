@@ -31,7 +31,10 @@ class MessagesConfigurationPageView extends ConfigurationPageView {
     _messagesContainer = new DivElement();
     configurationContent.append(_messagesContainer);
 
-    categories = new Accordion([]);
+    categories = new Accordion([], sortableId: "categories");
+    categories.onSort = (categoryId, newIndex) {
+      _view.appController.command(MessagesConfigAction.reorderStandardMessagesCategory, new StandardMessagesCategoriesReorderData(categoryId, newIndex));
+    };
     configurationContent.append(categories.renderElement);
 
     _addButton = new Button(ButtonType.add, hoverText: 'Add a new message category', onClick: (_) => _view.appController.command(MessagesConfigAction.addStandardMessagesCategory));
@@ -115,7 +118,10 @@ class StandardMessagesCategoryView extends AccordionItem {
     _standardMessagesGroupContainer = new DivElement()..classes.add('standard-messages__group');
     body.append(_standardMessagesGroupContainer);
 
-    groups = new Accordion([]);
+    groups = new Accordion([], sortableId: _categoryId);
+    groups.onSort = (groupId, newIndex) {
+      _view.appController.command(MessagesConfigAction.reorderStandardMessagesGroup, new StandardMessagesGroupsReorderData(_categoryId, groupId, newIndex));
+    };
     _standardMessagesGroupContainer.append(groups.renderElement);
 
     _addButton = Button(ButtonType.add, 
@@ -330,13 +336,16 @@ class StandardMessageView {
   StandardMessageView(String messageId, String text, String translation) {
     _standardMessageElement = new DivElement()
       ..classes.add('standard-message')
-      ..dataset['id'] = '$messageId';
+      ..dataset['id'] = '$messageId'
+      ..dataset[SORTABLE_DATASET_KEY] = "group_id";
 
     _textView = new MessageView(text, (text) => _view.appController.command(MessagesConfigAction.updateStandardMessage, new StandardMessageData(messageId, text: text)));
     _translationView = new MessageView(translation, (translation) => _view.appController.command(MessagesConfigAction.updateStandardMessage, new StandardMessageData(messageId, translation: translation)), placeholder: '(optional) Translate the message in a secondary language here');
+    var actionView = DivElement();
     _standardMessageElement
       ..append(_textView.renderElement)
-      ..append(_translationView.renderElement);
+      ..append(_translationView.renderElement)
+      ..append(actionView);
     _makeStandardMessageViewTextareasSynchronisable([_textView, _translationView]);
 
     var removeButton = new Button(ButtonType.remove, hoverText: 'Remove standard message', onClick: (_) {
@@ -348,7 +357,7 @@ class StandardMessageView {
       ]);
       removeWarningModal.parent = _standardMessageElement;
     });
-    removeButton.parent = _standardMessageElement;
+    actionView.append(removeButton.renderElement);
 
     _resetTextButton = Button(ButtonType.reset, hoverText: text, onClick: (event) {
       event.stopPropagation();
