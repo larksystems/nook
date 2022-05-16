@@ -4,6 +4,7 @@ import 'dart:html';
 
 import 'package:katikati_ui_lib/components/logger.dart';
 import 'package:katikati_ui_lib/components/model/model.dart';
+import 'package:katikati_ui_lib/components/url_manager/url_manager.dart';
 import 'package:nook/controller.dart';
 export 'package:nook/controller.dart';
 
@@ -31,6 +32,7 @@ class ProjectData extends Data {
 }
 
 class HomePageController extends Controller {
+  UrlManager urlManager;
   UIState state;
   List<Project> projects;
   Project selectedProject;
@@ -42,7 +44,7 @@ class HomePageController extends Controller {
 
   @override
   void init() {
-    super.init();
+    urlManager = UrlManager();
     view = new HomePageView(this);
     platform = new Platform(this);
   }
