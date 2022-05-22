@@ -158,9 +158,7 @@ class TagsConfiguratorController extends ConfiguratorController {
 
         var tag = tagManager.moveTagAcrossLocalGroups(tagData.id, tagData.groupId, tagData.newGroupId);
         _removeTagsFromView({ tagData.groupId: [tag] });
-        _addTagsToView({ tagData.newGroupId: [tag] }, tagManager.localGroupsById);
-        
-        tagManager.editedTagIds.add(tagData.id);
+        _addTagsToView({ tagData.newGroupId: [tag] }, tagManager.localGroupsById);        
         _updateUnsavedIndicators(tagManager.localTagsByGroupId, tagManager.editedTagIds, tagManager.editedGroupIds);
         break;
 
@@ -182,8 +180,7 @@ class TagsConfiguratorController extends ConfiguratorController {
           return;
         }
 
-        var groupName = "new group";
-        var group = tagManager.createGroupInLocal(groupName);
+        var group = tagManager.createGroupInLocal("new group");
         _addTagsToView({group.groupId: []}, tagManager.localGroupsById, startEditingName: true);
         _updateUnsavedIndicators(tagManager.localTagsByGroupId, tagManager.editedTagIds, tagManager.editedGroupIds);
         break;
@@ -265,14 +262,14 @@ class TagsConfiguratorController extends ConfiguratorController {
         tagManager.removeAllDeletedTags();
         tagManager.removeAllEditedGroups();
 
-        // todo: eb: function
+        // todo: eb: convert this to a helper function to copy over storage to local
         tagManager.localTagsById = {};
         tagManager.storageTagsById.keys.forEach((tagId) {
           tagManager.localTagsById[tagId] = tagManager.storageTagsById[tagId]; // todo: eb: clone!
         });
         _view.showSaveStatus('Modifying tags has been disabled, dropping all changes');
         _view.unsavedChanges = false;
-        // todo: eb: fix existing bug / reset view!
+        // todo: eb: fix existing bug / reset view to discard all user made changes!
         _updateUnsavedIndicators(tagManager.localTagsByGroupId, tagManager.editedTagIds, tagManager.editedGroupIds);
       }
 

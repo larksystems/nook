@@ -82,6 +82,7 @@ class TagManager {
     tag.groupIds
       ..remove(oldGroup)
       ..add(newGroup);
+    addEditedTag(tagId);
     _updateGroupDetailsInLocalTags();
     return tag;
   }

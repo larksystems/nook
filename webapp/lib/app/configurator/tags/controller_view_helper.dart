@@ -73,7 +73,7 @@ void _updateUnsavedIndicators(Map<String, List<model.Tag>> tagsByGroup, Set<Stri
 Map<String, List<model.Tag>> _groupTagsIntoCategories(List<model.Tag> tags) {
   Map<String, List<model.Tag>> result = {};
   for (model.Tag tag in tags) {
-    if (tag.groupIds.isEmpty) { 
+    if (tag.groupIds.isEmpty) {
       result.putIfAbsent("", () => []).add(tag);
       continue;
     }
