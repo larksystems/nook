@@ -15,24 +15,26 @@ List<MenuItem> getMenuItems(model.Tag tag) {
   ];
 }
 
-void _addTagsToView(Map<String, List<model.Tag>> tagsByCategory, {bool startEditing = false, bool startEditingName = false}) {
-  for (var category in tagsByCategory.keys.toList()..sort()) {
-    if (_view.groups.queryItem(category) == null) {
-      _view.addTagCategory(category, new TagGroupView(category, category, DivElement(), DivElement()));
+void _addTagsToView(Map<String, List<model.Tag>> tagsByCategory, Map<String, TagGroup> tagGroupById, {bool startEditing = false, bool startEditingName = false}) {
+  var sortedCategoryIds = tagsByCategory.keys.toList()
+    ..sort((id1, id2) => tagGroupById[id1].groupIndex.compareTo(tagGroupById[id2].groupIndex));
+  for (var categoryId in sortedCategoryIds) {
+    if (_view.groups.queryItem(categoryId) == null) {
+      _view.addTagCategory(categoryId, new TagGroupView(categoryId, tagGroupById[categoryId].groupName, DivElement(), DivElement()));
     }
     Map<String, TagView> tagsById = {};
-    for (var tag in tagsByCategory[category]) {
-      tagsById[tag.tagId] = new ConfigureTagView(tag.text, tag.docId, category, _tagTypeToKKStyle(tag.type), getMenuItems(tag));
+    for (var tag in tagsByCategory[categoryId]) {
+      tagsById[tag.tagId] = new ConfigureTagView(tag.text, tag.docId, categoryId, _tagTypeToKKStyle(tag.type), getMenuItems(tag));
       if (startEditing) {
         tagsById[tag.tagId].beginEdit();
       }
     }
-    var groupView = _view.groups.queryItem(category) as TagGroupView;
+    var groupView = _view.groups.queryItem(categoryId) as TagGroupView;
     groupView.addTags(tagsById);
     if (startEditing) {
-      tagsById[tagsByCategory[category].last.tagId].focus();
-      tagsById[tagsByCategory[category].last.tagId].onCancel = () {
-        _view.appController.command(TagsConfigAction.removeTag, new TagData(tagsByCategory[category].last.tagId, groupId: category));
+      tagsById[tagsByCategory[categoryId].last.tagId].focus();
+      tagsById[tagsByCategory[categoryId].last.tagId].onCancel = () {
+        _view.appController.command(TagsConfigAction.removeTag, new TagData(tagsByCategory[categoryId].last.tagId, groupId: categoryId));
       };
     }
     if (startEditingName) {
@@ -48,13 +50,13 @@ void _removeTagsFromView(Map<String, List<model.Tag>> tagsByCategory) {
   }
 }
 
-void _modifyTagsInView(Map<String, List<model.Tag>> tagsByCategory) {
-  for (var category in tagsByCategory.keys.toList()..sort()) {
+void _modifyTagsInView(Map<String, List<model.Tag>> tagsByCategory, Map<String, TagGroup> tagGroupById) {
+  for (var categoryId in tagsByCategory.keys) {
     Map<String, TagView> tagViewsById = {};
-    for (var tag in tagsByCategory[category]) {
-      tagViewsById[tag.tagId] = new ConfigureTagView(tag.text, tag.docId, category, _tagTypeToKKStyle(tag.type), getMenuItems(tag));
+    for (var tag in tagsByCategory[categoryId]) {
+      tagViewsById[tag.tagId] = new ConfigureTagView(tag.text, tag.docId, categoryId, _tagTypeToKKStyle(tag.type), getMenuItems(tag));
     }
-    (_view.groups.queryItem(category) as TagGroupView).modifyTags(tagViewsById);
+    (_view.groups.queryItem(categoryId) as TagGroupView).modifyTags(tagViewsById);
   }
 }
 
@@ -71,11 +73,11 @@ void _updateUnsavedIndicators(Map<String, List<model.Tag>> tagsByGroup, Set<Stri
 Map<String, List<model.Tag>> _groupTagsIntoCategories(List<model.Tag> tags) {
   Map<String, List<model.Tag>> result = {};
   for (model.Tag tag in tags) {
-    if (tag.groups.isEmpty) {
+    if (tag.groupIds.isEmpty) { 
       result.putIfAbsent("", () => []).add(tag);
       continue;
     }
-    for (var group in tag.groups) {
+    for (var group in tag.groupIds) {
       result.putIfAbsent(group, () => []).add(tag);
     }
   }

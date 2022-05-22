@@ -11,6 +11,7 @@ import 'package:katikati_ui_lib/components/menu/menu.dart';
 import 'package:nook/app/nook/controller.dart';
 import 'package:nook/platform/platform.dart';
 import 'view.dart';
+import 'dart:math';
 
 part 'controller_view_helper.dart';
 part 'controller_tag_helper.dart';
@@ -54,16 +55,16 @@ class TagData extends Data {
 
 class TagGroupData extends Data {
   // Used when renaming or removing a tag group
-  String groupName;
+  String id;
 
   // Used when renaming a tag group
   String newGroupName;
 
-  TagGroupData(this.groupName, {this.newGroupName});
+  TagGroupData(this.id, {this.newGroupName});
 
   @override
   String toString() {
-    return 'TagData($groupName, {$newGroupName})';
+    return 'TagData($id, {$newGroupName})';
   }
 }
 
@@ -106,10 +107,8 @@ class TagsConfiguratorController extends ConfiguratorController {
           return;
         }
 
-        var tag = tagManager.createTag(tagData.groupId);
-        _addTagsToView({
-          tagData.groupId: [tag]
-        }, startEditing: true);
+        var tag = tagManager.createTagInLocal(tagData.groupId);
+        _addTagsToView({tagData.groupId: [tag]}, tagManager.localTagGroupsById, startEditing: true);
         break;
 
       case TagsConfigAction.requestRenameTag:
@@ -117,12 +116,13 @@ class TagsConfiguratorController extends ConfiguratorController {
         if (!currentConfig.editTagsEnabled) {
           command(BaseAction.showSnackbar, SnackbarData('Renaming a tag is disabled', SnackbarNotificationType.warning));
           // Reshow the tag as the view edits it anyway
-          _modifyTagsInView(Map.fromEntries(tagManager.getTagById(tagData.id).groups.map((g) => new MapEntry(g, [tagManager.getTagById(tagData.id)]))));
+          var renamedTag = tagManager.localTagsById[tagData.id];
+          _modifyTagsInView(Map.fromEntries(renamedTag.groupIds.map((g) => new MapEntry(g, [renamedTag]))), tagManager.localTagGroupsById); // todo: eb: confirm this works!
           return;
         }
 
         var tagText = tagData.text.toLowerCase().trim();
-        var presentTagTexts = tagManager._tags.map((tag) => tag.text.toLowerCase().trim()).toList();
+        var presentTagTexts = tagManager.tagsInLocal.map((tag) => tag.text.toLowerCase().trim()).toList();
 
         if (presentTagTexts.contains(tagText)) {
           _showDuplicateTagWarningModal(tagData.groupId, tagData.id, tagData.text);
@@ -136,13 +136,14 @@ class TagsConfiguratorController extends ConfiguratorController {
         if (!currentConfig.editTagsEnabled) {
           command(BaseAction.showSnackbar, SnackbarData('Renaming a tag is disabled', SnackbarNotificationType.warning));
           // Reshow the tag as the view edits it anyway
-          _modifyTagsInView(Map.fromEntries(tagManager.getTagById(tagData.id).groups.map((g) => new MapEntry(g, [tagManager.getTagById(tagData.id)]))));
+          var renamedTag = tagManager.localTagsById[tagData.id];
+          _modifyTagsInView(Map.fromEntries(renamedTag.groupIds.map((g) => new MapEntry(g, [renamedTag]))), tagManager.localTagGroupsById); // todo: eb: confirm this works!
           return;
         }
 
-        var tag = tagManager.modifyTag(tagData.id, text: tagData.text);
-        _modifyTagsInView(Map.fromEntries(tag.groups.map((g) => new MapEntry(g, [tag]))));
-        _updateUnsavedIndicators(tagManager.tagsByGroup, tagManager.unsavedTagIds, tagManager.unsavedGroupIds);
+        var tag = tagManager.updateTextInLocal(tagData.id, tagData.text);
+        _modifyTagsInView(Map.fromEntries(tag.groupIds.map((g) => new MapEntry(g, [tag]))), tagManager.localTagGroupsById);
+        _updateUnsavedIndicators(tagManager.localTagsByCategoryId, tagManager.editedTagIds, tagManager.editedGroupIds);
         break;
 
       case TagsConfigAction.moveTag:
@@ -150,20 +151,18 @@ class TagsConfiguratorController extends ConfiguratorController {
         if (!currentConfig.editTagsEnabled) {
           command(BaseAction.showSnackbar, SnackbarData('Moving a tag is disabled', SnackbarNotificationType.warning));
           // Reshow the tag as the view edits it anyway
-          _modifyTagsInView(Map.fromEntries(tagManager.getTagById(tagData.id).groups.map((g) => new MapEntry(g, [tagManager.getTagById(tagData.id)]))));
+          var movedTag = tagManager.localTagsById[tagData.id];
+          _modifyTagsInView(Map.fromEntries(movedTag.groupIds.map((g) => new MapEntry(g, [movedTag]))), tagManager.localTagGroupsById); // todo: eb: confirm this works!
           return;
         }
 
-        model.Tag tag = tagManager.modifyTag(tagData.id, group: tagData.newGroupId);
-        // update the view by removing the tag and then adding it
-        _removeTagsFromView({
-          tagData.groupId: [tag]
-        });
-        _addTagsToView({
-          tagData.newGroupId: [tag]
-        });
-        tagManager.movedFromGroupIds.add(tagData.groupId);
-        _updateUnsavedIndicators(tagManager.tagsByGroup, tagManager.unsavedTagIds, tagManager.unsavedGroupIds);
+        var tag = tagManager.removeTagFromLocalGroup(tagData.id, tagData.groupId, skipUpdate: true);
+        tagManager.addTagToLocalGroup(tag, tagData.newGroupId);
+        _removeTagsFromView({ tagData.groupId: [tag] });
+        _addTagsToView({ tagData.newGroupId: [tag] }, tagManager.localTagGroupsById);
+        
+        tagManager.editedTagIds.add(tagData.id);
+        _updateUnsavedIndicators(tagManager.localTagsByCategoryId, tagManager.editedTagIds, tagManager.editedGroupIds);
         break;
 
       case TagsConfigAction.removeTag:
@@ -173,11 +172,9 @@ class TagsConfiguratorController extends ConfiguratorController {
           return;
         }
 
-        model.Tag tag = tagManager.deleteTag(tagData.id);
-        _removeTagsFromView({
-          tagData.groupId: [tag]
-        });
-        _updateUnsavedIndicators(tagManager.tagsByGroup, tagManager.unsavedTagIds, tagManager.unsavedGroupIds);
+        var tag = tagManager.removeTagInLocal(tagData.id);
+        _removeTagsFromView({tagData.groupId: [tag]});
+        _updateUnsavedIndicators(tagManager.localTagsByCategoryId, tagManager.editedTagIds, tagManager.editedGroupIds);
         break;
 
       case TagsConfigAction.addTagGroup:
@@ -186,9 +183,10 @@ class TagsConfiguratorController extends ConfiguratorController {
           return;
         }
 
-        var newGroupName = tagManager.createTagGroup();
-        _addTagsToView({newGroupName: []}, startEditingName: true);
-        _updateUnsavedIndicators(tagManager.tagsByGroup, tagManager.unsavedTagIds, tagManager.unsavedGroupIds);
+        var groupName = "new group";
+        var group = tagManager.createGroupInLocal(groupName);
+        _addTagsToView({group.groupId: []}, tagManager.localTagGroupsById, startEditingName: true);
+        _updateUnsavedIndicators(tagManager.localTagsByCategoryId, tagManager.editedTagIds, tagManager.editedGroupIds);
         break;
 
       case TagsConfigAction.updateTagGroup:
@@ -199,11 +197,8 @@ class TagsConfiguratorController extends ConfiguratorController {
           return;
         }
 
-        tagManager.renameTagGroup(groupData.groupName, groupData.newGroupName);
-        var groupView = _view.groups.queryItem(groupData.groupName);
-        groupView.id = groupData.newGroupName;
-        _view.groups.updateItem(groupData.newGroupName, groupView);
-        _updateUnsavedIndicators(tagManager.tagsByGroup, tagManager.unsavedTagIds, tagManager.unsavedGroupIds);
+        tagManager.renameGroupInLocal(groupData.id, groupData.newGroupName);
+        _updateUnsavedIndicators(tagManager.localTagsByCategoryId, tagManager.editedTagIds, tagManager.editedGroupIds);
         break;
 
       case TagsConfigAction.removeTagGroup:
@@ -213,8 +208,8 @@ class TagsConfiguratorController extends ConfiguratorController {
         }
 
         TagGroupData groupData = data;
-        tagManager.deleteTagGroup(groupData.groupName);
-        _view.removeTagGroup(groupData.groupName);
+        tagManager.removeAllTagsFromGroupInLocal(groupData.id);
+        _view.removeTagGroup(groupData.id);
         break;
 
       case TagsConfigAction.updateTagType:
@@ -224,9 +219,9 @@ class TagsConfiguratorController extends ConfiguratorController {
         }
 
         TagData tagData = data;
-        var tag = tagManager.modifyTag(tagData.id, type: tagData.newType);
-        _modifyTagsInView(Map.fromEntries(tag.groups.map((g) => new MapEntry(g, [tag]))));
-        _updateUnsavedIndicators(tagManager.tagsByGroup, tagManager.unsavedTagIds, tagManager.unsavedGroupIds);
+        var tag = tagManager.updateTypeInLocal(tagData.id, tagData.newType);
+        _modifyTagsInView(Map.fromEntries(tag.groupIds.map((g) => new MapEntry(g, [tag]))), tagManager.localTagGroupsById);
+        _updateUnsavedIndicators(tagManager.localTagsByCategoryId, tagManager.editedTagIds, tagManager.editedGroupIds);
         break;
 
       default:
@@ -238,12 +233,12 @@ class TagsConfiguratorController extends ConfiguratorController {
   @override
   void setUpOnLogin() {
     platform.listenForTags((added, modified, removed) {
-      var tagsAdded = tagManager.addTags(added);
-      var tagsModified = tagManager.updateTags(modified);
-      var tagsRemoved = tagManager.removeTags(removed);
+      var tagsAdded = tagManager.populateTagsInStorage(added);
+      var tagsModified = tagManager.populateTagsInStorage(modified);
+      var tagsRemoved = tagManager.removeTagsFromStorage(removed.map((tag) => tag.tagId).toList());
 
-      _addTagsToView(_groupTagsIntoCategories(tagsAdded));
-      _modifyTagsInView(_groupTagsIntoCategories(tagsModified));
+      _addTagsToView(_groupTagsIntoCategories(tagsAdded), tagManager.storageTagGroupsById);
+      _modifyTagsInView(_groupTagsIntoCategories(tagsModified), tagManager.storageTagGroupsById);
       _removeTagsFromView(_groupTagsIntoCategories(tagsRemoved));
     });
 
@@ -266,12 +261,17 @@ class TagsConfiguratorController extends ConfiguratorController {
 
       // Apply new config
       if (!currentConfig.editTagsEnabled) {
-        tagManager.editedTags.clear();
-        tagManager.movedFromGroupIds.clear();
-        tagManager.deletedTags.clear();
+        tagManager.editedTagIds.clear();
+        tagManager.deletedTagIds.clear();
+        tagManager.editedGroupIds.clear();
+        tagManager.localTagsById = {};
+        tagManager.storageTagsById.keys.forEach((tagId) {
+          tagManager.localTagsById[tagId] = tagManager.storageTagsById[tagId]; // todo: eb: clone!
+        });
         _view.showSaveStatus('Modifying tags has been disabled, dropping all changes');
         _view.unsavedChanges = false;
-        _updateUnsavedIndicators(tagManager.tagsByGroup, tagManager.unsavedTagIds, tagManager.unsavedGroupIds);
+        // todo: eb: fix existing bug / reset view!
+        _updateUnsavedIndicators(tagManager.localTagsByCategoryId, tagManager.editedTagIds, tagManager.editedGroupIds);
       }
 
       if (currentConfig.consoleLoggingLevel.toLowerCase().contains('verbose')) {
@@ -297,31 +297,31 @@ class TagsConfiguratorController extends ConfiguratorController {
 
     // ignore: placeholder for tool/adhoc/tag-data-index-id-script.txt
 
-    platform.updateTags(tagManager.editedTags.values.toList()).then((value) {
-      tagManager.editedTags.clear();
-      tagManager.movedFromGroupIds.clear();
-      if (otherPartSaved) {
-        _view.showSaveStatus('Saved!');
-        _view.unsavedChanges = false;
-        _updateUnsavedIndicators(tagManager.tagsByGroup, tagManager.unsavedTagIds, tagManager.unsavedGroupIds);
-        return;
-      }
-      otherPartSaved = true;
-    }, onError: (error, stacktrace) {
-      _view.showSaveStatus('Unable to save. Please check your connection and try again. If the issue persists, please contact your project administrator');
-    });
+    // platform.updateTags(tagManager.editedTags.values.toList()).then((value) {
+    //   tagManager.editedTags.clear();
+    //   tagManager.movedFromGroupIds.clear();
+    //   if (otherPartSaved) {
+    //     _view.showSaveStatus('Saved!');
+    //     _view.unsavedChanges = false;
+    //     _updateUnsavedIndicators(tagManager.tagsByGroup, tagManager.unsavedTagIds, tagManager.unsavedGroupIds);
+    //     return;
+    //   }
+    //   otherPartSaved = true;
+    // }, onError: (error, stacktrace) {
+    //   _view.showSaveStatus('Unable to save. Please check your connection and try again. If the issue persists, please contact your project administrator');
+    // });
 
-    platform.deleteTags(tagManager.deletedTags.values.toList()).then((value) {
-      tagManager.deletedTags.clear();
-      if (otherPartSaved) {
-        _view.showSaveStatus('Saved!');
-        _view.unsavedChanges = false;
-        _updateUnsavedIndicators(tagManager.tagsByGroup, tagManager.unsavedTagIds, tagManager.unsavedGroupIds);
-        return;
-      }
-      otherPartSaved = true;
-    }, onError: (error, stacktrace) {
-      _view.showSaveStatus('Unable to save. Please check your connection and try again. If the issue persists, please contact your project administrator');
-    });
+    // platform.deleteTags(tagManager.deletedTags.values.toList()).then((value) {
+    //   tagManager.deletedTags.clear();
+    //   if (otherPartSaved) {
+    //     _view.showSaveStatus('Saved!');
+    //     _view.unsavedChanges = false;
+    //     _updateUnsavedIndicators(tagManager.tagsByGroup, tagManager.unsavedTagIds, tagManager.unsavedGroupIds);
+    //     return;
+    //   }
+    //   otherPartSaved = true;
+    // }, onError: (error, stacktrace) {
+    //   _view.showSaveStatus('Unable to save. Please check your connection and try again. If the issue persists, please contact your project administrator');
+    // });
   }
 }

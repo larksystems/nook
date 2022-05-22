@@ -68,6 +68,7 @@ class TagsConfigurationPageView extends ConfigurationPageView {
 }
 
 class TagGroupView extends AccordionItem {
+  String id;
   String _groupName;
   TextEdit editableTitle;
   DivElement _header;
@@ -77,12 +78,12 @@ class TagGroupView extends AccordionItem {
 
   Map<String, ConfigureTagView> tagViewsById;
 
-  TagGroupView(id, this._groupName, this._header, this._body) : super(id, _header, _body, false) {
+  TagGroupView(this.id, this._groupName, this._header, this._body) : super(id, _header, _body, false) {
     _groupName = _groupName ?? '';
 
     editableTitle = TextEdit(_groupName, removable: true)
       ..onEdit = (value) {
-        _view.appController.command(TagsConfigAction.updateTagGroup, new TagGroupData(_groupName, newGroupName: value));
+        _view.appController.command(TagsConfigAction.updateTagGroup, new TagGroupData(id, newGroupName: value));
         _groupName = value;
       }
       ..onDelete = () {
@@ -98,7 +99,7 @@ class TagGroupView extends AccordionItem {
 
     _addButton = Button(ButtonType.add);
     _addButton.renderElement.onClick.listen((e) {
-      _view.appController.command(TagsConfigAction.addTag, new TagData(null, groupId: _groupName));
+      _view.appController.command(TagsConfigAction.addTag, new TagData(null, groupId: id));
     });
     _body.append(_addButton.renderElement);
 
@@ -114,7 +115,7 @@ class TagGroupView extends AccordionItem {
       var tagId = tag.dataset['id'];
       var groupId = tag.dataset['group-id'];
       expand();
-      _view.appController.command(TagsConfigAction.moveTag, new TagData(tagId, groupId: groupId, newGroupId: name));
+      _view.appController.command(TagsConfigAction.moveTag, new TagData(tagId, groupId: groupId, newGroupId: id));
       tag.remove();
     });
 
@@ -128,7 +129,7 @@ class TagGroupView extends AccordionItem {
     expand();
     InlineOverlayModal warningModal;
     warningModal = new InlineOverlayModal('Are you sure you want to remove this group?', [
-      new Button(ButtonType.text, buttonText: 'Yes', onClick: (_) => _view.appController.command(TagsConfigAction.removeTagGroup, new TagGroupData(name))),
+      new Button(ButtonType.text, buttonText: 'Yes', onClick: (_) => _view.appController.command(TagsConfigAction.removeTagGroup, new TagGroupData(id))),
       new Button(ButtonType.text, buttonText: 'No', onClick: (_) => warningModal.remove()),
     ]);
     renderElement.append(warningModal.inlineOverlayModal);
