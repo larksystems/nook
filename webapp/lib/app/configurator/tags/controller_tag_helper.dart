@@ -4,6 +4,7 @@ class TagGroup {
   String groupId;
   String groupName;
   int groupIndex;
+  List<model.Tag> tags = [];
   
   TagGroup(this.groupId, this.groupName, this.groupIndex);
 }
@@ -13,144 +14,76 @@ class TagManager {
   TagManager._internal();
   factory TagManager() => _singleton;
 
-  Map<String, TagGroup> localTagGroupsById = {};
-  Map<String, TagGroup> storageTagGroupsById = {};
-
+  // store for tags
   Map<String, model.Tag> localTagsById = {};
   Map<String, model.Tag> storageTagsById = {};
 
-  Set<String> editedTagIds = {};
-  Set<String> deletedTagIds = {};
-
-  Set<String> editedGroupIds = {};
+  Map<String, TagGroup> localGroupsById = {};
+  Map<String, TagGroup> storageGroupsById = {};
 
   List<model.Tag> get tagsInLocal => localTagsById.values.toList();
   List<model.Tag> get tagsInStorage => storageTagsById.values.toList();
 
-  Map<String, List<model.Tag>> get localTagsByCategoryId {
+  Map<String, List<model.Tag>> get localTagsByGroupId {
     Map<String, List<model.Tag>> result = {};
-    tagsInLocal.forEach((tag) {
-      for (var categoryId in tag.groupIds) {
-        result[categoryId] = result[categoryId] ?? [];
-        result[categoryId].add(tag);
-      }
-    });
-    return result;
-  }
-  Map<String, List<model.Tag>> get storageTagsByCategoryId {
-    Map<String, List<model.Tag>> result = {};
-    tagsInStorage.forEach((tag) {
-      for (var categoryId in tag.groupIds) {
-        result[categoryId] = result[categoryId] ?? [];
-        result[categoryId].add(tag);
-      }
-    });
+    localGroupsById.forEach((groupId, tagGroup) => result[groupId] = tagGroup.tags);
     return result;
   }
 
-  bool get hasUnsavedTags => editedTagIds.isNotEmpty || deletedTagIds.isNotEmpty || editedGroupIds.isNotEmpty;
-
-  int _getNextGroupIndex() {
-    var lastIndex = localTagGroupsById.values
-      .map((tagGroup) => tagGroup.groupIndex)
-      .reduce(max);
-    return lastIndex + 1;
-  }
-
-  void markAsEditedTag(String id) {
-    editedTagIds.add(id);
-  }
-
-  void markAsDeletedTag(String id) {
-    deletedTagIds.add(id);
-  }
-
+  // local tag methods
   model.Tag createTagInLocal(String groupId) {
     var tag = model.Tag()
       ..docId = model.generateTagId()
       ..filterable = true
       ..groupIds = [groupId]
-      ..groupIndices = [localTagGroupsById[groupId].groupIndex]
-      ..groupNames = [localTagGroupsById[groupId].groupName]
+      ..groupIndices = [localGroupsById[groupId].groupIndex]
+      ..groupNames = [localGroupsById[groupId].groupName]
       ..isUnifier = false
       ..text = ''
       ..shortcut = ''
       ..visible = true
       ..type = model.TagType.normal;
-    populateTagInLocal(tag);
+    addOrUpdateTagInLocal(tag);
     return tag;
   }
 
-  List<model.Tag> populateTagsInLocal(List<model.Tag> tags) {
+  List<model.Tag> addOrUpdateTagsInLocal(List<model.Tag> tags) {
     for (var tag in tags) {
-      populateTagInLocal(tag);
+      addOrUpdateTagInLocal(tag);
     }
-
     return tags;
   }
 
-  model.Tag populateTagInLocal(model.Tag tag) {
+  model.Tag addOrUpdateTagInLocal(model.Tag tag) {
     localTagsById[tag.tagId] = tag;
     for(var i = 0; i < tag.groupIds.length; ++i) {
-      localTagGroupsById[tag.groupIds[i]] = TagGroup(tag.groupIds[i], tag.groupNames[i], tag.groupIndices[i]);
+      localGroupsById[tag.groupIds[i]] = localGroupsById[tag.groupIds[i]] ?? TagGroup(tag.groupIds[i], tag.groupNames[i], tag.groupIndices[i]);
+      localGroupsById[tag.groupIds[i]].tags.removeWhere((_tag) => _tag.tagId == tag.tagId);
+      localGroupsById[tag.groupIds[i]].tags.add(tag);
     }
     _updateGroupDetailsInLocalTags();
     return tag;
   }
 
-  TagGroup createGroupInLocal(String name) {
-    var id = model.generateTagGroupId();
-    var group = TagGroup(id, name, _getNextGroupIndex());
-    localTagGroupsById[id] = group;
-    editedGroupIds.add(id);
-    return group;
-  }
-
-  void renameGroupInLocal(String id, String name) {
-    if (!localTagGroupsById.containsKey(id)) {
-      log.warning("renameGroupInLocal: Unable to find group with id $id");
-      return;
-    }
-    _updateGroupDetailsInLocalTags();
-    localTagGroupsById[id].groupName = name;
-    editedGroupIds.add(id);
-    // todo: eb: add edited tags
-  }
-
-  void removeAllTagsFromGroupInLocal(String groupId) {
-    if (!localTagGroupsById.containsKey(groupId)) {
-      log.warning("removeAllTagsFromGroupInLocal: Unable to find group with id $groupId");
-      return;
-    }
-
-    tagsInLocal.forEach((tag) {
-      tag.groupIds.remove(groupId);
-    });
-    _updateGroupDetailsInLocalTags();
-  }
-
-  model.Tag updateTypeInLocal(String id, model.TagType newType) {
-    localTagsById[id].type = newType;
-    editedTagIds.add(id);
-    return localTagsById[id];
-  }
-
-  model.Tag updateTextInLocal(String id, String newText) {
+  model.Tag updateTagTextInLocal(String id, String newText) {
     localTagsById[id].text = newText;
-    editedTagIds.add(id);
+    addEditedTag(id);
     return localTagsById[id];
   }
 
-  void reorderGroupInLocal(String id, int index) {
-    if (!localTagGroupsById.containsKey(id)) {
-      log.warning("_renameGroupInLocal: Unable to find group with id $id");
-      return;
-    }
-    var groupIds = localTagGroupsById.values.map((tagGroup) => tagGroup.groupId).toList();
-    groupIds.sort((groupIdA, groupIdB) => localTagGroupsById[groupIdA].groupIndex.compareTo(localTagGroupsById[groupIdB].groupIndex));
-    groupIds.remove(id);
-    groupIds.insert(index, id);
+  model.Tag updateTagTypeInLocal(String id, model.TagType newType) {
+    localTagsById[id].type = newType;
+    addEditedTag(id);
+    return localTagsById[id];
+  }
+
+  model.Tag moveTagAcrossLocalGroups(String tagId, String oldGroup, String newGroup) {
+    var tag = localTagsById[tagId];
+    tag.groupIds
+      ..remove(oldGroup)
+      ..add(newGroup);
     _updateGroupDetailsInLocalTags();
+    return tag;
   }
 
   List<model.Tag> removeTagsInLocal(List<String> tagIds) {
@@ -158,56 +91,68 @@ class TagManager {
   }
 
   model.Tag removeTagInLocal(String tagId) {
-    deletedTagIds.add(tagId);
+    addDeltedTag(tagId);
     var tagToRemove = localTagsById.remove(tagId);
     return tagToRemove;
   }
 
-  model.Tag addTagToLocalGroup(model.Tag tag, String groupId) {
-    localTagsById[tag.tagId] = tag;
-    if (!tag.groupIds.contains(groupId)) {
-      tag.groupIds.add(groupId);
-    }
-    _updateGroupDetailsInLocalTags();
-    return tag;
+  // local group methods
+  TagGroup createGroupInLocal(String name) {
+    var id = model.generateTagGroupId();
+    var group = TagGroup(id, name, _getNextGroupIndex());
+    localGroupsById[id] = group;
+    addEditedGroup(id);
+    return group;
   }
 
-  model.Tag removeTagFromLocalGroup(String tagId, String groupId, {bool skipUpdate = false}) {
-    var removed = localTagsById[tagId].groupIds.remove(groupId);
-    if (!removed) {
-      log.warning("_removeTagFromLocalGroup: Unable to find tag $tagId in group $groupId");
-    }
-    if (!skipUpdate) {
-      _updateGroupDetailsInLocalTags();
-    }
-    return localTagsById[tagId];
-  }
-
-  void moveTagAcrossLocalGroup(String tagId, String fromGroupId, String toGroupId) {
-    if (fromGroupId == toGroupId) return;
-    if (!localTagsById.containsKey(tagId)) {
-      log.warning("_moveTag: Unable to find tag $tagId");
-    }
-    localTagsById[tagId].groupIds.remove(fromGroupId);
-    localTagsById[tagId].groupIds.add(toGroupId);
+  void renameGroupInLocal(String id, String name) {
+    localGroupsById[id].groupName = name;
+    addEditedGroup(id);
     _updateGroupDetailsInLocalTags();
   }
 
-  List<model.Tag> populateTagsInStorage(List<model.Tag> tags) {
+  void reorderGroupInLocal(String id, int index) {
+    // todo: eb: test this when we have the functionality
+    var groupIds = localGroupsById.values.map((tagGroup) => tagGroup.groupId).toList();
+    groupIds.sort((groupIdA, groupIdB) => localGroupsById[groupIdA].groupIndex.compareTo(localGroupsById[groupIdB].groupIndex));
+    groupIds.remove(id);
+    groupIds.insert(index, id);
+    _updateGroupDetailsInLocalTags();
+  }
+
+  void removeGroupAndTagsinLocal(String groupId) {
+    localTagsById.forEach((_, tag) => tag.groupIds.remove(groupId));
+    localTagsById.removeWhere((key, tag) {
+      var groupsEmpty = tag.groupIds.isEmpty;
+      if (groupsEmpty) {
+        addDeltedTag(tag.tagId);
+      }
+      return groupsEmpty;
+    });
+    
+    _updateGroupDetailsInLocalTags();
+  }
+
+  // storage methods
+  List<model.Tag> addOrUpdateTagsInStorage(List<model.Tag> tags) {
     for (var tag in tags) {
-      populateTagInStorage(tag);
+      addOrUpdateTagInStorage(tag);
     }
     return tags;
   }
 
-  model.Tag populateTagInStorage(model.Tag tag) {
+  model.Tag addOrUpdateTagInStorage(model.Tag tag) {
     storageTagsById[tag.tagId] = tag;
     for(var i = 0; i < tag.groupIds.length; ++i) {
-      storageTagGroupsById[tag.groupIds[i]] = TagGroup(tag.groupIds[i], tag.groupNames[i], tag.groupIndices[i]);
+      storageGroupsById[tag.groupIds[i]] = storageGroupsById[tag.groupIds[i]] ?? TagGroup(tag.groupIds[i], tag.groupNames[i], tag.groupIndices[i]);
+      storageGroupsById[tag.groupIds[i]].tags.removeWhere((_tag) => _tag.tagId == tag.tagId);
+      storageGroupsById[tag.groupIds[i]].tags.add(tag);
     }
     _updateGroupDetailsInStorageTags();
-    // todo: eb: check for diff
-    populateTagInLocal(tag);
+    // todo: clear edited tags, deleted tags, edited groups
+    // todo: eb: check for diff as a next step
+    addOrUpdateTagInLocal(tag);
+    removeEditedTag(tag.tagId);
     return tag;
   }
 
@@ -217,26 +162,95 @@ class TagManager {
 
   model.Tag removeTagFromStorage(String tagId) {
     var removedTag = storageTagsById.remove(tagId);
+    removeDeletedTag(tagId);
     return removedTag;
   }
 
+  // tag helper methods
+  int _getNextGroupIndex() {
+    var lastIndex = localGroupsById.values
+      .map((tagGroup) => tagGroup.groupIndex)
+      .reduce(max);
+    return lastIndex + 1;
+  }
+
   void _updateGroupDetailsInLocalTags() {
-    localTagsById.removeWhere((key, tag) {
-      if (tag.groupIds.isEmpty) {
-        deletedTagIds.add(tag.tagId);
-      }
-      return tag.groupIds.isEmpty;
-    });
     localTagsById.values.forEach((tag) {
-      tag.groupNames = tag.groupIds.map((id) => localTagGroupsById[id].groupName).toList();
-      tag.groupIndices = tag.groupIds.map((id) => localTagGroupsById[id].groupIndex).toList();
+      tag.groupNames = tag.groupIds.map((id) => localGroupsById[id].groupName).toList();
+      tag.groupIndices = tag.groupIds.map((id) => localGroupsById[id].groupIndex).toList();
     });
   }
 
   void _updateGroupDetailsInStorageTags() {
     storageTagsById.values.forEach((tag) {
-      tag.groupNames = tag.groupIds.map((id) => storageTagGroupsById[id].groupName).toList();
-      tag.groupIndices = tag.groupIds.map((id) => storageTagGroupsById[id].groupIndex).toList();
+      tag.groupNames = tag.groupIds.map((id) => storageGroupsById[id].groupName).toList();
+      tag.groupIndices = tag.groupIds.map((id) => storageGroupsById[id].groupIndex).toList();
     });
   }
+
+  // edited tags, groups
+  Set<String> _editedTagIds = {};
+  Set<String> _deletedTagIds = {};
+  Set<String> _editedGroupIds = {};
+
+  bool get hasUnsavedTags => _editedTagIds.isNotEmpty || _deletedTagIds.isNotEmpty || _editedGroupIds.isNotEmpty;
+  Set<String> get editedTagIds => _editedTagIds;
+  Set<String> get deletedTagIds => _deletedTagIds;
+  Set<String> get editedGroupIds => _editedGroupIds;
+
+  List<model.Tag> get editedTags {
+    var allEditedTagIds = Set.from(editedTagIds);
+    editedGroupIds.forEach((groupId) {
+      localGroupsById[groupId].tags.forEach((tag) {
+        allEditedTagIds.add(tag.tagId);
+      });
+    });
+
+    // todo: eb: remove deleted IDs here
+    return allEditedTagIds.map((tagId) => localTagsById[tagId]).toList();
+  }
+
+  List<model.Tag> get deletedTags {
+    List<model.Tag> tags = [];
+    deletedTagIds.forEach((tagId) {
+      tags.add(storageTagsById[tagId]);
+    });
+    return tags;
+  }
+
+  void addEditedTag(String tagId) {
+    _editedTagIds.add(tagId);
+  }
+
+  void removeEditedTag(String tagId) {
+    _editedTagIds.remove(tagId);
+  }
+
+  void removeAllEditedTags() {
+    _editedTagIds.clear();
+  }
+
+  void addDeltedTag(String tagId) {
+    _deletedTagIds.add(tagId);
+  }
+
+  void removeDeletedTag(String tagId) {
+    _deletedTagIds.remove(tagId);
+  }
+
+  void removeAllDeletedTags() {
+    _deletedTagIds.clear();
+  }
+
+  void addEditedGroup(String groupId) {
+    _editedGroupIds.add(groupId);
+  }
+
+  void removeEditedGroup(String groupId) {
+    _editedGroupIds.remove(groupId);
+  }
+
+  void removeAllEditedGroups() {
+    _editedGroupIds.clear();
+  } 
 }

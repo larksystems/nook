@@ -6,7 +6,7 @@ List<MenuItem> getMenuItems(model.Tag tag) {
   var copyId = DivElement()..innerText = "Copy ID";
   return [
     MenuItem(markAsImportant, () {
-      _view.appController.command(TagsConfigAction.updateTagType, new TagData(tag.tagId, groupId: tag.groups.first, newType: tagImportant ? model.TagType.normal : model.TagType.important));
+      _view.appController.command(TagsConfigAction.updateTagType, new TagData(tag.tagId, groupId: tag.groupIds.first, newType: tagImportant ? model.TagType.normal : model.TagType.important));
     }),
     MenuItem(copyId, () {
       window.navigator.clipboard.writeText(tag.tagId);

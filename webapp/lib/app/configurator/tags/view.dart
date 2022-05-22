@@ -122,9 +122,6 @@ class TagGroupView extends AccordionItem {
     tagViewsById = {};
   }
 
-  void set name(String text) => _groupName = text;
-  String get name => _groupName;
-
   void requestToDelete() {
     expand();
     InlineOverlayModal warningModal;
