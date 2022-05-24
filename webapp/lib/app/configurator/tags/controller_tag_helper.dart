@@ -1,219 +1,257 @@
 part of controller;
 
+class TagGroup {
+  String groupId;
+  String groupName;
+  int groupIndex;
+  List<model.Tag> tags = [];
+  
+  TagGroup(this.groupId, this.groupName, this.groupIndex);
+}
+
 class TagManager {
   static final TagManager _singleton = TagManager._internal();
-
   TagManager._internal();
-
   factory TagManager() => _singleton;
 
-  /// Returns the set of tags being managed.
-  Set<model.Tag> get tags => Set.from(_tags);
-  Set<model.Tag> _tags = {};
+  // store for tags
+  Map<String, model.Tag> localTagsById = {};
+  Map<String, model.Tag> storageTagsById = {};
 
-  /// Returns the set of tags being managed, organised by group.
-  Map<String, List<model.Tag>> get tagsByGroup => _tagsByGroup;
-  Map<String, List<model.Tag>> _tagsByGroup = {};
+  Map<String, TagGroup> localGroupsById = {};
+  Map<String, TagGroup> storageGroupsById = {};
 
-  /// Returns an automatically generated name for a new tag group.
-  /// The name is based on an internal sequence, and verified against existing tag group names.
-  /// If the next group in the sequence already exists, it will recursively try to generate a new one.
-  String get nextTagGroupName {
-    var newTagGroupNameProposal = 'new tag group $nextGroupSeqNo';
-    if (tagsByGroup.containsKey(newTagGroupNameProposal)) {
-      return nextTagGroupName;
-    }
-    return newTagGroupNameProposal;
+  List<model.Tag> get tagsInLocal => localTagsById.values.toList();
+  List<model.Tag> get tagsInStorage => storageTagsById.values.toList();
+
+  Map<String, List<model.Tag>> get localTagsByGroupId {
+    Map<String, List<model.Tag>> result = {};
+    localGroupsById.forEach((groupId, tagGroup) => result[groupId] = tagGroup.tags);
+    return result;
   }
 
-  /// Returns a new number in the group numbering sequence. Starts the sequence at 1.
-  int get nextGroupSeqNo => ++_lastGroupSeqNo;
-  int _lastGroupSeqNo = 0;
-
-  /// Returns the [Tag] with the given [id].
-  model.Tag getTagById(String id) => _tags.singleWhere((t) => t.tagId == id);
-
-  /// Adds the given [tag] to the list of tags being managed.
-  /// Returns either the [tag] if it's a new tag, or [null] if it already exists and it's an update operation.
-  model.Tag addTag(model.Tag tag) {
-    var added = addTags([tag]);
-    if (added.isNotEmpty) return added.first;
-    return null;
-  }
-
-  /// Adds the given list of [tags] to the list of tags being managed.
-  /// Returns a list confirming which tags have been added as new tags. This allows the caller to account for
-  /// tags being added multiple times, e.g. created via the UI and then saved and confirmed by the platform.
-  List<model.Tag> addTags(List<model.Tag> tags) {
-    List<model.Tag> added = [];
-    for (var tag in tags) {
-      if (_tags.any((t) => t.tagId == tag.tagId)) {
-        _tags.removeWhere((t) => t.tagId == tag.tagId);
-        _tags.add(tag);
-      } else {
-        _tags.add(tag);
-        added.add(tag);
-      }
-
-      if (tag.groups.isEmpty) {
-        _tagsByGroup.putIfAbsent('', () => []).add(tag);
-        continue;
-      }
-      for (var group in tag.groups) {
-        _tagsByGroup.putIfAbsent(group, () => []).add(tag);
-      }
-    }
-    return added;
-  }
-
-  /// Updates the given [tag] in the list of tags being managed.
-  /// Returns either the [tag] if it has been updated successfully,
-  /// or [null] if the tag doesn't exist in the list of managed tags and so nothing has been updated.
-  model.Tag updateTag(model.Tag tag) {
-    var updated = updateTags([tag]);
-    if (updated.isNotEmpty) return updated.first;
-    return null;
-  }
-
-  /// Updates the given list of [tags] to the list of tags being managed.
-  /// Returns a list confirming which tags have been updated sucessfully.
-  /// Tags which don't yet exist in the list of managed tags won't be added to the returned list.
-  List<model.Tag> updateTags(List<model.Tag> tags) {
-    var removed = removeTags(tags);
-    var updated = addTags(removed);
-    if (removed.length != updated.length) {
-      throw "Tag consistency error: The two-step update process has an inconsistency between the tags to be updated";
-    }
-    return updated;
-  }
-
-  /// Removes the given [tag] from the list of tags being managed.
-  /// Returns either the [tag] if it's been removed successfully, or [null] if the tag has already been removed.
-  model.Tag removeTag(model.Tag tag) {
-    var removed = removeTags([tag]);
-    if (removed.isNotEmpty) return removed.first;
-    return null;
-  }
-
-  /// Removes the given list of [tags] from the list of tags being managed.
-  /// Returns a list confirming which tags have been removed successfully. This allows the caller to account for
-  /// tags being removed multiple times, e.g. removed via the UI and then saved and confirmed by the platform.
-  List<model.Tag> removeTags(List<model.Tag> tags) {
-    List<model.Tag> removed = [];
-    for (var tag in tags) {
-      if (!_tags.any((t) => t.tagId == tag.tagId)) {
-        log.warning("Tag consistency error: Removing tag that doesn't exist, ${tag.tagId}");
-        continue;
-      }
-
-      var oldTag = _tags.singleWhere((t) => t.tagId == tag.tagId, orElse: () => null);
-      _tags.remove(oldTag);
-      removed.add(tag);
-
-      if (oldTag.groups.isEmpty) {
-        _tagsByGroup[''].remove(oldTag);
-        continue;
-      }
-      for (var group in oldTag.groups) {
-        _tagsByGroup[group].remove(oldTag);
-      }
-    }
-    return removed;
-  }
-
-  /// Creates and returns a new tag in the given tag [group].
-  /// Also adds the tag to the list of tags that have been edited and need to be saved.
-  model.Tag createTag(String group) {
-    var tag = new model.Tag()
+  // local tag methods
+  model.Tag createTagInLocal(String groupId) {
+    var tag = model.Tag()
       ..docId = model.generateTagId()
       ..filterable = true
-      ..groups = [group]
+      ..groupIds = [groupId]
+      ..groupIndices = [localGroupsById[groupId].groupIndex]
+      ..groupNames = [localGroupsById[groupId].groupName]
       ..isUnifier = false
       ..text = ''
       ..shortcut = ''
       ..visible = true
       ..type = model.TagType.normal;
-    addTag(tag);
-    editedTags[tag.tagId] = tag;
+    addOrUpdateTagInLocal(tag);
     return tag;
   }
 
-  /// Returns a copy of the original tag with the given [id], with the given new [text] and/or [group].
-  /// Also adds the tag to the list of tags that have been edited and need to be saved.
-  model.Tag modifyTag(String id, {String text, String group, model.TagType type}) {
-    model.Tag tag = getTagById(id);
-    model.Tag newTag = model.Tag.fromData(tag.toData())..docId = tag.tagId;
-    if (text != null) {
-      newTag.text = text;
+  List<model.Tag> addOrUpdateTagsInLocal(List<model.Tag> tags) {
+    for (var tag in tags) {
+      addOrUpdateTagInLocal(tag);
     }
-    if (group != null) {
-      newTag.groups = [group];
-    }
-    if (type != null) {
-      newTag.type = type;
-    }
-    updateTag(newTag);
-    editedTags[newTag.tagId] = newTag;
-    return newTag;
+    return tags;
   }
 
-  /// Deletes the tag with the given [id] from the managed list.
-  /// Also adds the tag to the list of tags to be deleted and need to be saved.
-  model.Tag deleteTag(String id) {
-    model.Tag tag = getTagById(id);
-    removeTag(tag);
-    editedTags.remove(tag.tagId);
-    deletedTags[tag.tagId] = tag;
+  model.Tag addOrUpdateTagInLocal(model.Tag tag) {
+    localTagsById[tag.tagId] = tag;
+    for(var i = 0; i < tag.groupIds.length; ++i) {
+      localGroupsById[tag.groupIds[i]] = localGroupsById[tag.groupIds[i]] ?? TagGroup(tag.groupIds[i], tag.groupNames[i], tag.groupIndices[i]);
+      localGroupsById[tag.groupIds[i]].tags.removeWhere((_tag) => _tag.tagId == tag.tagId);
+      localGroupsById[tag.groupIds[i]].tags.add(tag);
+    }
+    _updateGroupDetailsInLocalTags();
     return tag;
   }
 
-  /// Creates a new tag group and returns its name.
-  /// If [groupName] is given, it will use that name, otherwise it will generate a placeholder name.
-  String createTagGroup([String groupName]) {
-    var newGroupName = groupName ?? nextTagGroupName;
-    _tagsByGroup[newGroupName] = [];
-    return newGroupName;
+  model.Tag updateTagTextInLocal(String id, String newText) {
+    localTagsById[id].text = newText;
+    addEditedTag(id);
+    return localTagsById[id];
   }
 
-  /// Renames a tag group and propagates the change to all tags in the group.
-  /// Adds the modified tags to the list of tags that have been edited and need to be saved.
-  void renameTagGroup(String groupName, String newGroupName) {
-    createTagGroup(newGroupName);
-    var tagsToModify = _tagsByGroup[groupName].toList();
-    for (var tag in tagsToModify) {
-      modifyTag(tag.tagId, group: newGroupName);
+  model.Tag updateTagTypeInLocal(String id, model.TagType newType) {
+    localTagsById[id].type = newType;
+    addEditedTag(id);
+    return localTagsById[id];
+  }
+
+  model.Tag moveTagAcrossLocalGroups(String tagId, String oldGroup, String newGroup) {
+    var tag = localTagsById[tagId];
+    tag.groupIds
+      ..remove(oldGroup)
+      ..add(newGroup);
+    addEditedTag(tagId);
+    _updateGroupDetailsInLocalTags();
+    return tag;
+  }
+
+  List<model.Tag> removeTagsInLocal(List<String> tagIds) {
+    return tagIds.map((id) => removeTagInLocal(id)).toList();
+  }
+
+  model.Tag removeTagInLocal(String tagId) {
+    addDeltedTag(tagId);
+    var tagToRemove = localTagsById.remove(tagId);
+    return tagToRemove;
+  }
+
+  // local group methods
+  TagGroup createGroupInLocal(String name) {
+    var id = model.generateTagGroupId();
+    var group = TagGroup(id, name, _getNextGroupIndex());
+    localGroupsById[id] = group;
+    addEditedGroup(id);
+    return group;
+  }
+
+  void renameGroupInLocal(String id, String name) {
+    localGroupsById[id].groupName = name;
+    addEditedGroup(id);
+    _updateGroupDetailsInLocalTags();
+  }
+
+  void reorderGroupInLocal(String id, int index) {
+    // todo: eb: test this when we have the functionality
+    var groupIds = localGroupsById.values.map((tagGroup) => tagGroup.groupId).toList();
+    groupIds.sort((groupIdA, groupIdB) => localGroupsById[groupIdA].groupIndex.compareTo(localGroupsById[groupIdB].groupIndex));
+    groupIds.remove(id);
+    groupIds.insert(index, id);
+    _updateGroupDetailsInLocalTags();
+  }
+
+  void removeGroupAndTagsinLocal(String groupId) {
+    localTagsById.forEach((_, tag) => tag.groupIds.remove(groupId));
+    localTagsById.removeWhere((key, tag) {
+      var groupsEmpty = tag.groupIds.isEmpty;
+      if (groupsEmpty) {
+        addDeltedTag(tag.tagId);
+      }
+      return groupsEmpty;
+    });
+    
+    _updateGroupDetailsInLocalTags();
+  }
+
+  // storage methods
+  List<model.Tag> addOrUpdateTagsInStorage(List<model.Tag> tags) {
+    for (var tag in tags) {
+      addOrUpdateTagInStorage(tag);
     }
-    _tagsByGroup.remove(groupName);
+    return tags;
   }
 
-  /// Deletes the tag group with the given [groupName] and the tags in that group from the managed list of tags.
-  /// Also adds these tags to the list of tags to be deleted and need to be saved.
-  void deleteTagGroup(String groupName) {
-    var tagsToDelete = _tagsByGroup[groupName].toList();
-    for (var tag in tagsToDelete) {
-      deleteTag(tag.tagId);
+  model.Tag addOrUpdateTagInStorage(model.Tag tag) {
+    storageTagsById[tag.tagId] = tag;
+    for(var i = 0; i < tag.groupIds.length; ++i) {
+      storageGroupsById[tag.groupIds[i]] = storageGroupsById[tag.groupIds[i]] ?? TagGroup(tag.groupIds[i], tag.groupNames[i], tag.groupIndices[i]);
+      storageGroupsById[tag.groupIds[i]].tags.removeWhere((_tag) => _tag.tagId == tag.tagId);
+      storageGroupsById[tag.groupIds[i]].tags.add(tag);
     }
-    _tagsByGroup.remove(groupName);
+    _updateGroupDetailsInStorageTags();
+    // todo: clear edited tags, deleted tags, edited groups
+    // todo: eb: check for diff as a next step
+    addOrUpdateTagInLocal(tag);
+    removeEditedTag(tag.tagId);
+    return tag;
   }
 
-  /// The tags that have been edited and need to be saved, stored as a `Map<tagId, Tag>`.
-  Map<String, model.Tag> editedTags = {};
-
-  /// The tags that have been deleted and need to be saved, stored as a `Map<tagId, Tag>`.
-  Map<String, model.Tag> deletedTags = {};
-
-  /// When a tag is moved across groups, we need to remember the origin group
-  Set<String> movedFromGroupIds = {};
-
-  /// Getters for unsaved tag Ids, group Ids derived from editedTags, deletedTags
-  Set<String> get unsavedTagIds => Set.from(List.from(editedTags.keys)..addAll(deletedTags.keys));
-  Set<String> get unsavedGroupIds {
-    var editedTagGroups = editedTags.values.map((tag) => tag.groups).expand((e) => e); //.toList();
-    var deletedTagGroups = deletedTags.values.map((tag) => tag.groups).expand((e) => e); //.toList();
-    Set<String> setString = Set.from(List.from(editedTagGroups)..addAll(deletedTagGroups))..addAll(movedFromGroupIds);
-    return setString;
+  List<model.Tag> removeTagsFromStorage(List<String> tagIds) {
+    return tagIds.map((id) => removeTagFromStorage(id)).toList();
   }
 
-  /// Returns whether there's any edited or deleted tags to be saved.
-  bool get hasUnsavedTags => editedTags.isNotEmpty || deletedTags.isNotEmpty || movedFromGroupIds.isNotEmpty;
+  model.Tag removeTagFromStorage(String tagId) {
+    var removedTag = storageTagsById.remove(tagId);
+    removeDeletedTag(tagId);
+    return removedTag;
+  }
+
+  // tag helper methods
+  int _getNextGroupIndex() {
+    var lastIndex = localGroupsById.values
+      .map((tagGroup) => tagGroup.groupIndex)
+      .reduce(max);
+    return lastIndex + 1;
+  }
+
+  void _updateGroupDetailsInLocalTags() {
+    localTagsById.values.forEach((tag) {
+      tag.groupNames = tag.groupIds.map((id) => localGroupsById[id].groupName).toList();
+      tag.groupIndices = tag.groupIds.map((id) => localGroupsById[id].groupIndex).toList();
+    });
+  }
+
+  void _updateGroupDetailsInStorageTags() {
+    storageTagsById.values.forEach((tag) {
+      tag.groupNames = tag.groupIds.map((id) => storageGroupsById[id].groupName).toList();
+      tag.groupIndices = tag.groupIds.map((id) => storageGroupsById[id].groupIndex).toList();
+    });
+  }
+
+  // edited tags, groups
+  Set<String> _editedTagIds = {};
+  Set<String> _deletedTagIds = {};
+  Set<String> _editedGroupIds = {};
+
+  bool get hasUnsavedTags => _editedTagIds.isNotEmpty || _deletedTagIds.isNotEmpty || _editedGroupIds.isNotEmpty;
+  Set<String> get editedTagIds => _editedTagIds;
+  Set<String> get deletedTagIds => _deletedTagIds;
+  Set<String> get editedGroupIds => _editedGroupIds;
+
+  List<model.Tag> get editedTags {
+    var allEditedTagIds = Set.from(editedTagIds);
+    editedGroupIds.forEach((groupId) {
+      localGroupsById[groupId].tags.forEach((tag) {
+        allEditedTagIds.add(tag.tagId);
+      });
+    });
+
+    // todo: eb: remove deleted IDs here
+    return allEditedTagIds.map((tagId) => localTagsById[tagId]).toList();
+  }
+
+  List<model.Tag> get deletedTags {
+    List<model.Tag> tags = [];
+    deletedTagIds.forEach((tagId) {
+      tags.add(storageTagsById[tagId]);
+    });
+    return tags;
+  }
+
+  void addEditedTag(String tagId) {
+    _editedTagIds.add(tagId);
+  }
+
+  void removeEditedTag(String tagId) {
+    _editedTagIds.remove(tagId);
+  }
+
+  void removeAllEditedTags() {
+    _editedTagIds.clear();
+  }
+
+  void addDeltedTag(String tagId) {
+    _deletedTagIds.add(tagId);
+  }
+
+  void removeDeletedTag(String tagId) {
+    _deletedTagIds.remove(tagId);
+  }
+
+  void removeAllDeletedTags() {
+    _deletedTagIds.clear();
+  }
+
+  void addEditedGroup(String groupId) {
+    _editedGroupIds.add(groupId);
+  }
+
+  void removeEditedGroup(String groupId) {
+    _editedGroupIds.remove(groupId);
+  }
+
+  void removeAllEditedGroups() {
+    _editedGroupIds.clear();
+  } 
 }
