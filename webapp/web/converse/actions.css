@@ -1,12 +1,5 @@
 @charset "utf-8";
 
-.action-list {
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-  overflow: auto;
-}
-
 .action {
   margin: 4px;
   padding: 4px 6px;
@@ -100,6 +93,8 @@
   box-shadow: 0 0 5px 4px #eee;
   text-align: center;
   align-items: flex-start;
+  font-size: 13px;
+  letter-spacing: 0.05em;
 }
 
 .action__button.action__button--float {

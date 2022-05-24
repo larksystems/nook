@@ -122,30 +122,57 @@ MessageView _generateMessageView(model.Message message, model.Conversation conve
   return messageView;
 }
 
-void _populateReplyPanelView(List<model.SuggestedReply> replies) {
-  Map<String, List<model.SuggestedReply>> repliesByGroups = _groupRepliesIntoGroups(replies);
-  _view.replyPanelView.clear();
-  String buttonText = SEND_REPLY_BUTTON_TEXT;
-  var groupIdsSortedByDescription = repliesByGroups.keys.toList();
-  groupIdsSortedByDescription.sort((group1, group2) => repliesByGroups[group1].first.groupName.compareTo(repliesByGroups[group2].first.groupName));
-  for (var groupId in groupIdsSortedByDescription) {
-    var repliesInGroup = repliesByGroups[groupId];
-    List<ReplyActionView> views = [];
-    var groupDescription = "";
-    for (var reply in repliesInGroup) {
-      groupDescription = reply.groupName;
-      var replyView = new ReplyActionView(reply.text, reply.translation, reply.shortcut, reply.suggestedReplyId, buttonText);
-      replyView.fadeText(controller.activeConversation?.messages?.where((element) => element.text == reply.text)?.isNotEmpty ?? false);
-      replyView.showShortcut(controller.currentConfig.repliesKeyboardShortcutsEnabled);
-      replyView.showButtons(controller.currentConfig.sendMessagesEnabled);
-      views.add(replyView);
-    }
-    var replyGroupView = new ReplyActionGroupView(groupId, groupDescription, buttonText + " all", views);
-    replyGroupView.showButtons(SENDABLE_STANDARD_MESSAGE_GROUPS);
-    _view.replyPanelView.addReply(replyGroupView);
+void _removeFromReplyPanelView(List<String> suggestedReplyIds) {
+  for (var replyId in suggestedReplyIds) {
+    _view.replyPanelView.remove(replyId);
   }
 }
 
+void _populateReplyPanelView(List<model.SuggestedReply> suggestedReplies) {
+  Map<String, int> categoryIndexById = {};
+  Map<String, String> categoryNameById = {};
+  Map<String, int> groupIndexById = {};
+  Map<String, String> groupNameById = {};
+  suggestedReplies.forEach((reply) {
+    categoryIndexById[reply.categoryId] = reply.categoryIndex;
+    categoryNameById[reply.categoryId] = reply.categoryName;
+    groupIndexById[reply.groupId] = reply.groupIndexInCategory;
+    groupNameById[reply.groupId] = reply.groupName;
+  });
+
+  var suggestedRepliesByCategoryId = _groupRepliesIntoCategories(suggestedReplies);
+  var sortedSuggestedReplyCategoryIds = suggestedRepliesByCategoryId.keys.toList();
+  sortedSuggestedReplyCategoryIds.sort((id1, id2) => (categoryIndexById[id1] ?? 0).compareTo(categoryIndexById[id2] ?? 0));
+
+  for (var categoryId in sortedSuggestedReplyCategoryIds) {
+    List<ReplyActionGroupView> replyGroupViews = [];
+    var suggestedRepliesInCategory = suggestedRepliesByCategoryId[categoryId];
+    var suggestedRepliesByGroupId = _groupRepliesIntoGroups(suggestedRepliesInCategory);
+    var sortedSuggestedReplyGroupIds = suggestedRepliesByGroupId.keys.toList();
+    sortedSuggestedReplyGroupIds.sort((id1, id2) => (groupIndexById[id1] ?? 0).compareTo(groupIndexById[id2] ?? 0));
+
+    for (var groupId in sortedSuggestedReplyGroupIds) {
+      List<ReplyActionView> views = [];
+      var suggestedRepliesInGroup = suggestedRepliesByGroupId[groupId];
+      suggestedRepliesInGroup.sort((r1, r2) => r1.indexInGroup.compareTo(r2.indexInGroup));
+
+      for (var reply in suggestedRepliesInGroup) {
+        var replyView = new ReplyActionView(reply.text, reply.translation, reply.shortcut, reply.suggestedReplyId, SEND_REPLY_BUTTON_TEXT);
+        replyView.fadeText(controller.activeConversation?.messages?.where((element) => element.text == reply.text)?.isNotEmpty ?? false);
+        replyView.showShortcut(controller.currentConfig.repliesKeyboardShortcutsEnabled);
+        replyView.showButtons(controller.currentConfig.sendMessagesEnabled);
+        views.add(replyView);
+      }
+
+      var replyGroupView = new ReplyActionGroupView(categoryId, categoryNameById[categoryId], groupId, groupNameById[groupId],  "$SEND_REPLY_BUTTON_TEXT all", views);
+      replyGroupView.showButtons(SENDABLE_STANDARD_MESSAGE_GROUPS);
+      replyGroupViews.add(replyGroupView);
+    }
+
+    _view.replyPanelView.update(replyGroupViews);
+  }
+}
+  
 void _populateTagPanelView(Map<String, List<model.Tag>> tagsByGroup, bool showShortcut, Set<String> mandatoryExcludeTagIds) {
   _view.tagPanelView.clear();
 
@@ -270,11 +297,11 @@ TagStyle tagTypeToKKStyle(model.TagType tagType) {
 Map<String, List<model.SuggestedReply>> _groupRepliesIntoCategories(List<model.SuggestedReply> replies) {
   Map<String, List<model.SuggestedReply>> result = {};
   for (model.SuggestedReply reply in replies) {
-    String category = reply.category ?? '';
-    if (!result.containsKey(category)) {
-      result[category] = [];
+    String categoryId = reply.categoryId ?? '';
+    if (!result.containsKey(categoryId)) {
+      result[categoryId] = [];
     }
-    result[category].add(reply);
+    result[categoryId].add(reply);
   }
   return result;
 }
@@ -283,17 +310,9 @@ Map<String, List<model.SuggestedReply>> _groupRepliesIntoGroups(List<model.Sugge
   Map<String, List<model.SuggestedReply>> result = {};
   for (model.SuggestedReply reply in replies) {
     // TODO (mariana): once we've transitioned to using groups, we can remove the sequence number fix
-    String groupId = controller.currentConfig.suggestedRepliesGroupsEnabled ?
-        reply.groupId ?? reply.seqNumber.toString() :
-        reply.seqNumber.toString();
-    if (!result.containsKey(groupId)) {
-      result[groupId] = [];
-    }
+    String groupId = reply.groupId ?? '';
+    result.putIfAbsent(reply.groupId, () => []);
     result[groupId].add(reply);
-  }
-  for (String groupId in result.keys) {
-    // TODO (mariana): once we've transitioned to using groups, we can remove the sequence number comparison
-    result[groupId].sort((reply1, reply2) => (reply1.indexInGroup ?? reply1.seqNumber).compareTo(reply2.indexInGroup ?? reply2.seqNumber));
   }
   return result;
 }
