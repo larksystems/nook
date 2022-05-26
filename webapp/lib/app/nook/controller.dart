@@ -80,7 +80,6 @@ enum UIAction {
   saveNewTagInline,
   selectAllConversations,
   deselectAllConversations,
-  updateSuggestedRepliesCategory,
   updateConversationIdFilter,
   goToUser,
   addNewConversations,
@@ -268,14 +267,6 @@ class SaveTagData extends Data {
   String toString() => 'SaveTagData: {tagText: $tagText, tagId: $tagId}';
 }
 
-class UpdateSuggestedRepliesCategoryData extends Data {
-  String category;
-  UpdateSuggestedRepliesCategoryData(this.category);
-
-  @override
-  String toString() => 'UpdateSuggestedRepliesCategoryData: {category: $category}';
-}
-
 class UpdateFilterTagsCategoryData extends Data {
   String category;
   UpdateFilterTagsCategoryData(this.category);
@@ -312,7 +303,6 @@ class NookController extends Controller {
   Set<model.Conversation> conversations;
   Set<model.Conversation> filteredConversations;
   List<model.SuggestedReply> suggestedReplies;
-  Map<String, List<model.SuggestedReply>> suggestedRepliesByCategory;
   String selectedSuggestedRepliesCategory;
   List<model.Tag> tags;
   Map<String, List<model.Tag>> tagsByGroup;
@@ -424,32 +414,14 @@ class NookController extends Controller {
           ..addAll(added)
           ..addAll(modified);
 
-        // Update the replies by category map
-        suggestedRepliesByCategory = _groupRepliesIntoCategories(suggestedReplies);
-        // Empty sublist if there are no replies to show
-        if (suggestedRepliesByCategory.isEmpty) {
-          suggestedRepliesByCategory[''] = [];
+        if (added.isNotEmpty || modified.isNotEmpty) {
+          _populateReplyPanelView(suggestedReplies);
         }
-        // Sort by sequence number
-        for (var replies in suggestedRepliesByCategory.values) {
-          replies.sort((r1, r2) {
-            var seqNo1 = r1.seqNumber == null ? double.nan : r1.seqNumber;
-            var seqNo2 = r2.seqNumber == null ? double.nan : r2.seqNumber;
-            return seqNo1.compareTo(seqNo2);
-          });
+
+        if (removed.isNotEmpty) {
+          var removeIds = removed.map((r) => r.suggestedReplyId).toList();
+          _removeFromReplyPanelView(removeIds);
         }
-        List<String> categories = suggestedRepliesByCategory.keys.toList();
-        categories.sort((c1, c2) => c1.compareTo(c2));
-        // Replace list of categories in the UI selector
-        _view.replyPanelView.categories = categories;
-        // If the categories have changed under us and the selected one no longer exists,
-        // default to the first category, whichever it is
-        if (!categories.contains(selectedSuggestedRepliesCategory)) {
-          selectedSuggestedRepliesCategory = categories.first;
-        }
-        // Select the selected category in the UI and add the suggested replies for it
-        _view.replyPanelView.selectedCategory = selectedSuggestedRepliesCategory;
-        _populateReplyPanelView(suggestedRepliesByCategory[selectedSuggestedRepliesCategory]);
       }, showAndLogError);
 
     platform.listenForConversationListShards(
@@ -653,8 +625,8 @@ class NookController extends Controller {
     }
 
     if (oldConfig.suggestedRepliesGroupsEnabled != newConfig.suggestedRepliesGroupsEnabled) {
-      if (suggestedRepliesByCategory != null) {
-        _populateReplyPanelView(suggestedRepliesByCategory[selectedSuggestedRepliesCategory]);
+      if (suggestedReplies.isNotEmpty) {
+        _populateReplyPanelView(suggestedReplies);
       }
     }
 
@@ -853,7 +825,6 @@ class NookController extends Controller {
     if (activeConversation == null &&
         action != UIAction.selectConversationList && action != UIAction.showConversation &&
         action != UIAction.addFilterTag && action != UIAction.removeFilterTag &&
-        action != UIAction.updateSuggestedRepliesCategory &&
         action != UIAction.selectAllConversations && action != UIAction.deselectAllConversations &&
         action != UIAction.updateConversationIdFilter) {
       return;
@@ -869,7 +840,7 @@ class NookController extends Controller {
     switch (action) {
       case UIAction.sendMessage:
         ReplyData replyData = data;
-        model.SuggestedReply selectedReply = suggestedRepliesByCategory[selectedSuggestedRepliesCategory].singleWhere((reply) => reply.suggestedReplyId == replyData.replyId);
+        model.SuggestedReply selectedReply = suggestedReplies.singleWhere((reply) => reply.suggestedReplyId == replyData.replyId);
         if (replyData.replyWithTranslation) {
           model.SuggestedReply translationReply = new model.SuggestedReply();
           translationReply
@@ -889,7 +860,7 @@ class NookController extends Controller {
         break;
       case UIAction.sendMessageGroup:
         GroupReplyData replyData = data;
-        List<model.SuggestedReply> selectedReplies = suggestedRepliesByCategory[selectedSuggestedRepliesCategory].where((reply) => reply.groupId == replyData.replyGroupId).toList();
+        List<model.SuggestedReply> selectedReplies = suggestedReplies.where((reply) => reply.groupId == replyData.replyGroupId).toList();
         selectedReplies.sort((reply1, reply2) => reply1.indexInGroup.compareTo(reply2.indexInGroup));
         if (replyData.replyWithTranslation) {
           List<model.SuggestedReply> translationReplies = [];
@@ -1285,7 +1256,7 @@ class NookController extends Controller {
             currentConfig.repliesPanelVisibility &&
             currentConfig.repliesKeyboardShortcutsEnabled) {
           // If the shortcut is for a reply, find it and send it
-          var selectedReply = suggestedRepliesByCategory[selectedSuggestedRepliesCategory].where((reply) => reply.shortcut == keyPressData.key);
+          var selectedReply = suggestedReplies.where((reply) => reply.shortcut == keyPressData.key);
           if (selectedReply.isNotEmpty) {
             assert (selectedReply.length == 1);
             if (!currentConfig.sendMultiMessageEnabled || selectedConversations.isEmpty) {
@@ -1360,11 +1331,6 @@ class NookController extends Controller {
           updateFilteredAndSelectedConversationLists();
         }
         _view.conversationListPanelView.updateSelectedCount(selectedConversations.length);
-        break;
-      case UIAction.updateSuggestedRepliesCategory:
-        UpdateSuggestedRepliesCategoryData updateCategoryData = data;
-        selectedSuggestedRepliesCategory = updateCategoryData.category;
-        _populateReplyPanelView(suggestedRepliesByCategory[selectedSuggestedRepliesCategory]);
         break;
 
       case UIAction.goToUser:
@@ -1527,7 +1493,7 @@ class NookController extends Controller {
     if (matches.length > 1) {
       log.warning('Two conversations seem to have the same deidentified phone number: ${activeConversation.docId}');
     }
-    _selectConversationInView(activeConversation, skipReplyPanelRefresh: true);
+    _selectConversationInView(activeConversation);
     _view.conversationPanelView.clearWarning();
     return activeConversation;
   }
@@ -1552,7 +1518,7 @@ class NookController extends Controller {
       }
     }
 
-    _selectConversationInView(conversation, skipReplyPanelRefresh: true);
+    _selectConversationInView(conversation);
     if (!filteredConversations.contains(conversation)) {
       // If it doesn't meet the filter, show warning
       _view.conversationPanelView.showWarning('Conversation no longer meets filtering constraints');
@@ -1562,14 +1528,11 @@ class NookController extends Controller {
     }
   }
 
-  void _selectConversationInView(model.Conversation conversation, {bool skipReplyPanelRefresh = false}) {
+  void _selectConversationInView(model.Conversation conversation) {
     urlManager.conversationId = conversation.docId;
     if (conversationsInView.contains(conversation)) {
       // Select the conversation in the list of conversations
       _view.conversationListPanelView.selectConversation(conversation.docId);
-      if (!skipReplyPanelRefresh) {
-        _populateReplyPanelView(suggestedRepliesByCategory[selectedSuggestedRepliesCategory]);
-      }
     }
   }
 

@@ -16,7 +16,6 @@ import 'package:katikati_ui_lib/components/model/model.dart';
 import 'package:katikati_ui_lib/components/conversation/conversation_item.dart';
 import 'package:katikati_ui_lib/components/conversation/new_conversation_modal.dart';
 import 'package:katikati_ui_lib/components/user_presence/user_presence_indicator.dart';
-import 'package:katikati_ui_lib/components/scroll_indicator/scroll_indicator.dart';
 import 'package:katikati_ui_lib/components/tag/tag.dart';
 import 'package:katikati_ui_lib/components/turnline/turnline.dart' as tl;
 import 'package:katikati_ui_lib/components/button/button.dart' as buttons;
@@ -1590,109 +1589,71 @@ class TurnlinePanelView {
 
 class ReplyPanelView {
   DivElement replyPanel;
-  DivElement _panelTitle;
-  SelectElement _replyCategories;
-  DivElement _replies;
-  DivElement _replyList;
-  AddActionView _addReply;
-  List<ActionView> _replyViews;
-  ScrollOverflowIndicator _repliesScrollContainer;
+  Map<String, List<ReplyActionGroupView>> _messageGroupsByCategoryId;
+  Accordion _categories;
 
   ReplyPanelView() {
-    replyPanel = new DivElement()
-      ..classes.add('reply-panel');
-
-    _panelTitle = new DivElement()
-      ..classes.add('panel-title')
-      ..classes.add('panel-title--multiple-cols');
-    replyPanel.append(_panelTitle);
-
-    _replyCategories = new SelectElement();
-    _replyCategories.onChange.listen((_) => _view.appController.command(UIAction.updateSuggestedRepliesCategory, new UpdateSuggestedRepliesCategoryData(_replyCategories.value)));
-
-    _panelTitle
-      ..append(new DivElement()..text = REPLY_PANEL_TITLE)
-      ..append(_replyCategories);
-
-    _replies = new DivElement()
-      ..classes.add('replies')
-      ..classes.add('action-list');
-    _repliesScrollContainer = ScrollOverflowIndicator();
-    _repliesScrollContainer.setContent(_replies);
-    replyPanel.append(_repliesScrollContainer.container);
-
-    _replyList = new DivElement();
-    _replies.append(_replyList);
-
-    // TODO(mariana): support adding replies
-    // _addReply = new AddReplyActionView(ADD_REPLY_INFO);
-    // _replies.append(_addReply.addAction);
-
-    _replyViews = [];
+    replyPanel = DivElement()..classes.add('standard-messages-panel');
+    _categories = Accordion([]);
+    _messageGroupsByCategoryId = {};
+    replyPanel.append(_categories.renderElement);
   }
 
-  set selectedCategory(String category) {
-    int index = _replyCategories.children.indexWhere((Element option) => (option as OptionElement).value == category);
-    if (index == -1) {
-      _view.showWarningStatus("Couldn't find $category in list of suggested replies category, using first");
-      _replyCategories.selectedIndex = 0;
-      _view.appController.command(UIAction.updateSuggestedRepliesCategory, new UpdateSuggestedRepliesCategoryData(_replyCategories.value));
-      return;
+  void update(List<ReplyActionGroupView> groupViews) {
+    var categoryId = groupViews.first.categoryId;
+    var categoryName = groupViews.first.categoryName;
+
+    _messageGroupsByCategoryId[categoryId] = groupViews;
+    var accordionItem = _categories.items.firstWhere((accordionItem) => accordionItem.id == categoryId, orElse: () => null);
+    var headerElement = DivElement()..innerText = categoryName;
+    var bodyElement = DivElement();
+    groupViews.forEach((groupView) {
+      bodyElement.append(groupView.action);
+    });
+    var item = AccordionItem(categoryId, headerElement, bodyElement, false);
+
+    if (accordionItem == null) {
+      _categories.appendItem(item);
+    } else {
+      _categories.updateItem(categoryId, item);
     }
-    _replyCategories.selectedIndex = index;
-    _panelTitle.dataset['category-id'] = category;
-  }
-
-  set categories(List<String> categories) {
-    _replyCategories.children.clear();
-    for (var category in categories) {
-      _replyCategories.append(
-        new OptionElement()
-          ..value = category
-          ..text = category);
-    }
-  }
-
-  void addReply(ActionView action) {
-    _replyViews.add(action);
-    _replyList.append(action.action);
-    _repliesScrollContainer.updateShadows();
   }
 
   void clear() {
-    int repliesNo = _replyList.children.length;
-    for (int i = 0; i < repliesNo; i++) {
-      _replyList.firstChild.remove();
-    }
-    _replyViews.clear();
-    assert(_replyList.children.length == 0);
+    _categories.clear();
+    _messageGroupsByCategoryId = {};
+  }
+
+  void remove(String replyId) {
+    _messageGroupsByCategoryId.values.forEach((groups) {
+      groups.forEach((group) {
+        var matchedReply = group.replies.firstWhere((reply) => reply.replyId == replyId, orElse: () => null);
+        if (matchedReply != null) {
+          matchedReply.action.remove();
+          group.replies.remove(matchedReply);
+        }
+      });
+    });
   }
 
   void showShortcuts(bool show) {
-    for (var view in _replyViews) {
-      view.showShortcut(show);
-    }
+    _messageGroupsByCategoryId.values.forEach((groups) {
+      groups.forEach((group) {
+        group.replies.forEach((reply) {
+          reply.showShortcut(show);
+        });
+      });
+    });
   }
 
   void showButtons(bool show) {
-    for (var view in _replyViews) {
-      view.showButtons(show);
-    }
-  }
-
-  void disableReplies() {
-    _replies.remove();
-    _panelTitle
-      ..children.clear()
-      ..append(new DivElement()..text = NOTES_PANEL_TITLE);
-  }
-
-  void enableReplies() {
-    _panelTitle
-      ..children.clear()
-      ..append(new DivElement()..text = REPLY_PANEL_TITLE)
-      ..append(_replyCategories);
-    replyPanel.append(_replies);
+    _messageGroupsByCategoryId.values.forEach((groups) {
+      groups.forEach((group) {
+        group.replies.forEach((reply) {
+          reply.showButtons(show);
+        });
+      });
+    });
   }
 
 }
@@ -1784,6 +1745,7 @@ abstract class ActionView {
 }
 
 class ReplyActionView implements ActionView {
+  String replyId;
   DivElement action;
   DivElement _shortcutElement;
   DivElement _textElement;
@@ -1796,7 +1758,7 @@ class ReplyActionView implements ActionView {
   String get text => _text;
   String get translation => _translation;
 
-  ReplyActionView(this._text, this._translation, String shortcut, String replyId, String buttonText) {
+  ReplyActionView(this._text, this._translation, String shortcut, this.replyId, String buttonText) {
     action = new DivElement()
       ..classes.add('action')
       ..dataset['id'] = "${replyId}";
@@ -1896,8 +1858,11 @@ class ReplyActionGroupView implements ActionView {
   DivElement action;
   List<DivElement> _buttonElements;
   List<ReplyActionView> replies;
+  String categoryId;
+  String categoryName;
+  String groupId;
 
-  ReplyActionGroupView(String groupId, String groupDescription, String buttonText, this.replies) {
+  ReplyActionGroupView(this.categoryId, this.categoryName, this.groupId, String groupDescription, String buttonText, this.replies) {
     action = new DivElement()
       ..classes.add('action')
       ..classes.add('action--group')
