@@ -51,6 +51,7 @@ class HomePageController extends Controller {
 
   @override
   void setUpOnLogin() {
+    super.setUpOnLogin();
     state = urlManager.project != null ? UIState.project : UIState.landing;
 
     platform.listenForProjects((added, modified, removed) {
@@ -131,6 +132,7 @@ class HomePageController extends Controller {
     (view as HomePageView).showProjectTitleOrSelector(projects);
     (view as HomePageView).selectProject(projectId);
     (view as HomePageView).showProjectPage(
+      projectId,
       {
         'Converse': [pages[Page.converse]],
         'Configure': [pages[Page.configureMessages], pages[Page.configureTags]],

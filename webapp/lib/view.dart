@@ -8,7 +8,6 @@ import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
 import 'package:katikati_ui_lib/components/banner/banner.dart';
 import 'package:katikati_ui_lib/components/logger.dart';
 import 'package:katikati_ui_lib/components/nav/nav_header.dart';
-import 'package:nook/utils.dart';
 
 import 'package:nook/controller.dart';
 
@@ -64,7 +63,7 @@ class PageView {
 
   void initSignedInView(String displayName, String photoUrl) {
     authHeaderView.signIn(displayName, photoUrl);
-    navHeaderView.navContent = ButtonLinksView(navLinks, window.location.pathname).renderElement;
+    navHeaderView.navContent = ButtonLinksView(generateProjectLinks(appController.urlManager.project), window.location.pathname).renderElement;
     headerElement.append(navHeaderView.navViewElement);
     headerElement.insertBefore(bannerView.bannerElement, navHeaderView.navViewElement);
 

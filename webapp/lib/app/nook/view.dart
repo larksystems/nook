@@ -22,7 +22,6 @@ import 'package:katikati_ui_lib/components/turnline/turnline.dart' as tl;
 import 'package:katikati_ui_lib/components/button/button.dart' as buttons;
 import 'package:katikati_ui_lib/components/model/model.dart' as model;
 import 'package:nook/view.dart';
-import 'package:nook/utils.dart';
 import 'package:nook/app/developer/utils.dart';
 
 import 'controller.dart';
@@ -45,7 +44,6 @@ class NookPageView extends PageView {
   TagPanelView tagPanelView;
   TurnlinePanelView turnlinePanelView;
   NotesPanelView notesPanelView;
-  UrlManager urlManager;
   TabsView tabsView;
 
   NookPageView(NookController controller) : super(controller) {
@@ -58,7 +56,6 @@ class NookPageView extends PageView {
     tagPanelView = new TagPanelView();
     turnlinePanelView = new TurnlinePanelView();
     notesPanelView = new NotesPanelView();
-    urlManager = new UrlManager();
 
     tabsView = new TabsView([]);
 
@@ -104,7 +101,7 @@ class NookPageView extends PageView {
       showNormalStatus('signed in: ${latestCommitHash.substring(0, 8)}...');
     }, onError: (_) { /* Do nothing */ });
 
-    var links = ButtonLinksView(navLinks, window.location.pathname);
+    var links = ButtonLinksView(generateProjectLinks(appController.urlManager.project), window.location.pathname);
 
     navHeaderView.navContent = new DivElement()
       ..style.display = 'flex'

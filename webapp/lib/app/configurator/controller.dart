@@ -16,6 +16,7 @@ class ConfiguratorController extends Controller {
 
   @override
   void setUpOnLogin() {
+    super.setUpOnLogin();
   }
 
   void command(action, [Data data]) {

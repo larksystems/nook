@@ -240,7 +240,7 @@ class Platform {
   void listenForSystemMessages(SystemMessageCollectionListener listener, [OnErrorListener onErrorListener]) {
     _systemMessagesSubscription = SystemMessage.listen(_docStorage, listener, onErrorListener: onErrorListener);
   }
-      
+
 
   void listenForConversationListShards(ConversationListShardCollectionListener listener, [OnErrorListener onErrorListener]) {
     _shardsSubscription =  ConversationListShard.listen(_docStorage, listener, onErrorListener: onErrorListener);
