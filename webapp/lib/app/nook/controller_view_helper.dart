@@ -165,14 +165,14 @@ void _populateReplyPanelView(List<model.SuggestedReply> suggestedReplies) {
       }
 
       var replyGroupView = new ReplyActionGroupView(categoryId, categoryNameById[categoryId], groupId, groupNameById[groupId],  "$SEND_REPLY_BUTTON_TEXT all", views);
-      replyGroupView.showButtons(SENDABLE_STANDARD_MESSAGE_GROUPS);
+      replyGroupView.showButtons(controller.currentConfig.suggestedRepliesGroupsEnabled);
       replyGroupViews.add(replyGroupView);
     }
 
     _view.replyPanelView.update(replyGroupViews);
   }
 }
-  
+
 void _populateTagPanelView(Map<String, List<model.Tag>> tagsByGroup, bool showShortcut, Set<String> mandatoryExcludeTagIds) {
   _view.tagPanelView.clear();
 

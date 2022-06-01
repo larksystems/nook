@@ -55,8 +55,7 @@ class NookPageView extends PageView {
     tagPanelView = new TagPanelView();
     turnlinePanelView = new TurnlinePanelView();
     notesPanelView = new NotesPanelView();
-
-    tabsView = new TabsView([]);
+    tabsView = new TabsView();
 
     conversationFilter = {
       TagFilterType.include: conversationListPanelView.conversationIncludeFilter,
@@ -113,43 +112,44 @@ class NookPageView extends PageView {
     showNormalStatus('signed out');
   }
 
-  void showPanels(bool showReplyPanel, bool enableEditNotesPanel, bool showTagPanel, bool tagMessagesEnabled, bool tagConversationsEnabled, bool showTurnlinePanel, String defaultTab) {
+  void showPanels(bool showReplyPanel, bool enableEditNotesPanel, bool showTagPanel, bool tagMessagesEnabled, bool tagConversationsEnabled, bool showTurnlinePanel) {
     List<TabView> tabsToSet = [];
+    var previouslySelectedTab = tabsView.selectedTab;
 
     if (showReplyPanel) {
       var standardMessagesTab = TabView('standard_messages', "Standard messages", replyPanelView.replyPanel);
       tabsToSet.add(standardMessagesTab);
+    } else {
+      previouslySelectedTab = previouslySelectedTab == 'standard_messages' ? null : previouslySelectedTab;
     }
 
     if (showTagPanel) {
-      var tagsTab = TabView('tag', "Tags", tagPanelView.tagPanel);
+      var tagsTab = TabView('tags', "Tags", tagPanelView.tagPanel);
       tabsToSet.add(tagsTab);
       tagPanelView.enableTagging(tagMessagesEnabled, tagConversationsEnabled, false);
+    } else {
+      previouslySelectedTab = previouslySelectedTab == 'tags' ? null : previouslySelectedTab;
     }
 
     if (showTurnlinePanel) {
       var turnlineTab = TabView('turnline', "Turnline", turnlinePanelView.turnlinePanel);
       tabsToSet.add(turnlineTab);
+    } else {
+      previouslySelectedTab = previouslySelectedTab == 'turnline' ? null : previouslySelectedTab;
     }
 
     if (enableEditNotesPanel) {
       var notesTab = TabView('notes', "Notes", notesPanelView.notesPanel);
       tabsToSet.add(notesTab);
       notesPanelView.enableEditableNotes(enableEditNotesPanel);
+    } else {
+      previouslySelectedTab = previouslySelectedTab == 'notes' ? null : previouslySelectedTab;
     }
 
     tabsView.setTabs(tabsToSet);
-
-    if (showReplyPanel && defaultTab == 'standard_messages') {
-      tabsView.selectTab(defaultTab);
-    } else if (showTagPanel && defaultTab == 'tag') {
-      tabsView.selectTab(defaultTab);
-    } else if (showTurnlinePanel && defaultTab == 'turnline') {
-      tabsView.selectTab(defaultTab);
-    } else if (enableEditNotesPanel && defaultTab == 'notes') {
-      tabsView.selectTab(defaultTab);
+    if (tabsToSet.isNotEmpty) {
+      tabsView.selectTab(previouslySelectedTab ?? tabsToSet.first.id);
     }
-
   }
 
   bool sendingMultiMessagesUserConfirmation(int noMessages) {
