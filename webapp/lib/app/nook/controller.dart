@@ -27,9 +27,6 @@ part 'controller_view_helper.dart';
 
 Logger log = new Logger('controller.dart');
 
-bool get SENDABLE_STANDARD_MESSAGE_GROUPS => controller.projectConfiguration['sendableMessageGroups'] ?? true;
-bool get ENABLE_TURNLINE_PANEL => controller.projectConfiguration['nookTurnlineEnabled'] ?? false;
-String get DEFAULT_PANEL_TAB => controller.projectConfiguration['nookDefaultPanel'] ?? 'standard_messages';
 
 enum UIActionObject {
   conversation,
@@ -642,10 +639,13 @@ class NookController extends Controller {
       }
     }
 
-    if (oldConfig.tagsPanelVisibility != newConfig.tagsPanelVisibility ||
+    if (oldConfig.repliesPanelVisibility != newConfig.repliesPanelVisibility ||
         oldConfig.editNotesEnabled != newConfig.editNotesEnabled ||
-        oldConfig.repliesPanelVisibility != newConfig.repliesPanelVisibility) {
-      _view.showPanels(newConfig.repliesPanelVisibility, newConfig.editNotesEnabled, newConfig.tagsPanelVisibility, newConfig.tagMessagesEnabled, newConfig.tagConversationsEnabled, ENABLE_TURNLINE_PANEL, DEFAULT_PANEL_TAB);
+        oldConfig.tagsPanelVisibility != newConfig.tagsPanelVisibility ||
+        oldConfig.tagMessagesEnabled != newConfig.tagMessagesEnabled ||
+        oldConfig.tagConversationsEnabled != newConfig.tagConversationsEnabled ||
+        oldConfig.turnlinePanelVisibility != newConfig.turnlinePanelVisibility) {
+      _view.showPanels(newConfig.repliesPanelVisibility, newConfig.editNotesEnabled, newConfig.tagsPanelVisibility, newConfig.tagMessagesEnabled, newConfig.tagConversationsEnabled, newConfig.turnlinePanelVisibility);
     }
 
     if (oldConfig.suggestedRepliesGroupsEnabled != newConfig.suggestedRepliesGroupsEnabled) {
