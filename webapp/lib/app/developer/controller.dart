@@ -32,7 +32,7 @@ class DeveloperController extends Controller {
     showCurrentDeveloperModeStatus();
 
     // show project config
-    var projectConfig = json.encode(projectConfiguration);
+    var projectConfig = json.encode(controller.selectedProject?.toData());
     var formattedProjectConfig = encoder.convert(json.decode(projectConfig));
     _view.updateProjectConfig(formattedProjectConfig);
 

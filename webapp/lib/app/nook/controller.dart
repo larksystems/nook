@@ -333,8 +333,7 @@ class NookController extends Controller {
     super.init();
 
     view = new NookPageView(this);
-    platform = new Platform(this);
-    userPositionReporter = UserPositionReporter();
+    userPositionReporter = UserPositionReporter(platform);
   }
 
   @override

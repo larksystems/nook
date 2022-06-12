@@ -112,8 +112,8 @@ class MessagesConfiguratorController extends ConfiguratorController {
 
   @override
   void init() {
+    super.init();
     view = new MessagesConfigurationPageView(this);
-    platform = new Platform(this);
   }
 
   void command(action, [Data data]) {

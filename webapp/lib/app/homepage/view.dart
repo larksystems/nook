@@ -13,7 +13,6 @@ Logger log = new Logger('view.dart');
 
 class HomePageView extends PageView {
   DivElement homePageContents;
-  SelectElement projectSelector;
 
 
   HomePageView(HomePageController controller) : super(controller) {
@@ -82,39 +81,6 @@ class HomePageView extends PageView {
     }
     homePageContents.children.clear();
     homePageContents.append(pageContents);
-  }
-
-  void showProjectTitleOrSelector(List<Project> projects) {
-    if (projects == null || projects.length == 0) {
-      navHeaderView.projectTitle = null;
-      return;
-    }
-
-    if (projects.length == 1) {
-      var title = SpanElement()..text = projects[0].projectName;
-      navHeaderView.projectTitle = title;
-      return;
-    }
-
-
-    // String selectedProjectId = null;
-    // if (projectSelector != null) {
-    //   selectedProject = projectSelector.options[projectSelector.selectedIndex].value;
-    // }
-    projectSelector = SelectElement();
-    projectSelector.append(OptionElement()
-        ..value = ''
-        ..text = "-- See all projects");
-
-    for (var project in projects) {
-      projectSelector.append(OptionElement()
-        ..value = project.projectId
-        ..text = project.projectName);
-    }
-    projectSelector.onChange.listen((event) {
-      appController.command(UIAction.projectSelected, ProjectData(projectSelector.value));
-    });
-    navHeaderView.projectTitle = projectSelector;
   }
 }
 
