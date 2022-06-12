@@ -79,11 +79,9 @@ class TagsConfiguratorController extends ConfiguratorController {
 
   @override
   void init() {
-    defaultUserConfig = model.UserConfigurationUtil.baseUserConfiguration;
-    currentUserConfig = currentConfig = model.UserConfigurationUtil.emptyUserConfiguration;
+    super.init();
 
     view = new TagsConfigurationPageView(this);
-    platform = new Platform(this);
   }
 
   void command(action, [Data data]) {

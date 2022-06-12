@@ -8,6 +8,7 @@ import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
 import 'package:katikati_ui_lib/components/banner/banner.dart';
 import 'package:katikati_ui_lib/components/logger.dart';
 import 'package:katikati_ui_lib/components/nav/nav_header.dart';
+import 'package:katikati_ui_lib/components/model/model.dart' as model;
 
 import 'package:nook/controller.dart';
 
@@ -24,6 +25,7 @@ class PageView {
   // header
   BannerView bannerView;
   NavHeaderView navHeaderView;
+  SelectElement projectSelector;
   AuthHeaderView authHeaderView;
 
   // main
@@ -43,9 +45,8 @@ class PageView {
         () {}, // We don't show the navbar when the user is not logged in, so no need to show this
         () => appController.command(BaseAction.signOutButtonClicked));
     navHeaderView.authHeader = authHeaderView;
-    navHeaderView.projectTitle = SpanElement()..innerText = appController.projectConfiguration['projectTitle'];
 
-    document.title = "${document.title} | ${appController.projectConfiguration['projectTitle']} | KatiKati";
+    document.title = "${document.title} | Katikati";
 
     snackbarView = new SnackbarView();
   }
@@ -71,6 +72,39 @@ class PageView {
 
     footerElement.append(snackbarView.snackbarElement);
   }
+
+
+  void showProjectTitleOrSelector(String projectId, List<model.Project> projects) {
+    if (projectId == null ||  projects == null || projects.length == 0) {
+      navHeaderView.projectTitle = null;
+      return;
+    }
+
+    if (projects.length == 1) {
+      var title = SpanElement()..text = projects[0].projectName;
+      navHeaderView.projectTitle = title;
+      return;
+    }
+
+    projectSelector = SelectElement();
+    projectSelector.append(OptionElement()
+        ..value = ''
+        ..text = "See all projects");
+
+    // TODO: This currently only works on MacOS, but it's not a big issue and can work as is until we restyle the selector.
+    projectSelector.append(HRElement());
+
+    for (var project in projects) {
+      projectSelector.append(OptionElement()
+        ..value = project.projectId
+        ..text = project.projectName
+        ..selected = project.projectId == projectId);
+    }
+    projectSelector.onChange.listen((event) {
+      appController.command(BaseAction.projectSelected, ProjectData(projectSelector.value));
+    });
+    navHeaderView.projectTitle = projectSelector;
+  }
 }
 
 /// The authentication page
@@ -80,9 +114,9 @@ class LoginPage {
   LoginPage() {
     authView = new AuthMainView(
         brand.KATIKATI,
-        _pageView.appController.projectConfiguration['loginTitle'] ?? '',
-        _pageView.appController.projectConfiguration['loginDescription'] ?? '',
-        _buildSignInDomainInfos(_pageView.appController.projectConfiguration['domainsInfo'] ?? []),
+        'Log into Katikati',
+        'Use the email address that you use at work.',
+        _buildSignInDomainInfos(_pageView.appController.selectedProject?.allowedEmailDomainsMap ?? {'katikati': 'katikati.world'}),
         (SignInDomainInfo domainInfo) => _pageView.appController.command(BaseAction.signInButtonClicked, new SignInData(domainInfo)));
   }
 
