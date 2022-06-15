@@ -19,11 +19,6 @@ Logger log = new Logger('platform.dart');
 
 const _SEND_MESSAGES_TO_IDS_ACTION = "send_messages_to_ids";
 
-DocStorage _docStorage;
-DocStorage _projectDocStorage;
-PubSubClient _pubsubInstance;
-PubSubClient _uptimePubSubInstance;
-
 
 class Platform {
   controller.Controller appController;
@@ -36,6 +31,11 @@ class Platform {
   StreamSubscription _systemMessagesSubscription;
   StreamSubscription _shardsSubscription;
   StreamSubscription _conversationsSubscriptions;
+
+  DocStorage _docStorage;
+  DocStorage _projectDocStorage;
+  PubSubClient _pubsubInstance;
+  PubSubClient _uptimePubSubInstance;
 
   Platform(this.appController) {
     platform.init("/assets/firebase_constants.json", (user) {
@@ -202,42 +202,10 @@ class Platform {
   bool isUserSignedIn() => platform.isUserSignedIn();
 
   FirebaseDocStorage get docStorage => _docStorage;
-
-  Future<void> sendMultiMessage(List<String> ids, String message, {bool wasSuggested = false, onError(dynamic)}) async {
-    log.verbose("Sending multi-message $ids : $message");
-
-    return sendMultiMessages(ids, [message], wasSuggested: wasSuggested, onError: onError);
-  }
-
-  Future<void> sendMultiMessages(List<String> ids, List<String> messages, {bool wasSuggested = false, onError(dynamic)}) async {
-    log.verbose("Sending multi-message $ids : $messages");
-
-    //  {
-    //  "action" : "send_messages_to_ids"
-    //  "ids" : [ "nook-uuid-23dsa" ],
-    //  "messages" : [ "🐱" ]
-    //  }
-
-    Map payload =
-      {
-        'action' : _SEND_MESSAGES_TO_IDS_ACTION,
-        'ids' : ids,
-        'messages' : messages,
-        'was_suggested' : wasSuggested,
-      };
-
-    try {
-      return await _pubsubInstance.publish(platform_constants.smsTopic, payload);
-    } catch (error, trace) {
-      if (onError != null) onError(error);
-      // Rethrow so that others could handle it
-      // and so that it is logged through the normal process
-      rethrow;
-    }
-  }
+  FirebaseDocStorage get projectDocStorage => _projectDocStorage;
 
   void listenForProjects(ProjectCollectionListener listener, [OnErrorListener onErrorListener]) {
-    _projectSubscription = Project.listen(_docStorage, listener, queryList: [FirebaseQuery('user', FirebaseQuery.EQUAL_TO, appController.signedInUser.userEmail)], onError: onErrorListener);
+    _projectSubscription = Project.listen(_docStorage, listener, queryList: [FirebaseQuery('users', FirebaseQuery.ARRAY_CONTAINS, appController.signedInUser.userEmail)], onError: onErrorListener);
   }
 
   void listenForUserConfigurations(UserConfigurationCollectionListener listener, [OnErrorListener onErrorListener]) {
@@ -268,6 +236,37 @@ class Platform {
 
   void listenForUserPresence(UserPresenceCollectionListener listener, [OnErrorListener onErrorListener]) {
     _userPresenceSubscription = UserPresence.listen(_projectDocStorage, listener, onError: onErrorListener);
+  }
+
+  Future<void> sendMultiMessage(List<String> ids, String message, {bool wasSuggested = false, onError(dynamic)}) async {
+    log.verbose("Sending multi-message $ids : $message");
+    return sendMultiMessages(ids, [message], wasSuggested: wasSuggested, onError: onError);
+  }
+
+  Future<void> sendMultiMessages(List<String> ids, List<String> messages, {bool wasSuggested = false, onError(dynamic)}) async {
+    log.verbose("Sending multi-message $ids : $messages");
+
+    //  {
+    //  "action" : "send_messages_to_ids"
+    //  "ids" : [ "nook-uuid-23dsa" ],
+    //  "messages" : [ "🐱" ]
+    //  }
+    Map payload =
+      {
+        'action' : _SEND_MESSAGES_TO_IDS_ACTION,
+        'ids' : ids,
+        'messages' : messages,
+        'was_suggested' : wasSuggested,
+      };
+
+    try {
+      return await _pubsubInstance.publish(platform_constants.smsTopic, payload);
+    } catch (error, trace) {
+      if (onError != null) onError(error);
+      // Rethrow so that others could handle it
+      // and so that it is logged through the normal process
+      rethrow;
+    }
   }
 
   Future<void> addMessageTag(Conversation conversation, Message message, String tagId) {
