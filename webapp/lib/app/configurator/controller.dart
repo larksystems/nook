@@ -15,8 +15,10 @@ class ConfiguratorController extends Controller {
   ConfiguratorController() : super();
 
   @override
-  void setUpOnLogin() {
-    super.setUpOnLogin();
+  void init() {
+    if (urlManager.project == null) routeToPage(Page.homepage);
+
+    super.init();
   }
 
   void command(action, [Data data]) {

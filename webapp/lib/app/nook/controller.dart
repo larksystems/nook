@@ -330,6 +330,8 @@ class NookController extends Controller {
 
   @override
   void init() {
+    if (urlManager.project == null) routeToPage(Page.homepage);
+
     super.init();
 
     view = new NookPageView(this);
