@@ -231,7 +231,6 @@ class Controller {
   /// Method to be implemented by extending classes to set up any UI/listeners on user logging in
   void setUpOnLogin() {
     platform.listenForProjects((added, modified, removed) {
-      print('== $projects');
       for (var project in added) {
         projects.add(project);
       }
