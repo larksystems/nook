@@ -71,6 +71,7 @@ class ConfigurationPageView extends PageView {
     renderElement.append(configurationContent);
   }
 
+  @override
   void initSignedInView(String displayName, String photoUrl) {
     super.initSignedInView(displayName, photoUrl);
     mainElement.append(renderElement);
