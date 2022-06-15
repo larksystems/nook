@@ -253,6 +253,8 @@ class TagsConfiguratorController extends ConfiguratorController {
       _view.showSaveStatus('Modifying tags has been disabled, dropping all changes');
       _view.unsavedChanges = false;
       _updateUnsavedIndicators(tagManager.tagsByGroup, tagManager.unsavedTagIds, tagManager.unsavedGroupIds);
+    } else {
+      _view.hideSaveStatus();
     }
   }
 
