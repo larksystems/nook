@@ -13,7 +13,7 @@ import 'package:katikati_ui_lib/components/platform/pubsub.dart';
 
 /// The client version used to track client/server API changes
 /// and passed to the server during each heartbeat
-String clientVersion = '1.0.0';
+String clientVersion = '1.0.1';
 
 Logger log = new Logger('platform.dart');
 
@@ -21,6 +21,7 @@ const _SEND_MESSAGES_TO_IDS_ACTION = "send_messages_to_ids";
 
 DocStorage _docStorage;
 PubSubClient _pubsubInstance;
+PubSubClient _pubsubLogInstance;
 PubSubClient _uptimePubSubInstance;
 
 
@@ -43,13 +44,16 @@ class Platform {
       }
       _docStorage = FirebaseDocStorage(firebase.firestore());
       _pubsubInstance = new PubSubClient(platform_constants.publishUrl, user);
+      _pubsubLogInstance = new PubSubClient(platform_constants.logUrl, user);
       appController.command(controller.BaseAction.userSignedIn, new controller.UserData(user.displayName, user.email, photoURL));
       _uptimePubSubInstance = new PubSubClient(platform_constants.statuszUrl, user);
       initUptimeMonitoring();
     }, () {
       _pubsubInstance = null;
+      _pubsubLogInstance = null;
       appController.command(controller.BaseAction.userSignedOut, null);
     });
+    Logger.platform = this;
   }
 
   void initUptimeMonitoring() {
@@ -229,6 +233,18 @@ class Platform {
     }
   }
 
+  void serverLog(String message, onError(dynamic)) async {
+    Map payload = {
+      'user': appController.signedInUser.userEmail,
+      'datetime': DateTime.now().toUtc().toIso8601String(),
+      'data': message,
+    };
+
+    _pubsubLogInstance
+      .publish(platform_constants.logTopic, payload)
+      .then((_) => {}, onError: (error, trace) { if (onError != null) onError(error); });
+  }
+
   void listenForUserConfigurations(UserConfigurationCollectionListener listener, [OnErrorListener onErrorListener]) {
     _userConfigSubscription = UserConfiguration.listen(_docStorage, listener, onErrorListener: onErrorListener);
   }
@@ -236,7 +252,7 @@ class Platform {
   void listenForSystemMessages(SystemMessageCollectionListener listener, [OnErrorListener onErrorListener]) {
     _systemMessagesSubscription = SystemMessage.listen(_docStorage, listener, onErrorListener: onErrorListener);
   }
-      
+
 
   void listenForConversationListShards(ConversationListShardCollectionListener listener, [OnErrorListener onErrorListener]) {
     _shardsSubscription =  ConversationListShard.listen(_docStorage, listener, onErrorListener: onErrorListener);

@@ -275,16 +275,16 @@ class TagsConfiguratorController extends ConfiguratorController {
       }
 
       if (currentConfig.consoleLoggingLevel.toLowerCase().contains('verbose')) {
-          logLevel = LogLevel.VERBOSE;
+          Logger.logLevel = LogLevel.VERBOSE;
       }
       if (currentConfig.consoleLoggingLevel.toLowerCase().contains('debug')) {
-          logLevel = LogLevel.DEBUG;
+          Logger.logLevel = LogLevel.DEBUG;
       }
       if (currentConfig.consoleLoggingLevel.toLowerCase().contains('warning')) {
-          logLevel = LogLevel.WARNING;
+          Logger.logLevel = LogLevel.WARNING;
       }
       if (currentConfig.consoleLoggingLevel.toLowerCase().contains('error')) {
-          logLevel = LogLevel.ERROR;
+          Logger.logLevel = LogLevel.ERROR;
       }
     });
 
