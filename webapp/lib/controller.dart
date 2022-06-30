@@ -281,16 +281,16 @@ class Controller {
       currentConfig ??= model.UserConfigurationUtil.emptyUserConfiguration;
       currentConfig.consoleLoggingLevel = newConfig.consoleLoggingLevel;
       if (newConfig.consoleLoggingLevel.toLowerCase().contains('verbose')) {
-          logLevel = LogLevel.VERBOSE;
+          Logger.logLevel = LogLevel.VERBOSE;
       }
       if (newConfig.consoleLoggingLevel.toLowerCase().contains('debug')) {
-          logLevel = LogLevel.DEBUG;
+          Logger.logLevel = LogLevel.DEBUG;
       }
       if (newConfig.consoleLoggingLevel.toLowerCase().contains('warning')) {
-          logLevel = LogLevel.WARNING;
+          Logger.logLevel = LogLevel.WARNING;
       }
       if (newConfig.consoleLoggingLevel.toLowerCase().contains('error')) {
-          logLevel = LogLevel.ERROR;
+          Logger.logLevel = LogLevel.ERROR;
       }
     }
 

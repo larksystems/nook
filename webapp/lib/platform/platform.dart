@@ -13,7 +13,7 @@ import 'package:katikati_ui_lib/components/platform/pubsub.dart';
 
 /// The client version used to track client/server API changes
 /// and passed to the server during each heartbeat
-String clientVersion = '1.0.0';
+String clientVersion = '1.0.1';
 
 Logger log = new Logger('platform.dart');
 
@@ -35,6 +35,7 @@ class Platform {
   DocStorage _docStorage;
   DocStorage _projectDocStorage;
   PubSubClient _pubsubInstance;
+  PubSubClient _pubsubLogInstance;
   PubSubClient _uptimePubSubInstance;
 
   Platform(this.appController) {
@@ -47,13 +48,16 @@ class Platform {
       var firebaseCollectionPrefix = appController.urlManager.project != null ? '/projects/${appController.urlManager.project}' : null;
       _projectDocStorage = FirebaseDocStorage(firebase.firestore(), collectionPathPrefix: firebaseCollectionPrefix);
       _pubsubInstance = new PubSubClient(platform_constants.publishUrl, user);
+      _pubsubLogInstance = new PubSubClient(platform_constants.logUrl, user);
       appController.command(controller.BaseAction.userSignedIn, new controller.UserData(user.displayName, user.email, photoURL));
       _uptimePubSubInstance = new PubSubClient(platform_constants.statuszUrl, user);
       initUptimeMonitoring();
     }, () {
       _pubsubInstance = null;
+      _pubsubLogInstance = null;
       appController.command(controller.BaseAction.userSignedOut, null);
     });
+    Logger.platform = this;
   }
 
   void initUptimeMonitoring() {
@@ -267,6 +271,18 @@ class Platform {
       // and so that it is logged through the normal process
       rethrow;
     }
+  }
+
+  void serverLog(String message, onError(dynamic)) async {
+    Map payload = {
+      'user': appController.signedInUser.userEmail,
+      'datetime': DateTime.now().toUtc().toIso8601String(),
+      'data': message,
+    };
+
+    _pubsubLogInstance
+      .publish(platform_constants.logTopic, payload)
+      .then((_) => {}, onError: (error, trace) { if (onError != null) onError(error); });
   }
 
   Future<void> addMessageTag(Conversation conversation, Message message, String tagId) {
