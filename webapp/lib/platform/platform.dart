@@ -13,7 +13,7 @@ import 'package:katikati_ui_lib/components/platform/pubsub.dart';
 
 /// The client version used to track client/server API changes
 /// and passed to the server during each heartbeat
-String clientVersion = '1.0.0';
+String clientVersion = '1.0.1';
 
 Logger log = new Logger('platform.dart');
 
