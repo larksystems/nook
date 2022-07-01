@@ -3,41 +3,39 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /projects/{project} {
+      function getProjectResource() {
+        return get(/databases/$(database)/documents/projects/$(project));
+      }
+
       function isEmailVerified() {
         return
           request.auth != null &&
           request.auth.token.email_verified;
       }
-      
-      function isEmailDomainAllowed() {
-        let allowedEmailDomainsRegex = get(/databases/$(database)/documents/projects/$(project)).data.allowedEmailDomainsRegex;
-        return request.auth.token.email.matches(allowedEmailDomainsRegex);
+
+      function isUserListed(projectResource) {
+        return request.auth.token.email in projectResource.data.users;
       }
 
-      function isUserListed() {
-        return exists(/databases/$(database)/documents/projects/$(project)/users/$(request.auth.token.email));
-      }
-      
-      function isUserAllowed() {
-        return 
+      function isUserAllowed(projectResource) {
+        return
           isEmailVerified() &&
-          isEmailDomainAllowed() &&
-          isUserListed();
+          isUserListed(projectResource);
       }
 
-      allow read: if isUserAllowed();
+      allow read: if isUserAllowed(resource);
 
       match /user_presence/{user} {
-        allow read: if isUserAllowed();
-        allow write: if isUserAllowed() && user == request.auth.token.email;
+        allow read: if isUserAllowed(getProjectResource());
+        allow write: if isUserAllowed(getProjectResource()) && user == request.auth.token.email;
       }
 
       match /{collection}/{docId} {
-        allow read: if isUserAllowed();
+        allow read: if isUserAllowed(getProjectResource());
 
         match /{nestedCollection}/{nestedDocId} {
           allow read: if
-            isUserAllowed() &&
+            isUserAllowed(getProjectResource()) &&
             (collection != "tables" || docId != "uuid-table");
         }
       }
