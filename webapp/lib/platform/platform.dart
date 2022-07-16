@@ -246,20 +246,20 @@ class Platform {
   }
 
   void listenForUserConfigurations(UserConfigurationCollectionListener listener, [OnErrorListener onErrorListener]) {
-    _userConfigSubscription = UserConfiguration.listen(_docStorage, listener, onErrorListener: onErrorListener);
+    _userConfigSubscription = UserConfiguration.listen(_docStorage, listener, onError: onErrorListener);
   }
 
   void listenForSystemMessages(SystemMessageCollectionListener listener, [OnErrorListener onErrorListener]) {
-    _systemMessagesSubscription = SystemMessage.listen(_docStorage, listener, onErrorListener: onErrorListener);
+    _systemMessagesSubscription = SystemMessage.listen(_docStorage, listener, onError: onErrorListener);
   }
 
 
   void listenForConversationListShards(ConversationListShardCollectionListener listener, [OnErrorListener onErrorListener]) {
-    _shardsSubscription =  ConversationListShard.listen(_docStorage, listener, onErrorListener: onErrorListener);
+    _shardsSubscription =  ConversationListShard.listen(_docStorage, listener, onError: onErrorListener);
   }
 
   StreamSubscription listenForConversations(ConversationCollectionListener listener, String conversationListRoot, [OnErrorListener onErrorListener]) {
-    _conversationsSubscriptions = Conversation.listen(_docStorage, listener, collectionRoot: conversationListRoot, onErrorListener: onErrorListener);
+    _conversationsSubscriptions = Conversation.listen(_docStorage, listener, collectionRoot: conversationListRoot, onError: onErrorListener);
     return _conversationsSubscriptions;
   }
 
@@ -268,11 +268,11 @@ class Platform {
   }
 
   void listenForSuggestedReplies(SuggestedReplyCollectionListener listener, [OnErrorListener onErrorListener]) {
-    _suggestedRepliesSubscription = SuggestedReply.listen(_docStorage, listener, onErrorListener: onErrorListener);
+    _suggestedRepliesSubscription = SuggestedReply.listen(_docStorage, listener, onError: onErrorListener);
   }
 
   void listenForUserPresence(UserPresenceCollectionListener listener, [OnErrorListener onErrorListener]) {
-    _userPresenceSubscription = UserPresence.listen(_docStorage, listener, onErrorListener: onErrorListener);
+    _userPresenceSubscription = UserPresence.listen(_docStorage, listener, onError: onErrorListener);
   }
 
   Future<void> addMessageTag(Conversation conversation, Message message, String tagId) {
