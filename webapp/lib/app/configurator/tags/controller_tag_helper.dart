@@ -55,12 +55,11 @@ class TagManager {
         added.add(tag);
       }
 
-      if (tag.groups.isEmpty) {
-        _tagsByGroup.putIfAbsent('', () => []).add(tag);
-        continue;
-      }
-      for (var group in tag.groups) {
-        _tagsByGroup.putIfAbsent(group, () => []).add(tag);
+      var tagGroups = tag.groups.isEmpty ? [''] : tag.groups;
+      for (var group in tagGroups) {
+        _tagsByGroup.putIfAbsent(group, () => []);
+        _tagsByGroup[group].removeWhere((t) => t.tagId == tag.tagId);
+        _tagsByGroup[group].add(tag);
       }
     }
     return added;
