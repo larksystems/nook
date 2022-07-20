@@ -183,7 +183,7 @@ void _populateTagPanelView(Map<String, List<model.Tag>> tagsByGroup, bool showSh
     var tags = tagsByGroup[tagGroupName];
     Map<String, TagView> tagViewsById = {};
     for (model.Tag tag in tags) {
-      tagViewsById[tag.docId] = TagView(tag.text, tag.text, selectable: true, shortcut: showShortcut ? tag.shortcut : "")
+      tagViewsById[tag.docId] = TagView(tag.text, tag.text, selectable: true, shortcut: showShortcut ? tag.shortcut : "", tagStyle: tagTypeToKKStyle(tag.type))
         ..onSelect = () => _view.appController.command(UIAction.addTag, new TagData(tag.tagId));
       if (mandatoryExcludeTagIds != null && mandatoryExcludeTagIds.contains(tag.tagId)) {
         var questionIcon = SpanElement()..className = "fas fa-info";
