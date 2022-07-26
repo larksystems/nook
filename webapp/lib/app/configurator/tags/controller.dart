@@ -248,7 +248,7 @@ class TagsConfiguratorController extends ConfiguratorController {
     });
 
     platform.listenForUserConfigurations((added, modified, removed) {
-      List<model.UserConfiguration> changedUserConfigurations = new List()
+      var changedUserConfigurations = <model.UserConfiguration>[]
         ..addAll(added)
         ..addAll(modified);
 
