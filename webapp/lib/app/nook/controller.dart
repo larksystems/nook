@@ -1195,24 +1195,44 @@ class NookController extends Controller {
       case UIAction.selectConversation:
         ConversationData conversationData = data;
         model.Conversation conversation = conversations.singleWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
-        var lastSelectedMessageId = selectedConversations.isEmpty ? null : selectedConversations.last.docId;
-        selectedConversations.add(conversation);
-        var selectedConversationIds = selectedConversations.map((c) => c.docId).toSet();
-        if (shiftKeyPressed && lastSelectedMessageId != null) {
-          bool addConversation = false;
-          for (var c in conversationsInView) {
-            if (c.docId == conversation.docId || c.docId == lastSelectedMessageId) {
-              addConversation = !addConversation;
-            }
-            if (addConversation && !selectedConversationIds.contains(c.docId)) {
-              selectedConversations.add(c);
-              _view.conversationListPanelView.checkConversation(c.docId);
+        if (validateSelectConversation(conversation)) {
+          var lastSelectedConversationId = selectedConversations.isEmpty ? null : selectedConversations.last.docId;
+          selectedConversations.add(conversation);
+          var selectedConversationIds = selectedConversations.map((c) => c.docId).toSet();
+          if (shiftKeyPressed && lastSelectedConversationId != null) {
+            // check if it passes the multi-select tag check
+            if (validateSelectAll()) {
+              bool addConversation = false;
+              for (var c in conversationsInView) {
+                if (c.docId == conversation.docId || c.docId == lastSelectedConversationId) {
+                  addConversation = !addConversation;
+                }
+                if (addConversation && !selectedConversationIds.contains(c.docId)) {
+                  selectedConversations.add(c);
+                  _view.conversationListPanelView.checkConversation(c.docId);
+                }
+              }
+            } else { // don't allow shift multi-select
+              var multiSelectExcludeTagsString = multiSelectExcludeTags.map((model.Tag t) => t.text).toList().join('", "');
+              command(BaseAction.showSnackbar, SnackbarData(
+                '''Cannot select multiple conversations as some conversations in the list are labelled with the important tags: "$multiSelectExcludeTagsString".
+                <br>Make sure to hide conversations with these tags before you can select all conversations in the list.
+                <br>To learn more, please visit <a href="https://www.katikati.world/article/multi-send" target="_blank">this page</a>.''',
+                SnackbarNotificationType.warning));
             }
           }
+          // to maintain the order for bulk deselect
+          sortSelectedConversations();
+          _view.conversationListPanelView.updateSelectedCount(selectedConversations.length);
+        } else {
+          var multiSelectExcludeTagsString = multiSelectExcludeTags.map((model.Tag t) => t.text).toList().join('", "');
+          command(BaseAction.showSnackbar, SnackbarData(
+            '''Cannot select this conversation as it contains one of the important tags: "$multiSelectExcludeTagsString".
+            <br>Make sure to hide conversations with these tags before you can select multiple conversations in the list.
+            <br>To learn more, please visit <a href="https://www.katikati.world/article/multi-send" target="_blank">this page</a>.''',
+            SnackbarNotificationType.warning));
+          _view.conversationListPanelView.uncheckConversation(conversation.docId);
         }
-        // to maintain the order for bulk deselect
-        sortSelectedConversations();
-        _view.conversationListPanelView.updateSelectedCount(selectedConversations.length);
         break;
       case UIAction.deselectConversation:
         ConversationData conversationData = data;
@@ -1356,11 +1376,22 @@ class NookController extends Controller {
         subCommandForAddTagInline(action, data);
         break;
       case UIAction.selectAllConversations:
-        _view.conversationListPanelView.checkAllConversations();
-        selectedConversations.clear();
-        selectedConversations.addAll(filteredConversations);
-        updateFilteredAndSelectedConversationLists();
-        _view.conversationListPanelView.updateSelectedCount(selectedConversations.length);
+        // check if it passes the multi-select tag check
+        if (validateSelectAll()) {
+          _view.conversationListPanelView.checkAllConversations();
+          selectedConversations.clear();
+          selectedConversations.addAll(filteredConversations);
+          updateFilteredAndSelectedConversationLists();
+          _view.conversationListPanelView.updateSelectedCount(selectedConversations.length);
+        } else { // don't allow multi-select all
+          var multiSelectExcludeTagsString = multiSelectExcludeTags.map((model.Tag t) => t.text).toList().join('", "');
+          command(BaseAction.showSnackbar, SnackbarData(
+            '''Cannot select all conversations as some conversations in the list are labelled with the important tags: "$multiSelectExcludeTagsString".
+            <br>Make sure to hide conversations with these tags before you can select all conversations in the list.
+            <br>To learn more, please visit <a href="https://www.katikati.world/article/multi-send" target="_blank">this page</a>.''',
+            SnackbarNotificationType.warning));
+          _view.conversationListPanelView.uncheckSelectAllCheckbox();
+        }
         break;
       case UIAction.deselectAllConversations:
         _view.conversationListPanelView.uncheckSelectAllCheckbox();
@@ -1753,6 +1784,22 @@ class NookController extends Controller {
     }
     return tagIdsWithMissingInfo;
   }
+
+  bool validateSelectAll() {
+    // if any conversations have the multisend exclude tags, don't allow multi-select
+    for (var conversation in conversationsInView) {
+      if (!validateSelectConversation(conversation)) return false;
+    }
+    return true;
+  }
+
+  bool validateSelectConversation(model.Conversation conversation) {
+    var intersection = conversation.tagIds.intersection(currentConfig.multiSelectExcludeTagIds);
+    if (intersection.isNotEmpty) return false;
+    return true;
+  }
+
+  Set<model.Tag> get multiSelectExcludeTags => currentConfig.multiSelectExcludeTagIds.map((e) => tagIdsToTags[e]).toSet();
 }
 
 Map<String, model.Tag> _notFoundTagIds = {};

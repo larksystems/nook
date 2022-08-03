@@ -5,6 +5,7 @@ import 'dart:svg' as svg;
 
 import 'package:intl/intl.dart';
 import 'package:katikati_ui_lib/components/accordion/accordion.dart';
+import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
 import 'package:katikati_ui_lib/components/tabs/tabs.dart';
 import 'package:katikati_ui_lib/components/url_manager/url_manager.dart';
 import 'package:katikati_ui_lib/utils/datetime.dart';
@@ -46,6 +47,8 @@ class NookPageView extends PageView {
   NotesPanelView notesPanelView;
   UrlManager urlManager;
   TabsView tabsView;
+
+  NookController get appController => super.appController;
 
   NookPageView(NookController controller) : super(controller) {
     _view = this;
@@ -975,7 +978,14 @@ class ConversationListPanelView {
       ..classes.add('conversation-list-header__checkbox')
       ..title = 'Select all conversations'
       ..checked = false
-      ..onClick.listen((_) => _selectAllCheckbox.checked ? _view.appController.command(UIAction.selectAllConversations, null) : _view.appController.command(UIAction.deselectAllConversations, null));
+      ..onClick.listen((_) {
+        if (!_selectAllCheckbox.checked) {
+          _view.appController.command(UIAction.deselectAllConversations, null);
+          return;
+        }
+
+        _view.appController.command(UIAction.selectAllConversations, null);
+      });
     _panelHeader.append(_selectAllCheckbox);
 
     _selectedCount = new SpanElement()
