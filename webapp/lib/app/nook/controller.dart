@@ -1217,7 +1217,7 @@ class NookController extends Controller {
               command(BaseAction.showSnackbar, SnackbarData(
                 '''Cannot select multiple conversations as some conversations in the list are labelled with the important tags: "$multiSelectExcludeTagsString".
                 <br>Make sure to hide conversations with these tags before you can select all conversations in the list.
-                <br>To learn more, please visit <a href="https://www.katikati.world/article/multi-send" target="_blank">this page</a>.''',
+                <br><a href="https://www.katikati.world/article/multi-send" target="_blank">Why we do this</a>.''',
                 SnackbarNotificationType.warning));
             }
           }
@@ -1229,7 +1229,7 @@ class NookController extends Controller {
           command(BaseAction.showSnackbar, SnackbarData(
             '''Cannot select this conversation as it contains one of the important tags: "$multiSelectExcludeTagsString".
             <br>Make sure to hide conversations with these tags before you can select multiple conversations in the list.
-            <br>To learn more, please visit <a href="https://www.katikati.world/article/multi-send" target="_blank">this page</a>.''',
+            <br><a href="https://www.katikati.world/article/multi-send" target="_blank">Why we do this</a>.''',
             SnackbarNotificationType.warning));
           _view.conversationListPanelView.uncheckConversation(conversation.docId);
         }
@@ -1388,7 +1388,7 @@ class NookController extends Controller {
           command(BaseAction.showSnackbar, SnackbarData(
             '''Cannot select all conversations as some conversations in the list are labelled with the important tags: "$multiSelectExcludeTagsString".
             <br>Make sure to hide conversations with these tags before you can select all conversations in the list.
-            <br>To learn more, please visit <a href="https://www.katikati.world/article/multi-send" target="_blank">this page</a>.''',
+            <br><a href="https://www.katikati.world/article/multi-send" target="_blank">Why we do this</a>.''',
             SnackbarNotificationType.warning));
           _view.conversationListPanelView.uncheckSelectAllCheckbox();
         }
