@@ -394,6 +394,7 @@ main {
 }
 
 .messages-date-separator {
+    text-align: center;
     background: var(--default-background-color);
     color: var(--dark-gray);
     padding: 2px 4px;
