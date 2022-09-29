@@ -1,34 +1,43 @@
+rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    function isEmailVerified() {
-      return
-        request.auth != null &&
-        request.auth.token.email_verified;
-    }
+    match /projects/{project} {
+      function getProjectResource() {
+        return get(/databases/$(database)/documents/projects/$(project));
+      }
 
-    function isEmailDomainAllowed() {
-      return
-        request.auth.token.email.matches(".*@katikati.world$") ||
-        request.auth.token.email.matches(".*@lark.systems$");
-    }
+      function isEmailVerified() {
+        return
+          request.auth != null &&
+          request.auth.token.email_verified;
+      }
 
-    function isUserAllowed() {
-      return exists(/databases/$(database)/documents/users/$(request.auth.token.email))
-    }
+      function isUserListed(projectResource) {
+        return request.auth.token.email in projectResource.data.users;
+      }
 
-    match /{collection}/{docId} {
-      allow read, write: if
-        isEmailVerified() &&
-        isEmailDomainAllowed() &&
-        isUserAllowed();
-
-      match /{nestedCollection2}/{nestedDocId2} {
-        allow read, write: if
+      function isUserAllowed(projectResource) {
+        return
           isEmailVerified() &&
-          isEmailDomainAllowed() &&
-          isUserAllowed() &&
-          (collection != "tables" ||
-          docId != "uuid-table");
+          isUserListed(projectResource);
+      }
+
+      allow read: if isUserAllowed(resource);
+
+      match /user_presence/{user} {
+        allow read: if isUserAllowed(getProjectResource());
+        allow write: if isUserAllowed(getProjectResource()) && user == request.auth.token.email;
+      }
+
+      match /{collection}/{docId} {
+        allow read: if isUserAllowed(getProjectResource());
+
+        match /{nestedCollection}/{nestedDocId} {
+          allow read: if
+            isUserAllowed(getProjectResource()) &&
+            (collection != "tables" || docId != "uuid-table");
+        }
       }
     }
   }

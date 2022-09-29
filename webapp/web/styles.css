@@ -25,9 +25,11 @@ header {
 
 .content {
     display: grid;
+    grid-template-columns: 31% 31% 31%;
     width: 100vw;
+    max-width: 800px;
     overflow-y: auto;
-    margin-top: 50px;
+    margin: 50px auto 0;
 }
 
 .config-page-options {
@@ -47,4 +49,41 @@ header {
 
 .config-page-option__action {
     min-width: 140px;
+}
+
+.tile-container {
+    display: grid;
+    grid-template-columns: 31% 31% 31%;
+    width: 100vw;
+    max-width: 800px;
+    overflow-y: auto;
+    margin: 50px auto 0;
+}
+
+.tile {
+    padding: 16px;
+    margin: 16px;
+    width: 200px;
+    height: 120px;
+    display: block;
+    text-decoration: none;
+    background: var(--white);
+    border: 1px solid var(--gray);
+    color: inherit;
+}
+
+.tile:hover {
+    background: var(--lightest-gray);
+}
+
+.tile:active {
+    background: var(--lighter-gray);
+}
+
+.tile .tile__title {
+    font-weight: bold;
+}
+
+.tile .tile__subtitle {
+    font-size: .8em;
 }

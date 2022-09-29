@@ -19,19 +19,20 @@ DeveloperPageView get _view => _controller.view;
 
 class DeveloperController extends Controller {
 
-  DeveloperController() {
+  DeveloperController() : super() {
     _controller = this;
     view = new DeveloperPageView(_controller);
   }
 
   void init() {
+    super.init();
     var encoder = new JsonEncoder.withIndent("  ");
-    
+
     // update developer mode status
     showCurrentDeveloperModeStatus();
 
     // show project config
-    var projectConfig = json.encode(projectConfiguration);
+    var projectConfig = json.encode(controller.selectedProject?.toData());
     var formattedProjectConfig = encoder.convert(json.decode(projectConfig));
     _view.updateProjectConfig(formattedProjectConfig);
 
@@ -39,10 +40,10 @@ class DeveloperController extends Controller {
     try {
       HttpRequest.getString('/assets/firebase_constants.json').then((firebaseConfigJson) {
         _view.updateFirebaseConfig(encoder.convert(json.decode(firebaseConfigJson)));
-      }, onError: (err) { 
+      }, onError: (err) {
         _view.updateFirebaseConfig("Error loading /assets/firebase_constants.json");
        });
-    } catch (e) { 
+    } catch (e) {
       _view.updateFirebaseConfig("Error loading & parsing /assets/firebase_constants.json");
     }
 

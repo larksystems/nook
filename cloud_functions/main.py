@@ -9,7 +9,7 @@ from google.cloud import pubsub_v1
 
 publisher = pubsub_v1.PublisherClient()
 PROJECT_ID = os.getenv('GCP_PROJECT')
-firebase_request_adapter = requests.Request()
+request_adapter = requests.Request()
 
 def _get_log_data(request):
     return {
@@ -37,16 +37,15 @@ def StatusZ(request):
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
 
+
 def Publish(request):
-    # Verify Firebase auth.
+    # Verify auth.
     id_token = None
-    error_message = None
     claims = None
     email = None
 
     request_data = request.get_data()
     json_map = json.loads(request_data)
-    id_token = json_map["fbUserIdToken"]
     topic_name = json_map["topic"]
     topic_path = publisher.topic_path(PROJECT_ID, topic_name)
 
@@ -54,8 +53,14 @@ def Publish(request):
     payload_bytes = payload.encode('utf-8')
 
     try:
-        claims = google.oauth2.id_token.verify_firebase_token(
-            id_token, firebase_request_adapter)
+        if "fbUserIdToken" in json_map:
+            id_token = json_map["fbUserIdToken"]
+            claims = google.oauth2.id_token.verify_firebase_token(id_token, request_adapter)
+        elif "oauthUserIdToken" in json_map:
+            id_token = json_map["oauthUserIdToken"]
+            claims = google.oauth2.id_token.verify_oauth2_token(id_token, request_adapter)
+        else:
+            raise ValueError("No user authentication token found")
         email = claims["email"]
         print (claims)
     except ValueError as e:

@@ -1,5 +1,6 @@
 name: nook
 version: 0.0.1
+publish_to: none
 
 environment:
   sdk: 2.10.4
@@ -13,7 +14,7 @@ dependencies:
     git:
       url: git@github.com:larksystems/katikati_common_lib.git
       path: ui
-      ref: 71a04421db4aee3ee9c41fec91b3155a7e083887
+      ref: 4ac41ef5ea2d37d32287a000f99bc25d9875a52e
 
 dev_dependencies:
   build_runner: ^1.7.0
