@@ -213,6 +213,8 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
   DivElement _conversationSummaryWrapper;
   DivElement _conversationSummary;
   DivElement _messages;
+  DivElement _startOfConversation;
+  DivElement _messagesList;
   DivElement _conversationWarning;
   DivElement _conversationId;
   DivElement _conversationIdCopy;
@@ -311,6 +313,14 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
     });
     conversationPanel.append(_messages);
 
+    _startOfConversation = DivElement()
+      ..classes.add("messages-date-separator")
+      ..innerText = "This is the start of conversation";
+    _messages.append(_startOfConversation);
+
+    _messagesList = new DivElement();
+    _messages.append(_messagesList);
+
     _freetextMessageSendView = FreetextMessageSendView("", maxLength: _view.appController.MESSAGE_MAX_LENGTH)..onSend.listen((messageText) {
       _view.appController.command(UIAction.sendManualMessage, new ManualReplyData(messageText));
     });
@@ -368,17 +378,18 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
   set demographicsInfo(String demographicsInfo) => _info.text = demographicsInfo;
 
   void addMessage(MessageView message) {
-    _messages.append(message.renderElement);
+    _messagesList.append(message.renderElement);
     _messageViews.add(message);
     _messageViewsMap[message.messageId] = message;
     message.renderElement.scrollIntoView();
+    _startOfConversation.classes.toggle("hidden", true);
   }
 
   void padOrTrimMessageViews(int count) {
     if (_messageViews.length == count) return;
     if (_messageViews.length > count) {
       for (int i = _messageViews.length - 1; i >= count; --i) {
-        _messages.children.removeAt(i);
+        _messagesList.children.removeAt(i);
         _messageViews.removeAt(i);
       }
       return;
@@ -386,19 +397,19 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
 
     for (int i = _messageViews.length; i < count; i++) {
       MessageView message = new MessageView('', DateTime.now(), '', '$i');
-      _messages.append(message.renderElement);
+      _messagesList.append(message.renderElement);
       _messageViews.add(message);
     }
   }
 
   void updateMessage(MessageView message, int index) {
     if (index >= _messageViews.length) {
-      _messages.append(message.renderElement);
+      _messagesList.append(message.renderElement);
       _messageViews.add(message);
       _messageViewsMap[message.messageId] = message;
       return;
     }
-    _messages.children[index] = message.renderElement;
+    _messagesList.children[index] = message.renderElement;
     _messageViews[index] = message;
     _messageViewsMap[message.messageId] = message;
   }
@@ -460,10 +471,11 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
     clearWarning();
     setSuggestedMessages([]);
 
-    int messagesNo = _messages.children.length;
+    int messagesNo = _messagesList.children.length;
     for (int i = 0; i < messagesNo; i++) {
-      _messages.firstChild.remove();
+      _messagesList.firstChild.remove();
     }
+    _startOfConversation.classes.toggle("hidden", false);
   }
 
   void updateDateSeparators() {
