@@ -116,7 +116,7 @@ class LoginPage {
         brand.KATIKATI,
         'Log into Katikati',
         'Use the email address that you use at work.',
-        _buildSignInDomainInfos(_pageView.appController.selectedProject?.allowedEmailDomainsMap ?? {'katikati': 'katikati.world'}),
+        _buildSignInDomainInfos(_pageView.appController.selectedProject?.allowedEmailDomainsMap ?? {null: null}),
         (SignInDomainInfo domainInfo) => _pageView.appController.command(BaseAction.signInButtonClicked, new SignInData(domainInfo)));
   }
 
