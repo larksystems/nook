@@ -22,7 +22,6 @@ import 'package:katikati_ui_lib/components/turnline/turnline.dart' as tl;
 import 'package:katikati_ui_lib/components/button/button.dart' as buttons;
 import 'package:katikati_ui_lib/components/model/model.dart' as model;
 import 'package:nook/view.dart';
-import 'package:nook/app/utils.dart';
 import 'package:nook/app/developer/utils.dart';
 
 import 'controller.dart';
@@ -45,7 +44,6 @@ class NookPageView extends PageView {
   TagPanelView tagPanelView;
   TurnlinePanelView turnlinePanelView;
   NotesPanelView notesPanelView;
-  UrlManager urlManager;
   TabsView tabsView;
 
   NookController get appController => super.appController;
@@ -60,7 +58,6 @@ class NookPageView extends PageView {
     tagPanelView = new TagPanelView();
     turnlinePanelView = new TurnlinePanelView();
     notesPanelView = new NotesPanelView();
-    urlManager = new UrlManager();
     tabsView = new TabsView();
 
     conversationFilter = {
@@ -105,7 +102,7 @@ class NookPageView extends PageView {
       showNormalStatus('signed in: ${latestCommitHash.substring(0, 8)}...');
     }, onError: (_) { /* Do nothing */ });
 
-    var links = ButtonLinksView(navLinks, window.location.pathname);
+    var links = ButtonLinksView(generateProjectLinks(appController.urlManager.project), window.location.pathname);
 
     navHeaderView.navContent = new DivElement()
       ..style.display = 'flex'
@@ -1802,7 +1799,7 @@ class ReplyActionView implements ActionView {
       var buttonElement = new DivElement()
         ..classes.add('action__button')
         ..classes.add('action__button--float')
-        ..text = '$buttonText (${controller.projectConfiguration["firstLanguage"] ?? "lang 1"})';
+        ..text = '$buttonText (${controller.selectedProject?.firstLanguage ?? "lang 1"})';
       buttonElement.onClick.listen((_) => _view.appController.command(UIAction.sendMessage, new ReplyData(replyId)));
       buttonElement.onMouseEnter.listen((event) => highlightText(true));
       buttonElement.onMouseLeave.listen((event) => highlightText(false));
@@ -1831,7 +1828,7 @@ class ReplyActionView implements ActionView {
       var buttonElement = new DivElement()
         ..classes.add('action__button')
         ..classes.add('action__button--float')
-        ..text = '$buttonText (${controller.projectConfiguration["secondLanguage"] ?? "lang 2"})';
+        ..text = '$buttonText (${controller.selectedProject?.secondLanguage ?? "lang 2"})';
       buttonElement.onClick.listen((_) => _view.appController.command(UIAction.sendMessage, new ReplyData(replyId, replyWithTranslation: true)));
       buttonElement.onMouseEnter.listen((event) => highlightTranslation(true));
       buttonElement.onMouseLeave.listen((event) => highlightTranslation(false));
@@ -1901,7 +1898,7 @@ class ReplyActionGroupView implements ActionView {
     var sendButton = new DivElement()
       ..classes.add('action__button')
       ..classes.add('action__button--flex')
-      ..text = '$buttonText (${controller.projectConfiguration["firstLanguage"] ?? "lang 1"})';
+      ..text = '$buttonText (${controller.selectedProject?.firstLanguage ?? "lang 1"})';
     sendButton.onClick.listen((_) => _view.appController.command(UIAction.sendMessageGroup, new GroupReplyData(groupId)));
     sendButton.onMouseEnter.listen((event) {
       sendButton.scrollIntoView(); // this is to stabilize the view around the button
@@ -1917,7 +1914,7 @@ class ReplyActionGroupView implements ActionView {
     var sendTranslationButton = new DivElement()
       ..classes.add('action__button')
       ..classes.add('action__button--flex')
-      ..text = '$buttonText (${controller.projectConfiguration["secondLanguage"] ?? "lang 2"})';
+      ..text = '$buttonText (${controller.selectedProject?.secondLanguage ?? "lang 2"})';
     sendTranslationButton.onClick.listen((_) => _view.appController.command(UIAction.sendMessageGroup, new GroupReplyData(groupId, replyWithTranslation: true)));
     sendTranslationButton.onMouseEnter.listen((event) {
       sendTranslationButton.scrollIntoView(); // this is to stabilize the view around the button

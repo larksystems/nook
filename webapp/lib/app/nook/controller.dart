@@ -7,12 +7,12 @@ import 'package:firebase/firebase.dart' show FirebaseError;
 import 'package:katikati_ui_lib/components/conversation/conversation_item.dart';
 import 'package:katikati_ui_lib/components/conversation/new_conversation_modal.dart';
 
-import 'package:katikati_ui_lib/components/url_manager/url_manager.dart';
 import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
 import 'package:katikati_ui_lib/components/tag/tag.dart';
 import 'package:katikati_ui_lib/components/turnline/turnline.dart';
 import 'package:katikati_ui_lib/components/logger.dart';
 import 'package:katikati_ui_lib/components/tooltip/tooltip.dart';
+import 'package:katikati_ui_lib/components/url_manager/url_manager.dart';
 import 'package:nook/controller.dart';
 export 'package:nook/controller.dart';
 import 'package:katikati_ui_lib/components/model/model.dart' as model;
@@ -319,12 +319,6 @@ class NookController extends Controller {
   String selectedConversationTagId;
   bool shiftKeyPressed = false;
 
-  model.UserConfiguration defaultUserConfig;
-  model.UserConfiguration currentUserConfig;
-  /// This represents the current configuration of the UI.
-  /// It's computed by merging the [defaultUserConfig] and [currentUserConfig] (if set).
-  model.UserConfiguration currentConfig;
-
   DateTime lastUserActivity = new DateTime.now();
   UserPositionReporter userPositionReporter;
   Map<String, Timer> otherUserPresenceTimersByUserId = {};
@@ -336,12 +330,12 @@ class NookController extends Controller {
 
   @override
   void init() {
-    defaultUserConfig = model.UserConfigurationUtil.baseUserConfiguration;
-    currentUserConfig = currentConfig = model.UserConfigurationUtil.emptyUserConfiguration;
+    if (urlManager.project == null) routeToPage(Page.homepage);
+
+    super.init();
 
     view = new NookPageView(this);
-    platform = new Platform(this);
-    userPositionReporter = UserPositionReporter();
+    userPositionReporter = UserPositionReporter(platform);
   }
 
   @override
@@ -360,6 +354,8 @@ class NookController extends Controller {
     conversationFilter = new ConversationFilter.fromUrl(currentConfig);
     _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.include), TagFilterType.include);
     _view.conversationIdFilter.filter = conversationFilter.conversationIdFilter;
+
+    super.setUpOnLogin();
 
     platform.listenForTags(
       (added, modified, removed) {
@@ -447,7 +443,7 @@ class NookController extends Controller {
         var shardsToConsider = shards.take(shardCountToConsider).toList();
 
         // Read any conversation shards from the URL
-        String urlConversationListRoot = _view.urlManager.conversationList;
+        String urlConversationListRoot = urlManager.conversationList;
         String conversationListRoot = urlConversationListRoot;
         if (urlConversationListRoot == null) {
           conversationListRoot = ConversationListData.NONE;
@@ -461,7 +457,7 @@ class NookController extends Controller {
         _view.conversationListPanelView.updateShardsList(shardsToConsider);
         // If we try to access a list that hasn't loaded yet, keep it in the URL
         // so it can be picked up on the next data snapshot from firebase.
-        _view.urlManager.conversationList = urlConversationListRoot;
+        urlManager.conversationList = urlConversationListRoot;
         _view.conversationListPanelView.selectShard(conversationListRoot);
         command(UIAction.selectConversationList, ConversationListData(conversationListRoot));
       }, (error, stacktrace) {
@@ -481,27 +477,6 @@ class NookController extends Controller {
           ..addAll(modified.where((m) => !m.expired));
         command(BaseAction.updateSystemMessages, SystemMessagesData(systemMessages));
       }, showAndLogError);
-
-    platform.listenForUserConfigurations(
-      (added, modified, removed) {
-        List<model.UserConfiguration> changedUserConfigurations = new List()
-          ..addAll(added)
-          ..addAll(modified);
-        var defaultConfig = changedUserConfigurations.singleWhere((c) => c.docId == 'default', orElse: () => null);
-        defaultConfig = removed.where((c) => c.docId == 'default').length > 0 ? model.UserConfigurationUtil.baseUserConfiguration : defaultConfig;
-        var userConfig = changedUserConfigurations.singleWhere((c) => c.docId == signedInUser.userEmail, orElse: () => null);
-        userConfig = removed.where((c) => c.docId == signedInUser.userEmail).length > 0 ? model.UserConfigurationUtil.emptyUserConfiguration : userConfig;
-        if (defaultConfig == null && userConfig == null) {
-          // Neither of the relevant configurations has been changed, nothing to do here
-          return;
-        }
-        defaultUserConfig = defaultConfig ?? defaultUserConfig;
-        currentUserConfig = userConfig ?? currentUserConfig;
-        var newConfig = currentUserConfig.applyDefaults(defaultUserConfig);
-        applyConfiguration(newConfig);
-      }, showAndLogError);
-    // Apply the default configuration before loading any new configs.
-    applyConfiguration(defaultUserConfig);
 
     platform.listenForUserPresence(
       (added, modified, removed) {
@@ -570,7 +545,9 @@ class NookController extends Controller {
 
   /// Sets user customization flags from the data map
   /// If a flag is not set in the data map, it defaults to the existing values
+  @override
   void applyConfiguration(model.UserConfiguration newConfig) {
+    super.applyConfiguration(newConfig);
     var oldConfig = currentConfig;
     currentConfig = newConfig;
     if (oldConfig.repliesKeyboardShortcutsEnabled != newConfig.repliesKeyboardShortcutsEnabled) {
@@ -622,7 +599,7 @@ class NookController extends Controller {
         // only clear things up after we've received the config from the server
         conversationFilter.clearFilters(TagFilterType.lastInboundTurn);
 
-        _view.urlManager.tagsFilter[TagFilterType.lastInboundTurn] = conversationFilter.filterTagIdsManuallySet[TagFilterType.lastInboundTurn];
+        urlManager.tagsFilter[TagFilterType.lastInboundTurn] = conversationFilter.filterTagIdsManuallySet[TagFilterType.lastInboundTurn];
       } else {
         _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.lastInboundTurn), TagFilterType.lastInboundTurn);
       }
@@ -633,7 +610,7 @@ class NookController extends Controller {
         // only clear things up after we've received the config from the server
         conversationFilter.clearFilters(TagFilterType.exclude);
 
-        _view.urlManager.tagsFilter[TagFilterType.exclude] = conversationFilter.filterTagIdsManuallySet[TagFilterType.exclude];
+        urlManager.tagsFilter[TagFilterType.exclude] = conversationFilter.filterTagIdsManuallySet[TagFilterType.exclude];
       } else {
         _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.exclude), TagFilterType.exclude);
       }
@@ -654,21 +631,6 @@ class NookController extends Controller {
       }
     }
 
-    if (oldConfig.consoleLoggingLevel != newConfig.consoleLoggingLevel) {
-      if (newConfig.consoleLoggingLevel.toLowerCase().contains('verbose')) {
-          Logger.logLevel = LogLevel.VERBOSE;
-      }
-      if (newConfig.consoleLoggingLevel.toLowerCase().contains('debug')) {
-          Logger.logLevel = LogLevel.DEBUG;
-      }
-      if (newConfig.consoleLoggingLevel.toLowerCase().contains('warning')) {
-          Logger.logLevel = LogLevel.WARNING;
-      }
-      if (newConfig.consoleLoggingLevel.toLowerCase().contains('error')) {
-          Logger.logLevel = LogLevel.ERROR;
-      }
-    }
-
     log.verbose('Updated user configuration: $currentConfig');
   }
 
@@ -677,15 +639,15 @@ class NookController extends Controller {
     conversationListSubscription?.cancel();
     if (conversationListSubscription != null) {
       // Only clear up the conversation id after the initial page loading
-      _view.urlManager.conversationId = null;
+      urlManager.conversationId = null;
     }
     conversationListSubscription = null;
     if (conversationListRoot == ConversationListData.NONE) {
-      _view.urlManager.conversationList = null;
+      urlManager.conversationList = null;
       _view.conversationListPanelView.totalConversations = 0;
       return;
     }
-    _view.urlManager.conversationList = conversationListRoot;
+    urlManager.conversationList = conversationListRoot;
     conversationListSubscription = platform.listenForConversations(
       (added, modified, removed) {
         if (added.length > 0) {
@@ -730,7 +692,7 @@ class NookController extends Controller {
         // TODO even though they are unlikely to happen, we should also handle the removals in the UI for consistency
 
         // Determine if we need to display the conversation from the url
-        String urlConversationId = _view.urlManager.conversationId;
+        String urlConversationId = urlManager.conversationId;
         if (activeConversation == null && urlConversationId != null) {
           var matches = conversations.where((c) => c.docId == urlConversationId).toList();
           if (matches.length == 0) {
@@ -993,7 +955,7 @@ class NookController extends Controller {
         model.Tag unifierTag = unifierTagForTag(tag, tagIdsToTags);
         var added = conversationFilter.addFilter(tagData.filterType, unifierTag);
         if (!added) return; // No change, nothing further to do
-        _view.urlManager.tagsFilter[tagData.filterType] = conversationFilter.filterTagIdsManuallySet[tagData.filterType];
+        urlManager.tagsFilter[tagData.filterType] = conversationFilter.filterTagIdsManuallySet[tagData.filterType];
         _view.conversationFilter[tagData.filterType].addFilterTag(new FilterTagView(unifierTag.text, unifierTag.tagId, tagTypeToKKStyle(unifierTag.type), tagData.filterType));
         if (actionObjectState == UIActionObject.loadingConversations) return;
         updateFilteredAndSelectedConversationLists();
@@ -1087,7 +1049,7 @@ class NookController extends Controller {
         model.Tag tag = tagIdToTag(tagData.tagId, tagIdsToTags);
         var changed = conversationFilter.removeFilter(tagData.filterType, tag);
         if (!changed) return; // No change, nothing further to do
-        _view.urlManager.tagsFilter[tagData.filterType] = conversationFilter.filterTagIdsManuallySet[tagData.filterType];
+        urlManager.tagsFilter[tagData.filterType] = conversationFilter.filterTagIdsManuallySet[tagData.filterType];
         _view.conversationFilter[tagData.filterType].removeFilterTag(tag.tagId);
         if (actionObjectState == UIActionObject.loadingConversations) return;
         updateFilteredAndSelectedConversationLists();
@@ -1096,7 +1058,7 @@ class NookController extends Controller {
       case UIAction.updateConversationIdFilter:
         ConversationIdFilterData filterData = data;
         conversationFilter.conversationIdFilter = filterData.idFilter;
-        _view.urlManager.conversationIdFilter = filterData.idFilter.isEmpty ? null : filterData.idFilter;
+        urlManager.conversationIdFilter = filterData.idFilter.isEmpty ? null : filterData.idFilter;
         if (actionObjectState == UIActionObject.loadingConversations) return;
         updateFilteredAndSelectedConversationLists();
         break;
@@ -1599,7 +1561,7 @@ class NookController extends Controller {
   }
 
   void _selectConversationInView(model.Conversation conversation) {
-    _view.urlManager.conversationId = conversation.docId;
+    urlManager.conversationId = conversation.docId;
     if (conversationsInView.contains(conversation)) {
       // Select the conversation in the list of conversations
       _view.conversationListPanelView.selectConversation(conversation.docId);

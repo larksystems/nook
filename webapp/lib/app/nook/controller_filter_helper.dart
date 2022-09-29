@@ -57,7 +57,7 @@ class ConversationFilter {
     updateUserConfig(userConfig);
     _applyMandatoryFilters();
 
-    conversationIdFilter = _view.urlManager.conversationIdFilter ?? "";
+    conversationIdFilter = controller.urlManager.conversationIdFilter ?? "";
   }
 
   bool get isEmpty =>
@@ -122,12 +122,12 @@ class ConversationFilter {
   }
 
   Set<model.Tag> _getTagsFromUrl(TagFilterType type, Map<String, model.Tag> tags) {
-    Set<String> filterTagIds = _view.urlManager.tagsFilter[type];
+    Set<String> filterTagIds = controller.urlManager.tagsFilter[type];
     var filterTags = convertTagIdsToTags(filterTagIds, tags);
     var unifierFilterTags = filterTags.map((t) => unifierTagForTag(t, tags));
     // Reset the URL to make sure it uses the unifier tags
     // This will be unnecessary after we have moved everyone to using the new unifier tags
-    _view.urlManager.tagsFilter[type] = tagsToTagIds(filterTags).toSet();
+    controller.urlManager.tagsFilter[type] = tagsToTagIds(filterTags).toSet();
     return unifierFilterTags.toSet();
   }
 }

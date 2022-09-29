@@ -112,8 +112,8 @@ class MessagesConfiguratorController extends ConfiguratorController {
 
   @override
   void init() {
+    super.init();
     view = new MessagesConfigurationPageView(this);
-    platform = new Platform(this);
   }
 
   void command(action, [Data data]) {
@@ -259,7 +259,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
         standardMessagesManager.deleteStandardMessagesCategory(categoryData.categoryId);
         _view.categories.removeItem(categoryData.categoryId);
         break;
-      
+
       case MessagesConfigAction.resetStandardMessagesCategoryName:
         StandardMessagesCategoryData categoryData = data;
         var resetCategoryName = standardMessagesManager.storageCategories[categoryData.categoryId].categoryName;
@@ -293,6 +293,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
 
   @override
   void setUpOnLogin() {
+    super.setUpOnLogin();
     platform.listenForSuggestedReplies((added, modified, removed) {
       var messagesAdded = standardMessagesManager.onAddStandardMessagesFromStorage(added);
       var messagesModified = standardMessagesManager.onUpdateStandardMessagesFromStorage(modified);
