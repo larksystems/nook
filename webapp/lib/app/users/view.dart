@@ -57,29 +57,44 @@ const VALUE_FROM_DEFAULT_CSS_CLASS = "from-default";
 bool isDefaultPermission(key) => key == DEFAULT_KEY;
 
 class UsersPageView extends PageView {
+  DivElement renderElement;
   HeadingElement headerElement;
   ParagraphElement helperElement;
   DivElement tableWrapper;
 
   // email > permission key > header/checkbox/textbox
   Map<String, Element> permissionEmailHeaders;
+  Map<String, Element> permissionNameHeaders;
   Map<String, Map<String, CheckboxInputElement>> permissionToggles;
   Map<String, Map<String, TextInputElement>> permissionTextboxes;
   Map<String, Map<String, SpanElement>> resetToDefaultPermissionsButtons;
 
   UsersPageView(UsersController controller) : super(controller) {
     permissionEmailHeaders = {};
+    permissionNameHeaders = {};
     permissionToggles = {};
     permissionTextboxes = {};
     resetToDefaultPermissionsButtons = {};
 
+    renderElement = DivElement()
+      ..className = "user-permissions";
+
+    var wrapperElement = DivElement()
+      ..className = "user-permissions__inner-wrapper";
+    renderElement.append(wrapperElement);
+
     headerElement = HeadingElement.h1()
       ..innerText = "User permissions"
       ..className = "user-permissions__heading";
+    wrapperElement.append(headerElement);
+
     helperElement = ParagraphElement()..innerText = "Default permissions apply to all user accounts unless overridden individually. Muted controls are derived from the default.";
+    wrapperElement.append(helperElement);
+
     tableWrapper = DivElement()
       ..className = "user-permissions__table-wrapper";
     tableWrapper.append(ImageElement(src: '/packages/katikati_ui_lib/components/brand_asset/logos/loading.svg')..className = "load-spinner");
+    wrapperElement.append(tableWrapper);
   }
 
   void updatePermission(String email, String permissionKey, dynamic value, {bool setToDefault = false}) {
@@ -100,10 +115,12 @@ class UsersPageView extends PageView {
         permissionTextboxes[email][permissionKey].classes.toggle(VALUE_FROM_DEFAULT_CSS_CLASS, setToDefault);
         break;
     }
+    toggleSaved(email, permissionKey, true);
   }
 
   void toggleSaved(String email, String key, bool saved) {
     permissionEmailHeaders[email].classes.toggle("unsaved", !saved);
+    permissionNameHeaders[key]?.classes?.toggle("unsaved", !saved);
   }
 
   void populateTable(UserConfiguration defaultConfig, Map<String, UserConfiguration> usersConfig) {
@@ -138,7 +155,9 @@ class UsersPageView extends PageView {
         var permissionRow = TableRowElement();
         var permissionText = DivElement()..innerText = permission.key;
         var permissionExplanation = SpanElement()..className = "permission-explanation"..innerText = permission.explanation;
-        permissionRow.append(Element.th()..append(permissionText)..append(permissionExplanation));
+        var permissionHeader = Element.th()..append(permissionText)..append(permissionExplanation);
+        permissionNameHeaders[permission.key] = permissionHeader;
+        permissionRow.append(permissionHeader);
 
         allEmails.forEach((email) {
           var permissionMap = isDefaultPermission(email) ? defaultConfigMap : usersConfig[email].toData();
@@ -229,8 +248,6 @@ class UsersPageView extends PageView {
   initSignedInView(String displayName, String photoUrl) {
     super.initSignedInView(displayName, photoUrl);
     mainElement
-      ..append(headerElement)
-      ..append(helperElement)
-      ..append(tableWrapper);
+      ..append(renderElement);
   }
 }

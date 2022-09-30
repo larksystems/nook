@@ -40,17 +40,17 @@ class UsersController extends Controller {
 
   @override
   void init() {
-    super.init();
+    if (urlManager.project == null) routeToPage(Page.homepage);
+
     view = UsersPageView(this);
     controller = this;
+    super.init();
   }
 
   @override
   void setUpOnLogin() {
-    _listenForUserConfig();
-  }
+    super.setUpOnLogin();
 
-  void _listenForUserConfig() {
     platform.listenForUserConfigurations((added, modified, removed) {
       if (added.isNotEmpty) {
         List<model.UserConfiguration> addedUserConfig = new List()
@@ -78,11 +78,11 @@ class UsersController extends Controller {
         userConfigs = userConfigs ?? {};
         modifiedUserConfig.where((c) => c.docId != 'default').forEach((c) {
           userConfigs[c.docId] = c.applyDefaults(defaultConfig);
-          var modifiedObj = c.toData();
-          modifiedObj.keys.forEach((permissionKey) {
-            var valueToUpdate = modifiedObj[permissionKey];
-            _view.updatePermission(c.docId, permissionKey, valueToUpdate);
-          });
+          var userConfigMap = userConfigs[c.docId].toData();
+          var defaultConfigMap = defaultConfig.toData();
+          for (var key in userConfigMap.keys) {
+            _view.updatePermission(c.docId, key, userConfigMap[key], setToDefault: defaultConfigMap[key] == userConfigMap[key]);
+          }
         });
       }
     });
@@ -98,13 +98,13 @@ class UsersController extends Controller {
       case UsersAction.updatePermission:
         var updateData = data as UpdatePermission;
         platform.setUserConfigField(updateData.userId, updateData.permissionKey, updateData.value);
-        _view.toggleSaved(updateData.userId, updateData.permissionKey, true);
+        _view.toggleSaved(updateData.userId, updateData.permissionKey, false);
         break;
 
       case UsersAction.resetToDefaultPermission:
         var resetData = data as ResetToDefaultPermission;
         platform.setUserConfigField(resetData.userId, resetData.permissionKey, defaultConfig.toData()[resetData.permissionKey]);
-        _view.toggleSaved(resetData.userId, resetData.permissionKey, true);
+        _view.toggleSaved(resetData.userId, resetData.permissionKey, false);
         break;
     }
   }
