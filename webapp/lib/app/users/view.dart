@@ -11,41 +11,44 @@ Logger log = new Logger('view.dart');
 class Permission {
   String key;
   String type;
-  String explanation = "Explanation shows up here";
+  String explanation;
 
-  Permission(this.key, this.type);
+  Permission(this.key, this.type, {this.explanation});
 }
 
 Map<String, List<Permission>> permissionGroups = {
-  "Sending message": [
-    Permission("send_messages_enabled", "bool"),
-    Permission("send_custom_messages_enabled", "bool"),
-    Permission("send_multi_message_enabled", "bool"),
-  ],
   "Standard messages": [
-    Permission("sample_messages_enabled", "bool"),
     Permission("edit_standard_messages_enabled", "bool"),
   ],
   "Tags": [
-    Permission("mandatory_include_tag_ids", "Set<String>"),
-    Permission("mandatory_exclude_tag_ids", "Set<String>"),
     Permission("edit_tags_enabled", "bool"),
-    
   ],
-  "Conversations UI": [
+  "Conversations": [
+    Permission("send_messages_enabled", "bool"),
+    Permission("send_custom_messages_enabled", "bool"),
+    Permission("send_multi_message_enabled", "bool"),
     Permission("tag_messages_enabled", "bool"),
     Permission("tag_conversations_enabled", "bool"),
-    Permission("edit_translations_enabled", "bool"),
-    Permission("edit_notes_enabled", "bool"),
     Permission("conversational_turns_enabled", "bool"),
     Permission("tags_panel_visibility", "bool"),
     Permission("replies_panel_visibility", "bool"),
+    Permission("turnline_panel_visibility", "bool"),
     Permission("suggested_replies_groups_enabled", "bool"),
     Permission("tags_keyboard_shortcuts_enabled", "bool"),
     Permission("replies_keyboard_shortcuts_enabled", "bool"),
+    Permission("edit_translations_enabled", "bool"),
+    Permission("edit_notes_enabled", "bool"),
+    Permission("mandatory_include_tag_ids", "Set<String>"),
+    Permission("mandatory_exclude_tag_ids", "Set<String>"),
+    Permission("multi_select_exclude_tag_ids", "Set<String>"),
+  ],
+  "Explore": [
+    Permission("sample_messages_enabled", "bool"),
   ],
   "Miscellaneous": [
     Permission("console_logging_level", "String"),
+    Permission("role", "String"),
+    Permission("status", "String"),
   ]
 };
 
@@ -57,8 +60,6 @@ class UsersPageView extends PageView {
   HeadingElement headerElement;
   ParagraphElement helperElement;
   DivElement tableWrapper;
-  DivElement footerWrapper;
-  ButtonElement saveButton;
 
   // email > permission key > header/checkbox/textbox
   Map<String, Element> permissionEmailHeaders;
@@ -67,7 +68,6 @@ class UsersPageView extends PageView {
   Map<String, Map<String, SpanElement>> resetToDefaultPermissionsButtons;
 
   UsersPageView(UsersController controller) : super(controller) {
-
     permissionEmailHeaders = {};
     permissionToggles = {};
     permissionTextboxes = {};
@@ -80,52 +80,29 @@ class UsersPageView extends PageView {
     tableWrapper = DivElement()
       ..className = "user-permissions__table-wrapper";
     tableWrapper.append(ImageElement(src: '/packages/katikati_ui_lib/components/brand_asset/logos/loading.svg')..className = "load-spinner");
-    footerWrapper = DivElement()
-      ..className = "user-permissions__footer";
-
-    saveButton = ButtonElement()
-      ..className = "user-permissions__save-action"
-      ..innerText = "Update permissions"
-      ..disabled = true
-      ..onClick.listen((event) {
-        appController.command(UsersAction.savePermissions, null);
-      });
-    footerWrapper.append(saveButton);
   }
 
-  void setSaveText(String text) {
-    saveButton.innerText = text;
-  }
+  void updatePermission(String email, String permissionKey, dynamic value, {bool setToDefault = false}) {
+    if (!permissionToggles[email].containsKey(permissionKey) && !permissionTextboxes[email].containsKey(permissionKey)) return;
+    switch (value.runtimeType.toString()) {
+      case 'bool':
+        permissionToggles[email][permissionKey].checked = value;
+        permissionToggles[email][permissionKey].classes.toggle(VALUE_FROM_DEFAULT_CSS_CLASS, setToDefault);
+        break;
 
-  void enableSaveButton(bool enable) {
-    saveButton.disabled = !enable;
-  }
+      case 'String':
+        permissionTextboxes[email][permissionKey].value = value;
+        permissionTextboxes[email][permissionKey].classes.toggle(VALUE_FROM_DEFAULT_CSS_CLASS, setToDefault);
+        break;
 
-  void updateBoolPermission(String email, String permissionKey, bool value, {bool setToDefault = false}) {
-    permissionToggles[email][permissionKey].checked = value;
-    if (setToDefault) {
-      resetToDefaultPermissionsButtons[email][permissionKey].remove();
-      permissionToggles[email][permissionKey].classes.add(VALUE_FROM_DEFAULT_CSS_CLASS);
+      case 'List<String>':
+        permissionTextboxes[email][permissionKey].value = value?.join(", ");
+        permissionTextboxes[email][permissionKey].classes.toggle(VALUE_FROM_DEFAULT_CSS_CLASS, setToDefault);
+        break;
     }
   }
 
-  void updateStringPermission(String email, String permissionKey, String value, {bool setToDefault = false}) {
-    permissionTextboxes[email][permissionKey].value = value;
-    if (setToDefault) {
-      resetToDefaultPermissionsButtons[email][permissionKey].remove();
-      permissionTextboxes[email][permissionKey].classes.add(VALUE_FROM_DEFAULT_CSS_CLASS);
-    }
-  }
-
-  void updateListStringPermission(String email, String permissionKey, List<String> values, {bool setToDefault = false}) {
-    permissionTextboxes[email][permissionKey].value = values.join(", ");
-    if (setToDefault) {
-      resetToDefaultPermissionsButtons[email][permissionKey].remove();
-      permissionTextboxes[email][permissionKey].classes.add(VALUE_FROM_DEFAULT_CSS_CLASS);
-    }
-  }
-
-  void markAsUnsaved(String email, bool saved) {
+  void toggleSaved(String email, String key, bool saved) {
     permissionEmailHeaders[email].classes.toggle("unsaved", !saved);
   }
 
@@ -188,7 +165,7 @@ class UsersPageView extends PageView {
                 ..checked = permissionValue
                 ..onChange.listen((event) {
                   renderElement.classes.remove(VALUE_FROM_DEFAULT_CSS_CLASS);
-                  appController.command(UsersAction.updateBoolPermission, UpdateBoolPermission(email, permission.key, (event.target as CheckboxInputElement).checked));
+                  appController.command(UsersAction.updatePermission, UpdatePermission(email, permission.key, (event.target as CheckboxInputElement).checked));
                 });
               if (derivedFromDefault) {
                 renderElement.classes.add(VALUE_FROM_DEFAULT_CSS_CLASS);
@@ -201,7 +178,7 @@ class UsersPageView extends PageView {
                 ..value = permissionValue
                 ..onInput.listen((event) {
                   renderElement.classes.remove(VALUE_FROM_DEFAULT_CSS_CLASS);
-                  appController.command(UsersAction.updateStringPermission, UpdateStringPermission(email, permission.key, (event.target as TextInputElement).value));
+                  appController.command(UsersAction.updatePermission, UpdatePermission(email, permission.key, (event.target as TextInputElement).value));
                 });
               if (derivedFromDefault) {
                 renderElement.classes.add(VALUE_FROM_DEFAULT_CSS_CLASS);
@@ -211,10 +188,11 @@ class UsersPageView extends PageView {
               break;
             case 'Set<String>':
               renderElement = TextInputElement()
-                ..value = (permissionValue as List<String>).join(",")
+                ..value = (permissionValue as List<String>)?.join(",")
                 ..onInput.listen((event) {
                   renderElement.classes.remove(VALUE_FROM_DEFAULT_CSS_CLASS);
-                  appController.command(UsersAction.updateStringSetPermission, UpdateStringPermission(email, permission.key, (event.target as TextInputElement).value));
+                  var value = (event.target as TextInputElement).value.split(',');
+                  appController.command(UsersAction.updatePermission, UpdatePermission(email, permission.key, value));
                 });
               if (derivedFromDefault) {
                 renderElement.classes.add(VALUE_FROM_DEFAULT_CSS_CLASS);
@@ -242,7 +220,7 @@ class UsersPageView extends PageView {
         tableBody.append(permissionRow);
       }
     }
-      
+
     tableWrapper.children.clear();
     tableWrapper.append(table);
   }
@@ -253,7 +231,6 @@ class UsersPageView extends PageView {
     mainElement
       ..append(headerElement)
       ..append(helperElement)
-      ..append(tableWrapper)
-      ..append(footerWrapper);
+      ..append(tableWrapper);
   }
 }
