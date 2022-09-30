@@ -1,4 +1,5 @@
 import "dart:async";
+import 'dart:html';
 
 import 'package:firebase/firebase.dart' as firebase;
 
@@ -257,6 +258,14 @@ class Platform {
 
   void listenForUserPresence(UserPresenceCollectionListener listener, [OnErrorListener onErrorListener]) {
     _userPresenceSubscription = UserPresence.listen(_docStorage, listener, onErrorListener: onErrorListener);
+  }
+
+  Future<void> updateUserConfiguration(Map<String, Map<String, dynamic>> updates) {
+    List<Future> futures = [];
+    for (var email in updates.keys) {
+      futures.add(platform.firestoreInstance.collection("users").doc(email).update(data: updates[email]));
+    }
+    return Future.wait(futures);
   }
 
   Future<void> addMessageTag(Conversation conversation, Message message, String tagId) {
