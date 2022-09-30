@@ -14,20 +14,21 @@ import 'package:katikati_ui_lib/components/platform/pubsub.dart';
 
 /// The client version used to track client/server API changes
 /// and passed to the server during each heartbeat
-String clientVersion = '1.0.0';
+String clientVersion = '1.0.1';
 
 Logger log = new Logger('platform.dart');
 
 const _SEND_MESSAGES_TO_IDS_ACTION = "send_messages_to_ids";
 
-DocStorage _docStorage;
-PubSubClient _pubsubInstance;
-PubSubClient _uptimePubSubInstance;
-
+const _LOG_SUFFIX = '-log';
+const _PUBLISH_SUFFIX = '-publish';
+const _PUBLISH_TOPIC_SUFFIX = '-pubsub';
+const _STATUSZ_SUFFIX = '-statusz';
 
 class Platform {
   controller.Controller appController;
 
+  StreamSubscription _projectSubscription;
   StreamSubscription _tagSubscription;
   StreamSubscription _suggestedRepliesSubscription;
   StreamSubscription _userPresenceSubscription;
@@ -36,6 +37,12 @@ class Platform {
   StreamSubscription _shardsSubscription;
   StreamSubscription _conversationsSubscriptions;
 
+  DocStorage _docStorage;
+  DocStorage _projectDocStorage;
+  PubSubClient _pubsubInstance;
+  PubSubClient _pubsubLogInstance;
+  PubSubClient _uptimePubSubInstance;
+
   Platform(this.appController) {
     platform.init("/assets/firebase_constants.json", (user) {
       String photoURL = platform.firebaseAuth.currentUser.photoURL;
@@ -43,14 +50,23 @@ class Platform {
         photoURL =  '/assets/user_image_placeholder.png';
       }
       _docStorage = FirebaseDocStorage(firebase.firestore());
-      _pubsubInstance = new PubSubClient(platform_constants.publishUrl, user);
+      var firebaseCollectionPrefix = appController.urlManager.project != null ? '/projects/${appController.urlManager.project}' : null;
+      _projectDocStorage = FirebaseDocStorage(firebase.firestore(), collectionPathPrefix: firebaseCollectionPrefix);
+
+      var projectName = appController.urlManager.project ?? "base"; // Use [base] if we're on the project selection page
+      var baseUrl = '${platform_constants.cloudFunctionsUrlDomain}${projectName}';
+      _pubsubInstance = new PubSubClient('$baseUrl$_PUBLISH_SUFFIX', '$projectName$_PUBLISH_TOPIC_SUFFIX', user);
+      _pubsubLogInstance = new PubSubClient('$baseUrl$_LOG_SUFFIX', '$projectName$_LOG_SUFFIX', user);
+      _uptimePubSubInstance = new PubSubClient('$baseUrl$_STATUSZ_SUFFIX', '$projectName$_STATUSZ_SUFFIX', user);
+
       appController.command(controller.BaseAction.userSignedIn, new controller.UserData(user.displayName, user.email, photoURL));
-      _uptimePubSubInstance = new PubSubClient(platform_constants.statuszUrl, user);
       initUptimeMonitoring();
     }, () {
       _pubsubInstance = null;
+      _pubsubLogInstance = null;
       appController.command(controller.BaseAction.userSignedOut, null);
     });
+    Logger.platform = this;
   }
 
   void initUptimeMonitoring() {
@@ -70,7 +86,7 @@ class Platform {
           'lastUserActivity': appController.lastUserActivity.toIso8601String(),
           'clientVersion': clientVersion,
         };
-        _uptimePubSubInstance.publish(platform_constants.statuszTopic, payload).then(
+        _uptimePubSubInstance.publish(payload).then(
           (_) {
             log.debug('Uptime ping ${t.tick}.${tt.tick} successful');
 
@@ -125,7 +141,7 @@ class Platform {
         'clientVersion': clientVersion,
       };
       // TODO Prompt user to refresh browser if a heartbeat response from server indicates that the client is out of date
-      _uptimePubSubInstance.publish(platform_constants.statuszTopic, payload).then(
+      _uptimePubSubInstance.publish(payload).then(
         (_) {
           log.debug('Uptime ping ${t.tick} successful');
 
@@ -185,6 +201,7 @@ class Platform {
   signIn({String domain}) => platform.signIn(domain: domain);
 
   signOut() {
+    _projectSubscription?.cancel();
     _tagSubscription?.cancel();
     _suggestedRepliesSubscription?.cancel();
     _userPresenceSubscription?.cancel();
@@ -197,9 +214,45 @@ class Platform {
 
   bool isUserSignedIn() => platform.isUserSignedIn();
 
+  FirebaseDocStorage get docStorage => _docStorage;
+  FirebaseDocStorage get projectDocStorage => _projectDocStorage;
+
+  void listenForProjects(ProjectCollectionListener listener, [OnErrorListener onErrorListener]) {
+    _projectSubscription = Project.listen(_docStorage, listener, queryList: [FirebaseQuery('users', FirebaseQuery.ARRAY_CONTAINS, appController.signedInUser.userEmail)], onError: onErrorListener);
+  }
+
+  void listenForUserConfigurations(UserConfigurationCollectionListener listener, [OnErrorListener onErrorListener]) {
+    _userConfigSubscription = UserConfiguration.listen(_projectDocStorage, listener, onError: onErrorListener);
+  }
+
+  void listenForSystemMessages(SystemMessageCollectionListener listener, [OnErrorListener onErrorListener]) {
+    _systemMessagesSubscription = SystemMessage.listen(_projectDocStorage, listener, onErrorListener: onErrorListener);
+  }
+
+
+  void listenForConversationListShards(ConversationListShardCollectionListener listener, [OnErrorListener onErrorListener]) {
+    _shardsSubscription =  ConversationListShard.listen(_projectDocStorage, listener, onError: onErrorListener);
+  }
+
+  StreamSubscription listenForConversations(ConversationCollectionListener listener, String conversationListRoot, [OnErrorListener onErrorListener]) {
+    _conversationsSubscriptions = Conversation.listen(_projectDocStorage, listener, collectionRoot: conversationListRoot, onErrorListener: onErrorListener);
+    return _conversationsSubscriptions;
+  }
+
+  void listenForTags(TagCollectionListener listener, [OnErrorListener onErrorListener]) {
+    _tagSubscription = Tag.listen(_projectDocStorage, listener, collectionRoot: "/tags", onError: onErrorListener);
+  }
+
+  void listenForSuggestedReplies(SuggestedReplyCollectionListener listener, [OnErrorListener onErrorListener]) {
+    _suggestedRepliesSubscription = SuggestedReply.listen(_projectDocStorage, listener, onError: onErrorListener);
+  }
+
+  void listenForUserPresence(UserPresenceCollectionListener listener, [OnErrorListener onErrorListener]) {
+    _userPresenceSubscription = UserPresence.listen(_projectDocStorage, listener, onError: onErrorListener);
+  }
+
   Future<void> sendMultiMessage(List<String> ids, String message, {bool wasSuggested = false, onError(dynamic)}) async {
     log.verbose("Sending multi-message $ids : $message");
-
     return sendMultiMessages(ids, [message], wasSuggested: wasSuggested, onError: onError);
   }
 
@@ -211,7 +264,6 @@ class Platform {
     //  "ids" : [ "nook-uuid-23dsa" ],
     //  "messages" : [ "🐱" ]
     //  }
-
     Map payload =
       {
         'action' : _SEND_MESSAGES_TO_IDS_ACTION,
@@ -221,7 +273,7 @@ class Platform {
       };
 
     try {
-      return await _pubsubInstance.publish(platform_constants.smsTopic, payload);
+      return await _pubsubInstance.publish(payload);
     } catch (error, trace) {
       if (onError != null) onError(error);
       // Rethrow so that others could handle it
@@ -230,34 +282,16 @@ class Platform {
     }
   }
 
-  void listenForUserConfigurations(UserConfigurationCollectionListener listener, [OnErrorListener onErrorListener]) {
-    _userConfigSubscription = UserConfiguration.listen(_docStorage, listener, onErrorListener: onErrorListener);
-  }
+  void serverLog(String message, onError(dynamic)) async {
+    Map payload = {
+      'user': appController.signedInUser.userEmail,
+      'datetime': DateTime.now().toUtc().toIso8601String(),
+      'data': message,
+    };
 
-  void listenForSystemMessages(SystemMessageCollectionListener listener, [OnErrorListener onErrorListener]) {
-    _systemMessagesSubscription = SystemMessage.listen(_docStorage, listener, onErrorListener: onErrorListener);
-  }
-      
-
-  void listenForConversationListShards(ConversationListShardCollectionListener listener, [OnErrorListener onErrorListener]) {
-    _shardsSubscription =  ConversationListShard.listen(_docStorage, listener, onErrorListener: onErrorListener);
-  }
-
-  StreamSubscription listenForConversations(ConversationCollectionListener listener, String conversationListRoot, [OnErrorListener onErrorListener]) {
-    _conversationsSubscriptions = Conversation.listen(_docStorage, listener, collectionRoot: conversationListRoot, onErrorListener: onErrorListener);
-    return _conversationsSubscriptions;
-  }
-
-  void listenForTags(TagCollectionListener listener, [OnErrorListener onErrorListener]) {
-    _tagSubscription = Tag.listen(_docStorage, listener, collectionRoot: "/tags", onError: onErrorListener);
-  }
-
-  void listenForSuggestedReplies(SuggestedReplyCollectionListener listener, [OnErrorListener onErrorListener]) {
-    _suggestedRepliesSubscription = SuggestedReply.listen(_docStorage, listener, onErrorListener: onErrorListener);
-  }
-
-  void listenForUserPresence(UserPresenceCollectionListener listener, [OnErrorListener onErrorListener]) {
-    _userPresenceSubscription = UserPresence.listen(_docStorage, listener, onErrorListener: onErrorListener);
+    _pubsubLogInstance
+      .publish(payload)
+      .then((_) => {}, onError: (error, trace) { if (onError != null) onError(error); });
   }
 
   Future<void> updateUserConfiguration(Map<String, Map<String, dynamic>> updates) {

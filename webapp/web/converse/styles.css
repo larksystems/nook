@@ -394,6 +394,7 @@ main {
 }
 
 .messages-date-separator {
+    text-align: center;
     background: var(--default-background-color);
     color: var(--dark-gray);
     padding: 2px 4px;
@@ -454,4 +455,19 @@ main {
     overflow-x: auto;
     padding-top: 6px;
     height: 100%;
+}
+
+.standard-messages-panel .accordion-body__wrapper {
+    padding: 0;
+}
+
+.standard-messages-panel .action__group__text {
+    flex-grow: 1;
+}
+
+.standard-messages-panel .accordion-item__header {
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 2;
 }

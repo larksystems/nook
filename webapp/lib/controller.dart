@@ -8,8 +8,15 @@ import 'package:katikati_ui_lib/components/logger.dart';
 
 import 'package:katikati_ui_lib/components/model/model.dart' as model;
 import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
+import 'package:katikati_ui_lib/components/url_manager/url_manager.dart';
+import 'package:katikati_ui_lib/components/nav/button_links.dart';
+import 'package:katikati_ui_lib/components/platform/pubsub.dart';
+import 'package:firebase/firebase.dart' show FirebaseError;
+
 import 'package:nook/platform/platform.dart';
 import 'view.dart';
+
+part 'utils.dart';
 
 Logger log = new Logger('controller.dart');
 
@@ -47,6 +54,9 @@ enum BaseAction {
   signInButtonClicked,
   signOutButtonClicked,
 
+  projectListUpdated,
+  projectSelected,
+
   showSnackbar,
   showBanner,
 }
@@ -69,6 +79,14 @@ class SignInData extends Data {
 
   @override
   String toString() => 'SignInData: {domain: ${info.domain}}';
+}
+
+class ProjectData extends Data {
+  String projectId;
+  ProjectData(this.projectId);
+
+  @override
+  String toString() => 'ProjectData: {projectId: $projectId}';
 }
 
 class SystemMessagesData extends Data {
@@ -99,27 +117,39 @@ class BannerData extends Data {
 
 class Controller {
   model.User signedInUser;
-  List<model.SystemMessage> systemMessages;
   DateTime lastUserActivity = new DateTime.now();
-  Map<String, dynamic> projectConfiguration;
+
+  List<model.Project> projects;
+  model.Project selectedProject;
+
+  List<model.SystemMessage> systemMessages;
+
+  UrlManager urlManager;
+
+  model.UserConfiguration defaultUserConfig;
+  model.UserConfiguration currentUserConfig;
+  /// This represents the current configuration of the UI.
+  /// It's computed by merging the [defaultUserConfig] and [currentUserConfig] (if set).
+  model.UserConfiguration currentConfig;
 
   PageView view;
   Platform platform;
 
   Controller() {
     systemMessages = [];
-    projectConfiguration = {};
+    urlManager = UrlManager();
+    projects = [];
 
-    try {
-      HttpRequest.getString('/assets/project_configuration.json').then((projectConfigurationJson) {
-        projectConfiguration = json.decode(projectConfigurationJson);
-        init();
-      }, onError: (_) { /* Do nothing */ });
-    } catch (e) { /* Do nothing */ }
+    defaultUserConfig = model.UserConfigurationUtil.baseUserConfiguration;
+    currentUserConfig = currentConfig = model.UserConfigurationUtil.emptyUserConfiguration;
+
+    init();
   }
 
   /// Method to be implemented by extending classes to initialise the view after the project configuration has been loaded
-  void init() {}
+  void init() {
+    platform = new Platform(this);
+  }
 
   /// Method to be implemented by extending classes to respond to their own UI command datatype.
   /// Any commands they don't recognise, they should pass them to super.command().
@@ -149,6 +179,32 @@ class Controller {
         platform.signOut();
         break;
 
+      case BaseAction.projectListUpdated:
+        print(selectedProject);
+        print(projects);
+        if (selectedProject == null) {
+          if (urlManager.project != null) {
+            selectedProject = projects.singleWhere((project) => project.projectId == urlManager.project, orElse: () => null);
+          }
+        }
+        view.showProjectTitleOrSelector(selectedProject?.projectId, projects);
+        break;
+      case BaseAction.projectSelected:
+        ProjectData projectData = data;
+        if (projectData.projectId == null || projectData.projectId == '') {
+          selectedProject = null;
+          urlManager.clearProjectSpecificQueryParameters();
+          urlManager.project = null;
+          break;
+        }
+        if (projectData.projectId != selectedProject?.projectId) {
+          selectedProject = projects.singleWhere((project) => project.projectId == projectData.projectId, orElse: () => null);
+          urlManager.clearProjectSpecificQueryParameters();
+          urlManager.project = projectData.projectId;
+          break;
+        }
+        break;
+
       case BaseAction.updateSystemMessages:
         SystemMessagesData msgData = data;
         if (msgData.messages.isNotEmpty) {
@@ -173,7 +229,73 @@ class Controller {
   }
 
   /// Method to be implemented by extending classes to set up any UI/listeners on user logging in
-  void setUpOnLogin() {}
+  void setUpOnLogin() {
+    platform.listenForProjects((added, modified, removed) {
+      for (var project in added) {
+        projects.add(project);
+      }
+      for (var project in modified) {
+        var projectIndex = projects.indexWhere((element) => element.projectId == project.projectId);
+        if (projectIndex == -1) {
+          log.warning("Modified project with ID ${project.projectId} wasn't found - adding it");
+          projects.add(project);
+          continue;
+        }
+        projects[projectIndex] = project;
+      }
+      for (var project in removed) {
+        projects.removeWhere((p1) => p1.projectId == project.projectId);
+      }
+
+      command(BaseAction.projectListUpdated);
+    });
+
+    if (urlManager.project != null) {
+      platform.listenForUserConfigurations(
+        (added, modified, removed) {
+          List<model.UserConfiguration> changedUserConfigurations = new List()
+            ..addAll(added)
+            ..addAll(modified);
+          var defaultConfig = changedUserConfigurations.singleWhere((c) => c.docId == 'default', orElse: () => null);
+          defaultConfig = removed.where((c) => c.docId == 'default').length > 0 ? model.UserConfigurationUtil.baseUserConfiguration : defaultConfig;
+          var userConfig = changedUserConfigurations.singleWhere((c) => c.docId == signedInUser.userEmail, orElse: () => null);
+          userConfig = removed.where((c) => c.docId == signedInUser.userEmail).length > 0 ? model.UserConfigurationUtil.emptyUserConfiguration : userConfig;
+          if (defaultConfig == null && userConfig == null) {
+            // Neither of the relevant configurations has been changed, nothing to do here
+            return;
+          }
+          defaultUserConfig = defaultConfig ?? defaultUserConfig;
+          currentUserConfig = userConfig ?? currentUserConfig;
+          var newConfig = currentUserConfig.applyDefaults(defaultUserConfig);
+          applyConfiguration(newConfig);
+        }, showAndLogError);
+    }
+    // Apply the default configuration before loading any new configs.
+    applyConfiguration(defaultUserConfig);
+  }
+
+  /// Sets user customization flags from the data map
+  /// If a flag is not set in the data map, it defaults to the existing values
+  void applyConfiguration(model.UserConfiguration newConfig) {
+    if (currentConfig?.consoleLoggingLevel != newConfig.consoleLoggingLevel) {
+      currentConfig ??= model.UserConfigurationUtil.emptyUserConfiguration;
+      currentConfig.consoleLoggingLevel = newConfig.consoleLoggingLevel;
+      if (newConfig.consoleLoggingLevel.toLowerCase().contains('verbose')) {
+          Logger.logLevel = LogLevel.VERBOSE;
+      }
+      if (newConfig.consoleLoggingLevel.toLowerCase().contains('debug')) {
+          Logger.logLevel = LogLevel.DEBUG;
+      }
+      if (newConfig.consoleLoggingLevel.toLowerCase().contains('warning')) {
+          Logger.logLevel = LogLevel.WARNING;
+      }
+      if (newConfig.consoleLoggingLevel.toLowerCase().contains('error')) {
+          Logger.logLevel = LogLevel.ERROR;
+      }
+    }
+
+    log.verbose('Updated user configuration: $currentConfig');
+  }
 
   /// Method to be implemented by extending classes to tear down any UI/listeners on user logging out
   void tearDownOnLogout() {}
@@ -191,7 +313,21 @@ class Controller {
   void routeToPage(Page page) => routeToPath(pages[page].urlPath);
 
   /// Set of configuration options common across UIs
-  int get MESSAGE_MAX_LENGTH {
-    return projectConfiguration['textCharacterLimit'] ?? 160;
+  int get MESSAGE_MAX_LENGTH => selectedProject?.messageCharacterLimit ?? 160;
+
+  void showAndLogError(error, trace) {
+    log.error("$error${trace != null ? "\n$trace" : ""}");
+    String errMsg;
+    if (error is PubSubException) {
+      errMsg = "A network problem occurred: ${error.message}";
+    } else if (error is FirebaseError) {
+      errMsg = "An firestore error occured: ${error.code} [${error.message}]";
+      this.command(BaseAction.showBanner, new BannerData("You don't have access to this dataset. Please contact your project administrator"));
+    } else if (error is Exception) {
+      errMsg = "An internal error occurred: ${error.runtimeType}";
+    }  else {
+      errMsg = "$error";
+    }
+    this.command(BaseAction.showSnackbar, new SnackbarData(errMsg, SnackbarNotificationType.error));
   }
 }

@@ -1,6 +1,7 @@
 library controller;
 
 import 'dart:html';
+import 'package:katikati_ui_lib/components/accordion/accordion.dart';
 import 'package:katikati_ui_lib/components/logger.dart';
 import 'package:nook/app/configurator/controller.dart';
 export 'package:nook/app/configurator/controller.dart';
@@ -22,10 +23,12 @@ enum MessagesConfigAction {
   resetStandardMessageTranslation,
   removeStandardMessage,
   addStandardMessagesGroup,
+  reorderStandardMessagesGroup,
   updateStandardMessagesGroup,
   removeStandardMessagesGroup,
   resetStandardMessagesGroupName,
   addStandardMessagesCategory,
+  reorderStandardMessagesCategory,
   updateStandardMessagesCategory,
   removeStandardMessagesCategory,
   resetStandardMessagesCategoryName,
@@ -68,6 +71,29 @@ class StandardMessagesCategoryData extends Data {
   }
 }
 
+class StandardMessagesCategoriesReorderData extends Data {
+  String categoryId;
+  int newIndex;
+  StandardMessagesCategoriesReorderData(this.categoryId, this.newIndex);
+
+  @override
+  String toString() {
+    return "StandardMessagesCategoriesReorderData(categoryId: ${categoryId}, newIndex: ${newIndex})";
+  }
+}
+
+class StandardMessagesGroupsReorderData extends Data {
+  String categoryId;
+  String groupId;
+  int newIndex;
+  StandardMessagesGroupsReorderData(this.categoryId, this.groupId, this.newIndex);
+
+  @override
+  String toString() {
+    return "StandardMessagesGroupsReorderData(categoryId: $categoryId, groupIds ${groupId}, newIndex: ${newIndex})";
+  }
+}
+
 MessagesConfiguratorController _controller;
 MessagesConfigurationPageView get _view => _controller.view;
 
@@ -81,13 +107,13 @@ class MessagesConfiguratorController extends ConfiguratorController {
   void _updateDiffUnsavedIndicators() {
     var diffData = standardMessagesManager.diffData;
     _updateUnsavedIndicators(standardMessagesManager.localCategories, diffData.unsavedMessageTextIds, diffData.unsavedMessageTranslationIds, diffData.renamedGroupIds, diffData.unsavedGroupIds, diffData.renamedCategoryIds, diffData.unsavedCategoryIds);
-    _view.unsavedChanges = diffData.editedMessages.isNotEmpty || diffData.deletedMessages.isNotEmpty;
+    _view.unsavedChanges = diffData.reorderedMessages.isNotEmpty || diffData.editedMessages.isNotEmpty || diffData.deletedMessages.isNotEmpty;
   }
 
   @override
   void init() {
+    super.init();
     view = new MessagesConfigurationPageView(this);
-    platform = new Platform(this);
   }
 
   void command(action, [Data data]) {
@@ -195,6 +221,25 @@ class MessagesConfiguratorController extends ConfiguratorController {
         _view.categoriesById[groupData.categoryId].renameGroup(groupData.groupId, resetGroupName);
         break;
 
+      case MessagesConfigAction.reorderStandardMessagesGroup:
+        StandardMessagesGroupsReorderData groupData = data;
+        var currentGroups = standardMessagesManager.localCategories[groupData.categoryId].groups.values.toList()
+          ..sort((g1, g2) => g1.groupIndexInCategory.compareTo(g2.groupIndexInCategory));
+        var currentGroupIds = currentGroups.map((e) => e.groupId).toList();
+        var currentGroupIndex = currentGroupIds.indexOf(groupData.groupId);
+
+        if (currentGroupIndex < groupData.newIndex) {
+          --groupData.newIndex;
+        }
+
+        currentGroupIds.remove(groupData.groupId);
+        currentGroupIds.insert(groupData.newIndex, groupData.groupId);
+        standardMessagesManager.reorderMessagesGroup(groupData.categoryId, currentGroupIds);
+
+        var accordionViewToMove = _view.categoriesById[groupData.categoryId].groups.items[currentGroupIndex];
+        _view.categoriesById[groupData.categoryId].groups.reorderItem(accordionViewToMove, groupData.newIndex);
+        break;
+
       case MessagesConfigAction.addStandardMessagesCategory:
         var newCategory = standardMessagesManager.createStandardMessagesCategory();
         var messageCategoryMap = {
@@ -214,12 +259,31 @@ class MessagesConfiguratorController extends ConfiguratorController {
         standardMessagesManager.deleteStandardMessagesCategory(categoryData.categoryId);
         _view.categories.removeItem(categoryData.categoryId);
         break;
-      
+
       case MessagesConfigAction.resetStandardMessagesCategoryName:
         StandardMessagesCategoryData categoryData = data;
         var resetCategoryName = standardMessagesManager.storageCategories[categoryData.categoryId].categoryName;
         standardMessagesManager.renameStandardMessageCategory(categoryData.categoryId, resetCategoryName);
         _view.renameCategory(categoryData.categoryId, resetCategoryName);
+        break;
+
+      case MessagesConfigAction.reorderStandardMessagesCategory:
+        StandardMessagesCategoriesReorderData categoryData = data;
+        var currentCategories = standardMessagesManager.localCategories.values.toList()
+          ..sort((c1, c2) => c1.categoryIndex.compareTo(c2.categoryIndex));
+        var currentCategoryIds = currentCategories.map((e) => e.categoryId).toList();
+        var currentCategoryIndex = currentCategoryIds.indexOf(categoryData.categoryId);
+
+        if (currentCategoryIndex < categoryData.newIndex) {
+          --categoryData.newIndex;
+        }
+
+        currentCategoryIds.remove(categoryData.categoryId);
+        currentCategoryIds.insert(categoryData.newIndex, categoryData.categoryId);
+        standardMessagesManager.reorderMessagesCategory(currentCategoryIds);
+
+        var accordionViewToMove = _view.categories.items[currentCategoryIndex];
+        _view.categories.reorderItem(accordionViewToMove, categoryData.newIndex);
         break;
     }
 
@@ -229,6 +293,7 @@ class MessagesConfiguratorController extends ConfiguratorController {
 
   @override
   void setUpOnLogin() {
+    super.setUpOnLogin();
     platform.listenForSuggestedReplies((added, modified, removed) {
       var messagesAdded = standardMessagesManager.onAddStandardMessagesFromStorage(added);
       var messagesModified = standardMessagesManager.onUpdateStandardMessagesFromStorage(modified);
@@ -247,9 +312,10 @@ class MessagesConfiguratorController extends ConfiguratorController {
     _view.showSaveStatus('Saving...');
     _view.disableSaveButton();
     var diffData = standardMessagesManager.diffData;
+    List<model.SuggestedReply> updatedMessages = List.from(diffData.editedMessages)..addAll(diffData.reorderedMessages);
 
     try {
-      await Future.wait([platform.updateSuggestedReplies(diffData.editedMessages), platform.deleteSuggestedReplies(diffData.deletedMessages)]);
+      await Future.wait([platform.updateSuggestedReplies(updatedMessages), platform.deleteSuggestedReplies(diffData.deletedMessages)]);
       _view
         ..unsavedChanges = false
         ..showSaveStatus('Saved!', autoHide: true);

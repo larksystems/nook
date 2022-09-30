@@ -7,12 +7,12 @@ import 'package:firebase/firebase.dart' show FirebaseError;
 import 'package:katikati_ui_lib/components/conversation/conversation_item.dart';
 import 'package:katikati_ui_lib/components/conversation/new_conversation_modal.dart';
 
-import 'package:katikati_ui_lib/components/url_manager/url_manager.dart';
 import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
 import 'package:katikati_ui_lib/components/tag/tag.dart';
 import 'package:katikati_ui_lib/components/turnline/turnline.dart';
 import 'package:katikati_ui_lib/components/logger.dart';
 import 'package:katikati_ui_lib/components/tooltip/tooltip.dart';
+import 'package:katikati_ui_lib/components/url_manager/url_manager.dart';
 import 'package:nook/controller.dart';
 export 'package:nook/controller.dart';
 import 'package:katikati_ui_lib/components/model/model.dart' as model;
@@ -27,9 +27,6 @@ part 'controller_view_helper.dart';
 
 Logger log = new Logger('controller.dart');
 
-bool get SENDABLE_STANDARD_MESSAGE_GROUPS => controller.projectConfiguration['sendableMessageGroups'] ?? true;
-bool get ENABLE_TURNLINE_PANEL => controller.projectConfiguration['nookTurnlineEnabled'] ?? false;
-String get DEFAULT_PANEL_TAB => controller.projectConfiguration['nookDefaultPanel'] ?? 'standard_messages';
 
 enum UIActionObject {
   conversation,
@@ -80,7 +77,6 @@ enum UIAction {
   saveNewTagInline,
   selectAllConversations,
   deselectAllConversations,
-  updateSuggestedRepliesCategory,
   updateConversationIdFilter,
   goToUser,
   addNewConversations,
@@ -268,14 +264,6 @@ class SaveTagData extends Data {
   String toString() => 'SaveTagData: {tagText: $tagText, tagId: $tagId}';
 }
 
-class UpdateSuggestedRepliesCategoryData extends Data {
-  String category;
-  UpdateSuggestedRepliesCategoryData(this.category);
-
-  @override
-  String toString() => 'UpdateSuggestedRepliesCategoryData: {category: $category}';
-}
-
 class UpdateFilterTagsCategoryData extends Data {
   String category;
   UpdateFilterTagsCategoryData(this.category);
@@ -312,7 +300,6 @@ class NookController extends Controller {
   Set<model.Conversation> conversations;
   Set<model.Conversation> filteredConversations;
   List<model.SuggestedReply> suggestedReplies;
-  Map<String, List<model.SuggestedReply>> suggestedRepliesByCategory;
   String selectedSuggestedRepliesCategory;
   List<model.Tag> tags;
   Map<String, List<model.Tag>> tagsByGroup;
@@ -332,12 +319,6 @@ class NookController extends Controller {
   String selectedConversationTagId;
   bool shiftKeyPressed = false;
 
-  model.UserConfiguration defaultUserConfig;
-  model.UserConfiguration currentUserConfig;
-  /// This represents the current configuration of the UI.
-  /// It's computed by merging the [defaultUserConfig] and [currentUserConfig] (if set).
-  model.UserConfiguration currentConfig;
-
   DateTime lastUserActivity = new DateTime.now();
   UserPositionReporter userPositionReporter;
   Map<String, Timer> otherUserPresenceTimersByUserId = {};
@@ -349,12 +330,12 @@ class NookController extends Controller {
 
   @override
   void init() {
-    defaultUserConfig = model.UserConfigurationUtil.baseUserConfiguration;
-    currentUserConfig = currentConfig = model.UserConfigurationUtil.emptyUserConfiguration;
+    if (urlManager.project == null) routeToPage(Page.homepage);
+
+    super.init();
 
     view = new NookPageView(this);
-    platform = new Platform(this);
-    userPositionReporter = UserPositionReporter();
+    userPositionReporter = UserPositionReporter(platform);
   }
 
   @override
@@ -373,6 +354,8 @@ class NookController extends Controller {
     conversationFilter = new ConversationFilter.fromUrl(currentConfig);
     _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.include), TagFilterType.include);
     _view.conversationIdFilter.filter = conversationFilter.conversationIdFilter;
+
+    super.setUpOnLogin();
 
     platform.listenForTags(
       (added, modified, removed) {
@@ -429,32 +412,14 @@ class NookController extends Controller {
           ..addAll(added)
           ..addAll(modified);
 
-        // Update the replies by category map
-        suggestedRepliesByCategory = _groupRepliesIntoCategories(suggestedReplies);
-        // Empty sublist if there are no replies to show
-        if (suggestedRepliesByCategory.isEmpty) {
-          suggestedRepliesByCategory[''] = [];
+        if (added.isNotEmpty || modified.isNotEmpty) {
+          _populateReplyPanelView(suggestedReplies);
         }
-        // Sort by sequence number
-        for (var replies in suggestedRepliesByCategory.values) {
-          replies.sort((r1, r2) {
-            var seqNo1 = r1.seqNumber == null ? double.nan : r1.seqNumber;
-            var seqNo2 = r2.seqNumber == null ? double.nan : r2.seqNumber;
-            return seqNo1.compareTo(seqNo2);
-          });
+
+        if (removed.isNotEmpty) {
+          var removeIds = removed.map((r) => r.suggestedReplyId).toList();
+          _removeFromReplyPanelView(removeIds);
         }
-        List<String> categories = suggestedRepliesByCategory.keys.toList();
-        categories.sort((c1, c2) => c1.compareTo(c2));
-        // Replace list of categories in the UI selector
-        _view.replyPanelView.categories = categories;
-        // If the categories have changed under us and the selected one no longer exists,
-        // default to the first category, whichever it is
-        if (!categories.contains(selectedSuggestedRepliesCategory)) {
-          selectedSuggestedRepliesCategory = categories.first;
-        }
-        // Select the selected category in the UI and add the suggested replies for it
-        _view.replyPanelView.selectedCategory = selectedSuggestedRepliesCategory;
-        _populateReplyPanelView(suggestedRepliesByCategory[selectedSuggestedRepliesCategory]);
       }, showAndLogError);
 
     platform.listenForConversationListShards(
@@ -478,7 +443,7 @@ class NookController extends Controller {
         var shardsToConsider = shards.take(shardCountToConsider).toList();
 
         // Read any conversation shards from the URL
-        String urlConversationListRoot = _view.urlManager.conversationList;
+        String urlConversationListRoot = urlManager.conversationList;
         String conversationListRoot = urlConversationListRoot;
         if (urlConversationListRoot == null) {
           conversationListRoot = ConversationListData.NONE;
@@ -492,7 +457,7 @@ class NookController extends Controller {
         _view.conversationListPanelView.updateShardsList(shardsToConsider);
         // If we try to access a list that hasn't loaded yet, keep it in the URL
         // so it can be picked up on the next data snapshot from firebase.
-        _view.urlManager.conversationList = urlConversationListRoot;
+        urlManager.conversationList = urlConversationListRoot;
         _view.conversationListPanelView.selectShard(conversationListRoot);
         command(UIAction.selectConversationList, ConversationListData(conversationListRoot));
       }, (error, stacktrace) {
@@ -512,27 +477,6 @@ class NookController extends Controller {
           ..addAll(modified.where((m) => !m.expired));
         command(BaseAction.updateSystemMessages, SystemMessagesData(systemMessages));
       }, showAndLogError);
-
-    platform.listenForUserConfigurations(
-      (added, modified, removed) {
-        List<model.UserConfiguration> changedUserConfigurations = new List()
-          ..addAll(added)
-          ..addAll(modified);
-        var defaultConfig = changedUserConfigurations.singleWhere((c) => c.docId == 'default', orElse: () => null);
-        defaultConfig = removed.where((c) => c.docId == 'default').length > 0 ? model.UserConfigurationUtil.baseUserConfiguration : defaultConfig;
-        var userConfig = changedUserConfigurations.singleWhere((c) => c.docId == signedInUser.userEmail, orElse: () => null);
-        userConfig = removed.where((c) => c.docId == signedInUser.userEmail).length > 0 ? model.UserConfigurationUtil.emptyUserConfiguration : userConfig;
-        if (defaultConfig == null && userConfig == null) {
-          // Neither of the relevant configurations has been changed, nothing to do here
-          return;
-        }
-        defaultUserConfig = defaultConfig ?? defaultUserConfig;
-        currentUserConfig = userConfig ?? currentUserConfig;
-        var newConfig = currentUserConfig.applyDefaults(defaultUserConfig);
-        applyConfiguration(newConfig);
-      }, showAndLogError);
-    // Apply the default configuration before loading any new configs.
-    applyConfiguration(defaultUserConfig);
 
     platform.listenForUserPresence(
       (added, modified, removed) {
@@ -601,7 +545,9 @@ class NookController extends Controller {
 
   /// Sets user customization flags from the data map
   /// If a flag is not set in the data map, it defaults to the existing values
+  @override
   void applyConfiguration(model.UserConfiguration newConfig) {
+    super.applyConfiguration(newConfig);
     var oldConfig = currentConfig;
     currentConfig = newConfig;
     if (oldConfig.repliesKeyboardShortcutsEnabled != newConfig.repliesKeyboardShortcutsEnabled) {
@@ -653,7 +599,7 @@ class NookController extends Controller {
         // only clear things up after we've received the config from the server
         conversationFilter.clearFilters(TagFilterType.lastInboundTurn);
 
-        _view.urlManager.tagsFilter[TagFilterType.lastInboundTurn] = conversationFilter.filterTagIdsManuallySet[TagFilterType.lastInboundTurn];
+        urlManager.tagsFilter[TagFilterType.lastInboundTurn] = conversationFilter.filterTagIdsManuallySet[TagFilterType.lastInboundTurn];
       } else {
         _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.lastInboundTurn), TagFilterType.lastInboundTurn);
       }
@@ -664,36 +610,24 @@ class NookController extends Controller {
         // only clear things up after we've received the config from the server
         conversationFilter.clearFilters(TagFilterType.exclude);
 
-        _view.urlManager.tagsFilter[TagFilterType.exclude] = conversationFilter.filterTagIdsManuallySet[TagFilterType.exclude];
+        urlManager.tagsFilter[TagFilterType.exclude] = conversationFilter.filterTagIdsManuallySet[TagFilterType.exclude];
       } else {
         _populateSelectedFilterTags(conversationFilter.getFilters(TagFilterType.exclude), TagFilterType.exclude);
       }
     }
 
-    if (oldConfig.tagsPanelVisibility != newConfig.tagsPanelVisibility ||
+    if (oldConfig.repliesPanelVisibility != newConfig.repliesPanelVisibility ||
         oldConfig.editNotesEnabled != newConfig.editNotesEnabled ||
-        oldConfig.repliesPanelVisibility != newConfig.repliesPanelVisibility) {
-      _view.showPanels(newConfig.repliesPanelVisibility, newConfig.editNotesEnabled, newConfig.tagsPanelVisibility, newConfig.tagMessagesEnabled, newConfig.tagConversationsEnabled, ENABLE_TURNLINE_PANEL, DEFAULT_PANEL_TAB);
+        oldConfig.tagsPanelVisibility != newConfig.tagsPanelVisibility ||
+        oldConfig.tagMessagesEnabled != newConfig.tagMessagesEnabled ||
+        oldConfig.tagConversationsEnabled != newConfig.tagConversationsEnabled ||
+        oldConfig.turnlinePanelVisibility != newConfig.turnlinePanelVisibility) {
+      _view.showPanels(newConfig.repliesPanelVisibility, newConfig.editNotesEnabled, newConfig.tagsPanelVisibility, newConfig.tagMessagesEnabled, newConfig.tagConversationsEnabled, newConfig.turnlinePanelVisibility);
     }
 
     if (oldConfig.suggestedRepliesGroupsEnabled != newConfig.suggestedRepliesGroupsEnabled) {
-      if (suggestedRepliesByCategory != null) {
-        _populateReplyPanelView(suggestedRepliesByCategory[selectedSuggestedRepliesCategory]);
-      }
-    }
-
-    if (oldConfig.consoleLoggingLevel != newConfig.consoleLoggingLevel) {
-      if (newConfig.consoleLoggingLevel.toLowerCase().contains('verbose')) {
-          logLevel = LogLevel.VERBOSE;
-      }
-      if (newConfig.consoleLoggingLevel.toLowerCase().contains('debug')) {
-          logLevel = LogLevel.DEBUG;
-      }
-      if (newConfig.consoleLoggingLevel.toLowerCase().contains('warning')) {
-          logLevel = LogLevel.WARNING;
-      }
-      if (newConfig.consoleLoggingLevel.toLowerCase().contains('error')) {
-          logLevel = LogLevel.ERROR;
+      if (suggestedReplies.isNotEmpty) {
+        _populateReplyPanelView(suggestedReplies);
       }
     }
 
@@ -705,15 +639,15 @@ class NookController extends Controller {
     conversationListSubscription?.cancel();
     if (conversationListSubscription != null) {
       // Only clear up the conversation id after the initial page loading
-      _view.urlManager.conversationId = null;
+      urlManager.conversationId = null;
     }
     conversationListSubscription = null;
     if (conversationListRoot == ConversationListData.NONE) {
-      _view.urlManager.conversationList = null;
+      urlManager.conversationList = null;
       _view.conversationListPanelView.totalConversations = 0;
       return;
     }
-    _view.urlManager.conversationList = conversationListRoot;
+    urlManager.conversationList = conversationListRoot;
     conversationListSubscription = platform.listenForConversations(
       (added, modified, removed) {
         if (added.length > 0) {
@@ -758,7 +692,7 @@ class NookController extends Controller {
         // TODO even though they are unlikely to happen, we should also handle the removals in the UI for consistency
 
         // Determine if we need to display the conversation from the url
-        String urlConversationId = _view.urlManager.conversationId;
+        String urlConversationId = urlManager.conversationId;
         if (activeConversation == null && urlConversationId != null) {
           var matches = conversations.where((c) => c.docId == urlConversationId).toList();
           if (matches.length == 0) {
@@ -892,7 +826,6 @@ class NookController extends Controller {
     if (activeConversation == null &&
         action != UIAction.selectConversationList && action != UIAction.showConversation &&
         action != UIAction.addFilterTag && action != UIAction.removeFilterTag &&
-        action != UIAction.updateSuggestedRepliesCategory &&
         action != UIAction.selectAllConversations && action != UIAction.deselectAllConversations &&
         action != UIAction.updateConversationIdFilter) {
       return;
@@ -908,7 +841,7 @@ class NookController extends Controller {
     switch (action) {
       case UIAction.sendMessage:
         ReplyData replyData = data;
-        model.SuggestedReply selectedReply = suggestedRepliesByCategory[selectedSuggestedRepliesCategory].singleWhere((reply) => reply.suggestedReplyId == replyData.replyId);
+        model.SuggestedReply selectedReply = suggestedReplies.singleWhere((reply) => reply.suggestedReplyId == replyData.replyId);
         if (replyData.replyWithTranslation) {
           model.SuggestedReply translationReply = new model.SuggestedReply();
           translationReply
@@ -928,7 +861,7 @@ class NookController extends Controller {
         break;
       case UIAction.sendMessageGroup:
         GroupReplyData replyData = data;
-        List<model.SuggestedReply> selectedReplies = suggestedRepliesByCategory[selectedSuggestedRepliesCategory].where((reply) => reply.groupId == replyData.replyGroupId).toList();
+        List<model.SuggestedReply> selectedReplies = suggestedReplies.where((reply) => reply.groupId == replyData.replyGroupId).toList();
         selectedReplies.sort((reply1, reply2) => reply1.indexInGroup.compareTo(reply2.indexInGroup));
         if (replyData.replyWithTranslation) {
           List<model.SuggestedReply> translationReplies = [];
@@ -1022,7 +955,7 @@ class NookController extends Controller {
         model.Tag unifierTag = unifierTagForTag(tag, tagIdsToTags);
         var added = conversationFilter.addFilter(tagData.filterType, unifierTag);
         if (!added) return; // No change, nothing further to do
-        _view.urlManager.tagsFilter[tagData.filterType] = conversationFilter.filterTagIdsManuallySet[tagData.filterType];
+        urlManager.tagsFilter[tagData.filterType] = conversationFilter.filterTagIdsManuallySet[tagData.filterType];
         _view.conversationFilter[tagData.filterType].addFilterTag(new FilterTagView(unifierTag.text, unifierTag.tagId, tagTypeToKKStyle(unifierTag.type), tagData.filterType));
         if (actionObjectState == UIActionObject.loadingConversations) return;
         updateFilteredAndSelectedConversationLists();
@@ -1116,7 +1049,7 @@ class NookController extends Controller {
         model.Tag tag = tagIdToTag(tagData.tagId, tagIdsToTags);
         var changed = conversationFilter.removeFilter(tagData.filterType, tag);
         if (!changed) return; // No change, nothing further to do
-        _view.urlManager.tagsFilter[tagData.filterType] = conversationFilter.filterTagIdsManuallySet[tagData.filterType];
+        urlManager.tagsFilter[tagData.filterType] = conversationFilter.filterTagIdsManuallySet[tagData.filterType];
         _view.conversationFilter[tagData.filterType].removeFilterTag(tag.tagId);
         if (actionObjectState == UIActionObject.loadingConversations) return;
         updateFilteredAndSelectedConversationLists();
@@ -1125,7 +1058,7 @@ class NookController extends Controller {
       case UIAction.updateConversationIdFilter:
         ConversationIdFilterData filterData = data;
         conversationFilter.conversationIdFilter = filterData.idFilter;
-        _view.urlManager.conversationIdFilter = filterData.idFilter.isEmpty ? null : filterData.idFilter;
+        urlManager.conversationIdFilter = filterData.idFilter.isEmpty ? null : filterData.idFilter;
         if (actionObjectState == UIActionObject.loadingConversations) return;
         updateFilteredAndSelectedConversationLists();
         break;
@@ -1224,24 +1157,44 @@ class NookController extends Controller {
       case UIAction.selectConversation:
         ConversationData conversationData = data;
         model.Conversation conversation = conversations.singleWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
-        var lastSelectedMessageId = selectedConversations.isEmpty ? null : selectedConversations.last.docId;
-        selectedConversations.add(conversation);
-        var selectedConversationIds = selectedConversations.map((c) => c.docId).toSet();
-        if (shiftKeyPressed && lastSelectedMessageId != null) {
-          bool addConversation = false;
-          for (var c in conversationsInView) {
-            if (c.docId == conversation.docId || c.docId == lastSelectedMessageId) {
-              addConversation = !addConversation;
-            }
-            if (addConversation && !selectedConversationIds.contains(c.docId)) {
-              selectedConversations.add(c);
-              _view.conversationListPanelView.checkConversation(c.docId);
+        if (validateSelectConversation(conversation)) {
+          var lastSelectedConversationId = selectedConversations.isEmpty ? null : selectedConversations.last.docId;
+          selectedConversations.add(conversation);
+          var selectedConversationIds = selectedConversations.map((c) => c.docId).toSet();
+          if (shiftKeyPressed && lastSelectedConversationId != null) {
+            // check if it passes the multi-select tag check
+            if (validateSelectAll()) {
+              bool addConversation = false;
+              for (var c in conversationsInView) {
+                if (c.docId == conversation.docId || c.docId == lastSelectedConversationId) {
+                  addConversation = !addConversation;
+                }
+                if (addConversation && !selectedConversationIds.contains(c.docId)) {
+                  selectedConversations.add(c);
+                  _view.conversationListPanelView.checkConversation(c.docId);
+                }
+              }
+            } else { // don't allow shift multi-select
+              var multiSelectExcludeTagsString = multiSelectExcludeTags.map((model.Tag t) => t.text).toList().join('", "');
+              command(BaseAction.showSnackbar, SnackbarData(
+                '''Cannot select multiple conversations as some conversations in the list are labelled with the important tags: "$multiSelectExcludeTagsString".
+                <br>Make sure to hide conversations with these tags before you can select all conversations in the list.
+                <br><a href="https://www.katikati.world/article/multi-send" target="_blank">Why we do this</a>.''',
+                SnackbarNotificationType.warning));
             }
           }
+          // to maintain the order for bulk deselect
+          sortSelectedConversations();
+          _view.conversationListPanelView.updateSelectedCount(selectedConversations.length);
+        } else {
+          var multiSelectExcludeTagsString = multiSelectExcludeTags.map((model.Tag t) => t.text).toList().join('", "');
+          command(BaseAction.showSnackbar, SnackbarData(
+            '''Cannot select this conversation as it contains one of the important tags: "$multiSelectExcludeTagsString".
+            <br>Make sure to hide conversations with these tags before you can select multiple conversations in the list.
+            <br><a href="https://www.katikati.world/article/multi-send" target="_blank">Why we do this</a>.''',
+            SnackbarNotificationType.warning));
+          _view.conversationListPanelView.uncheckConversation(conversation.docId);
         }
-        // to maintain the order for bulk deselect
-        sortSelectedConversations();
-        _view.conversationListPanelView.updateSelectedCount(selectedConversations.length);
         break;
       case UIAction.deselectConversation:
         ConversationData conversationData = data;
@@ -1324,7 +1277,7 @@ class NookController extends Controller {
             currentConfig.repliesPanelVisibility &&
             currentConfig.repliesKeyboardShortcutsEnabled) {
           // If the shortcut is for a reply, find it and send it
-          var selectedReply = suggestedRepliesByCategory[selectedSuggestedRepliesCategory].where((reply) => reply.shortcut == keyPressData.key);
+          var selectedReply = suggestedReplies.where((reply) => reply.shortcut == keyPressData.key);
           if (selectedReply.isNotEmpty) {
             assert (selectedReply.length == 1);
             if (!currentConfig.sendMultiMessageEnabled || selectedConversations.isEmpty) {
@@ -1385,11 +1338,22 @@ class NookController extends Controller {
         subCommandForAddTagInline(action, data);
         break;
       case UIAction.selectAllConversations:
-        _view.conversationListPanelView.checkAllConversations();
-        selectedConversations.clear();
-        selectedConversations.addAll(filteredConversations);
-        updateFilteredAndSelectedConversationLists();
-        _view.conversationListPanelView.updateSelectedCount(selectedConversations.length);
+        // check if it passes the multi-select tag check
+        if (validateSelectAll()) {
+          _view.conversationListPanelView.checkAllConversations();
+          selectedConversations.clear();
+          selectedConversations.addAll(filteredConversations);
+          updateFilteredAndSelectedConversationLists();
+          _view.conversationListPanelView.updateSelectedCount(selectedConversations.length);
+        } else { // don't allow multi-select all
+          var multiSelectExcludeTagsString = multiSelectExcludeTags.map((model.Tag t) => t.text).toList().join('", "');
+          command(BaseAction.showSnackbar, SnackbarData(
+            '''Cannot select all conversations as some conversations in the list are labelled with the important tags: "$multiSelectExcludeTagsString".
+            <br>Make sure to hide conversations with these tags before you can select all conversations in the list.
+            <br><a href="https://www.katikati.world/article/multi-send" target="_blank">Why we do this</a>.''',
+            SnackbarNotificationType.warning));
+          _view.conversationListPanelView.uncheckSelectAllCheckbox();
+        }
         break;
       case UIAction.deselectAllConversations:
         _view.conversationListPanelView.uncheckSelectAllCheckbox();
@@ -1399,11 +1363,6 @@ class NookController extends Controller {
           updateFilteredAndSelectedConversationLists();
         }
         _view.conversationListPanelView.updateSelectedCount(selectedConversations.length);
-        break;
-      case UIAction.updateSuggestedRepliesCategory:
-        UpdateSuggestedRepliesCategoryData updateCategoryData = data;
-        selectedSuggestedRepliesCategory = updateCategoryData.category;
-        _populateReplyPanelView(suggestedRepliesByCategory[selectedSuggestedRepliesCategory]);
         break;
 
       case UIAction.goToUser:
@@ -1566,7 +1525,7 @@ class NookController extends Controller {
     if (matches.length > 1) {
       log.warning('Two conversations seem to have the same deidentified phone number: ${activeConversation.docId}');
     }
-    _selectConversationInView(activeConversation, skipReplyPanelRefresh: true);
+    _selectConversationInView(activeConversation);
     _view.conversationPanelView.clearWarning();
     return activeConversation;
   }
@@ -1591,7 +1550,7 @@ class NookController extends Controller {
       }
     }
 
-    _selectConversationInView(conversation, skipReplyPanelRefresh: true);
+    _selectConversationInView(conversation);
     if (!filteredConversations.contains(conversation)) {
       // If it doesn't meet the filter, show warning
       _view.conversationPanelView.showWarning('Conversation no longer meets filtering constraints');
@@ -1601,14 +1560,11 @@ class NookController extends Controller {
     }
   }
 
-  void _selectConversationInView(model.Conversation conversation, {bool skipReplyPanelRefresh = false}) {
-    _view.urlManager.conversationId = conversation.docId;
+  void _selectConversationInView(model.Conversation conversation) {
+    urlManager.conversationId = conversation.docId;
     if (conversationsInView.contains(conversation)) {
       // Select the conversation in the list of conversations
       _view.conversationListPanelView.selectConversation(conversation.docId);
-      if (!skipReplyPanelRefresh) {
-        _populateReplyPanelView(suggestedRepliesByCategory[selectedSuggestedRepliesCategory]);
-      }
     }
   }
 
@@ -1790,6 +1746,22 @@ class NookController extends Controller {
     }
     return tagIdsWithMissingInfo;
   }
+
+  bool validateSelectAll() {
+    // if any conversations have the multisend exclude tags, don't allow multi-select
+    for (var conversation in conversationsInView) {
+      if (!validateSelectConversation(conversation)) return false;
+    }
+    return true;
+  }
+
+  bool validateSelectConversation(model.Conversation conversation) {
+    var intersection = conversation.tagIds.intersection(currentConfig.multiSelectExcludeTagIds);
+    if (intersection.isNotEmpty) return false;
+    return true;
+  }
+
+  Set<model.Tag> get multiSelectExcludeTags => currentConfig.multiSelectExcludeTagIds.map((e) => tagIdsToTags[e]).toSet();
 }
 
 Map<String, model.Tag> _notFoundTagIds = {};

@@ -5,6 +5,7 @@ import 'dart:svg' as svg;
 
 import 'package:intl/intl.dart';
 import 'package:katikati_ui_lib/components/accordion/accordion.dart';
+import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
 import 'package:katikati_ui_lib/components/tabs/tabs.dart';
 import 'package:katikati_ui_lib/components/url_manager/url_manager.dart';
 import 'package:katikati_ui_lib/utils/datetime.dart';
@@ -16,13 +17,11 @@ import 'package:katikati_ui_lib/components/model/model.dart';
 import 'package:katikati_ui_lib/components/conversation/conversation_item.dart';
 import 'package:katikati_ui_lib/components/conversation/new_conversation_modal.dart';
 import 'package:katikati_ui_lib/components/user_presence/user_presence_indicator.dart';
-import 'package:katikati_ui_lib/components/scroll_indicator/scroll_indicator.dart';
 import 'package:katikati_ui_lib/components/tag/tag.dart';
 import 'package:katikati_ui_lib/components/turnline/turnline.dart' as tl;
 import 'package:katikati_ui_lib/components/button/button.dart' as buttons;
 import 'package:katikati_ui_lib/components/model/model.dart' as model;
 import 'package:nook/view.dart';
-import 'package:nook/app/utils.dart';
 import 'package:nook/app/developer/utils.dart';
 
 import 'controller.dart';
@@ -45,8 +44,9 @@ class NookPageView extends PageView {
   TagPanelView tagPanelView;
   TurnlinePanelView turnlinePanelView;
   NotesPanelView notesPanelView;
-  UrlManager urlManager;
   TabsView tabsView;
+
+  NookController get appController => super.appController;
 
   NookPageView(NookController controller) : super(controller) {
     _view = this;
@@ -58,9 +58,7 @@ class NookPageView extends PageView {
     tagPanelView = new TagPanelView();
     turnlinePanelView = new TurnlinePanelView();
     notesPanelView = new NotesPanelView();
-    urlManager = new UrlManager();
-
-    tabsView = new TabsView([]);
+    tabsView = new TabsView();
 
     conversationFilter = {
       TagFilterType.include: conversationListPanelView.conversationIncludeFilter,
@@ -104,7 +102,7 @@ class NookPageView extends PageView {
       showNormalStatus('signed in: ${latestCommitHash.substring(0, 8)}...');
     }, onError: (_) { /* Do nothing */ });
 
-    var links = ButtonLinksView(navLinks, window.location.pathname);
+    var links = ButtonLinksView(generateProjectLinks(appController.urlManager.project), window.location.pathname);
 
     navHeaderView.navContent = new DivElement()
       ..style.display = 'flex'
@@ -117,43 +115,44 @@ class NookPageView extends PageView {
     showNormalStatus('signed out');
   }
 
-  void showPanels(bool showReplyPanel, bool enableEditNotesPanel, bool showTagPanel, bool tagMessagesEnabled, bool tagConversationsEnabled, bool showTurnlinePanel, String defaultTab) {
+  void showPanels(bool showReplyPanel, bool enableEditNotesPanel, bool showTagPanel, bool tagMessagesEnabled, bool tagConversationsEnabled, bool showTurnlinePanel) {
     List<TabView> tabsToSet = [];
+    var previouslySelectedTab = tabsView.selectedTab;
 
     if (showReplyPanel) {
       var standardMessagesTab = TabView('standard_messages', "Standard messages", replyPanelView.replyPanel);
       tabsToSet.add(standardMessagesTab);
+    } else {
+      previouslySelectedTab = previouslySelectedTab == 'standard_messages' ? null : previouslySelectedTab;
     }
 
     if (showTagPanel) {
-      var tagsTab = TabView('tag', "Tags", tagPanelView.tagPanel);
+      var tagsTab = TabView('tags', "Tags", tagPanelView.tagPanel);
       tabsToSet.add(tagsTab);
       tagPanelView.enableTagging(tagMessagesEnabled, tagConversationsEnabled, false);
+    } else {
+      previouslySelectedTab = previouslySelectedTab == 'tags' ? null : previouslySelectedTab;
     }
 
     if (showTurnlinePanel) {
       var turnlineTab = TabView('turnline', "Turnline", turnlinePanelView.turnlinePanel);
       tabsToSet.add(turnlineTab);
+    } else {
+      previouslySelectedTab = previouslySelectedTab == 'turnline' ? null : previouslySelectedTab;
     }
 
     if (enableEditNotesPanel) {
       var notesTab = TabView('notes', "Notes", notesPanelView.notesPanel);
       tabsToSet.add(notesTab);
       notesPanelView.enableEditableNotes(enableEditNotesPanel);
+    } else {
+      previouslySelectedTab = previouslySelectedTab == 'notes' ? null : previouslySelectedTab;
     }
 
     tabsView.setTabs(tabsToSet);
-
-    if (showReplyPanel && defaultTab == 'standard_messages') {
-      tabsView.selectTab(defaultTab);
-    } else if (showTagPanel && defaultTab == 'tag') {
-      tabsView.selectTab(defaultTab);
-    } else if (showTurnlinePanel && defaultTab == 'turnline') {
-      tabsView.selectTab(defaultTab);
-    } else if (enableEditNotesPanel && defaultTab == 'notes') {
-      tabsView.selectTab(defaultTab);
+    if (tabsToSet.isNotEmpty) {
+      tabsView.selectTab(previouslySelectedTab ?? tabsToSet.first.id);
     }
-
   }
 
   bool sendingMultiMessagesUserConfirmation(int noMessages) {
@@ -214,6 +213,8 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
   DivElement _conversationSummaryWrapper;
   DivElement _conversationSummary;
   DivElement _messages;
+  DivElement _startOfConversation;
+  DivElement _messagesList;
   DivElement _conversationWarning;
   DivElement _conversationId;
   DivElement _conversationIdCopy;
@@ -312,6 +313,14 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
     });
     conversationPanel.append(_messages);
 
+    _startOfConversation = DivElement()
+      ..classes.add("messages-date-separator")
+      ..innerText = "This is the start of conversation";
+    _messages.append(_startOfConversation);
+
+    _messagesList = new DivElement();
+    _messages.append(_messagesList);
+
     _freetextMessageSendView = FreetextMessageSendView("", maxLength: _view.appController.MESSAGE_MAX_LENGTH)..onSend.listen((messageText) {
       _view.appController.command(UIAction.sendManualMessage, new ManualReplyData(messageText));
     });
@@ -369,17 +378,18 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
   set demographicsInfo(String demographicsInfo) => _info.text = demographicsInfo;
 
   void addMessage(MessageView message) {
-    _messages.append(message.renderElement);
+    _messagesList.append(message.renderElement);
     _messageViews.add(message);
     _messageViewsMap[message.messageId] = message;
     message.renderElement.scrollIntoView();
+    _startOfConversation.classes.toggle("hidden", true);
   }
 
   void padOrTrimMessageViews(int count) {
     if (_messageViews.length == count) return;
     if (_messageViews.length > count) {
       for (int i = _messageViews.length - 1; i >= count; --i) {
-        _messages.children.removeAt(i);
+        _messagesList.children.removeAt(i);
         _messageViews.removeAt(i);
       }
       return;
@@ -387,19 +397,19 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
 
     for (int i = _messageViews.length; i < count; i++) {
       MessageView message = new MessageView('', DateTime.now(), '', '$i');
-      _messages.append(message.renderElement);
+      _messagesList.append(message.renderElement);
       _messageViews.add(message);
     }
   }
 
   void updateMessage(MessageView message, int index) {
     if (index >= _messageViews.length) {
-      _messages.append(message.renderElement);
+      _messagesList.append(message.renderElement);
       _messageViews.add(message);
       _messageViewsMap[message.messageId] = message;
       return;
     }
-    _messages.children[index] = message.renderElement;
+    _messagesList.children[index] = message.renderElement;
     _messageViews[index] = message;
     _messageViewsMap[message.messageId] = message;
   }
@@ -461,10 +471,11 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
     clearWarning();
     setSuggestedMessages([]);
 
-    int messagesNo = _messages.children.length;
+    int messagesNo = _messagesList.children.length;
     for (int i = 0; i < messagesNo; i++) {
-      _messages.firstChild.remove();
+      _messagesList.firstChild.remove();
     }
+    _startOfConversation.classes.toggle("hidden", false);
   }
 
   void updateDateSeparators() {
@@ -976,7 +987,14 @@ class ConversationListPanelView {
       ..classes.add('conversation-list-header__checkbox')
       ..title = 'Select all conversations'
       ..checked = false
-      ..onClick.listen((_) => _selectAllCheckbox.checked ? _view.appController.command(UIAction.selectAllConversations, null) : _view.appController.command(UIAction.deselectAllConversations, null));
+      ..onClick.listen((_) {
+        if (!_selectAllCheckbox.checked) {
+          _view.appController.command(UIAction.deselectAllConversations, null);
+          return;
+        }
+
+        _view.appController.command(UIAction.selectAllConversations, null);
+      });
     _panelHeader.append(_selectAllCheckbox);
 
     _selectedCount = new SpanElement()
@@ -1593,109 +1611,71 @@ class TurnlinePanelView {
 
 class ReplyPanelView {
   DivElement replyPanel;
-  DivElement _panelTitle;
-  SelectElement _replyCategories;
-  DivElement _replies;
-  DivElement _replyList;
-  AddActionView _addReply;
-  List<ActionView> _replyViews;
-  ScrollOverflowIndicator _repliesScrollContainer;
+  Map<String, List<ReplyActionGroupView>> _messageGroupsByCategoryId;
+  Accordion _categories;
 
   ReplyPanelView() {
-    replyPanel = new DivElement()
-      ..classes.add('reply-panel');
-
-    _panelTitle = new DivElement()
-      ..classes.add('panel-title')
-      ..classes.add('panel-title--multiple-cols');
-    replyPanel.append(_panelTitle);
-
-    _replyCategories = new SelectElement();
-    _replyCategories.onChange.listen((_) => _view.appController.command(UIAction.updateSuggestedRepliesCategory, new UpdateSuggestedRepliesCategoryData(_replyCategories.value)));
-
-    _panelTitle
-      ..append(new DivElement()..text = REPLY_PANEL_TITLE)
-      ..append(_replyCategories);
-
-    _replies = new DivElement()
-      ..classes.add('replies')
-      ..classes.add('action-list');
-    _repliesScrollContainer = ScrollOverflowIndicator();
-    _repliesScrollContainer.setContent(_replies);
-    replyPanel.append(_repliesScrollContainer.container);
-
-    _replyList = new DivElement();
-    _replies.append(_replyList);
-
-    // TODO(mariana): support adding replies
-    // _addReply = new AddReplyActionView(ADD_REPLY_INFO);
-    // _replies.append(_addReply.addAction);
-
-    _replyViews = [];
+    replyPanel = DivElement()..classes.add('standard-messages-panel');
+    _categories = Accordion([]);
+    _messageGroupsByCategoryId = {};
+    replyPanel.append(_categories.renderElement);
   }
 
-  set selectedCategory(String category) {
-    int index = _replyCategories.children.indexWhere((Element option) => (option as OptionElement).value == category);
-    if (index == -1) {
-      _view.showWarningStatus("Couldn't find $category in list of suggested replies category, using first");
-      _replyCategories.selectedIndex = 0;
-      _view.appController.command(UIAction.updateSuggestedRepliesCategory, new UpdateSuggestedRepliesCategoryData(_replyCategories.value));
-      return;
+  void update(List<ReplyActionGroupView> groupViews) {
+    var categoryId = groupViews.first.categoryId;
+    var categoryName = groupViews.first.categoryName;
+
+    _messageGroupsByCategoryId[categoryId] = groupViews;
+    var accordionItem = _categories.items.firstWhere((accordionItem) => accordionItem.id == categoryId, orElse: () => null);
+    var headerElement = DivElement()..innerText = categoryName;
+    var bodyElement = DivElement();
+    groupViews.forEach((groupView) {
+      bodyElement.append(groupView.action);
+    });
+    var item = AccordionItem(categoryId, headerElement, bodyElement, false);
+
+    if (accordionItem == null) {
+      _categories.appendItem(item);
+    } else {
+      _categories.updateItem(categoryId, item);
     }
-    _replyCategories.selectedIndex = index;
-    _panelTitle.dataset['category-id'] = category;
-  }
-
-  set categories(List<String> categories) {
-    _replyCategories.children.clear();
-    for (var category in categories) {
-      _replyCategories.append(
-        new OptionElement()
-          ..value = category
-          ..text = category);
-    }
-  }
-
-  void addReply(ActionView action) {
-    _replyViews.add(action);
-    _replyList.append(action.action);
-    _repliesScrollContainer.updateShadows();
   }
 
   void clear() {
-    int repliesNo = _replyList.children.length;
-    for (int i = 0; i < repliesNo; i++) {
-      _replyList.firstChild.remove();
-    }
-    _replyViews.clear();
-    assert(_replyList.children.length == 0);
+    _categories.clear();
+    _messageGroupsByCategoryId = {};
+  }
+
+  void remove(String replyId) {
+    _messageGroupsByCategoryId.values.forEach((groups) {
+      groups.forEach((group) {
+        var matchedReply = group.replies.firstWhere((reply) => reply.replyId == replyId, orElse: () => null);
+        if (matchedReply != null) {
+          matchedReply.action.remove();
+          group.replies.remove(matchedReply);
+        }
+      });
+    });
   }
 
   void showShortcuts(bool show) {
-    for (var view in _replyViews) {
-      view.showShortcut(show);
-    }
+    _messageGroupsByCategoryId.values.forEach((groups) {
+      groups.forEach((group) {
+        group.replies.forEach((reply) {
+          reply.showShortcut(show);
+        });
+      });
+    });
   }
 
   void showButtons(bool show) {
-    for (var view in _replyViews) {
-      view.showButtons(show);
-    }
-  }
-
-  void disableReplies() {
-    _replies.remove();
-    _panelTitle
-      ..children.clear()
-      ..append(new DivElement()..text = NOTES_PANEL_TITLE);
-  }
-
-  void enableReplies() {
-    _panelTitle
-      ..children.clear()
-      ..append(new DivElement()..text = REPLY_PANEL_TITLE)
-      ..append(_replyCategories);
-    replyPanel.append(_replies);
+    _messageGroupsByCategoryId.values.forEach((groups) {
+      groups.forEach((group) {
+        group.replies.forEach((reply) {
+          reply.showButtons(show);
+        });
+      });
+    });
   }
 
 }
@@ -1787,6 +1767,7 @@ abstract class ActionView {
 }
 
 class ReplyActionView implements ActionView {
+  String replyId;
   DivElement action;
   DivElement _shortcutElement;
   DivElement _textElement;
@@ -1799,7 +1780,7 @@ class ReplyActionView implements ActionView {
   String get text => _text;
   String get translation => _translation;
 
-  ReplyActionView(this._text, this._translation, String shortcut, String replyId, String buttonText) {
+  ReplyActionView(this._text, this._translation, String shortcut, this.replyId, String buttonText) {
     action = new DivElement()
       ..classes.add('action')
       ..dataset['id'] = "${replyId}";
@@ -1830,7 +1811,7 @@ class ReplyActionView implements ActionView {
       var buttonElement = new DivElement()
         ..classes.add('action__button')
         ..classes.add('action__button--float')
-        ..text = '$buttonText (${controller.projectConfiguration["firstLanguage"] ?? "lang 1"})';
+        ..text = '$buttonText (${controller.selectedProject?.firstLanguage ?? "lang 1"})';
       buttonElement.onClick.listen((_) => _view.appController.command(UIAction.sendMessage, new ReplyData(replyId)));
       buttonElement.onMouseEnter.listen((event) => highlightText(true));
       buttonElement.onMouseLeave.listen((event) => highlightText(false));
@@ -1859,7 +1840,7 @@ class ReplyActionView implements ActionView {
       var buttonElement = new DivElement()
         ..classes.add('action__button')
         ..classes.add('action__button--float')
-        ..text = '$buttonText (${controller.projectConfiguration["secondLanguage"] ?? "lang 2"})';
+        ..text = '$buttonText (${controller.selectedProject?.secondLanguage ?? "lang 2"})';
       buttonElement.onClick.listen((_) => _view.appController.command(UIAction.sendMessage, new ReplyData(replyId, replyWithTranslation: true)));
       buttonElement.onMouseEnter.listen((event) => highlightTranslation(true));
       buttonElement.onMouseLeave.listen((event) => highlightTranslation(false));
@@ -1899,8 +1880,11 @@ class ReplyActionGroupView implements ActionView {
   DivElement action;
   List<DivElement> _buttonElements;
   List<ReplyActionView> replies;
+  String categoryId;
+  String categoryName;
+  String groupId;
 
-  ReplyActionGroupView(String groupId, String groupDescription, String buttonText, this.replies) {
+  ReplyActionGroupView(this.categoryId, this.categoryName, this.groupId, String groupDescription, String buttonText, this.replies) {
     action = new DivElement()
       ..classes.add('action')
       ..classes.add('action--group')
@@ -1926,7 +1910,7 @@ class ReplyActionGroupView implements ActionView {
     var sendButton = new DivElement()
       ..classes.add('action__button')
       ..classes.add('action__button--flex')
-      ..text = '$buttonText (${controller.projectConfiguration["firstLanguage"] ?? "lang 1"})';
+      ..text = '$buttonText (${controller.selectedProject?.firstLanguage ?? "lang 1"})';
     sendButton.onClick.listen((_) => _view.appController.command(UIAction.sendMessageGroup, new GroupReplyData(groupId)));
     sendButton.onMouseEnter.listen((event) {
       sendButton.scrollIntoView(); // this is to stabilize the view around the button
@@ -1942,7 +1926,7 @@ class ReplyActionGroupView implements ActionView {
     var sendTranslationButton = new DivElement()
       ..classes.add('action__button')
       ..classes.add('action__button--flex')
-      ..text = '$buttonText (${controller.projectConfiguration["secondLanguage"] ?? "lang 2"})';
+      ..text = '$buttonText (${controller.selectedProject?.secondLanguage ?? "lang 2"})';
     sendTranslationButton.onClick.listen((_) => _view.appController.command(UIAction.sendMessageGroup, new GroupReplyData(groupId, replyWithTranslation: true)));
     sendTranslationButton.onMouseEnter.listen((event) {
       sendTranslationButton.scrollIntoView(); // this is to stabilize the view around the button
