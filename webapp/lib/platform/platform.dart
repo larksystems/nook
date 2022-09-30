@@ -294,14 +294,6 @@ class Platform {
       .then((_) => {}, onError: (error, trace) { if (onError != null) onError(error); });
   }
 
-  Future<void> updateUserConfiguration(Map<String, Map<String, dynamic>> updates) {
-    List<Future> futures = [];
-    for (var email in updates.keys) {
-      futures.add(platform.firestoreInstance.collection("users").doc(email).update(data: updates[email]));
-    }
-    return Future.wait(futures);
-  }
-
   Future<void> addMessageTag(Conversation conversation, Message message, String tagId) {
     log.verbose("Adding tag $tagId to message in conversation ${conversation.docId}");
     return message.addTagId(_pubsubInstance, conversation, tagId);
@@ -375,6 +367,14 @@ class Platform {
     var tagData = tag.toData();
     tagData['__id'] = tag.docId;
     return _pubsubInstance.publishAddOpinion('nook/set_tag', tagData);
+  }
+
+  Future<void> setUserConfigField(String user, String field, dynamic value) {
+    log.verbose(("Setting $field to $value for $user"));
+    return _pubsubInstance.publishAddOpinion('nook/set_user_config', {
+      '__id': user,
+      field: value
+    });
   }
 
   Future<void> updateTags(List<Tag> tags) {
