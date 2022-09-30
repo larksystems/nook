@@ -1,63 +1,48 @@
 library controller;
 
-import 'dart:html';
 import 'package:katikati_ui_lib/components/logger.dart';
 import 'package:nook/app/nook/controller.dart';
-import 'package:nook/platform/platform.dart';
 import 'package:katikati_ui_lib/components/model/model.dart' as model;
 import 'view.dart';
-import 'dart:async';
 
 Logger log = new Logger('controller.dart');
 
 enum UsersAction {
-  updateBoolPermission,
-  updateStringPermission,
-  updateStringSetPermission,
-  savePermissions,
-  resetToDefaultPermission
+  addUser,
+  deactivateUser,
+  updatePermission,
+  resetToDefaultPermission,
 }
 
-class UpdateBoolPermission extends Data {
-  String email;
+class UpdatePermission extends Data {
+  String userId;
   String permissionKey;
-  bool value;
+  dynamic value;
 
-  UpdateBoolPermission(this.email, this.permissionKey, this.value);
-}
-
-class UpdateStringPermission extends Data {
-  String email;
-  String permissionKey;
-  String value;
-
-  UpdateStringPermission(this.email, this.permissionKey, this.value);
+  UpdatePermission(this.userId, this.permissionKey, this.value);
 }
 
 class ResetToDefaultPermission extends Data {
-  String email;
+  String userId;
   String permissionKey;
 
-  ResetToDefaultPermission(this.email, this.permissionKey);
+  ResetToDefaultPermission(this.userId, this.permissionKey);
 }
 
 UsersController controller;
 UsersPageView get _view => controller.view;
 
 class UsersController extends Controller {
-
   model.UserConfiguration defaultConfig;
   Map<String, model.UserConfiguration> userConfigs;
-  Map<String, Map<String, dynamic>> editedConfig;
 
-  UsersController(): super() {}
+  UsersController(): super();
 
   @override
   void init() {
+    super.init();
     view = UsersPageView(this);
-    platform = new Platform(this);
     controller = this;
-    editedConfig = {};
   }
 
   @override
@@ -95,33 +80,11 @@ class UsersController extends Controller {
           userConfigs[c.docId] = c.applyDefaults(defaultConfig);
           var modifiedObj = c.toData();
           modifiedObj.keys.forEach((permissionKey) {
-
-            if (editedConfig.containsKey(c.docId)) {
-              if (editedConfig[c.docId].containsKey(permissionKey)) {
-                editedConfig[c.docId].remove(permissionKey);
-              }
-              if (editedConfig[c.docId].isEmpty) {
-                editedConfig.remove(c.docId);
-              }
-            }
-            
             var valueToUpdate = modifiedObj[permissionKey];
-            var valueType = valueToUpdate.runtimeType.toString();
-            if (valueType == 'bool') {
-              _view.updateBoolPermission(c.docId, permissionKey, valueToUpdate);
-            } else if (valueType == 'String') {
-              _view.updateStringPermission(c.docId, permissionKey, valueToUpdate);
-            } else if (valueType == 'List<String>') {
-              _view.updateListStringPermission(c.docId, permissionKey, valueToUpdate);
-            } else {
-              log.error("Unknown data type for ${c.docId}, ${permissionKey}, ${valueToUpdate}");
-            }
+            _view.updatePermission(c.docId, permissionKey, valueToUpdate);
           });
         });
       }
-
-      // todo: handle removal of user
-      _view.enableSaveButton(editedConfig.isNotEmpty);
     });
   }
 
@@ -132,111 +95,23 @@ class UsersController extends Controller {
     }
 
     switch (action) {
-      case UsersAction.savePermissions:
-        _view.setSaveText("Updating…");
-        _view.enableSaveButton(false);
-        platform.updateUserConfiguration(editedConfig).then((_) {
-          editedConfig.keys.forEach((email) {
-            _view.markAsUnsaved(email, true);
-          });
-          editedConfig = {};
-          _view.setSaveText("Updated!");
-          new Timer(new Duration(seconds: 2), () => _view.setSaveText("Update permissions"));
-        });
+      case UsersAction.updatePermission:
+        var updateData = data as UpdatePermission;
+        platform.setUserConfigField(updateData.userId, updateData.permissionKey, updateData.value);
+        _view.toggleSaved(updateData.userId, updateData.permissionKey, true);
         break;
 
-      case UsersAction.updateBoolPermission:
-        var updateData = data as UpdateBoolPermission;
-        if (isDefaultPermission(updateData.email)) {
-          var userDataObj = defaultConfig.toData();
-          userDataObj[updateData.permissionKey] = updateData.value;
-          defaultConfig = model.UserConfiguration.fromData(userDataObj);
-          for (var email in userConfigs.keys) {
-            if (email != 'default') {
-              var valueToUpdate = userConfigs[email].toData()[updateData.permissionKey] ?? updateData.value;
-              _view.updateBoolPermission(email, updateData.permissionKey, valueToUpdate);
-            }
-          }
-        } else {
-          var userDataObj = userConfigs[updateData.email].toData();
-          userDataObj[updateData.permissionKey] = updateData.value;
-          userConfigs[updateData.email] = model.UserConfiguration.fromData(userDataObj);
-        }
-        editedConfig[updateData.email] = editedConfig[updateData.email] ?? {};
-        editedConfig[updateData.email][updateData.permissionKey] = updateData.value;
-        _view.markAsUnsaved(updateData.email, false);
-        _view.enableSaveButton(editedConfig.isNotEmpty);
-        break;
-
-      case UsersAction.updateStringPermission:
-        var updateData = data as UpdateStringPermission;
-        if (isDefaultPermission(updateData.email)) {
-          var userDataObj = defaultConfig.toData();
-          userDataObj[updateData.permissionKey] = updateData.value;
-          defaultConfig = model.UserConfiguration.fromData(userDataObj);
-          for (var email in userConfigs.keys) {
-            if (email != 'default') {
-              var valueToUpdate = userConfigs[email].toData()[updateData.permissionKey] ?? updateData.value;
-              _view.updateStringPermission(email, updateData.permissionKey, valueToUpdate);
-            }
-          }
-        } else {
-          var userDataObj = userConfigs[updateData.email].toData();
-          userDataObj[updateData.permissionKey] = updateData.value;
-          userConfigs[updateData.email] = model.UserConfiguration.fromData(userDataObj);
-        }
-        editedConfig[updateData.email] = editedConfig[updateData.email] ?? {};
-        editedConfig[updateData.email][updateData.permissionKey] = updateData.value;
-        _view.markAsUnsaved(updateData.email, false);
-        _view.enableSaveButton(editedConfig.isNotEmpty);
-        break;
-
-      case UsersAction.updateStringSetPermission:
-        var updateData = data as UpdateStringPermission;
-        var values = updateData.value.split(",").map((e) => e.trim()).toList();
-        if (isDefaultPermission(updateData.email)) {
-          var userDataObj = defaultConfig.toData();
-          userDataObj[updateData.permissionKey] = values;
-          defaultConfig = model.UserConfiguration.fromData(userDataObj);
-          for (var email in userConfigs.keys) {
-            if (email != 'default') {
-              var valueToUpdate = userConfigs[email].toData()[updateData.permissionKey] ?? updateData.value.split(",");
-              _view.updateListStringPermission(email, updateData.permissionKey, valueToUpdate);
-            }
-          }
-        } else {
-          var userDataObj = userConfigs[updateData.email].toData();
-          userDataObj[updateData.permissionKey] = values;
-          userConfigs[updateData.email] = model.UserConfiguration.fromData(userDataObj);
-        }
-        editedConfig[updateData.email] = editedConfig[updateData.email] ?? {};
-        editedConfig[updateData.email][updateData.permissionKey] = values;
-        _view.markAsUnsaved(updateData.email, false);
-        _view.enableSaveButton(editedConfig.isNotEmpty);
-        break;
-      
       case UsersAction.resetToDefaultPermission:
         var resetData = data as ResetToDefaultPermission;
-        var userDataObj = userConfigs[resetData.email].toData();
-
-        var valueType = userDataObj[resetData.permissionKey].runtimeType.toString();
-
-        userDataObj[resetData.permissionKey] = null;
-        userConfigs[resetData.email] = model.UserConfiguration.fromData(userDataObj);
-        editedConfig[resetData.email] = editedConfig[resetData.email] ?? {};
-        editedConfig[resetData.email][resetData.permissionKey] = null;
-
-        _view.markAsUnsaved(resetData.email, false);
-        _view.enableSaveButton(editedConfig.isNotEmpty);
-
-        if (valueType == 'bool') {
-          _view.updateBoolPermission(resetData.email, resetData.permissionKey, defaultConfig.toData()[resetData.permissionKey], setToDefault: true);
-        } else if (valueType == 'String') {
-          _view.updateStringPermission(resetData.email, resetData.permissionKey, defaultConfig.toData()[resetData.permissionKey] ?? "", setToDefault: true);
-        } else if (valueType == 'List<String>') {
-          _view.updateListStringPermission(resetData.email, resetData.permissionKey, defaultConfig.toData()[resetData.permissionKey] ?? [], setToDefault: true);
-        }
+        platform.setUserConfigField(resetData.userId, resetData.permissionKey, defaultConfig.toData()[resetData.permissionKey]);
+        _view.toggleSaved(resetData.userId, resetData.permissionKey, true);
         break;
     }
+  }
+
+  @override
+  void applyConfiguration(model.UserConfiguration newConfig) {
+    // TODO: implement applyConfiguration
+    super.applyConfiguration(newConfig);
   }
 }
