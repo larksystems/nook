@@ -1,5 +1,6 @@
 import 'dart:html';
 import 'package:katikati_ui_lib/components/button/button.dart';
+import 'package:katikati_ui_lib/components/editable/editable_text.dart';
 import 'package:katikati_ui_lib/components/logger.dart';
 import 'package:katikati_ui_lib/datatypes/user.dart';
 import 'package:nook/view.dart';
@@ -10,51 +11,66 @@ Logger log = new Logger('view.dart');
 
 class Permission {
   String key;
+  String text;
   String type;
   String explanation;
 
-  Permission(this.key, this.type, {this.explanation});
+  Permission(this.key, this.text, this.type, {this.explanation});
 }
 
-Map<String, List<Permission>> permissionGroups = {
-  "Standard messages": [
-    Permission("edit_standard_messages_enabled", "bool"),
+Map<String, List<Permission>> projectAdminPermissionGroups = {
+  "Configuring standard messages": [
+    Permission("edit_standard_messages_enabled", "Can edit standard messages", "bool"),
   ],
-  "Tags": [
-    Permission("edit_tags_enabled", "bool"),
+  "Configuring tags": [
+    Permission("edit_tags_enabled", "Can edit tags", "bool"),
+  ],
+  "Messaging": [
+    Permission("send_messages_enabled", "Can send messages", "bool"),
+    Permission("send_custom_messages_enabled", "Can send custom messages", "bool"),
+    Permission("send_multi_message_enabled", "Can select multiple conversations", "bool"),
+    Permission("multi_select_exclude_tag_ids", "Tags excluding conversations from multiple selection", "Set<String>"),
   ],
   "Conversations": [
-    Permission("send_messages_enabled", "bool"),
-    Permission("send_custom_messages_enabled", "bool"),
-    Permission("send_multi_message_enabled", "bool"),
-    Permission("tag_messages_enabled", "bool"),
-    Permission("tag_conversations_enabled", "bool"),
-    Permission("conversational_turns_enabled", "bool"),
-    Permission("tags_panel_visibility", "bool"),
-    Permission("replies_panel_visibility", "bool"),
-    Permission("turnline_panel_visibility", "bool"),
-    Permission("suggested_replies_groups_enabled", "bool"),
-    Permission("tags_keyboard_shortcuts_enabled", "bool"),
-    Permission("replies_keyboard_shortcuts_enabled", "bool"),
-    Permission("edit_translations_enabled", "bool"),
-    Permission("edit_notes_enabled", "bool"),
-    Permission("mandatory_include_tag_ids", "Set<String>"),
-    Permission("mandatory_exclude_tag_ids", "Set<String>"),
-    Permission("multi_select_exclude_tag_ids", "Set<String>"),
+    Permission("tag_messages_enabled", "Can tag messages", "bool"),
+    Permission("tag_conversations_enabled", "Can tag conversations", "bool"),
+    Permission("suggested_replies_groups_enabled", "Can send groups of standard messages", "bool"),
+    Permission("tags_panel_visibility", "Standard messages panel is visible", "bool"),
+    Permission("replies_panel_visibility", "Tags panel is visible", "bool"),
+    Permission("turnline_panel_visibility", "Turnline panel is visible", "bool"),
+    // Permission("tags_keyboard_shortcuts_enabled", "Can use keyboard shortcuts for tagging", "bool"),
+    // Permission("replies_keyboard_shortcuts_enabled", "Can use keyboard shortcuts for replying with standard messages", "bool"),
+
+    Permission("edit_translations_enabled", "Can edit messages translation", "bool"),
+    Permission("edit_notes_enabled", "Can add conversation notes", "bool"),
+    Permission("conversational_turns_enabled", "Can filter conversations by the last turn and exclusion", "bool"),
   ],
-  "Explore": [
-    Permission("sample_messages_enabled", "bool"),
+  "Access restrictions": [
+    Permission("mandatory_include_tag_ids", "Tags of the only conversations the user can access", "Set<String>"),
+    Permission("mandatory_exclude_tag_ids", "Tags of the conversations the user can't access", "Set<String>"),
+    Permission("sample_messages_enabled", "Can show sample messages associated with tags", "bool"),
   ],
-  "Miscellaneous": [
-    Permission("console_logging_level", "String"),
-    Permission("role", "String"),
-    Permission("status", "String"),
+  "User management": [
+    Permission("status", "User status", "String"),
+  ],
+};
+
+Map<String, List<Permission>> superAdminPermissionGroups = {
+  ...projectAdminPermissionGroups,
+  "Role management": [
+    Permission("role", "User role", "String"),
+  ],
+  "Other": [
+    Permission("console_logging_level", "Console logging level", "String"),
   ]
 };
 
 const DEFAULT_KEY = "default";
 const VALUE_FROM_DEFAULT_CSS_CLASS = "from-default";
 bool isDefaultPermission(key) => key == DEFAULT_KEY;
+
+const TITLE_TEXT = "User permissions";
+const HELPER_TEXT = "Default permissions apply to all user accounts unless overridden individually. Faded values are derived from the default.";
 
 class UsersPageView extends PageView {
   DivElement renderElement;
@@ -84,11 +100,13 @@ class UsersPageView extends PageView {
     renderElement.append(wrapperElement);
 
     headerElement = HeadingElement.h1()
-      ..innerText = "User permissions"
-      ..className = "user-permissions__heading";
+      ..className = "user-permissions__heading"
+      ..innerText = TITLE_TEXT;
     wrapperElement.append(headerElement);
 
-    helperElement = ParagraphElement()..innerText = "Default permissions apply to all user accounts unless overridden individually. Muted controls are derived from the default.";
+    helperElement = ParagraphElement()
+      ..className = "user-permissions__help-text"
+      ..innerText = HELPER_TEXT;
     wrapperElement.append(helperElement);
 
     tableWrapper = DivElement()
@@ -123,7 +141,14 @@ class UsersPageView extends PageView {
     permissionNameHeaders[key]?.classes?.toggle("unsaved", !saved);
   }
 
-  void populateTable(UserConfiguration defaultConfig, Map<String, UserConfiguration> usersConfig) {
+  void displayAccessNotAllowed() {
+    headerElement.text = "You don't have permissions to access this page";
+    helperElement.text = "Please contact your administrator if you have any questions";
+
+    tableWrapper.children.clear();
+  }
+
+  void populateTable(UserConfiguration defaultConfig, UserConfiguration currentConfig, Map<String, UserConfiguration> usersConfig) {
     tableWrapper.children.clear();
     var table = TableElement();
     // thead, tbody
@@ -133,10 +158,41 @@ class UsersPageView extends PageView {
       ..append(tableHeader)
       ..append(tableBody);
 
-    var allEmails = [defaultConfig.docId]..addAll(usersConfig.keys);
+    var allEmails = [defaultConfig.docId, ...usersConfig.keys];
 
     // email headers
-    var headerRow = TableRowElement()..append(Element.th());
+    var cornerElement = Element.th();
+
+    var wrapper = DivElement()
+      ..style.textAlign = 'right';
+    cornerElement.append(wrapper);
+
+    SpanElement addNewUserText = SpanElement()..text = 'Add new user';
+    Button addNewUserButton;
+    TextEdit newUserEmail;
+    newUserEmail = TextEdit("", placeholder: "name@email.org")
+      ..onEdit = (value) {
+        appController.command(UsersAction.addUser, UserData(value.trim()));
+        newUserEmail.renderElement.remove();
+        wrapper.append(addNewUserText);
+        wrapper.append(addNewUserButton.renderElement);
+      }
+      ..onCancel = () {
+        newUserEmail.renderElement.remove();
+        wrapper.append(addNewUserText);
+        wrapper.append(addNewUserButton.renderElement);
+      };
+    addNewUserButton = Button(ButtonType.add, onClick: (e) {
+      addNewUserText.remove();
+      addNewUserButton.remove();
+      wrapper.append(newUserEmail.renderElement);
+      newUserEmail.beginEdit();
+    });
+    wrapper.append(addNewUserText);
+    wrapper.append(addNewUserButton.renderElement);
+
+    var headerRow = TableRowElement()..append(cornerElement);
+
     allEmails.forEach((email) {
       var emailHeader = Element.th()..innerText = email;
       permissionEmailHeaders[email] = emailHeader;
@@ -146,6 +202,14 @@ class UsersPageView extends PageView {
 
     var defaultConfigMap = defaultConfig.toData();
 
+    var permissionGroups =
+      currentConfig.role == UserRole.superAdmin ? superAdminPermissionGroups :
+      currentConfig.role == UserRole.projectAdmin ? projectAdminPermissionGroups :
+      throw "User does not have permissions to see the permissions";
+
+    headerElement.text = TITLE_TEXT;
+    helperElement.text = HELPER_TEXT;
+
     for (var group in permissionGroups.keys) {
       var groupTitle = TableRowElement()
         ..append(Element.td()..className = "group-row"..innerText = group)
@@ -153,7 +217,7 @@ class UsersPageView extends PageView {
       tableBody.append(groupTitle);
       for (var permission in permissionGroups[group]) {
         var permissionRow = TableRowElement();
-        var permissionText = DivElement()..innerText = permission.key;
+        var permissionText = DivElement()..innerText = permission.text;
         var permissionExplanation = SpanElement()..className = "permission-explanation"..innerText = permission.explanation;
         var permissionHeader = Element.th()..append(permissionText)..append(permissionExplanation);
         permissionNameHeaders[permission.key] = permissionHeader;
@@ -167,7 +231,7 @@ class UsersPageView extends PageView {
           if (derivedFromDefault) {
             permissionValue = defaultConfigMap[permission.key];
           } else {
-            if (!isDefaultPermission(email)) {
+            if (!isDefaultPermission(email) && permission.key != "role" && permission.key != "status") {
               var resetButton = Button(ButtonType.reset, hoverText: 'Reset to default', onClick: (_) {
                 appController.command(UsersAction.resetToDefaultPermission, ResetToDefaultPermission(email, permission.key));
               });
@@ -195,7 +259,7 @@ class UsersPageView extends PageView {
             case 'String':
               renderElement = TextInputElement()
                 ..value = permissionValue
-                ..onInput.listen((event) {
+                ..onChange.listen((event) {
                   renderElement.classes.remove(VALUE_FROM_DEFAULT_CSS_CLASS);
                   appController.command(UsersAction.updatePermission, UpdatePermission(email, permission.key, (event.target as TextInputElement).value));
                 });
@@ -208,7 +272,7 @@ class UsersPageView extends PageView {
             case 'Set<String>':
               renderElement = TextInputElement()
                 ..value = (permissionValue as List<String>)?.join(",")
-                ..onInput.listen((event) {
+                ..onChange.listen((event) {
                   renderElement.classes.remove(VALUE_FROM_DEFAULT_CSS_CLASS);
                   var value = (event.target as TextInputElement).value.split(',');
                   appController.command(UsersAction.updatePermission, UpdatePermission(email, permission.key, value));
@@ -222,6 +286,9 @@ class UsersPageView extends PageView {
             default:
               renderElement = SpanElement()..innerText = "Unknown data type";
               break;
+          }
+          if (email == "default" && (permission.key == "role" || permission.key == "status")) {
+            renderElement.attributes["disabled"] = "true";
           }
           var cell = TableCellElement()
             ..append(renderElement)

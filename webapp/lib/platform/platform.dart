@@ -377,6 +377,15 @@ class Platform {
     });
   }
 
+  Future<void> addUser(String user) {
+    log.verbose(("Adding user $user"));
+    return _pubsubInstance.publishAddOpinion('nook/add_user', {
+      '__id': user,
+      'role': 'UserRole.user',
+      'status': 'UserStatus.active',
+    });
+  }
+
   Future<void> updateTags(List<Tag> tags) {
     List<Future> futures = [];
 
