@@ -14,6 +14,12 @@ enum UsersAction {
   resetToDefaultPermission,
 }
 
+class UserData extends Data {
+  String userId;
+
+  UserData(this.userId);
+}
+
 class UpdatePermission extends Data {
   String userId;
   String permissionKey;
@@ -52,18 +58,25 @@ class UsersController extends Controller {
     super.setUpOnLogin();
 
     platform.listenForUserConfigurations((added, modified, removed) {
-      if (added.isNotEmpty) {
-        List<model.UserConfiguration> addedUserConfig = new List()
-          ..addAll(added);
-
-        defaultConfig = addedUserConfig.singleWhere((c) => c.docId == 'default', orElse: () => null);
+      if (added.isNotEmpty || removed.isNotEmpty) {
+        defaultConfig = added.singleWhere((c) => c.docId == 'default', orElse: () => defaultConfig);
 
         userConfigs = userConfigs ?? {};
-        addedUserConfig.where((c) => c.docId != 'default').forEach((c) {
-          userConfigs[c.docId] = c;
-        });
+        for (var config in added) {
+          if (config.docId == 'default') continue;
+          userConfigs[config.docId] = config;
+        }
+        for (var config in removed) {
+          userConfigs.remove(config.docId);
+        }
 
-        _view.populateTable(defaultConfig, userConfigs);
+        var currentConfig = userConfigs[signedInUser.userEmail] ?? model.UserConfigurationUtil.emptyUserConfiguration;
+
+        if (currentConfig.role == model.UserRole.superAdmin || currentConfig.role == model.UserRole.projectAdmin) {
+          _view.populateTable(defaultConfig, currentConfig, userConfigs);
+        } else {
+          _view.displayAccessNotAllowed();
+        }
       }
 
       if (modified.isNotEmpty) {
@@ -95,6 +108,10 @@ class UsersController extends Controller {
     }
 
     switch (action) {
+      case UsersAction.addUser:
+        var userData = data as UserData;
+        platform.addUser(userData.userId);
+        break;
       case UsersAction.updatePermission:
         var updateData = data as UpdatePermission;
         platform.setUserConfigField(updateData.userId, updateData.permissionKey, updateData.value);

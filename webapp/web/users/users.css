@@ -33,6 +33,10 @@ body {
     padding: 15px 0;
 }
 
+.user-permissions__help-text {
+    padding-bottom: 7px;
+}
+
 .user-permissions__table-wrapper {
     overflow-x: scroll;
     max-width: 100%;
@@ -69,7 +73,6 @@ body {
     background-color: white;
     z-index: 2;
     border-right: 2px solid var(--default-border-color);
-    padding-left: var(--spacer-2);
 }
 
 .user-permissions__table-wrapper td,
