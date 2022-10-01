@@ -1,4 +1,5 @@
 import "dart:async";
+import 'dart:html';
 
 import 'package:firebase/firebase.dart' as firebase;
 
@@ -366,6 +367,23 @@ class Platform {
     var tagData = tag.toData();
     tagData['__id'] = tag.docId;
     return _pubsubInstance.publishAddOpinion('nook/set_tag', tagData);
+  }
+
+  Future<void> setUserConfigField(String user, String field, dynamic value) {
+    log.verbose(("Setting $field to $value for $user"));
+    return _pubsubInstance.publishAddOpinion('nook/set_user_config', {
+      '__id': user,
+      field: value
+    });
+  }
+
+  Future<void> addUser(String user) {
+    log.verbose(("Adding user $user"));
+    return _pubsubInstance.publishAddOpinion('nook/add_user', {
+      '__id': user,
+      'role': 'UserRole.user',
+      'status': 'UserStatus.active',
+    });
   }
 
   Future<void> updateTags(List<Tag> tags) {
