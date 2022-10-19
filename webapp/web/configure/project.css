@@ -13,7 +13,7 @@ body {
     margin: 0px;
 }
 
-.user-permissions {
+.project-configuration {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -21,29 +21,29 @@ body {
     max-width: 100%;
 }
 
-.user-permissions__inner-wrapper {
+.project-configuration__inner-wrapper {
     padding: 0 15px;
     max-width: 100%;
     overflow-y: hidden;
 }
 
-.user-permissions__heading {
+.project-configuration__heading {
     font-size: large;
     font-weight: bold;
     padding: 15px 0;
 }
 
-.user-permissions__help-text {
+.project-configuration__help-text {
     padding-bottom: 7px;
 }
 
-.user-permissions__table-wrapper {
+.project-configuration__table-wrapper {
     overflow-x: scroll;
     max-width: 100%;
     overflow-y: hidden;
 }
 
-.user-permissions__table-wrapper table {
+.project-configuration__table-wrapper table {
     border: none;
     border-collapse: separate;
     border-spacing: 0;
@@ -51,7 +51,7 @@ body {
     border-bottom: 1px solid var(--default-border-color);
 }
 
-.user-permissions__table-wrapper table thead th {
+.project-configuration__table-wrapper table thead th {
     background-color: var(--lighter-background-color);
     position: sticky;
     top: 0;
@@ -60,14 +60,14 @@ body {
 }
 
 
-.user-permissions__table-wrapper table thead th:first-child {
+.project-configuration__table-wrapper table thead th:first-child {
     position: sticky;
     z-index: 4;
     left: 0;
     border-right: 2px solid var(--default-border-color);
 }
 
-.user-permissions__table-wrapper table tbody th {
+.project-configuration__table-wrapper table tbody th {
     position: sticky;
     left: 0;
     background-color: white;
@@ -75,8 +75,8 @@ body {
     border-right: 2px solid var(--default-border-color);
 }
 
-.user-permissions__table-wrapper td,
-.user-permissions__table-wrapper th {
+.project-configuration__table-wrapper td,
+.project-configuration__table-wrapper th {
     padding: 6px 12px;
     border-top: 1px solid var(--default-border-color);
     border-left: 1px solid var(--default-border-color);
@@ -84,12 +84,12 @@ body {
     position: relative;
 }
 
-.user-permissions__table-wrapper td:last-child,
-.user-permissions__table-wrapper th:last-child {
+.project-configuration__table-wrapper td:last-child,
+.project-configuration__table-wrapper th:last-child {
     border-right: 1px solid var(--default-border-color);
 }
 
-.user-permissions__table-wrapper td.group-row {
+.project-configuration__table-wrapper td.group-row {
     position: sticky !important;
     left: 0;
     z-index: 2;
@@ -103,27 +103,27 @@ body {
     border-right: 2px solid var(--default-border-color);
 }
 
-.user-permissions__table-wrapper td.group-row--empty {
+.project-configuration__table-wrapper td.group-row--empty {
     background: var(--lighter-background-color);
 }
 
-.user-permissions__table-wrapper td:hover .button-wrapper {
+.project-configuration__table-wrapper td:hover .button-wrapper {
     visibility: visible;
 }
 
-.user-permissions__table-wrapper td .button-wrapper {
+.project-configuration__table-wrapper td .button-wrapper {
     visibility: hidden;
     position: absolute;
     top: 6px;
     right: 12px;
 }
 
-.user-permissions__table-wrapper tbody tr:hover th,
-.user-permissions__table-wrapper tr th.highlight {
+.project-configuration__table-wrapper tbody tr:hover th,
+.project-configuration__table-wrapper tr th.highlight {
     background-color: var(--lighter-gray);
 }
 
-.user-permissions__table-wrapper tbody tr:hover {
+.project-configuration__table-wrapper tbody tr:hover {
     background-color: var(--default-background-color);
 }
 
