@@ -69,8 +69,10 @@ const DEFAULT_KEY = "default";
 const VALUE_FROM_DEFAULT_CSS_CLASS = "from-default";
 bool isDefaultPermission(key) => key == DEFAULT_KEY;
 
-const TITLE_TEXT = "User permissions";
-const HELPER_TEXT = "Default permissions apply to all user accounts unless overridden individually. Faded values are derived from the default.";
+const PROJECT_CONFIG_TITLE_TEXT = "Project configuration";
+
+const USER_CONFIG_TITLE_TEXT = "User configuration";
+const USER_CONFIG_HELPER_TEXT = "Default permissions apply to all user accounts unless overridden individually. Faded values are derived from the default.";
 
 class UsersPageView extends PageView {
   DivElement renderElement;
@@ -93,24 +95,24 @@ class UsersPageView extends PageView {
     resetToDefaultPermissionsButtons = {};
 
     renderElement = DivElement()
-      ..className = "user-permissions";
+      ..className = "project-configuration";
 
     var wrapperElement = DivElement()
-      ..className = "user-permissions__inner-wrapper";
+      ..className = "project-configuration__inner-wrapper";
     renderElement.append(wrapperElement);
 
     headerElement = HeadingElement.h1()
-      ..className = "user-permissions__heading"
-      ..innerText = TITLE_TEXT;
+      ..className = "project-configuration__heading"
+      ..innerText = USER_CONFIG_TITLE_TEXT;
     wrapperElement.append(headerElement);
 
     helperElement = ParagraphElement()
-      ..className = "user-permissions__help-text"
-      ..innerText = HELPER_TEXT;
+      ..className = "project-configuration__help-text"
+      ..innerText = USER_CONFIG_HELPER_TEXT;
     wrapperElement.append(helperElement);
 
     tableWrapper = DivElement()
-      ..className = "user-permissions__table-wrapper";
+      ..className = "project-configuration__table-wrapper";
     tableWrapper.append(ImageElement(src: '/packages/katikati_ui_lib/components/brand_asset/logos/loading.svg')..className = "load-spinner");
     wrapperElement.append(tableWrapper);
   }
@@ -207,8 +209,8 @@ class UsersPageView extends PageView {
       currentConfig.role == UserRole.projectAdmin ? projectAdminPermissionGroups :
       throw "User does not have permissions to see the permissions";
 
-    headerElement.text = TITLE_TEXT;
-    helperElement.text = HELPER_TEXT;
+    headerElement.text = USER_CONFIG_TITLE_TEXT;
+    helperElement.text = USER_CONFIG_HELPER_TEXT;
 
     for (var group in permissionGroups.keys) {
       var groupTitle = TableRowElement()
