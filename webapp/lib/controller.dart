@@ -180,12 +180,8 @@ class Controller {
         break;
 
       case BaseAction.projectListUpdated:
-        print(selectedProject);
-        print(projects);
-        if (selectedProject == null) {
-          if (urlManager.project != null) {
-            selectedProject = projects.singleWhere((project) => project.projectId == urlManager.project, orElse: () => null);
-          }
+        if (urlManager.project != null) {
+          selectedProject = projects.singleWhere((project) => project.projectId == urlManager.project, orElse: () => null);
         }
         view.showProjectTitleOrSelector(selectedProject?.projectId, projects);
         break;

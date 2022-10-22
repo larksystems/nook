@@ -37,6 +37,13 @@ body {
     padding-bottom: 7px;
 }
 
+.project-configuration__grid-wrapper {
+    display: grid;
+    grid-template-areas: "a a";
+    gap: 10px;
+    grid-auto-columns: 200px;
+}
+
 .project-configuration__table-wrapper {
     overflow-x: scroll;
     max-width: 100%;
