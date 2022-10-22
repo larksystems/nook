@@ -369,6 +369,15 @@ class Platform {
     return _pubsubInstance.publishAddOpinion('nook/set_tag', tagData);
   }
 
+  Future<void> setProjectInfo(Project project) {
+    log.verbose(("Updating ${project.projectId} info"));
+    var projectData = project.toData();
+    projectData['__id'] = project.docId;
+    projectData.remove('_authenticatedUserEmail');
+    projectData.remove('_authenticatedUserDisplayName');
+    return _pubsubInstance.publishAddOpinion('nook/set_project_config', projectData);
+  }
+
   Future<void> setUserConfigField(String user, String field, dynamic value) {
     log.verbose(("Setting $field to $value for $user"));
     return _pubsubInstance.publishAddOpinion('nook/set_user_config', {

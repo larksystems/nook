@@ -2,7 +2,10 @@ import 'dart:html';
 import 'package:katikati_ui_lib/components/button/button.dart';
 import 'package:katikati_ui_lib/components/editable/editable_text.dart';
 import 'package:katikati_ui_lib/components/logger.dart';
+import 'package:katikati_ui_lib/components/snackbar/snackbar.dart';
+import 'package:katikati_ui_lib/datatypes/project.dart';
 import 'package:katikati_ui_lib/datatypes/user.dart';
+import 'package:nook/app/nook/controller.dart' show BaseAction, SnackbarData;
 import 'package:nook/view.dart';
 
 import 'controller.dart';
@@ -76,9 +79,9 @@ const USER_CONFIG_HELPER_TEXT = "Default permissions apply to all user accounts 
 
 class UsersPageView extends PageView {
   DivElement renderElement;
-  HeadingElement headerElement;
-  ParagraphElement helperElement;
-  DivElement tableWrapper;
+  DivElement wrapperElement;
+  DivElement projectConfigWrapper;
+  DivElement userConfigTableWrapper;
 
   // email > permission key > header/checkbox/textbox
   Map<String, Element> permissionEmailHeaders;
@@ -97,24 +100,9 @@ class UsersPageView extends PageView {
     renderElement = DivElement()
       ..className = "project-configuration";
 
-    var wrapperElement = DivElement()
+    wrapperElement = DivElement()
       ..className = "project-configuration__inner-wrapper";
     renderElement.append(wrapperElement);
-
-    headerElement = HeadingElement.h1()
-      ..className = "project-configuration__heading"
-      ..innerText = USER_CONFIG_TITLE_TEXT;
-    wrapperElement.append(headerElement);
-
-    helperElement = ParagraphElement()
-      ..className = "project-configuration__help-text"
-      ..innerText = USER_CONFIG_HELPER_TEXT;
-    wrapperElement.append(helperElement);
-
-    tableWrapper = DivElement()
-      ..className = "project-configuration__table-wrapper";
-    tableWrapper.append(ImageElement(src: '/packages/katikati_ui_lib/components/brand_asset/logos/loading.svg')..className = "load-spinner");
-    wrapperElement.append(tableWrapper);
   }
 
   void updatePermission(String email, String permissionKey, dynamic value, {bool setToDefault = false}) {
@@ -144,14 +132,54 @@ class UsersPageView extends PageView {
   }
 
   void displayAccessNotAllowed() {
-    headerElement.text = "You don't have permissions to access this page";
-    helperElement.text = "Please contact your administrator if you have any questions";
+    wrapperElement.children.clear();
 
-    tableWrapper.children.clear();
+    var headerElement = HeadingElement.h1()
+      ..className = "project-configuration__heading"
+      ..innerText = "You don't have permissions to access this page";
+    wrapperElement.append(headerElement);
+
+    var helperElement = ParagraphElement()
+      ..className = "project-configuration__help-text"
+      ..innerText = "Please contact your administrator if you have any questions";
+    wrapperElement.append(helperElement);
+  }
+
+  var pageInited = false;
+  void initAccessAllowedPageStructure() {
+    if (pageInited) return;
+    wrapperElement.children.clear();
+
+    var projSectionHeaderElement = HeadingElement.h1()
+      ..className = "project-configuration__heading"
+      ..innerText = PROJECT_CONFIG_TITLE_TEXT;
+    wrapperElement.append(projSectionHeaderElement);
+
+    projectConfigWrapper = DivElement()
+      ..className = "project-configuration__grid-wrapper";
+    projectConfigWrapper.append(ImageElement(src: '/packages/katikati_ui_lib/components/brand_asset/logos/loading.svg')..className = "load-spinner");
+    wrapperElement.append(projectConfigWrapper);
+
+    var userSectionHeaderElement = HeadingElement.h1()
+      ..className = "project-configuration__heading"
+      ..innerText = USER_CONFIG_TITLE_TEXT;
+    wrapperElement.append(userSectionHeaderElement);
+
+    var helperElement = ParagraphElement()
+      ..className = "project-configuration__help-text"
+      ..innerText = USER_CONFIG_HELPER_TEXT;
+    wrapperElement.append(helperElement);
+
+    userConfigTableWrapper = DivElement()
+      ..className = "project-configuration__table-wrapper";
+    userConfigTableWrapper.append(ImageElement(src: '/packages/katikati_ui_lib/components/brand_asset/logos/loading.svg')..className = "load-spinner");
+    wrapperElement.append(userConfigTableWrapper);
+
+    pageInited = true;
   }
 
   void populateTable(UserConfiguration defaultConfig, UserConfiguration currentConfig, Map<String, UserConfiguration> usersConfig) {
-    tableWrapper.children.clear();
+    userConfigTableWrapper.children.clear();
     var table = TableElement();
     // thead, tbody
     var tableHeader = table.createTHead();
@@ -204,13 +232,15 @@ class UsersPageView extends PageView {
 
     var defaultConfigMap = defaultConfig.toData();
 
-    var permissionGroups =
-      currentConfig.role == UserRole.superAdmin ? superAdminPermissionGroups :
-      currentConfig.role == UserRole.projectAdmin ? projectAdminPermissionGroups :
+    var permissionGroups;
+    if (currentConfig.role == UserRole.superAdmin) {
+      permissionGroups = superAdminPermissionGroups;
+    } else if (currentConfig.role == UserRole.projectAdmin) {
+      permissionGroups = projectAdminPermissionGroups;
+    } else {
+      displayAccessNotAllowed();
       throw "User does not have permissions to see the permissions";
-
-    headerElement.text = USER_CONFIG_TITLE_TEXT;
-    helperElement.text = USER_CONFIG_HELPER_TEXT;
+    }
 
     for (var group in permissionGroups.keys) {
       var groupTitle = TableRowElement()
@@ -309,8 +339,34 @@ class UsersPageView extends PageView {
       }
     }
 
-    tableWrapper.children.clear();
-    tableWrapper.append(table);
+    userConfigTableWrapper.children.clear();
+    userConfigTableWrapper.append(table);
+  }
+
+  void updateProjectInfo(Project project) {
+    projectConfigWrapper.children.clear();
+
+    for (var fieldInfo in projectConfigurationInfo) {
+      projectConfigWrapper.append(DivElement()
+        ..classes.add('project-config__label')
+        ..text = "${fieldInfo.name}:"
+        ..title = fieldInfo.description);
+
+      projectConfigWrapper.append(InputElement()
+        ..classes.add('project-config__input')
+        ..value = fieldInfo.getter(project)
+        ..onChange.listen((event) {
+          var inputElement = event.target as InputElement;
+          try {
+            fieldInfo.setter(project, inputElement.value);
+          } catch (e) {
+            controller.command(BaseAction.showSnackbar, SnackbarData(e.toString(), SnackbarNotificationType.error));
+            return;
+          }
+          inputElement.previousElementSibling.classes.toggle("unsaved", true);
+          controller.command(UsersAction.updateProjectInfo, ProjectInfo(project));
+        }));
+    }
   }
 
   @override

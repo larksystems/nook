@@ -10,6 +10,7 @@ Logger log = new Logger('controller.dart');
 enum UsersAction {
   addUser,
   deactivateUser,
+  updateProjectInfo,
   updatePermission,
   resetToDefaultPermission,
 }
@@ -18,6 +19,12 @@ class UserData extends Data {
   String userId;
 
   UserData(this.userId);
+}
+
+class ProjectInfo extends Data {
+  model.Project project;
+
+  ProjectInfo(this.project);
 }
 
 class UpdatePermission extends Data {
@@ -73,6 +80,7 @@ class UsersController extends Controller {
         var currentConfig = userConfigs[signedInUser.userEmail] ?? model.UserConfigurationUtil.emptyUserConfiguration;
 
         if (currentConfig.role == model.UserRole.superAdmin || currentConfig.role == model.UserRole.projectAdmin) {
+          _view.initAccessAllowedPageStructure();
           _view.populateTable(defaultConfig, currentConfig, userConfigs);
         } else {
           _view.displayAccessNotAllowed();
@@ -102,16 +110,17 @@ class UsersController extends Controller {
   }
 
   void command(action, [Data data]) {
-    if (action is! UsersAction) {
-      super.command(action, data);
-      return;
-    }
-
     switch (action) {
       case UsersAction.addUser:
         var userData = data as UserData;
         platform.addUser(userData.userId);
         break;
+
+      case UsersAction.updateProjectInfo:
+        var updateData = data as ProjectInfo;
+        platform.setProjectInfo(updateData.project);
+        break;
+
       case UsersAction.updatePermission:
         var updateData = data as UpdatePermission;
         platform.setUserConfigField(updateData.userId, updateData.permissionKey, updateData.value);
@@ -124,6 +133,16 @@ class UsersController extends Controller {
         _view.toggleSaved(resetData.userId, resetData.permissionKey, false);
         break;
     }
+
+    switch (action) {
+      case BaseAction.projectListUpdated:
+        selectedProject = projects.singleWhere((project) => project.projectId == urlManager.project, orElse: () => null);
+        _view.initAccessAllowedPageStructure();
+        _view.updateProjectInfo(selectedProject);
+        return;
+    }
+
+    super.command(action, data);
   }
 
   @override
