@@ -1,6 +1,7 @@
 library controller;
 
 import 'package:katikati_ui_lib/components/logger.dart';
+import 'package:katikati_ui_lib/datatypes/user.dart';
 import 'package:nook/controller.dart';
 export 'package:nook/controller.dart';
 
@@ -55,10 +56,16 @@ class HomePageController extends Controller {
     (view as HomePageView).showLandingPage(projects);
   }
 
-  void setUpProjectPage(String projectId) {
-    var previousProjectId = selectedProject?.projectId;
-    if (previousProjectId == projectId) return;
+  @override
+  void applyConfiguration(UserConfiguration newConfig) {
+    super.applyConfiguration(newConfig);
 
+    if (projects.isNotEmpty && urlManager.project != null) {
+      setUpProjectPage(urlManager.project);
+    }
+  }
+
+  void setUpProjectPage(String projectId) {
     selectedProject = projects.singleWhere((element) => element.projectId == projectId, orElse: () => null);
     if (selectedProject == null) {
       setUpLandingPage();
@@ -71,6 +78,7 @@ class HomePageController extends Controller {
         'Converse': [pages[Page.converse]],
         'Configure': [pages[Page.configureMessages], pages[Page.configureTags]],
         'Explore': [pages[Page.explore]],
+        if (currentUserConfig.role == UserRole.projectAdmin || currentUserConfig.role == UserRole.superAdmin) 'Admin': [pages[Page.configureExplorer], pages[Page.configureProjectAndUsers]],
         // 'Tag': [pages[Page.coda]],
       });
   }

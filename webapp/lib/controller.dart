@@ -34,15 +34,19 @@ enum Page {
   converse,
   explore,
   coda,
+  configureExplorer,
+  configureProjectAndUsers,
 }
 
 final pages = {
   Page.homepage: PageInfo('', '', ''),
-  Page.configureTags: PageInfo('How do you want to label messages and conversations?', 'Configure tags', 'configure/tags.html'),
-  Page.configureMessages: PageInfo('What standard messages do you want to send?', 'Configure messages', 'configure/messages.html'),
+  Page.configureTags: PageInfo('How do you want to label messages and conversations?', 'Configure tags', '/configure/tags.html'),
+  Page.configureMessages: PageInfo('What standard messages do you want to send?', 'Configure messages', '/configure/messages.html'),
   Page.converse: PageInfo('View conversations and send messages', 'Conversations', '/converse/index.html'),
   Page.explore: PageInfo('Explore trends and analyse themes', 'Explore', '/explore'),
   Page.coda: PageInfo('Efficiently tag large sets of messages', 'Survey tagging', '/coda'),
+  Page.configureExplorer: PageInfo('What exploration and analysis do you want to do?', 'Configure explorer', '/explore/configure.html'),
+  Page.configureProjectAndUsers: PageInfo('Who uses Katikati and how?', 'Configure project and users', '/configure/project.html'),
 };
 
 
