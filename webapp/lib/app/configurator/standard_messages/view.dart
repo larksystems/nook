@@ -3,8 +3,9 @@ library view;
 import 'dart:async';
 import 'dart:html';
 import 'package:katikati_ui_lib/components/accordion/accordion.dart';
-import 'package:katikati_ui_lib/components/editable/editable_text.dart';
 import 'package:katikati_ui_lib/components/button/button.dart';
+import 'package:katikati_ui_lib/components/editable/editable_text.dart';
+import 'package:katikati_ui_lib/components/modals/modals.dart';
 import 'package:nook/app/configurator/view.dart';
 export 'package:nook/app/configurator/view.dart';
 
@@ -124,8 +125,8 @@ class StandardMessagesCategoryView extends AccordionItem {
     };
     _standardMessagesGroupContainer.append(groups.renderElement);
 
-    _addButton = Button(ButtonType.add, 
-      hoverText: 'Add a new group of standard messages', 
+    _addButton = Button(ButtonType.add,
+      hoverText: 'Add a new group of standard messages',
       onClick: (event) => _view.appController.command(MessagesConfigAction.addStandardMessagesGroup, new StandardMessagesGroupData(_categoryId, null)));
 
     body.append(_addButton.renderElement);
@@ -463,7 +464,7 @@ class MessageView {
         _textLengthIndicator.classes.toggle('message__length-indicator--alert', count > _view.appController.MESSAGE_MAX_LENGTH);
         _handleTextareaHeightChange();
       });
-    
+
     _messageWrapper..append(_messageText)..append(_textLengthIndicator);
     _messageElement..append(_messageWrapper)..append(_alternativeElement);
     finaliseRenderAsync();
