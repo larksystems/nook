@@ -1,8 +1,8 @@
 import 'package:firebase/firestore.dart' as firestore;
 import 'package:katikati_ui_lib/components/model/model.dart';
 
-Future<List<Message>> getSampleMessages(firestore.Firestore fs, String tagId) async {
-  var snapshot = await fs.collection("/nook_conversation_shards/shard-0/conversations")
+Future<List<Message>> getSampleMessages(firestore.Firestore fs, String projectId, String tagId) async {
+  var snapshot = await fs.collection("projects/${projectId}/nook_conversation_shards/shard-0/conversations")
     .where("tags", "array-contains", tagId)
     .limit(50)
     .get();

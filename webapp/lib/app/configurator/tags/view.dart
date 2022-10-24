@@ -207,7 +207,7 @@ class ConfigureTagView extends TagView {
 
     onDelete = () async {
       var warningModal;
-      var messages = await getSampleMessages(platform.firestoreInstance, tagId) ?? [];
+      var messages = await getSampleMessages(platform.firestoreInstance, _view.appController.urlManager.project, tagId) ?? [];
 
       if (messages.isNotEmpty) {
         warningModal = new PopupModal('Tag [${tagText}] is being used in ${messages.length} messages, and cannot be removed.', [
@@ -237,7 +237,7 @@ class ConfigureTagView extends TagView {
       if (dragInProgress) return;
       if ((_view.appController as TagsConfiguratorController).currentConfig.sampleMessagesEnabled) {
         tooltip.parent = renderElement;
-        getSampleMessages(platform.firestoreInstance, tagId).then((value) => tooltip.displayMessages(value));
+        getSampleMessages(platform.firestoreInstance, _view.appController.urlManager.project, tagId).then((value) => tooltip.displayMessages(value));
       }
     };
     onMouseLeave = () {
