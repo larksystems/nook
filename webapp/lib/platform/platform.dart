@@ -43,6 +43,8 @@ class Platform {
   PubSubClient _pubsubLogInstance;
   PubSubClient _uptimePubSubInstance;
 
+  PubSubClient get pubsubInstance => _pubsubInstance;
+
   Platform(this.appController) {
     platform.init("/assets/firebase_constants.json", (user) {
       String photoURL = platform.firebaseAuth.currentUser.photoURL;
