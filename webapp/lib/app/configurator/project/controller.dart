@@ -65,46 +65,50 @@ class UsersController extends Controller {
     super.setUpOnLogin();
 
     platform.listenForUserConfigurations((added, modified, removed) {
+      defaultConfig = added.singleWhere((c) => c.docId == 'default', orElse: () => defaultConfig);
+
+      userConfigs = userConfigs ?? {};
+      for (var config in added) {
+        if (config.docId == 'default') continue;
+        userConfigs[config.docId] = config;
+      }
+      for (var config in removed) {
+        userConfigs.remove(config.docId);
+      }
+
+      var currentConfig = userConfigs[signedInUser.userEmail] ?? model.UserConfigurationUtil.emptyUserConfiguration;
+      if (currentConfig.role != model.UserRole.superAdmin && currentConfig.role != model.UserRole.projectAdmin) {
+        _view.displayAccessNotAllowed();
+        return;
+      }
+
+      _view.setupAccessAllowed();
+
       if (added.isNotEmpty || removed.isNotEmpty) {
-        defaultConfig = added.singleWhere((c) => c.docId == 'default', orElse: () => defaultConfig);
-
-        userConfigs = userConfigs ?? {};
-        for (var config in added) {
-          if (config.docId == 'default') continue;
-          userConfigs[config.docId] = config;
-        }
-        for (var config in removed) {
-          userConfigs.remove(config.docId);
-        }
-
-        var currentConfig = userConfigs[signedInUser.userEmail] ?? model.UserConfigurationUtil.emptyUserConfiguration;
-
-        if (currentConfig.role == model.UserRole.superAdmin || currentConfig.role == model.UserRole.projectAdmin) {
-          _view.initAccessAllowedPageStructure();
-          _view.populateTable(defaultConfig, currentConfig, userConfigs);
-        } else {
-          _view.displayAccessNotAllowed();
-        }
+        _view.populateTable(defaultConfig, currentConfig, userConfigs);
       }
 
       if (modified.isNotEmpty) {
-        List<model.UserConfiguration> modifiedUserConfig = new List()
-          ..addAll(modified);
-
-        var newDefaultConfig = modifiedUserConfig.singleWhere((c) => c.docId == 'default', orElse: () => null);
-        if (newDefaultConfig != null) {
-          defaultConfig = newDefaultConfig;
-        }
-
         userConfigs = userConfigs ?? {};
-        modifiedUserConfig.where((c) => c.docId != 'default').forEach((c) {
-          userConfigs[c.docId] = c.applyDefaults(defaultConfig);
-          var userConfigMap = userConfigs[c.docId].toData();
-          var defaultConfigMap = defaultConfig.toData();
-          for (var key in userConfigMap.keys) {
-            _view.updatePermission(c.docId, key, userConfigMap[key], setToDefault: defaultConfigMap[key] == userConfigMap[key]);
+        for (var modifiedUserConfig in modified) {
+          if (modifiedUserConfig.docId == 'default') {
+            var modifiedData = modifiedUserConfig.toData();
+            var previousData = defaultConfig.toData();
+            for (var key in _view.permissionNameHeaders.keys) {
+              if (previousData[key] != modifiedData[key]) {
+                _view.updatePermission(modifiedUserConfig.docId, key, modifiedData[key]);
+                for (var email in userConfigs.keys) {
+                  _view.updatePermission(email, key, userConfigs[email].toData()[key]);
+                }
+              }
+            }
+            defaultConfig = modifiedUserConfig;
           }
-        });
+          else userConfigs[modifiedUserConfig.docId] = modifiedUserConfig;
+
+        }
+        var currentConfig = userConfigs[signedInUser.userEmail] ?? model.UserConfigurationUtil.emptyUserConfiguration;
+        _view.populateTable(defaultConfig, currentConfig, userConfigs);
       }
     });
   }
@@ -137,7 +141,7 @@ class UsersController extends Controller {
     switch (action) {
       case BaseAction.projectListUpdated:
         selectedProject = projects.singleWhere((project) => project.projectId == urlManager.project, orElse: () => null);
-        _view.initAccessAllowedPageStructure();
+        _view.setupAccessAllowed();
         _view.updateProjectInfo(selectedProject);
         return;
     }

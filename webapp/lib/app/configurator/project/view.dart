@@ -70,7 +70,6 @@ Map<String, List<Permission>> superAdminPermissionGroups = {
 
 const DEFAULT_KEY = "default";
 const VALUE_FROM_DEFAULT_CSS_CLASS = "from-default";
-bool isDefaultPermission(key) => key == DEFAULT_KEY;
 
 const PROJECT_CONFIG_TITLE_TEXT = "Project configuration";
 
@@ -146,7 +145,8 @@ class UsersPageView extends PageView {
   }
 
   var pageInited = false;
-  void initAccessAllowedPageStructure() {
+
+  void setupAccessAllowed() {
     if (pageInited) return;
     wrapperElement.children.clear();
 
@@ -180,6 +180,12 @@ class UsersPageView extends PageView {
 
   void populateTable(UserConfiguration defaultConfig, UserConfiguration currentConfig, Map<String, UserConfiguration> usersConfig) {
     userConfigTableWrapper.children.clear();
+    permissionEmailHeaders = {};
+    permissionNameHeaders = {};
+    permissionToggles = {};
+    permissionTextboxes = {};
+    resetToDefaultPermissionsButtons = {};
+
     var table = TableElement();
     // thead, tbody
     var tableHeader = table.createTHead();
@@ -255,15 +261,15 @@ class UsersPageView extends PageView {
         permissionNameHeaders[permission.key] = permissionHeader;
         permissionRow.append(permissionHeader);
 
-        allEmails.forEach((email) {
-          var permissionMap = isDefaultPermission(email) ? defaultConfigMap : usersConfig[email].toData();
+        for (var email in allEmails) {
+          var permissionMap = email == DEFAULT_KEY ? defaultConfigMap : usersConfig[email].toData();
           var permissionValue = permissionMap[permission.key];
           SpanElement resetToDefault;
-          bool derivedFromDefault = !isDefaultPermission(email) && permissionValue == null;
+          bool derivedFromDefault = email != DEFAULT_KEY && permissionValue == null;
           if (derivedFromDefault) {
             permissionValue = defaultConfigMap[permission.key];
           } else {
-            if (!isDefaultPermission(email) && permission.key != "role" && permission.key != "status") {
+            if (email != DEFAULT_KEY && permission.key != "role" && permission.key != "status") {
               var resetButton = Button(ButtonType.reset, hoverText: 'Reset to default', onClick: (_) {
                 appController.command(UsersAction.resetToDefaultPermission, ResetToDefaultPermission(email, permission.key));
               });
@@ -271,6 +277,15 @@ class UsersPageView extends PageView {
               resetToDefaultPermissionsButtons[email] = resetToDefaultPermissionsButtons[email] ?? {};
               resetToDefaultPermissionsButtons[email][permission.key] = resetToDefault;
             }
+          }
+
+
+          bool isDerivedFromDefault(String id, String key) => id != DEFAULT_KEY && usersConfig[id].toData()[key] == null;
+          bool isResettableToDefault(String id, String key) => !isDerivedFromDefault(id, key);
+
+          dynamic getValue(String id, String key) {
+            var configMap = (id == DEFAULT_KEY || isDerivedFromDefault(id, key)) ? defaultConfigMap : usersConfig[email].toData();
+            return configMap[key];
           }
 
           Element renderElement;
@@ -293,7 +308,8 @@ class UsersPageView extends PageView {
                 ..value = permissionValue
                 ..onChange.listen((event) {
                   renderElement.classes.remove(VALUE_FROM_DEFAULT_CSS_CLASS);
-                  appController.command(UsersAction.updatePermission, UpdatePermission(email, permission.key, (event.target as TextInputElement).value));
+                  var value = (event.target as TextInputElement).value.trim();
+                  appController.command(UsersAction.updatePermission, UpdatePermission(email, permission.key, value));
                 });
               if (derivedFromDefault) {
                 renderElement.classes.add(VALUE_FROM_DEFAULT_CSS_CLASS);
@@ -301,13 +317,15 @@ class UsersPageView extends PageView {
               permissionTextboxes[email] = permissionTextboxes[email] ?? {};
               permissionTextboxes[email][permission.key] = renderElement;
               break;
+            case 'List<String>':
             case 'Set<String>':
               renderElement = TextInputElement()
-                ..value = (permissionValue as List<String>)?.join(",")
+                ..value = permissionValue.toList<String>().join(", ")
                 ..onChange.listen((event) {
                   renderElement.classes.remove(VALUE_FROM_DEFAULT_CSS_CLASS);
-                  var value = (event.target as TextInputElement).value.split(',');
-                  appController.command(UsersAction.updatePermission, UpdatePermission(email, permission.key, value));
+                  var value = (event.target as TextInputElement).value;
+                  var listValue = value.isEmpty ? <String>[] : value.split(',').map((e) => e.trim()).toList();
+                  appController.command(UsersAction.updatePermission, UpdatePermission(email, permission.key, listValue));
                 });
               if (derivedFromDefault) {
                 renderElement.classes.add(VALUE_FROM_DEFAULT_CSS_CLASS);
@@ -334,7 +352,7 @@ class UsersPageView extends PageView {
             cell.append(resetToDefault);
           }
           permissionRow.append(cell);
-        });
+        }
         tableBody.append(permissionRow);
       }
     }
