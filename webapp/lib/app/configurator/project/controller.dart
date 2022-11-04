@@ -134,6 +134,13 @@ class UsersController extends Controller {
 
       case UsersAction.updatePermission:
         var updateData = data as UpdatePermission;
+        var userConfig = updateData.userId == DEFAULT_KEY ? defaultConfig : userConfigs[updateData.userId];
+        var previousValue = userConfig.toData()[updateData.permissionKey];
+        var updatedData = updateData.value;
+        if (previousValue == updatedData) break;
+        if (previousValue is List || updatedData is List) {
+          if ((previousValue ?? []).toSet().intersection((updatedData ?? []).toSet()).length == previousValue?.length) break;
+        }
         platform.setUserConfigField(updateData.userId, updateData.permissionKey, updateData.value);
         _view.toggleSaved(updateData.userId, updateData.permissionKey, false);
         break;

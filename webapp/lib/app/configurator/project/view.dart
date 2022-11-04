@@ -272,6 +272,7 @@ class UsersPageView extends PageView {
                   renderElement.classes.remove(VALUE_FROM_DEFAULT_CSS_CLASS);
                   var value = (event.target as TextInputElement).value;
                   var listValue = value.isEmpty ? <String>[] : value.split(',').map((e) => e.trim()).toList();
+                  listValue.removeWhere((element) => element == null || element.isEmpty);
                   appController.command(UsersAction.updatePermission, UpdatePermission(email, permission.key, listValue));
                 });
               permissionTextboxes[email] = permissionTextboxes[email] ?? {};
