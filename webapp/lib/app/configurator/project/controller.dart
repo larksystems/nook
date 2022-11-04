@@ -7,6 +7,8 @@ import 'view.dart';
 
 Logger log = new Logger('controller.dart');
 
+const DEFAULT_KEY = "default";
+
 enum UsersAction {
   addUser,
   deactivateUser,
@@ -64,19 +66,21 @@ class UsersController extends Controller {
   void setUpOnLogin() {
     super.setUpOnLogin();
 
-    platform.listenForUserConfigurations((added, modified, removed) {
-      defaultConfig = added.singleWhere((c) => c.docId == 'default', orElse: () => defaultConfig);
+    userConfigs = userConfigs ?? {};
+    currentConfig = userConfigs[signedInUser.userEmail] ?? model.UserConfigurationUtil.emptyUserConfiguration;
 
-      userConfigs = userConfigs ?? {};
+    platform.listenForUserConfigurations((added, modified, removed) {
+      defaultConfig = added.singleWhere((c) => c.docId == DEFAULT_KEY, orElse: () => defaultConfig);
+
       for (var config in added) {
-        if (config.docId == 'default') continue;
+        if (config.docId == DEFAULT_KEY) continue;
         userConfigs[config.docId] = config;
       }
       for (var config in removed) {
         userConfigs.remove(config.docId);
       }
 
-      var currentConfig = userConfigs[signedInUser.userEmail] ?? model.UserConfigurationUtil.emptyUserConfiguration;
+      currentConfig = userConfigs[signedInUser.userEmail] ?? model.UserConfigurationUtil.emptyUserConfiguration;
       if (currentConfig.role != model.UserRole.superAdmin && currentConfig.role != model.UserRole.projectAdmin) {
         _view.displayAccessNotAllowed();
         return;
@@ -85,30 +89,33 @@ class UsersController extends Controller {
       _view.setupAccessAllowed();
 
       if (added.isNotEmpty || removed.isNotEmpty) {
-        _view.populateTable(defaultConfig, currentConfig, userConfigs);
+        _view.populatePermissionsTable(defaultConfig, currentConfig, userConfigs);
       }
 
       if (modified.isNotEmpty) {
         userConfigs = userConfigs ?? {};
         for (var modifiedUserConfig in modified) {
-          if (modifiedUserConfig.docId == 'default') {
-            var modifiedData = modifiedUserConfig.toData();
-            var previousData = defaultConfig.toData();
-            for (var key in _view.permissionNameHeaders.keys) {
-              if (previousData[key] != modifiedData[key]) {
-                _view.updatePermission(modifiedUserConfig.docId, key, modifiedData[key]);
+          var previousConfig = modifiedUserConfig.docId == DEFAULT_KEY ? defaultConfig : userConfigs[modifiedUserConfig.docId];
+          var modifiedData = modifiedUserConfig.toData();
+          var previousData = previousConfig.toData();
+
+          for (var key in _view.permissionNameHeaders.keys) {
+            if (previousData[key] != modifiedData[key]) {
+              _view.updatePermission(defaultConfig, modifiedUserConfig, userConfigs, key);
+              if (modifiedUserConfig.docId == DEFAULT_KEY) {
                 for (var email in userConfigs.keys) {
-                  _view.updatePermission(email, key, userConfigs[email].toData()[key]);
+                  _view.updatePermission(defaultConfig, userConfigs[email], userConfigs, key);
                 }
               }
             }
-            defaultConfig = modifiedUserConfig;
           }
+
+          if (modifiedUserConfig.docId == DEFAULT_KEY) defaultConfig = modifiedUserConfig;
           else userConfigs[modifiedUserConfig.docId] = modifiedUserConfig;
 
         }
-        var currentConfig = userConfigs[signedInUser.userEmail] ?? model.UserConfigurationUtil.emptyUserConfiguration;
-        _view.populateTable(defaultConfig, currentConfig, userConfigs);
+        currentConfig = userConfigs[signedInUser.userEmail] ?? model.UserConfigurationUtil.emptyUserConfiguration;
+        _view.populatePermissionsTable(defaultConfig, currentConfig, userConfigs);
       }
     });
   }
@@ -147,6 +154,20 @@ class UsersController extends Controller {
     }
 
     super.command(action, data);
+  }
+
+  bool hasHigherAdminRoleThanId(String id) =>
+    currentConfig.role == model.UserRole.superAdmin ?
+      true :
+      (currentConfig.role == model.UserRole.projectAdmin && userConfigs[id]?.role == model.UserRole.superAdmin) ? false : true;
+
+  bool isDerivedFromDefault(String id, String key) => id != DEFAULT_KEY && userConfigs[id].toData()[key] == null;
+  bool isResettableToDefault(String id, String key) => id != DEFAULT_KEY && !isDerivedFromDefault(id, key) && key != "role" && key != "status";
+  bool isEditable(String id, String key) => !((!hasHigherAdminRoleThanId(id) || id == DEFAULT_KEY) && (key == "role" || key == "status"));
+
+  dynamic getValue(String id, String key) {
+    var configMap = (id == DEFAULT_KEY || isDerivedFromDefault(id, key)) ? defaultConfig.toData() : userConfigs[id].toData();
+    return configMap[key];
   }
 
   @override
