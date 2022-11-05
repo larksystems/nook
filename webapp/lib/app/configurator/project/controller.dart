@@ -99,6 +99,9 @@ class UsersController extends Controller {
           var modifiedData = modifiedUserConfig.toData();
           var previousData = previousConfig.toData();
 
+          if (modifiedUserConfig.docId == DEFAULT_KEY) defaultConfig = modifiedUserConfig;
+          else userConfigs[modifiedUserConfig.docId] = modifiedUserConfig;
+
           for (var key in _view.permissionNameHeaders.keys) {
             if (previousData[key] != modifiedData[key]) {
               _view.updatePermission(defaultConfig, modifiedUserConfig, userConfigs, key);
@@ -107,15 +110,17 @@ class UsersController extends Controller {
                   _view.updatePermission(defaultConfig, userConfigs[email], userConfigs, key);
                 }
               }
+              if (key == 'status') {
+                for (var k in _view.permissionNameHeaders.keys) {
+                  _view.updatePermission(defaultConfig, modifiedUserConfig, userConfigs, k);
+                }
+              }
             }
           }
 
-          if (modifiedUserConfig.docId == DEFAULT_KEY) defaultConfig = modifiedUserConfig;
-          else userConfigs[modifiedUserConfig.docId] = modifiedUserConfig;
-
         }
         currentConfig = userConfigs[signedInUser.userEmail] ?? model.UserConfigurationUtil.emptyUserConfiguration;
-        _view.populatePermissionsTable(defaultConfig, currentConfig, userConfigs);
+        // _view.populatePermissionsTable(defaultConfig, currentConfig, userConfigs);
       }
     });
   }
@@ -134,15 +139,16 @@ class UsersController extends Controller {
 
       case UsersAction.updatePermission:
         var updateData = data as UpdatePermission;
-        var userConfig = updateData.userId == DEFAULT_KEY ? defaultConfig : userConfigs[updateData.userId];
-        var previousValue = userConfig.toData()[updateData.permissionKey];
-        var updatedData = updateData.value;
-        if (previousValue == updatedData) break;
-        if (previousValue is List || updatedData is List) {
-          if ((previousValue ?? []).toSet().intersection((updatedData ?? []).toSet()).length == previousValue?.length) break;
+        var previousValue = getValue(updateData.userId, updateData.permissionKey);
+        var updatedValue = updateData.value;
+        if (previousValue == updatedValue) break;
+        if (previousValue is List || updatedValue is List) {
+          if (iterableContentsEqual(previousValue ?? [], updatedValue ?? [])) break;
         }
         platform.setUserConfigField(updateData.userId, updateData.permissionKey, updateData.value);
         _view.toggleSaved(updateData.userId, updateData.permissionKey, false);
+        var renderElement = _view.permissionToggles[updateData.userId][updateData.permissionKey] ?? _view.permissionTextboxes[updateData.userId][updateData.permissionKey];
+        renderElement.classes.toggle(VALUE_FROM_DEFAULT_CSS_CLASS, false);
         break;
 
       case UsersAction.resetToDefaultPermission:
@@ -163,6 +169,12 @@ class UsersController extends Controller {
     super.command(action, data);
   }
 
+  bool iterableContentsEqual(Iterable a, Iterable b) {
+    return
+      a.toSet().intersection(b.toSet()).length == a.length &&
+      b.toSet().intersection(a.toSet()).length == b.length;
+  }
+
   bool hasHigherAdminRoleThanId(String id) =>
     currentConfig.role == model.UserRole.superAdmin ?
       true :
@@ -170,7 +182,20 @@ class UsersController extends Controller {
 
   bool isDerivedFromDefault(String id, String key) => id != DEFAULT_KEY && userConfigs[id].toData()[key] == null;
   bool isResettableToDefault(String id, String key) => id != DEFAULT_KEY && !isDerivedFromDefault(id, key) && key != "role" && key != "status";
-  bool isEditable(String id, String key) => !((!hasHigherAdminRoleThanId(id) || id == DEFAULT_KEY) && (key == "role" || key == "status"));
+  bool isEditable(String id, String key) {
+    if (id == DEFAULT_KEY) {
+      if (key == "role" || key == "status") return false;
+      return true;
+    }
+    if (userConfigs[id].status == model.UserStatus.deactivated) {
+      if (key != "status") return false;
+      if (hasHigherAdminRoleThanId(id)) return true;
+      return false;
+    }
+    if (userConfigs[id].status == model.UserStatus.deactivated && key != "status") return false;
+    if (!hasHigherAdminRoleThanId(id) && key == "status") return false;
+    return true;
+  }
 
   dynamic getValue(String id, String key) {
     var configMap = (id == DEFAULT_KEY || isDerivedFromDefault(id, key)) ? defaultConfig.toData() : userConfigs[id].toData();

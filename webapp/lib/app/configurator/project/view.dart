@@ -68,6 +68,8 @@ Map<String, List<Permission>> superAdminPermissionGroups = {
   ]
 };
 
+List<Permission> permissions = superAdminPermissionGroups.values.fold([], (previousValue, element) => [...previousValue, ...element]);
+
 const VALUE_FROM_DEFAULT_CSS_CLASS = "from-default";
 
 const PROJECT_CONFIG_TITLE_TEXT = "Project configuration";
@@ -247,7 +249,6 @@ class UsersPageView extends PageView {
               renderElement = CheckboxInputElement()
                 ..checked = (controller.getValue(email, permission.key) ?? false)
                 ..onChange.listen((event) {
-                  renderElement.classes.remove(VALUE_FROM_DEFAULT_CSS_CLASS);
                   appController.command(UsersAction.updatePermission, UpdatePermission(email, permission.key, (event.target as CheckboxInputElement).checked));
                 });
               permissionToggles[email] = permissionToggles[email] ?? {};
@@ -257,19 +258,16 @@ class UsersPageView extends PageView {
               renderElement = TextInputElement()
                 ..value = (controller.getValue(email, permission.key) ?? "")
                 ..onChange.listen((event) {
-                  renderElement.classes.remove(VALUE_FROM_DEFAULT_CSS_CLASS);
                   var value = (event.target as TextInputElement).value.trim();
                   appController.command(UsersAction.updatePermission, UpdatePermission(email, permission.key, value));
                 });
               permissionTextboxes[email] = permissionTextboxes[email] ?? {};
               permissionTextboxes[email][permission.key] = renderElement;
               break;
-            case 'List<String>':
             case 'Set<String>':
               renderElement = TextInputElement()
                 ..value = (controller.getValue(email, permission.key) ?? []).toList().join(", ")
                 ..onChange.listen((event) {
-                  renderElement.classes.remove(VALUE_FROM_DEFAULT_CSS_CLASS);
                   var value = (event.target as TextInputElement).value;
                   var listValue = value.isEmpty ? <String>[] : value.split(',').map((e) => e.trim()).toList();
                   listValue.removeWhere((element) => element == null || element.isEmpty);
@@ -312,8 +310,11 @@ class UsersPageView extends PageView {
 
     if (!permissionToggles[email].containsKey(permissionKey) && !permissionTextboxes[email].containsKey(permissionKey)) return;
 
+    var permission = permissions.singleWhere((element) => element.key == permissionKey, orElse: null);
+    if (permission == null) return;
+
     var renderElement;
-    switch (value.runtimeType.toString()) {
+    switch (permission.type) {
       case 'bool':
         renderElement = permissionToggles[email][permissionKey];
         renderElement.checked = value ?? false;
@@ -324,7 +325,7 @@ class UsersPageView extends PageView {
         renderElement.value = value ?? "";
         break;
 
-      case 'List<String>':
+      case 'Set<String>':
         renderElement = permissionTextboxes[email][permissionKey];
         renderElement.value = (value ?? []).toList().join(", ");
         break;
@@ -332,7 +333,7 @@ class UsersPageView extends PageView {
 
     renderElement.classes.toggle(VALUE_FROM_DEFAULT_CSS_CLASS, controller.isDerivedFromDefault(email, permissionKey));
     controller.isEditable(email, permissionKey) ? renderElement.attributes.remove("disabled") : renderElement.attributes["disabled"] = "true";
-    resetToDefaultPermissionsButtons[email][permissionKey].classes.toggle('hidden', controller.isResettableToDefault(email, permissionKey));
+    resetToDefaultPermissionsButtons[email][permissionKey].classes.toggle('hidden', !controller.isResettableToDefault(email, permissionKey));
     toggleSaved(email, permissionKey, true);
   }
 
