@@ -55,6 +55,7 @@ body {
     border-collapse: separate;
     border-spacing: 0;
     text-align: left;
+    border-right: 1px solid var(--default-border-color);
     border-bottom: 1px solid var(--default-border-color);
 }
 
@@ -89,11 +90,6 @@ body {
     border-left: 1px solid var(--default-border-color);
     min-width: 120px;
     position: relative;
-}
-
-.project-configuration__table-wrapper td:last-child,
-.project-configuration__table-wrapper th:last-child {
-    border-right: 1px solid var(--default-border-color);
 }
 
 .project-configuration__table-wrapper td.group-row {

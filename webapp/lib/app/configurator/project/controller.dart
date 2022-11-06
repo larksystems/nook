@@ -7,12 +7,15 @@ import 'view.dart';
 
 Logger log = new Logger('controller.dart');
 
+const DEFAULT_KEY = "default";
+
 enum UsersAction {
   addUser,
   deactivateUser,
   updateProjectInfo,
   updatePermission,
   resetToDefaultPermission,
+  showOrHideDeactivatedUsers,
 }
 
 class UserData extends Data {
@@ -49,6 +52,8 @@ class UsersController extends Controller {
   model.UserConfiguration defaultConfig;
   Map<String, model.UserConfiguration> userConfigs;
 
+  bool showDeactivatedUsers = false;
+
   UsersController(): super();
 
   @override
@@ -64,47 +69,60 @@ class UsersController extends Controller {
   void setUpOnLogin() {
     super.setUpOnLogin();
 
+    userConfigs = userConfigs ?? {};
+    currentConfig = userConfigs[signedInUser.userEmail] ?? model.UserConfigurationUtil.emptyUserConfiguration;
+
     platform.listenForUserConfigurations((added, modified, removed) {
+      defaultConfig = added.singleWhere((c) => c.docId == DEFAULT_KEY, orElse: () => defaultConfig);
+
+      for (var config in added) {
+        if (config.docId == DEFAULT_KEY) continue;
+        userConfigs[config.docId] = config;
+      }
+      for (var config in removed) {
+        userConfigs.remove(config.docId);
+      }
+
+      currentConfig = userConfigs[signedInUser.userEmail] ?? model.UserConfigurationUtil.emptyUserConfiguration;
+      if (currentConfig.role != model.UserRole.superAdmin && currentConfig.role != model.UserRole.projectAdmin) {
+        _view.displayAccessNotAllowed();
+        return;
+      }
+
+      _view.setupAccessAllowed();
+
       if (added.isNotEmpty || removed.isNotEmpty) {
-        defaultConfig = added.singleWhere((c) => c.docId == 'default', orElse: () => defaultConfig);
-
-        userConfigs = userConfigs ?? {};
-        for (var config in added) {
-          if (config.docId == 'default') continue;
-          userConfigs[config.docId] = config;
-        }
-        for (var config in removed) {
-          userConfigs.remove(config.docId);
-        }
-
-        var currentConfig = userConfigs[signedInUser.userEmail] ?? model.UserConfigurationUtil.emptyUserConfiguration;
-
-        if (currentConfig.role == model.UserRole.superAdmin || currentConfig.role == model.UserRole.projectAdmin) {
-          _view.initAccessAllowedPageStructure();
-          _view.populateTable(defaultConfig, currentConfig, userConfigs);
-        } else {
-          _view.displayAccessNotAllowed();
-        }
+        _view.populatePermissionsTable(defaultConfig, currentConfig, userConfigs);
       }
 
       if (modified.isNotEmpty) {
-        List<model.UserConfiguration> modifiedUserConfig = new List()
-          ..addAll(modified);
-
-        var newDefaultConfig = modifiedUserConfig.singleWhere((c) => c.docId == 'default', orElse: () => null);
-        if (newDefaultConfig != null) {
-          defaultConfig = newDefaultConfig;
-        }
-
         userConfigs = userConfigs ?? {};
-        modifiedUserConfig.where((c) => c.docId != 'default').forEach((c) {
-          userConfigs[c.docId] = c.applyDefaults(defaultConfig);
-          var userConfigMap = userConfigs[c.docId].toData();
-          var defaultConfigMap = defaultConfig.toData();
-          for (var key in userConfigMap.keys) {
-            _view.updatePermission(c.docId, key, userConfigMap[key], setToDefault: defaultConfigMap[key] == userConfigMap[key]);
+        for (var modifiedUserConfig in modified) {
+          var previousConfig = modifiedUserConfig.docId == DEFAULT_KEY ? defaultConfig : userConfigs[modifiedUserConfig.docId];
+          var modifiedData = modifiedUserConfig.toData();
+          var previousData = previousConfig.toData();
+
+          if (modifiedUserConfig.docId == DEFAULT_KEY) defaultConfig = modifiedUserConfig;
+          else userConfigs[modifiedUserConfig.docId] = modifiedUserConfig;
+
+          for (var key in _view.permissionNameHeaders.keys) {
+            if (previousData[key] != modifiedData[key]) {
+              _view.updatePermission(defaultConfig, modifiedUserConfig, userConfigs, key);
+              if (modifiedUserConfig.docId == DEFAULT_KEY) {
+                for (var email in userConfigs.keys) {
+                  _view.updatePermission(defaultConfig, userConfigs[email], userConfigs, key);
+                }
+              }
+              if (key == 'status') {
+                for (var k in _view.permissionNameHeaders.keys) {
+                  _view.updatePermission(defaultConfig, modifiedUserConfig, userConfigs, k);
+                }
+              }
+            }
           }
-        });
+
+        }
+        currentConfig = userConfigs[signedInUser.userEmail] ?? model.UserConfigurationUtil.emptyUserConfiguration;
       }
     });
   }
@@ -123,8 +141,16 @@ class UsersController extends Controller {
 
       case UsersAction.updatePermission:
         var updateData = data as UpdatePermission;
+        var previousValue = getValue(updateData.userId, updateData.permissionKey);
+        var updatedValue = updateData.value;
+        if (previousValue == updatedValue) break;
+        if (previousValue is List || updatedValue is List) {
+          if (iterableContentsEqual(previousValue ?? [], updatedValue ?? [])) break;
+        }
         platform.setUserConfigField(updateData.userId, updateData.permissionKey, updateData.value);
         _view.toggleSaved(updateData.userId, updateData.permissionKey, false);
+        var renderElement = _view.permissionToggles[updateData.userId][updateData.permissionKey] ?? _view.permissionTextboxes[updateData.userId][updateData.permissionKey];
+        renderElement.classes.toggle(VALUE_FROM_DEFAULT_CSS_CLASS, false);
         break;
 
       case UsersAction.resetToDefaultPermission:
@@ -132,12 +158,16 @@ class UsersController extends Controller {
         platform.setUserConfigField(resetData.userId, resetData.permissionKey, defaultConfig.toData()[resetData.permissionKey]);
         _view.toggleSaved(resetData.userId, resetData.permissionKey, false);
         break;
+
+      case UsersAction.showOrHideDeactivatedUsers:
+        showDeactivatedUsers = !showDeactivatedUsers;
+        _view.populatePermissionsTable(defaultConfig, currentConfig, userConfigs);
     }
 
     switch (action) {
       case BaseAction.projectListUpdated:
         selectedProject = projects.singleWhere((project) => project.projectId == urlManager.project, orElse: () => null);
-        _view.initAccessAllowedPageStructure();
+        _view.setupAccessAllowed();
         _view.updateProjectInfo(selectedProject);
         return;
     }
@@ -145,9 +175,37 @@ class UsersController extends Controller {
     super.command(action, data);
   }
 
-  @override
-  void applyConfiguration(model.UserConfiguration newConfig) {
-    // TODO: implement applyConfiguration
-    super.applyConfiguration(newConfig);
+  bool iterableContentsEqual(Iterable a, Iterable b) {
+    return
+      a.toSet().intersection(b.toSet()).length == a.length &&
+      b.toSet().intersection(a.toSet()).length == b.length;
+  }
+
+  bool hasHigherAdminRoleThanId(String id) =>
+    currentConfig.role == model.UserRole.superAdmin ?
+      true :
+      (currentConfig.role == model.UserRole.projectAdmin && userConfigs[id]?.role == model.UserRole.superAdmin) ? false : true;
+
+  bool isDerivedFromDefault(String id, String key) => id != DEFAULT_KEY && userConfigs[id].toData()[key] == null;
+  bool isResettableToDefault(String id, String key) => id != DEFAULT_KEY && !isDerivedFromDefault(id, key) && key != "role" && key != "status" && getValue(id, 'status') == 'UserStatus.active';
+
+  bool isEditable(String id, String key) {
+    if (id == DEFAULT_KEY) {
+      if (key == "role" || key == "status") return false;
+      return true;
+    }
+    if (userConfigs[id].status == model.UserStatus.deactivated) {
+      if (key != "status") return false;
+      if (hasHigherAdminRoleThanId(id)) return true;
+      return false;
+    }
+    if (userConfigs[id].status == model.UserStatus.deactivated && key != "status") return false;
+    if (!hasHigherAdminRoleThanId(id) && key == "status") return false;
+    return true;
+  }
+
+  dynamic getValue(String id, String key) {
+    var configMap = (id == DEFAULT_KEY || isDerivedFromDefault(id, key)) ? defaultConfig.toData() : userConfigs[id].toData();
+    return configMap[key];
   }
 }
