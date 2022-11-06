@@ -145,6 +145,11 @@ class UsersPageView extends PageView {
       ..innerText = USER_CONFIG_HELPER_TEXT;
     wrapperElement.append(helperElement);
 
+    var showDeactivatedUsersButton = Button(ButtonType.text, buttonText: "Show/hide deactivated users", onClick: (_) {
+      controller.command(UsersAction.showOrHideDeactivatedUsers, null);
+    });
+    wrapperElement.append(showDeactivatedUsersButton.renderElement);
+
     userConfigTableWrapper = DivElement()
       ..className = "project-configuration__table-wrapper";
     userConfigTableWrapper.append(ImageElement(src: '/packages/katikati_ui_lib/components/brand_asset/logos/loading.svg')..className = "load-spinner");
@@ -206,6 +211,7 @@ class UsersPageView extends PageView {
 
     allEmails.forEach((email) {
       var emailHeader = Element.th()..innerText = email;
+      emailHeader.classes.toggle('hidden', controller.getValue(email, 'status') == 'UserStatus.deactivated' && !controller.showDeactivatedUsers);
       permissionEmailHeaders[email] = emailHeader;
       headerRow.append(emailHeader);
     });
@@ -291,9 +297,8 @@ class UsersPageView extends PageView {
             ..onMouseLeave.listen((event) {
               permissionEmailHeaders[email].classes.toggle('highlight', false);
             });
-          if (resetToDefault != null) {
-            cell.append(resetToDefault);
-          }
+          cell.append(resetToDefault);
+          cell.classes.toggle('hidden', controller.getValue(email, 'status') == 'UserStatus.deactivated' && !controller.showDeactivatedUsers);
           permissionRow.append(cell);
         }
         tableBody.append(permissionRow);

@@ -15,6 +15,7 @@ enum UsersAction {
   updateProjectInfo,
   updatePermission,
   resetToDefaultPermission,
+  showOrHideDeactivatedUsers,
 }
 
 class UserData extends Data {
@@ -50,6 +51,8 @@ UsersPageView get _view => controller.view;
 class UsersController extends Controller {
   model.UserConfiguration defaultConfig;
   Map<String, model.UserConfiguration> userConfigs;
+
+  bool showDeactivatedUsers = false;
 
   UsersController(): super();
 
@@ -120,7 +123,6 @@ class UsersController extends Controller {
 
         }
         currentConfig = userConfigs[signedInUser.userEmail] ?? model.UserConfigurationUtil.emptyUserConfiguration;
-        // _view.populatePermissionsTable(defaultConfig, currentConfig, userConfigs);
       }
     });
   }
@@ -156,6 +158,10 @@ class UsersController extends Controller {
         platform.setUserConfigField(resetData.userId, resetData.permissionKey, defaultConfig.toData()[resetData.permissionKey]);
         _view.toggleSaved(resetData.userId, resetData.permissionKey, false);
         break;
+
+      case UsersAction.showOrHideDeactivatedUsers:
+        showDeactivatedUsers = !showDeactivatedUsers;
+        _view.populatePermissionsTable(defaultConfig, currentConfig, userConfigs);
     }
 
     switch (action) {
@@ -181,7 +187,8 @@ class UsersController extends Controller {
       (currentConfig.role == model.UserRole.projectAdmin && userConfigs[id]?.role == model.UserRole.superAdmin) ? false : true;
 
   bool isDerivedFromDefault(String id, String key) => id != DEFAULT_KEY && userConfigs[id].toData()[key] == null;
-  bool isResettableToDefault(String id, String key) => id != DEFAULT_KEY && !isDerivedFromDefault(id, key) && key != "role" && key != "status";
+  bool isResettableToDefault(String id, String key) => id != DEFAULT_KEY && !isDerivedFromDefault(id, key) && key != "role" && key != "status" && getValue(id, 'status') == 'UserStatus.active';
+
   bool isEditable(String id, String key) {
     if (id == DEFAULT_KEY) {
       if (key == "role" || key == "status") return false;
@@ -200,11 +207,5 @@ class UsersController extends Controller {
   dynamic getValue(String id, String key) {
     var configMap = (id == DEFAULT_KEY || isDerivedFromDefault(id, key)) ? defaultConfig.toData() : userConfigs[id].toData();
     return configMap[key];
-  }
-
-  @override
-  void applyConfiguration(model.UserConfiguration newConfig) {
-    // TODO: implement applyConfiguration
-    super.applyConfiguration(newConfig);
   }
 }
