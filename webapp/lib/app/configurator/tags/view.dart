@@ -315,7 +315,10 @@ class SampleMessagesTooltip {
   }
 
   String _linkToFilteredConversationView({String messageId, String tagId}) {
-    Map<String, String> queryParams = {};
+    Map<String, String> queryParams = {
+      "project": _view.appController.urlManager.project,
+      "conversation-list": "shard-0",
+    };
     if (messageId != null) {
       queryParams["conversation-id"] = messageId.replaceAll('nook-message-', '').substring(0, 52);
     }
