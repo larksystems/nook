@@ -1,9 +1,7 @@
 import 'dart:html';
 
 import 'package:katikati_ui_lib/components/logger.dart';
-import 'package:katikati_ui_lib/components/button/button.dart';
 import 'package:katikati_ui_lib/components/model/model.dart';
-import 'package:katikati_ui_lib/components/nav/button_links.dart';
 
 import 'package:nook/view.dart';
 
@@ -13,7 +11,6 @@ Logger log = new Logger('view.dart');
 
 class HomePageView extends PageView {
   DivElement homePageContents;
-
 
   HomePageView(HomePageController controller) : super(controller) {
     homePageContents = new DivElement()..classes.add('configuration-view');
@@ -45,42 +42,9 @@ class HomePageView extends PageView {
       ..classes.add('tile-container');
 
     for (var project in projects) {
-      projectList.append(new ProjectTileView(project.projectName, project.projectId, './?project=${project.projectId}').tileElement);
+      projectList.append(new ProjectTileView(project.projectName, project.projectId, './dashboard.html?project=${project.projectId}').tileElement);
     }
     homePageContents.append(projectList);
-  }
-
-  void showProjectPage(String projectId, Map<String, List<PageInfo>> pageStructure) {
-    navHeaderView.navContent = ButtonLinksView(generateProjectLinks(appController.urlManager.project), window.location.pathname).renderElement;
-
-    DivElement pageContents = DivElement();
-
-    for (var heading in pageStructure.keys) {
-      var title = new DivElement()
-        ..classes.add('configuration-view__title')
-        ..text = heading;
-      pageContents.append(title);
-
-      DivElement pageContent = new DivElement()
-        ..classes.add('configuration-view__content')
-        ..classes.add('config-page-options');
-      pageContents.append(pageContent);
-
-      for (var page in pageStructure[heading]) {
-        var button  = Button(ButtonType.contained, buttonText: page.goToButtonText, onClick: (_) {
-          this.appController.routeToPath('${page.urlPath}?project=${projectId}');
-        });
-        button.renderElement.classes.add('config-page-option__action');
-        button.parent = pageContent;
-
-        var description = new SpanElement()
-          ..classes.add('config-page-option__description')
-          ..text = page.shortDescription;
-        pageContent..append(description);
-      }
-    }
-    homePageContents.children.clear();
-    homePageContents.append(pageContents);
   }
 }
 

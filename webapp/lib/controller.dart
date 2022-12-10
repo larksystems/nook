@@ -29,6 +29,7 @@ class PageInfo {
 
 enum Page {
   homepage,
+  dashboard,
   configureMessages,
   configureTags,
   converse,
@@ -40,6 +41,7 @@ enum Page {
 
 final pages = {
   Page.homepage: PageInfo('', '', ''),
+  Page.dashboard: PageInfo('', '', 'dashboard.html'),
   Page.configureTags: PageInfo('How do you want to label messages and conversations?', 'Configure tags', '/configure/tags.html'),
   Page.configureMessages: PageInfo('What standard messages do you want to send?', 'Configure messages', '/configure/messages.html'),
   Page.converse: PageInfo('View conversations and send messages', 'Conversations', '/converse/index.html'),
