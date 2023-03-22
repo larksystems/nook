@@ -42,6 +42,7 @@ class Platform {
   PubSubClient _pubsubInstance;
   PubSubClient _pubsubLogInstance;
   PubSubClient _uptimePubSubInstance;
+  firebase.Storage _imagesBucket;
 
   PubSubClient get pubsubInstance => _pubsubInstance;
 
@@ -54,6 +55,7 @@ class Platform {
       _docStorage = FirebaseDocStorage(firebase.firestore());
       var firebaseCollectionPrefix = appController.urlManager.project != null ? '/projects/${appController.urlManager.project}' : null;
       _projectDocStorage = FirebaseDocStorage(firebase.firestore(), collectionPathPrefix: firebaseCollectionPrefix);
+      _imagesBucket = firebase.app().storage("gs://${firebase.app().options.projectId}-telegram-images");
 
       var projectName = appController.urlManager.project ?? "base"; // Use [base] if we're on the project selection page
       var baseUrl = '${platform_constants.cloudFunctionsUrlDomain}${projectName}';
@@ -216,8 +218,13 @@ class Platform {
 
   bool isUserSignedIn() => platform.isUserSignedIn();
 
+  Future<String> getImageUrl(String filePath) async {
+    return (await imageStorage.ref(filePath).getDownloadURL()).toString();
+  }
+
   FirebaseDocStorage get docStorage => _docStorage;
   FirebaseDocStorage get projectDocStorage => _projectDocStorage;
+  firebase.Storage get imageStorage => _imagesBucket;
 
   void listenForProjects(ProjectCollectionListener listener, [OnErrorListener onErrorListener]) {
     _projectSubscription = Project.listen(_docStorage, listener, queryList: [FirebaseQuery('users', FirebaseQuery.ARRAY_CONTAINS, appController.signedInUser.userEmail)], onError: onErrorListener);

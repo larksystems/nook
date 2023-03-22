@@ -108,7 +108,19 @@ List<TagView> _generateMessageTagViews(model.Message message) {
 
 MessageView _generateMessageView(model.Message message, model.Conversation conversation) {
   List<TagView> tags = _generateMessageTagViews(message);
-  var messageView = new MessageView(
+  MessageView messageView;
+  if (isImagePath(message.text)) {
+    messageView = ImageMessageView(
+      '',
+      message.datetime.toLocal(),
+      conversation.docId,
+      message.id,
+      incoming: message.direction == model.MessageDirection.In,
+      tags: tags,
+      status: message.status);
+    controller.getImageUrl(message.text).then((value) => messageView.text = value);
+  } else {
+    messageView = new MessageView(
       message.text,
       message.datetime.toLocal(),
       conversation.docId,
@@ -118,6 +130,7 @@ MessageView _generateMessageView(model.Message message, model.Conversation conve
       tags: tags,
       status: message.status
     );
+  }
   messageView.enableEditableTranslations(controller.currentConfig.editTranslationsEnabled);
   return messageView;
 }
