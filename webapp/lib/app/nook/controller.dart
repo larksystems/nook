@@ -16,7 +16,6 @@ import 'package:katikati_ui_lib/components/url_manager/url_manager.dart';
 import 'package:nook/controller.dart';
 export 'package:nook/controller.dart';
 import 'package:katikati_ui_lib/components/model/model.dart' as model;
-import 'package:nook/platform/platform.dart';
 import 'package:katikati_ui_lib/components/platform/pubsub.dart' show PubSubException;
 import 'package:nook/platform/user_position_reporter.dart';
 
@@ -1762,6 +1761,10 @@ class NookController extends Controller {
   }
 
   Set<model.Tag> get multiSelectExcludeTags => currentConfig.multiSelectExcludeTagIds.map((e) => tagIdsToTags[e]).toSet();
+
+  Future<String> getImageUrl(String fileName) async {
+    return await platform.getImageUrl('projects/${urlManager.project}/$fileName');
+  }
 }
 
 Map<String, model.Tag> _notFoundTagIds = {};

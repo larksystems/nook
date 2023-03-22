@@ -772,6 +772,21 @@ class MessageView {
   }
 }
 
+class ImageMessageView extends MessageView {
+  ImageElement _messageImage;
+  ImageMessageView(String text, DateTime dateTime, String conversationId, String messageId, {String translation = '', bool incoming = true, List<TagView> tags = const[], MessageStatus status = null})
+    : super(text, dateTime, conversationId, messageId, translation: translation, incoming: incoming, tags: tags, status: status) {
+    _messageImage = ImageElement(src: text)
+      ..style.maxWidth = '250px';
+    _messageText
+      ..text = null
+      ..append(_messageImage);
+  }
+
+  @override
+  void set text(String value) => _messageImage.src = value;
+}
+
 class SuggestedMessageView {
   DivElement message;
   DivElement _messageBubble;
@@ -1423,7 +1438,10 @@ class ConversationSummary with LazyListViewItem, UserPresenceIndicator {
   }
 
   Element buildElement() {
-    _conversationItem = ConversationItemView(deidentifiedPhoneNumber, _shortDeidentifiedPhoneNumber, _text, _status, readStatus, checkEnabled: !_checkboxHidden, defaultSelected: _selected, dateTime: _dateTime)
+    _conversationItem = ConversationItemView(deidentifiedPhoneNumber, _shortDeidentifiedPhoneNumber, _text, _status, readStatus, checkEnabled: !_checkboxHidden, defaultSelected: _selected, dateTime: _dateTime);
+    if (isImagePath(_text)) controller.getImageUrl(_text).then((value) => _conversationItem.updateMessage(value));
+
+    _conversationItem
       ..onCheck.listen((_) {
         _view.appController.command(UIAction.selectConversation, new ConversationData(deidentifiedPhoneNumber));
       })
@@ -1484,6 +1502,7 @@ class ConversationSummary with LazyListViewItem, UserPresenceIndicator {
   void _updateText(String text) {
     _text = text;
     _conversationItem?.updateMessage(text);
+    if (isImagePath(_text)) controller.getImageUrl(_text).then((value) => _conversationItem?.updateMessage(value));
   }
 
   void _updateDateTime(DateTime dateTime) {
