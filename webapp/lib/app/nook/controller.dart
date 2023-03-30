@@ -313,6 +313,9 @@ class NookController extends Controller {
 
   List<model.ConversationListShard> shards = [];
 
+  Map<String, String> uuidToPhoneNumberMapping = {};
+  StreamSubscription uuidMappingsSubscription;
+
   String selectedMessageTagId; // tag's ID
   String selectedTagMessageId; // message's ID
   String selectedConversationTagId;
@@ -628,6 +631,34 @@ class NookController extends Controller {
       if (suggestedReplies.isNotEmpty) {
         _populateReplyPanelView(suggestedReplies);
       }
+    }
+
+    if (oldConfig.deanonymisedConversationsEnabled != newConfig.deanonymisedConversationsEnabled) {
+      uuidToPhoneNumberMapping.clear();
+      if (newConfig.deanonymisedConversationsEnabled) {
+        uuidMappingsSubscription?.cancel();
+        uuidMappingsSubscription = platform.listenForUuidMappings((added, modified, removed) {
+          for (var uuidEntry in added) {
+            uuidToPhoneNumberMapping[uuidEntry.data['uuid']] = uuidEntry.docId;
+          }
+          for (var uuidEntry in modified) {
+            uuidToPhoneNumberMapping[uuidEntry.data['uuid']] = uuidEntry.docId;
+          }
+          for (var uuidEntry in removed) {
+            uuidToPhoneNumberMapping.remove(uuidEntry.data['uuid']);
+          }
+          if (activeConversation != null) {
+            if (added.where((element) => element.data['uuid'] == activeConversation.docId).isNotEmpty ||
+                modified.where((element) => element.data['uuid'] == activeConversation.docId).isNotEmpty ||
+                removed.where((element) => element.data['uuid'] == activeConversation.docId).isNotEmpty) {
+              updateViewForConversation(activeConversation, updateInPlace: true);
+            }
+          }
+        });
+      } else {
+        uuidMappingsSubscription?.cancel();
+      }
+      if (activeConversation != null) updateViewForConversation(activeConversation, updateInPlace: true);
     }
 
     log.verbose('Updated user configuration: $currentConfig');
