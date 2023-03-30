@@ -20,11 +20,17 @@ void _populateConversationPanelView(model.Conversation conversation, {bool updat
     _updateConversationPanelView(conversation);
     return;
   }
+
+  var demogInfo = conversation.demographicsInfo.values.toList();
+  if (controller.uuidToPhoneNumberMapping.containsKey(conversation.docId)) {
+    demogInfo.insert(0, controller.uuidToPhoneNumberMapping[conversation.docId]);
+  }
+
   _view.conversationPanelView.clear();
   _view.conversationPanelView
     ..deidentifiedPhoneNumber = conversation.docId
     ..deidentifiedPhoneNumberShort = conversation.shortDeidentifiedPhoneNumber
-    ..demographicsInfo = conversation.demographicsInfo.values.join(', ');
+    ..demographicsInfo = demogInfo.join(', ');
   for (var tag in convertTagIdsToTags(conversation.tagIds, controller.tagIdsToTags)) {
     _view.conversationPanelView.addTags(new ConversationTagView(tag.text, tag.tagId, tagTypeToKKStyle(tag.type)));
   }
@@ -47,10 +53,15 @@ void _populateConversationPanelView(model.Conversation conversation, {bool updat
 }
 
 void _updateConversationPanelView(model.Conversation conversation) {
+  var demogInfo = conversation.demographicsInfo.values.toList();
+  if (controller.uuidToPhoneNumberMapping.containsKey(conversation.docId)) {
+    demogInfo.insert(0, controller.uuidToPhoneNumberMapping[conversation.docId]);
+  }
+
   _view.conversationPanelView
     ..deidentifiedPhoneNumber = conversation.docId
     ..deidentifiedPhoneNumberShort = conversation.shortDeidentifiedPhoneNumber
-    ..demographicsInfo = conversation.demographicsInfo.values.join(', ');
+    ..demographicsInfo = demogInfo.join(', ');
   _view.conversationPanelView.removeTags();
   for (var tag in convertTagIdsToTags(conversation.tagIds, controller.tagIdsToTags)) {
     _view.conversationPanelView.addTags(new ConversationTagView(tag.text, tag.tagId, tagTypeToKKStyle(tag.type)));

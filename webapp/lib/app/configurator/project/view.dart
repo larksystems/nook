@@ -65,6 +65,7 @@ Map<String, List<Permission>> superAdminPermissionGroups = {
   ],
   "Other": [
     Permission("console_logging_level", "Console logging level", "String"),
+    Permission("deanonymised_conversations_enabled", "Can see the phone number associated with each conversation", "bool"),
   ]
 };
 

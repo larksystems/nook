@@ -36,6 +36,7 @@ class Platform {
   StreamSubscription _systemMessagesSubscription;
   StreamSubscription _shardsSubscription;
   StreamSubscription _conversationsSubscriptions;
+  StreamSubscription _uuidMappingsSubscription;
 
   DocStorage _docStorage;
   DocStorage _projectDocStorage;
@@ -258,6 +259,11 @@ class Platform {
 
   void listenForUserPresence(UserPresenceCollectionListener listener, [OnErrorListener onErrorListener]) {
     _userPresenceSubscription = UserPresence.listen(_projectDocStorage, listener, onError: onErrorListener);
+  }
+
+  StreamSubscription listenForUuidMappings(DataMapListener listener, [OnErrorListener onErrorListener]) {
+    _uuidMappingsSubscription = DataMap.listen(_projectDocStorage, listener, 'tables/uuid-table/mappings', onError: onErrorListener);
+    return _uuidMappingsSubscription;
   }
 
   Future<void> sendMultiMessage(List<String> ids, String message, {bool wasSuggested = false, onError(dynamic)}) async {
