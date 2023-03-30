@@ -1399,7 +1399,7 @@ class ConversationIdFilter {
       ..classes.add('conversation-filter__input')
       ..placeholder = 'Enter conversation ID'
       ..onChange.listen((_) {
-        _view.appController.command(UIAction.updateConversationIdFilter, new ConversationIdFilterData(_idInput.value));
+        _view.appController.command(UIAction.updateConversationIdFilter, new ConversationIdFilterData(_idInput.value.trim()));
       });
     conversationFilter.append(_idInput);
   }
