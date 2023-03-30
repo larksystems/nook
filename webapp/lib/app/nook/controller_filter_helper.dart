@@ -86,7 +86,9 @@ class ConversationFilter {
     if (unifierTagIds.intersection(filterTagIdsAll[TagFilterType.exclude]).isNotEmpty) return false;
     if (!unifierTagIds.containsAll(filterTagIdsAll[TagFilterType.lastInboundTurn])) return false;
 
-    if (!conversation.docId.startsWith(conversationIdFilter) && !conversation.shortDeidentifiedPhoneNumber.startsWith(conversationIdFilter)) return false;
+    if (!conversation.docId.startsWith(conversationIdFilter) &&
+        !conversation.shortDeidentifiedPhoneNumber.startsWith(conversationIdFilter) &&
+        !(controller.uuidToPhoneNumberMapping[conversation.docId]?.contains(conversationIdFilter) ?? false)) return false;
 
     return true;
   }
