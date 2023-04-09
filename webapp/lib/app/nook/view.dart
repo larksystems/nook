@@ -470,6 +470,7 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
     clearNewMessageBox();
     clearWarning();
     setSuggestedMessages([]);
+    deselectConversationSummary();
 
     int messagesNo = _messagesList.children.length;
     for (int i = 0; i < messagesNo; i++) {
@@ -495,14 +496,9 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
     _freetextMessageSendView.clear();
   }
 
-  void showCustomMessageBox(bool show) {
-    // todo: convert to hide / show method under FreetextMessageSendView
-    if (show) {
-      _freetextMessageSendView.renderElement.classes.remove('hidden');
-    } else {
-      _freetextMessageSendView.renderElement.classes.add('hidden');
-    }
-  }
+  void showCustomMessageBox(bool show) => _freetextMessageSendView.toggleVisibility(show);
+
+  void setCustomMessageBoxText(String text) => _freetextMessageSendView.text = text;
 
   void enableEditableTranslations(bool enable) {
     for (var messageView in _messageViews) {
@@ -1691,7 +1687,8 @@ class ReplyPanelView {
     _messageGroupsByCategoryId.values.forEach((groups) {
       groups.forEach((group) {
         group.replies.forEach((reply) {
-          reply.showButtons(show);
+          reply.showSendButtons(show);
+          reply.showEditButtons(show);
         });
       });
     });
@@ -1782,7 +1779,8 @@ class TagPanelView {
 abstract class ActionView {
   DivElement action;
   void showShortcut(bool show);
-  void showButtons(bool show);
+  void showSendButtons(bool show);
+  void showEditButtons(bool show);
 }
 
 class ReplyActionView implements ActionView {
@@ -1791,7 +1789,8 @@ class ReplyActionView implements ActionView {
   DivElement _shortcutElement;
   DivElement _textElement;
   DivElement _translationElement;
-  List<DivElement> _buttonElements;
+  List<DivElement> _sendButtonElements;
+  List<DivElement> _editButtonElements;
 
   String _text;
   String _translation;
@@ -1799,7 +1798,7 @@ class ReplyActionView implements ActionView {
   String get text => _text;
   String get translation => _translation;
 
-  ReplyActionView(this._text, this._translation, String shortcut, this.replyId, String buttonText) {
+  ReplyActionView(this._text, this._translation, String shortcut, this.replyId, String sendButtonText, String editButtonText) {
     action = new DivElement()
       ..classes.add('action')
       ..dataset['id'] = "${replyId}";
@@ -1813,7 +1812,8 @@ class ReplyActionView implements ActionView {
       ..style.flex = '1 1 auto';
     action.append(textTranslationWrapper);
 
-    _buttonElements = [];
+    _sendButtonElements = [];
+    _editButtonElements = [];
 
     { // Add text
       var textWrapper = new DivElement()
@@ -1824,23 +1824,34 @@ class ReplyActionView implements ActionView {
       _textElement = new DivElement()
         ..dataset['reply-id'] = replyId
         ..classes.add('action__text')
-        ..text = _text;
+        ..classes.toggle('action__text--placeholder', _text.isEmpty)
+        ..text = _text.isEmpty ? 'No message text provided' : _text;
       textWrapper.append(_textElement);
 
-      var buttonElement = new DivElement()
+      var editButtonElement = new DivElement()
         ..classes.add('action__button')
         ..classes.add('action__button--float')
-        ..text = '$buttonText (${controller.selectedProject?.firstLanguage ?? "lang 1"})';
-      buttonElement.onClick.listen((_) => _view.appController.command(UIAction.sendMessage, new ReplyData(replyId)));
-      buttonElement.onMouseEnter.listen((event) => highlightText(true));
-      buttonElement.onMouseLeave.listen((event) => highlightText(false));
+        ..text = '$editButtonText (${controller.selectedProject?.firstLanguage ?? "lang 1"})';
+      editButtonElement.onClick.listen((_) => _view.appController.command(UIAction.editStandardMessage, new ReplyData(replyId)));
+      editButtonElement.onMouseEnter.listen((event) => highlightText(true));
+      editButtonElement.onMouseLeave.listen((event) => highlightText(false));
       if (_text.isNotEmpty) {
-        textWrapper.append(buttonElement);
-        _buttonElements.add(buttonElement);
-      } else {
-        _textElement
-          ..classes.add('action__text--placeholder')
-          ..text = 'No message text provided';
+        textWrapper.append(editButtonElement);
+        textWrapper.style.minHeight = '55px';
+        _editButtonElements.add(editButtonElement);
+      }
+
+      var sendButtonElement = new DivElement()
+        ..classes.add('action__button')
+        ..classes.add('action__button--float')
+        ..style.top = '28px'
+        ..text = '$sendButtonText (${controller.selectedProject?.firstLanguage ?? "lang 1"})';
+      sendButtonElement.onClick.listen((_) => _view.appController.command(UIAction.sendMessage, new ReplyData(replyId)));
+      sendButtonElement.onMouseEnter.listen((event) => highlightText(true));
+      sendButtonElement.onMouseLeave.listen((event) => highlightText(false));
+      if (_text.isNotEmpty) {
+        textWrapper.append(sendButtonElement);
+        _sendButtonElements.add(sendButtonElement);
       }
     }
 
@@ -1853,23 +1864,34 @@ class ReplyActionView implements ActionView {
       _translationElement = new DivElement()
         ..dataset['reply-id'] = replyId
         ..classes.add('action__translation')
-        ..text = _translation;
+        ..classes.toggle('action__text--placeholder', _translation.isEmpty)
+        ..text = _translation.isEmpty ? 'No message translation provided' : _translation;
       translationWrapper.append(_translationElement);
 
-      var buttonElement = new DivElement()
+      var editButtonElement = new DivElement()
         ..classes.add('action__button')
         ..classes.add('action__button--float')
-        ..text = '$buttonText (${controller.selectedProject?.secondLanguage ?? "lang 2"})';
-      buttonElement.onClick.listen((_) => _view.appController.command(UIAction.sendMessage, new ReplyData(replyId, replyWithTranslation: true)));
-      buttonElement.onMouseEnter.listen((event) => highlightTranslation(true));
-      buttonElement.onMouseLeave.listen((event) => highlightTranslation(false));
+        ..text = '$editButtonText (${controller.selectedProject?.secondLanguage ?? "lang 2"})';
+      editButtonElement.onClick.listen((_) => _view.appController.command(UIAction.editStandardMessage, new ReplyData(replyId, replyWithTranslation: true)));
+      editButtonElement.onMouseEnter.listen((event) => highlightTranslation(true));
+      editButtonElement.onMouseLeave.listen((event) => highlightTranslation(false));
       if (_translation.isNotEmpty) {
-        translationWrapper.append(buttonElement);
-        _buttonElements.add(buttonElement);
-      } else {
-        _translationElement
-          ..classes.add('action__text--placeholder')
-          ..text = 'No message translation provided';
+        translationWrapper.append(editButtonElement);
+        translationWrapper.style.minHeight = '55px';
+        _editButtonElements.add(editButtonElement);
+      }
+
+      var sendButtonElement = new DivElement()
+        ..classes.add('action__button')
+        ..classes.add('action__button--float')
+        ..style.top = '28px'
+        ..text = '$sendButtonText (${controller.selectedProject?.secondLanguage ?? "lang 2"})';
+      sendButtonElement.onClick.listen((_) => _view.appController.command(UIAction.sendMessage, new ReplyData(replyId, replyWithTranslation: true)));
+      sendButtonElement.onMouseEnter.listen((event) => highlightTranslation(true));
+      sendButtonElement.onMouseLeave.listen((event) => highlightTranslation(false));
+      if (_translation.isNotEmpty) {
+        translationWrapper.append(sendButtonElement);
+        _sendButtonElements.add(sendButtonElement);
       }
     }
   }
@@ -1878,8 +1900,12 @@ class ReplyActionView implements ActionView {
     _shortcutElement.classes.toggle('hidden', !show);
   }
 
-  void showButtons(bool show) {
-    _buttonElements.forEach((button) => button.classes.toggle('hidden', !show));
+  void showEditButtons(bool show) {
+    _editButtonElements.forEach((button) => button.classes.toggle('hidden', !show));
+  }
+
+  void showSendButtons(bool show) {
+    _sendButtonElements.forEach((button) => button.classes.toggle('hidden', !show));
   }
 
   void highlightText(bool highlight) {
@@ -1972,14 +1998,25 @@ class ReplyActionGroupView implements ActionView {
     }
   }
 
-  void showButtons(bool show) {
+  void showSendButtons(bool show) {
     _buttonElements.forEach((button) => button.classes.toggle('hidden', !show));
   }
 
-  void showButtonsRecursive(bool show) {
+  void showEditButtons(bool show) {
+    // No-op operation for standard message groups
+    return;
+  }
+
+  void showSendButtonsRecursive(bool show) {
     _buttonElements.forEach((button) => button.classes.toggle('hidden', !show));
     for (var reply in replies) {
-      reply.showButtons(show);
+      reply.showSendButtons(show);
+    }
+  }
+
+  void showEditButtonsRecursive(bool show) {
+    for (var reply in replies) {
+      reply.showEditButtons(show);
     }
   }
 }

@@ -39,6 +39,7 @@ enum UIAction {
   updateTranslation,
   updateNote,
   sendMessage,
+  editStandardMessage,
   sendMessageGroup,
   sendManualMessage,
   confirmSuggestedMessages,
@@ -879,6 +880,11 @@ class NookController extends Controller {
             ..translation = selectedReply.text;
           selectedReply = translationReply;
         }
+        if (!_view.sendingManualMessageUserConfirmation(selectedReply.text)) {
+          log.verbose('User cancelled sending standard message reply: "${selectedReply.text}"');
+          return;
+        }
+
         if (!currentConfig.sendMultiMessageEnabled || selectedConversations.isEmpty) {
           sendMultiReply(selectedReply, [activeConversation]);
           return;
@@ -888,6 +894,18 @@ class NookController extends Controller {
           return;
         }
         sendMultiReply(selectedReply, selectedConversations);
+        break;
+      case UIAction.editStandardMessage:
+        ReplyData replyData = data;
+        model.SuggestedReply selectedReply = suggestedReplies.singleWhere((reply) => reply.suggestedReplyId == replyData.replyId);
+        if (replyData.replyWithTranslation) {
+          model.SuggestedReply translationReply = new model.SuggestedReply();
+          translationReply
+            ..text = selectedReply.translation
+            ..translation = selectedReply.text;
+          selectedReply = translationReply;
+        }
+        _view.conversationPanelView.setCustomMessageBoxText(selectedReply.text);
         break;
       case UIAction.sendMessageGroup:
         GroupReplyData replyData = data;
@@ -902,6 +920,10 @@ class NookController extends Controller {
             translationReplies.add(translationReply);
           }
           selectedReplies = translationReplies;
+        }
+        if (!_view.sendingManualMessageUserConfirmation(selectedReplies.map((e) => e.text).join('\n'))) {
+          log.verbose('User cancelled sending standard message group reply: "${selectedReplies.map((r) => r.text).join("; ")}"');
+          return;
         }
         if (!currentConfig.sendMultiMessageEnabled || selectedConversations.isEmpty) {
           sendMultiReplyGroup(selectedReplies, [activeConversation]);
@@ -920,10 +942,6 @@ class NookController extends Controller {
           ..text = replyData.replyText
           ..translation = '';
         if (!currentConfig.sendMultiMessageEnabled || selectedConversations.isEmpty) {
-          if (!_view.sendingManualMessageUserConfirmation(oneoffReply.text)) {
-            log.verbose('User cancelled sending manual message reply: "${oneoffReply.text}"');
-            return;
-          }
           sendMultiReply(oneoffReply, [activeConversation]);
           _view.conversationPanelView.clearNewMessageBox();
           return;
