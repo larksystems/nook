@@ -1,6 +1,8 @@
 part of controller;
 
+const EDIT_REPLY_BUTTON_TEXT = 'EDIT';
 const SEND_REPLY_BUTTON_TEXT = 'SEND';
+const SEND_ALL_BUTTON_TEXT = 'SEND all';
 const SEND_CUSTOM_REPLY_BUTTON_TEXT = 'SEND custom message';
 const SEND_SUGGESTED_REPLY_BUTTON_TEXT = 'SEND suggested messages';
 const DELETE_SUGGESTED_REPLY_BUTTON_TEXT = 'DELETE suggested messages';
@@ -181,15 +183,17 @@ void _populateReplyPanelView(List<model.SuggestedReply> suggestedReplies) {
       suggestedRepliesInGroup.sort((r1, r2) => r1.indexInGroup.compareTo(r2.indexInGroup));
 
       for (var reply in suggestedRepliesInGroup) {
-        var replyView = new ReplyActionView(reply.text, reply.translation, reply.shortcut, reply.suggestedReplyId, SEND_REPLY_BUTTON_TEXT);
+        var replyView = new ReplyActionView(reply.text, reply.translation, reply.shortcut, reply.suggestedReplyId, SEND_REPLY_BUTTON_TEXT, EDIT_REPLY_BUTTON_TEXT);
         replyView.fadeText(controller.activeConversation?.messages?.where((element) => element.text == reply.text)?.isNotEmpty ?? false);
         replyView.showShortcut(controller.currentConfig.repliesKeyboardShortcutsEnabled);
-        replyView.showButtons(controller.currentConfig.sendMessagesEnabled);
+        replyView.showSendButtons(controller.currentConfig.sendMessagesEnabled);
+        replyView.showEditButtons(controller.currentConfig.sendMessagesEnabled);
         views.add(replyView);
       }
 
-      var replyGroupView = new ReplyActionGroupView(categoryId, categoryNameById[categoryId], groupId, groupNameById[groupId],  "$SEND_REPLY_BUTTON_TEXT all", views);
-      replyGroupView.showButtons(controller.currentConfig.suggestedRepliesGroupsEnabled);
+      var replyGroupView = new ReplyActionGroupView(categoryId, categoryNameById[categoryId], groupId, groupNameById[groupId],  SEND_ALL_BUTTON_TEXT, views);
+      replyGroupView.showSendButtons(controller.currentConfig.suggestedRepliesGroupsEnabled);
+      replyGroupView.showEditButtons(controller.currentConfig.suggestedRepliesGroupsEnabled);
       replyGroupViews.add(replyGroupView);
     }
 
@@ -284,9 +288,10 @@ void _populateTurnlines(List<model.Turnline> turnlines) {
         if (repliesByGroups.containsKey(step.standardMessagesGroupId)) {
           var replies = repliesByGroups[step.standardMessagesGroupId];
           for (var reply in replies) {
-            var replyView = new ReplyActionView(reply.text, reply.translation, reply.shortcut, reply.suggestedReplyId, 'SEND');
+            var replyView = new ReplyActionView(reply.text, reply.translation, reply.shortcut, reply.suggestedReplyId, SEND_REPLY_BUTTON_TEXT, EDIT_REPLY_BUTTON_TEXT);
             replyView.showShortcut(controller.currentConfig.replies_keyboard_shortcuts_enabled);
-            replyView.showButtons(controller.currentConfig.sendMessagesEnabled);
+            replyView.showSendButtons(controller.currentConfig.sendMessagesEnabled);
+            replyView.showEditButtons(controller.currentConfig.sendMessagesEnabled);
             messages.add(replyView.action);
           }
         }
