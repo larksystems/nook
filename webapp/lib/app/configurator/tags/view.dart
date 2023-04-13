@@ -273,7 +273,7 @@ class SampleMessagesTooltip {
         onMouseLeave();
       });
 
-    var titleElement = new AnchorElement(href: _view.appController.urlManager.linkToFilteredConversationView(tagId: _tagId))..classes.add('sample-msg-tooltip__title');
+    var titleElement = new AnchorElement(href: _view.appController.urlManager.linkToFilteredConversationView(includeTagIds: {_tagId}))..classes.add('sample-msg-tooltip__title');
     titleElement.append(SpanElement()..className = 'fas fa-external-link-square-alt');
     titleElement.append(SpanElement()..innerText = " ${title}");
     tooltip.append(titleElement);
@@ -306,7 +306,7 @@ class SampleMessagesTooltip {
     }
 
     for (var message in messages) {
-      var messageLink = AnchorElement(href: _view.appController.urlManager.linkToFilteredConversationView(messageId: message.id, tagId: _tagId))..classes.add('sample-msg-tooltip__message');
+      var messageLink = AnchorElement(href: _view.appController.urlManager.linkToFilteredConversationView(conversationId: conversationIdFromMessageId(message.id), includeTagIds: {_tagId}))..classes.add('sample-msg-tooltip__message');
       var linkIcon = SpanElement()..className = 'fas fa-external-link-alt';
       var messageText = SpanElement()..innerText = "  ${message.text}";
       messageLink..append(linkIcon)..append(messageText);
