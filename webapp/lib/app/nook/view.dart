@@ -459,6 +459,8 @@ class ConversationPanelView with AutomaticSuggestionIndicator {
     return _messageViewsMap[id];
   }
 
+  void set freeTextMessageLength(int length) => _freetextMessageSendView.maxLength = length;
+
   void clear() {
     _conversationId.text = '';
     _conversationIdCopy.dataset['copy-value'] = '';

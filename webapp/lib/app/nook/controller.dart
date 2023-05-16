@@ -847,6 +847,12 @@ class NookController extends Controller {
   void command(action, [Data data]) {
     if (action is! UIAction) {
       super.command(action, data);
+      switch (action) {
+        case BaseAction.projectListUpdated:
+          _view.conversationPanelView.freeTextMessageLength = MESSAGE_MAX_LENGTH;
+          break;
+      }
+
       return;
     }
 
