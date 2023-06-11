@@ -2,6 +2,7 @@ import "dart:async";
 import 'dart:html';
 
 import 'package:firebase/firebase.dart' as firebase;
+import 'package:katikati_ui_lib/datatypes/doc_storage_util.dart' show DocQuery;
 
 import 'package:nook/controller.dart' as controller;
 import 'package:katikati_ui_lib/components/logger.dart';
@@ -244,8 +245,8 @@ class Platform {
     _shardsSubscription =  ConversationListShard.listen(_projectDocStorage, listener, onError: onErrorListener);
   }
 
-  StreamSubscription listenForConversations(ConversationCollectionListener listener, String conversationListRoot, [OnErrorListener onErrorListener]) {
-    _conversationsSubscriptions = Conversation.listen(_projectDocStorage, listener, collectionRoot: conversationListRoot, onErrorListener: onErrorListener);
+  StreamSubscription listenForConversations(ConversationCollectionListener listener, String conversationListRoot, [OnErrorListener onErrorListener, List<DocQuery> queryList]) {
+    _conversationsSubscriptions = Conversation.listen(_projectDocStorage, listener, collectionRoot: conversationListRoot, onErrorListener: onErrorListener, queryList: queryList);
     return _conversationsSubscriptions;
   }
 

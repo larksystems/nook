@@ -23,16 +23,26 @@ void _populateConversationPanelView(model.Conversation conversation, {bool updat
     return;
   }
 
-  var demogInfo = conversation.demographicsInfo.values.toList();
-  if (controller.uuidToPhoneNumberMapping.containsKey(conversation.docId)) {
-    demogInfo.insert(0, controller.uuidToPhoneNumberMapping[conversation.docId]);
+  if (controller.currentConfig.deanonymisedConversationsEnabled) {
+    var collectionPath = controller.platform.projectDocStorage.collectionPathPrefix.endsWith('/')
+        ? '${controller.platform.projectDocStorage.collectionPathPrefix}tables/uuid-table/mappings'
+        : '${controller.platform.projectDocStorage.collectionPathPrefix}/tables/uuid-table/mappings';
+
+    controller.platform.projectDocStorage.fs.collection(collectionPath)
+      .where('uuid', '==', '${conversation.docId}')
+      .get().then((value) {
+        if (value.docs.isEmpty) return;
+        controller.uuidToPhoneNumberMapping[conversation.docId] = value.docs.first.id;
+        var demogInfo = [value.docs.first.id, ...conversation.demographicsInfo.values.toList()];
+        _view.conversationPanelView.demographicsInfo = demogInfo.join(', ');
+      });
   }
 
   _view.conversationPanelView.clear();
   _view.conversationPanelView
     ..deidentifiedPhoneNumber = conversation.docId
     ..deidentifiedPhoneNumberShort = conversation.shortDeidentifiedPhoneNumber
-    ..demographicsInfo = demogInfo.join(', ');
+    ..demographicsInfo = conversation.demographicsInfo.values.join(', ');
   for (var tag in convertTagIdsToTags(conversation.tagIds, controller.tagIdsToTags)) {
     _view.conversationPanelView.addTags(new ConversationTagView(tag.text, tag.tagId, tagTypeToKKStyle(tag.type)));
   }
