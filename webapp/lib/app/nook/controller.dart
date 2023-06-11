@@ -507,6 +507,22 @@ class NookController extends Controller {
         displayOtherUserPresenceIndicators(otherUserPresenceByUserId.values.toList());
       }
     );
+
+    var lastestConversationMetric = {};
+    var collectionPath = controller.platform.projectDocStorage.collectionPathPrefix.endsWith('/')
+        ? '${controller.platform.projectDocStorage.collectionPathPrefix}conversation_metrics'
+        : '${controller.platform.projectDocStorage.collectionPathPrefix}/conversation_metrics';
+
+    controller.platform.projectDocStorage.fs.collection(collectionPath)
+      .onSnapshot.listen((event) {
+        if (event.docs.isEmpty) return;
+        lastestConversationMetric = event.docs.first.data();
+        for (var doc in event.docs) {
+          if (doc.id.compareTo(lastestConversationMetric["datetime"]) >= 0) lastestConversationMetric = doc.data();
+        }
+
+        _view.conversationListPanelView.totalConversations = lastestConversationMetric["conversations_count"];
+      });
   }
 
 
@@ -652,7 +668,6 @@ class NookController extends Controller {
     conversationListSubscription = null;
     if (conversationListRoot == ConversationListData.NONE) {
       urlManager.conversationList = null;
-      _view.conversationListPanelView.totalConversations = 0;
       return;
     }
     urlManager.conversationList = conversationListRoot;
@@ -693,8 +708,6 @@ class NookController extends Controller {
         log.debug('New conversations, added: $added');
         log.debug('New conversations, modified: $modified');
         log.debug('New conversations, removed: $removed');
-
-        _view.conversationListPanelView.totalConversations = conversations.length;
 
         updateMissingTagIds(conversations, tags, [TagFilterType.include, TagFilterType.exclude, TagFilterType.lastInboundTurn]);
 
