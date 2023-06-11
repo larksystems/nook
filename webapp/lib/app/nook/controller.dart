@@ -13,6 +13,7 @@ import 'package:katikati_ui_lib/components/turnline/turnline.dart';
 import 'package:katikati_ui_lib/components/logger.dart';
 import 'package:katikati_ui_lib/components/tooltip/tooltip.dart';
 import 'package:katikati_ui_lib/components/url_manager/url_manager.dart';
+import 'package:katikati_ui_lib/datatypes/doc_storage_util.dart';
 import 'package:nook/controller.dart';
 export 'package:nook/controller.dart';
 import 'package:katikati_ui_lib/components/model/model.dart' as model;
@@ -315,7 +316,6 @@ class NookController extends Controller {
   List<model.ConversationListShard> shards = [];
 
   Map<String, String> uuidToPhoneNumberMapping = {};
-  StreamSubscription uuidMappingsSubscription;
 
   String selectedMessageTagId; // tag's ID
   String selectedTagMessageId; // message's ID
@@ -636,29 +636,6 @@ class NookController extends Controller {
 
     if (oldConfig.deanonymisedConversationsEnabled != newConfig.deanonymisedConversationsEnabled) {
       uuidToPhoneNumberMapping.clear();
-      if (newConfig.deanonymisedConversationsEnabled) {
-        uuidMappingsSubscription?.cancel();
-        uuidMappingsSubscription = platform.listenForUuidMappings((added, modified, removed) {
-          for (var uuidEntry in added) {
-            uuidToPhoneNumberMapping[uuidEntry.data['uuid']] = uuidEntry.docId;
-          }
-          for (var uuidEntry in modified) {
-            uuidToPhoneNumberMapping[uuidEntry.data['uuid']] = uuidEntry.docId;
-          }
-          for (var uuidEntry in removed) {
-            uuidToPhoneNumberMapping.remove(uuidEntry.data['uuid']);
-          }
-          if (activeConversation != null) {
-            if (added.where((element) => element.data['uuid'] == activeConversation.docId).isNotEmpty ||
-                modified.where((element) => element.data['uuid'] == activeConversation.docId).isNotEmpty ||
-                removed.where((element) => element.data['uuid'] == activeConversation.docId).isNotEmpty) {
-              updateViewForConversation(activeConversation, updateInPlace: true);
-            }
-          }
-        });
-      } else {
-        uuidMappingsSubscription?.cancel();
-      }
       if (activeConversation != null) updateViewForConversation(activeConversation, updateInPlace: true);
     }
 
@@ -679,6 +656,12 @@ class NookController extends Controller {
       return;
     }
     urlManager.conversationList = conversationListRoot;
+    var queryList = <DocQuery>[];
+    if (conversationFilter.getFilters(TagFilterType.include).isNotEmpty) {
+      var tagIds = conversationFilter.getFilters(TagFilterType.include).map((e) => e.tagId).toList();
+      queryList.add(DocQuery("tags", "array-contains-any", tagIds.join(', ')));
+    }
+
     conversationListSubscription = platform.listenForConversations(
       (added, modified, removed) {
         if (added.length > 0) {
@@ -765,7 +748,8 @@ class NookController extends Controller {
         }
       },
       conversationListRoot,
-      showAndLogError);
+      showAndLogError,
+      queryList);
   }
 
   SplayTreeSet<model.Conversation> emptyConversationsSet(UIConversationSort sortOrder) {
@@ -1011,6 +995,10 @@ class NookController extends Controller {
         if (!added) return; // No change, nothing further to do
         urlManager.tagsFilter[tagData.filterType] = conversationFilter.filterTagIdsManuallySet[tagData.filterType];
         _view.conversationFilter[tagData.filterType].addFilterTag(new FilterTagView(unifierTag.text, unifierTag.tagId, tagTypeToKKStyle(unifierTag.type), tagData.filterType));
+        if (tagData.filterType == TagFilterType.include) {
+          command(UIAction.selectConversationList, ConversationListData(urlManager.conversationList));
+          return;
+        }
         if (actionObjectState == UIActionObject.loadingConversations) return;
         updateFilteredAndSelectedConversationLists();
         updateViewForConversation(activeConversation, updateInPlace: true);
@@ -1105,10 +1093,15 @@ class NookController extends Controller {
         if (!changed) return; // No change, nothing further to do
         urlManager.tagsFilter[tagData.filterType] = conversationFilter.filterTagIdsManuallySet[tagData.filterType];
         _view.conversationFilter[tagData.filterType].removeFilterTag(tag.tagId);
+        if (tagData.filterType == TagFilterType.include) {
+          command(UIAction.selectConversationList, ConversationListData(urlManager.conversationList));
+          return;
+        }
         if (actionObjectState == UIActionObject.loadingConversations) return;
         updateFilteredAndSelectedConversationLists();
         updateViewForConversation(activeConversation, updateInPlace: true);
         break;
+
       case UIAction.updateConversationIdFilter:
         ConversationIdFilterData filterData = data;
         conversationFilter.conversationIdFilter = filterData.idFilter;
@@ -1116,15 +1109,16 @@ class NookController extends Controller {
         if (actionObjectState == UIActionObject.loadingConversations) return;
         updateFilteredAndSelectedConversationLists();
         break;
+
       case UIAction.selectConversationSummary:
         deselectAllConversationElements();
-
         ConversationData conversationData = data;
         selectedConversationSummary = conversations.firstWhere((conversation) => conversation.docId == conversationData.deidentifiedPhoneNumber);
         actionObjectState = UIActionObject.conversation;
         _view.conversationPanelView.selectConversationSummary();
         _view.tagPanelView.enableTagging(currentConfig.tagMessagesEnabled, currentConfig.tagConversationsEnabled, _enableTagging);
         break;
+
       case UIAction.deselectConversationSummary:
         if (actionObjectState != UIActionObject.conversation) return;
         selectedConversationSummary = null;
@@ -1509,6 +1503,22 @@ class NookController extends Controller {
   }
 
   void updateFilteredAndSelectedConversationLists() {
+    // query for the phone number if deanonimisation enabled
+    if (controller.currentConfig.deanonymisedConversationsEnabled && conversationFilter.conversationIdFilter.isNotEmpty) {
+      if (!uuidToPhoneNumberMapping.containsValue(conversationFilter.conversationIdFilter)) {
+        var docPath = controller.platform.projectDocStorage.collectionPathPrefix.endsWith('/')
+            ? '${controller.platform.projectDocStorage.collectionPathPrefix}tables/uuid-table/mappings/${conversationFilter.conversationIdFilter}'
+            : '${controller.platform.projectDocStorage.collectionPathPrefix}/tables/uuid-table/mappings/${conversationFilter.conversationIdFilter}';
+
+        controller.platform.projectDocStorage.fs.doc(docPath)
+          .get().then((value) {
+            if (!value.exists) return;
+            controller.uuidToPhoneNumberMapping[value.data()["uuid"]] = value.id;
+            updateFilteredAndSelectedConversationLists();
+          });
+      }
+    }
+
     filteredConversations = conversations.where((conversation) => conversationFilter.test(conversation)).toSet();
     if (!currentConfig.sendMultiMessageEnabled) {
       activeConversation = updateViewForConversations(conversationsInView);
